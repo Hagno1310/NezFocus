@@ -43,5 +43,7 @@ Viết comment một dòng, chỉ để nói **vì sao**: ràng buộc từ SRS 
 
 ## Git
 
+Task nằm trên Jira project **NF** (https://nez-focus.atlassian.net/jira/software/projects/NF/boards/3/backlog): 1 issue = 1 REQ, AC dạng checkbox. Branch `feat/NF-12-req-auth-01-dang-ky`, commit message có key Jira để tự liên kết (`feat(backend): NF-12 register account`).
+
 Người dùng tự commit. Agent để thay đổi ở trạng thái chưa commit, kết thúc bằng tóm tắt thay đổi và gợi ý commit message dạng Conventional Commits (`feat(mobile): …`; scope: mobile, backend, shared, mascot, infra, docs, ci, deps).
 Không chạy `git commit`, `git push`, `git rebase`, `git reset --hard` hay sửa lịch sử.

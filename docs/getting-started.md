@@ -54,7 +54,9 @@ cd apps/mobile
 pnpm build:dev
 ```
 
-Build mất khoảng 10–20 phút. Khi xong, EAS trả về link/QR tải file APK. **Gửi link này cho cả nhóm**: mọi người dùng chung một APK, không ai phải tự build. Muốn mời thành viên vào project Expo để họ tự build: expo.dev → project → **Members**.
+> **Đã xong (17/10/2026):** bản dev client đầu tiên đã được build và cài thử thành công. Link tải APK mới nhất: <https://expo.dev/accounts/hagnovn/projects/nezfocus/builds> (chọn bản _development_ gần nhất).
+
+Build mất khoảng 10–20 phút, chưa tính thời gian chờ hàng đợi của tài khoản miễn phí. Khi xong, EAS trả về link/QR tải file APK. **Gửi link này cho cả nhóm**: mọi người dùng chung một APK, không ai phải tự build. Muốn mời thành viên vào project Expo để họ tự build: expo.dev → project → **Members**.
 
 ### 1.4. Quyền truy cập cho thành viên mới
 
@@ -109,8 +111,9 @@ File `.env` không bao giờ được commit (đã nằm trong `.gitignore`).
 
 ### 2.4. Cài app lên điện thoại
 
-- **Hiện tại:** cài **Expo Go** từ Google Play.
-- **Khi dự án đã có thư viện native** (LiveKit, Firebase…): cài APK dev client từ link trưởng nhóm gửi (mục 1.3).
+Cài **APK dev client** từ link ở mục 1.3: mở link bằng điện thoại, bấm **Install**, cho phép cài từ nguồn không rõ nếu máy hỏi. Chỉ cài **một lần**; xem mục 5 để biết khi nào cần cài lại.
+
+Expo Go (Google Play) chỉ là phương án dự phòng khi chưa có APK.
 
 ### 2.5. Kiểm tra mọi thứ chạy được
 
@@ -133,7 +136,7 @@ App cần backend, nên mỗi ngày cần chạy **cả ba**. Mỗi lệnh chạ
 | 2        | `pnpm dev:backend` | Chạy API ở cổng 3000, tự reload khi sửa code                                   |
 | 3        | `pnpm dev:mobile`  | Chạy Metro. Mở app dev client trên điện thoại rồi quét QR                      |
 
-Khi chưa có APK dev client, terminal 3 dùng `pnpm --filter mobile start:go` và quét QR bằng Expo Go.
+Mở app **NezFocus** (dev client) trên điện thoại: app tự tìm Metro trong cùng mạng Wi-Fi, hoặc quét QR in ở terminal 3. Không dùng được Wi-Fi chung (trường, quán): xem mục 5.3.
 
 Sửa code TypeScript ở app hay backend đều tự cập nhật; không cần build lại APK. Sửa `packages/shared` thì chạy thêm `pnpm --filter @nezfocus/shared dev` (tự build lại khi lưu).
 
@@ -206,14 +209,39 @@ Cả ba phải pass. CI chạy lại đúng các bước này, thêm e2e test v�
 
 ## 5. App Android: Expo Go, dev client và khi nào build lại
 
-|                                                                | Expo Go                                   | Dev client (APK riêng của dự án)             |
-| -------------------------------------------------------------- | ----------------------------------------- | -------------------------------------------- |
-| Cài từ                                                         | Google Play                               | Link APK do trưởng nhóm gửi                  |
-| Chạy bằng lệnh                                                 | `pnpm --filter mobile start:go`           | `pnpm dev:mobile`                            |
-| Thư viện native riêng (LiveKit, Firebase, Notifee, op-sqlite…) | **Không chạy được**                       | Chạy được                                    |
-| Dùng khi                                                       | Giai đoạn đầu, chỉ có màn hình và gọi API | Từ khi làm voice, push, thông báo chuyển pha |
+|                                                                | Expo Go                         | Dev client (APK riêng của dự án) |
+| -------------------------------------------------------------- | ------------------------------- | -------------------------------- |
+| Cài từ                                                         | Google Play                     | Link APK do trưởng nhóm gửi      |
+| Chạy bằng lệnh                                                 | `pnpm --filter mobile start:go` | `pnpm dev:mobile`                |
+| Thư viện native riêng (LiveKit, Firebase, Notifee, op-sqlite…) | **Không chạy được**             | Chạy được                        |
+| Dùng khi                                                       | Dự phòng khi chưa cài được APK  | **Mặc định** cho cả nhóm         |
 
-**Chỉ build lại APK** khi có người thêm, xóa hoặc nâng phiên bản thư viện native, hoặc sửa phần native trong `app.config.ts`/`plugins/`. Khi đó người đó chạy `pnpm --filter mobile build:dev` (hoặc workflow trên GitHub) và báo cả nhóm cài APK mới. Sửa code JS/TS thì **không** cần build lại.
+### 5.1. Cài một lần, dùng tới khi đổi thư viện native
+
+APK dev client chỉ chứa **phần native** (React Native, các module native). Toàn bộ code JS/TS của app được tải từ Metro mỗi lần mở app, nên:
+
+- Sửa màn hình, logic, gọi API… → **không** cần cài lại; lưu file là app tự cập nhật.
+- Có người **thêm, xóa hoặc nâng phiên bản thư viện native**, hoặc sửa phần native trong `app.config.ts`/`plugins/` → APK cũ không còn khớp. Người đó chạy `pnpm --filter mobile build:dev` (hoặc workflow **Mobile build (EAS)**, profile `development`), báo cả nhóm, rồi mọi người cài APK mới.
+
+Dấu hiệu APK đã cũ: app báo thiếu native module hoặc crash ngay khi mở màn hình dùng thư viện mới.
+
+### 5.2. Nhiều điện thoại dùng chung một máy chạy Metro
+
+Mọi điện thoại đã cài APK và **cùng mạng Wi-Fi** đều mở được app từ một máy đang chạy `pnpm dev:mobile`, nhiều điện thoại cùng lúc cũng được. Dùng khi demo hoặc khi cả nhóm cùng thử một tính năng.
+
+Cần nhớ:
+
+- Điện thoại chạy **code đang có trên máy chạy Metro** (kể cả phần chưa commit).
+- App gọi **backend của máy đó**: địa chỉ lấy từ `apps/mobile/.env` của máy chạy Metro, nên máy đó cũng phải đang chạy `pnpm dev:backend`, và mọi điện thoại dùng chung một database.
+- Làm việc hằng ngày: mỗi người dùng **laptop của mình kèm điện thoại của mình**, để code đang sửa của các bạn không lẫn vào nhau.
+
+### 5.3. Mạng chặn kết nối giữa các thiết bị
+
+Wi-Fi ở nhà thường chạy ngay. Wi-Fi trường, quán cà phê hay ký túc xá thường bật _client isolation_: các thiết bị trong mạng không gọi được nhau, nên điện thoại không thấy máy tính. Cách xử lý, theo thứ tự nên thử:
+
+1. **Phát hotspot từ điện thoại**, cho laptop bắt vào hotspot đó. Cập nhật IP mới của laptop vào `apps/mobile/.env` (xem bằng `ipconfig`) rồi khởi động lại Metro. Cả app lẫn backend đều chạy được.
+2. **Chạy Metro qua tunnel:** `pnpm dev:mobile -- --tunnel`. Code app tải qua Internet, nhưng tunnel **không** mang theo backend, nên app vẫn cần một backend điện thoại gọi được (cách 1 hoặc backend đã deploy).
+3. **Dùng backend dùng chung đã deploy** (`infra/docker-compose.prod.yml`): đặt `EXPO_PUBLIC_API_URL` trỏ tới server đó, máy tính chỉ cần chạy Metro (kết hợp cách 2 nếu cần).
 
 Thư mục `apps/mobile/android/` được sinh tự động (Continuous Native Generation) và không commit. Mọi cấu hình native khai báo trong `app.config.ts` hoặc config plugin trong `apps/mobile/plugins/`.
 
@@ -279,6 +307,7 @@ Chạy ở thư mục gốc repo, trừ khi ghi khác.
 | ------------------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | App báo **Backend: down**                         | Điện thoại không gọi được máy tính           | Kiểm tra cùng Wi-Fi; IP trong `apps/mobile/.env` đúng với `ipconfig`; cho phép Node.js qua **Windows Firewall** (mạng Private). Sửa `.env` xong thì khởi động lại Metro |
 | Quét QR mà app không tải                          | Firewall chặn cổng 8081 của Metro            | Như trên; hoặc chạy `pnpm dev:mobile -- --tunnel`                                                                                                                       |
+| Ở nhà chạy được, ra trường/quán thì không         | Wi-Fi bật client isolation                   | Phát hotspot từ điện thoại hoặc dùng tunnel (mục 5.3)                                                                                                                   |
 | `/health` trả **503** `db: down`                  | Docker chưa chạy hoặc Postgres chưa sẵn sàng | Mở Docker Desktop, chạy lại `pnpm dev:infra`, đợi vài giây                                                                                                              |
 | `pnpm dev:infra` báo lỗi pipe/daemon              | Docker Desktop chưa khởi động                | Mở Docker Desktop và đợi tới khi báo _Engine running_                                                                                                                   |
 | Cổng 3000/5432 đã bị dùng                         | Có chương trình khác chiếm cổng              | Tắt chương trình đó, hoặc đổi `PORT` / cổng trong `infra/docker-compose.yml`                                                                                            |

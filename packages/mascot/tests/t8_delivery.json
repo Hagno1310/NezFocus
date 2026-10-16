@@ -1,0 +1,47 @@
+{
+  "names": [
+    "Runtime",
+    "Main",
+    "Mascot",
+    "mood"
+  ],
+  "min_types": {
+    "DataEnumValue": 7,
+    "LinearAnimation": 10,
+    "StateMachineLayer": 4
+  },
+  "transparent_artboard": true,
+  "captures": [
+    {
+      "id": "t8-letterbox",
+      "viewport": "500x300",
+      "fit": "contain",
+      "regions": [
+        {
+          "what": "eye visible when letterboxed",
+          "box": [
+            217,
+            116,
+            4,
+            4
+          ],
+          "color": "6EA6FB",
+          "tol": 45,
+          "min": 0.5
+        },
+        {
+          "what": "head top not cropped (ear tip area has blue)",
+          "box": [
+            188,
+            28,
+            6,
+            6
+          ],
+          "color": "6E9BF0",
+          "tol": 70,
+          "min": 0.3
+        }
+      ]
+    }
+  ]
+}

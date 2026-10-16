@@ -1,0 +1,21 @@
+{
+  "names": ["idle_breathe", "blink", "ear_twitch", "Idle", "Blink", "Ears"],
+  "min_types": {"StateMachineLayer": 4, "CubicEaseInterpolator": 2},
+  "captures": [
+    {"id": "t5-rest", "advance": 1, "regions": [
+      {"what": "above head top at rest = background", "box": [245, 46, 10, 2], "color": "1D1D1D", "tol": 20, "min": 0.8}
+    ]},
+    {"id": "t5-inhale", "advance": 75, "regions": [
+      {"what": "head rose on inhale", "box": [245, 46, 10, 2], "color": "F3F6FC", "tol": 40, "min": 0.6}
+    ]},
+    {"id": "t5-seam", "advance": 151, "regions": [
+      {"what": "loop returns to rest at 150f", "box": [245, 46, 10, 2], "color": "1D1D1D", "tol": 20, "min": 0.8}
+    ]},
+    {"id": "t5-eyes-open", "advance": 60, "regions": [
+      {"what": "upper eye lit", "box": [194, 180, 10, 6], "color": "6EA6FB", "tol": 40, "min": 0.8}
+    ]},
+    {"id": "t5-eyes-shut", "advance": 206, "regions": [
+      {"what": "upper eye dark mid-blink", "box": [194, 180, 10, 6], "color": "6EA6FB", "tol": 40, "max": 0.1}
+    ]}
+  ]
+}

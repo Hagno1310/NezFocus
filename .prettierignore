@@ -1,0 +1,4 @@
+pnpm-lock.yaml
+packages/mascot/
+docs/SRS_NezFocus.md
+**/dist/

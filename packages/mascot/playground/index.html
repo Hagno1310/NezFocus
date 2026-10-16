@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Runtime Playground</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --bg: #f3f6fc; --panel: #ffffff; --ink: #172e62; --muted: #5d6b91;
+    --primary: #547fe4; --primary-ink: #ffffff; --line: #dde4f3; --stage: #eef2fa;
+  }
+  :root[data-stage="dark"] { --stage: #1d2340; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 20px 24px 8px; }
+  header h1 { margin: 0; font-size: 20px; }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  main { display: grid; grid-template-columns: minmax(280px, 1fr) 320px; gap: 20px; padding: 12px 24px 24px; }
+  @media (max-width: 760px) { main { grid-template-columns: 1fr; } }
+  .stage { background: var(--stage); border: 1px solid var(--line); border-radius: 16px;
+           display: grid; place-items: center; min-height: 460px; transition: background .2s; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  .panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 14px 0 8px; }
+  .panel h2:first-child { margin-top: 0; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  button { font: inherit; border: 1px solid var(--line); background: #f7f9fe; color: var(--ink);
+           padding: 9px 10px; border-radius: 10px; cursor: pointer; text-align: left; }
+  button:hover { border-color: var(--primary); }
+  button[aria-pressed="true"] { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .row button { flex: 1; text-align: center; }
+  #status { font: 12px/1.4 ui-monospace, Consolas, monospace; color: var(--muted); white-space: pre-wrap;
+            background: #f7f9fe; border-radius: 10px; padding: 10px; margin-top: 14px; min-height: 3em; }
+  #status.err { color: #b3261e; }
+  .mascot { position: relative; width: var(--size, 400px); height: var(--size, 400px); max-width: 100%; }
+  .mascot canvas { width: 100%; height: 100%; display: block; }
+  .bubble { position: absolute; left: 0; top: 0; max-width: 240px; min-width: 120px; padding: 10px 14px;
+            background: #fff; color: #172e62; border: 2px solid #2b3257; border-radius: 16px;
+            font: 600 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            box-shadow: 0 6px 18px rgba(43, 50, 87, .18);
+            transform-origin: 100% 100%; transform: translate(-100%, -100%) scale(.6); opacity: 0;
+            transition: transform .18s cubic-bezier(.2, 1.4, .4, 1), opacity .15s; pointer-events: none; }
+  .bubble.show { transform: translate(-100%, -100%) scale(1); opacity: 1; }
+  .bubble::after { content: ""; position: absolute; right: 14px; bottom: -11px; width: 16px; height: 16px;
+                   background: #fff; border-right: 2px solid #2b3257; border-bottom: 2px solid #2b3257;
+                   transform: rotate(45deg) skew(12deg, 12deg); }
+  .bubble small { display: block; font: 500 11px/1.2 system-ui, sans-serif; color: #5d6b91; margin-bottom: 2px; }
+  .chat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .chat-grid button { text-align: center; padding: 8px 6px; font-size: 13px; }
+  kbd { font: 12px ui-monospace, Consolas, monospace; background: #eef2fa; border: 1px solid var(--line);
+        border-radius: 4px; padding: 0 4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Nez — thử hành động</h1>
+  <p>Nạp <code>dist/runtime.riv</code> · artboard <code>Runtime</code> · state machine <code>Main</code> · view model <code>Mascot.mood</code>. Phím tắt: <kbd>1</kbd>–<kbd>7</kbd> đổi mood, <kbd>S</kbd> cho ngủ, <kbd>W</kbd> vẫy chào, <kbd>T</kbd> nói một câu, <kbd>Space</kbd> dừng/chạy. Click vào nhân vật khi đang ngủ để đánh thức.</p>
+</header>
+<main>
+  <section class="stage">
+    <div class="mascot" id="mascot">
+      <canvas id="rive" width="800" height="800"></canvas>
+      <div class="bubble" id="bubble" role="status" aria-live="polite"><small id="bubbleTag"></small><span id="bubbleText"></span></div>
+    </div>
+  </section>
+  <aside class="panel">
+    <h2>Mood</h2>
+    <div class="grid" id="moods"></div>
+    <h2>Hành động</h2>
+    <div class="row">
+      <button id="sleep" aria-pressed="false">Cho ngủ</button>
+      <button id="wave">Vẫy chào</button>
+    </div>
+    <p style="margin:6px 0 0;font-size:12px;color:var(--muted)">Đang ngủ thì <b>click vào nhân vật</b> để đánh thức.</p>
+    <h2>Trò chuyện</h2>
+    <div class="chat-grid" id="chat"></div>
+    <div class="row" style="margin-top:8px">
+      <button id="autoChat" aria-pressed="false">Tự tám chuyện (7s)</button>
+    </div>
+    <h2>Phát</h2>
+    <div class="row">
+      <button id="toggle" aria-pressed="false">Dừng</button>
+      <button id="reload">Nạp lại file</button>
+    </div>
+    <h2>Kích cỡ</h2>
+    <div class="row" id="sizes"></div>
+    <h2>Nền</h2>
+    <div class="row">
+      <button data-stage="light" aria-pressed="true">Sáng</button>
+      <button data-stage="dark" aria-pressed="false">Tối</button>
+    </div>
+    <div id="status">Đang nạp…</div>
+  </aside>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@rive-app/canvas@2/rive.js"></script>
+<script>
+  const SRC = '../dist/runtime.riv';
+  const MOODS = [
+    ['neutral', 'Mặc định'], ['happy', 'Vui vẻ'], ['wink', 'Nháy mắt'], ['focus', 'Tập trung'],
+    ['surprised', 'Bất ngờ'], ['sleepy', 'Buồn ngủ'], ['confused', 'Thắc mắc'],
+  ];
+  const SIZES = [['120px', 'Nhỏ 120'], ['240px', 'Vừa 240'], ['400px', 'Lớn 400']];
+  const canvas = document.getElementById('rive');
+  const statusEl = document.getElementById('status');
+  let r = null, moodProp = null, sleepProp = null, waveProp = null, playing = true;
+  const sleepBtn = document.getElementById('sleep');
+
+  function status(msg, isErr = false) {
+    statusEl.textContent = msg;
+    statusEl.classList.toggle('err', isErr);
+  }
+
+  function markPressed(container, pressedBtn) {
+    container.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === pressedBtn)));
+  }
+
+  const moodBox = document.getElementById('moods');
+  MOODS.forEach(([key, label], i) => {
+    const b = document.createElement('button');
+    b.dataset.mood = key;
+    b.textContent = `${i + 1}. ${label}`;
+    b.setAttribute('aria-pressed', String(key === 'neutral'));
+    b.onclick = () => setMood(key);
+    moodBox.appendChild(b);
+  });
+
+  const sizeBox = document.getElementById('sizes');
+  SIZES.forEach(([px, label]) => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.setAttribute('aria-pressed', String(px === '400px'));
+    b.onclick = () => {
+      document.documentElement.style.setProperty('--size', px);
+      bubble.classList.remove('show');
+      markPressed(sizeBox, b);
+      requestAnimationFrame(() => r && r.resizeDrawingSurfaceToCanvas());
+    };
+    sizeBox.appendChild(b);
+  });
+
+  document.querySelectorAll('[data-stage]').forEach(b => b.onclick = () => {
+    document.documentElement.dataset.stage = b.dataset.stage;
+    markPressed(b.parentElement, b);
+  });
+
+  function setMood(key) {
+    if (!moodProp) { status('Chưa có view model — file chưa nạp xong hoặc runtime không hỗ trợ data binding.', true); return; }
+    moodProp.value = key;
+    markPressed(moodBox, moodBox.querySelector(`[data-mood="${key}"]`));
+    status(`mood = ${key}`);
+  }
+
+  function load() {
+    if (r) { r.cleanup(); r = null; moodProp = null; sleepProp = null; }
+    status('Đang nạp…');
+    r = new rive.Rive({
+      src: SRC + '?t=' + Date.now(),
+      canvas,
+      artboard: 'Runtime',
+      stateMachine: 'Main',
+      autoplay: true,
+      autoBind: true,
+      layout: new rive.Layout({ fit: rive.Fit.Contain, alignment: rive.Alignment.Center }),
+      onLoad: () => {
+        r.resizeDrawingSurfaceToCanvas();
+        const vmi = r.viewModelInstance;
+        moodProp = vmi && vmi.enum ? vmi.enum('mood') : null;
+        sleepProp = vmi && vmi.boolean ? vmi.boolean('isAsleep') : null;
+        waveProp = vmi && vmi.trigger ? vmi.trigger('wave') : null;
+        if (sleepProp) {
+          syncSleep();
+          sleepProp.on(() => {
+            syncSleep();
+            if (sleepProp.value) { bubble.classList.remove('show'); status('isAsleep = true — đang ngủ (click để đánh thức)'); }
+            else setTimeout(() => say('wake'), 350);   // woke up (e.g. tapped): say something startled
+          });
+        }
+        playing = true;
+        document.getElementById('toggle').textContent = 'Dừng';
+        if (moodProp) {
+          status(`Đã nạp. mood = ${moodProp.value}\nGiá trị hợp lệ: ${(moodProp.values || MOODS.map(m => m[0])).join(', ')}`);
+          markPressed(moodBox, moodBox.querySelector(`[data-mood="${moodProp.value}"]`));
+        } else {
+          status('Đã nạp nhưng không tìm thấy view model "Mascot" / enum "mood".', true);
+        }
+      },
+      onLoadError: e => status('Không nạp được file .riv: ' + (e && e.data ? e.data : e) +
+        '\nMở trang qua server (xem README trong thư mục này), không mở trực tiếp bằng file://.', true),
+    });
+  }
+
+  document.getElementById('toggle').onclick = e => {
+    if (!r) return;
+    playing ? r.pause() : r.play();
+    playing = !playing;
+    e.target.textContent = playing ? 'Dừng' : 'Chạy';
+    e.target.setAttribute('aria-pressed', String(!playing));
+  };
+  function syncSleep() {
+    const on = !!(sleepProp && sleepProp.value);
+    sleepBtn.setAttribute('aria-pressed', String(on));
+    sleepBtn.textContent = on ? 'Đang ngủ… (bấm để đánh thức)' : 'Cho ngủ';
+  }
+  sleepBtn.onclick = () => {
+    if (!sleepProp) { status('Không tìm thấy thuộc tính isAsleep — hãy xuất lại runtime.riv rồi Nạp lại file.', true); return; }
+    sleepProp.value = !sleepProp.value;
+    syncSleep();
+  };
+  document.getElementById('wave').onclick = () => {
+    if (!waveProp) { status('Không tìm thấy trigger wave — xuất lại runtime.riv rồi Nạp lại file.', true); return; }
+    waveProp.trigger();
+    status('wave() — vẫy chào!');
+  };
+  // ---------------- speech bubble (drawn by the app, not by Rive) ----------------
+  const LINES_URL = '../speech/lines.vi.json';
+  const DEMO = { name: 'bạn', minutes: 25, streak: 7 };
+  const CHAT_BUTTONS = ['greeting', 'cheer', 'chat', 'focusStart', 'breakTime', 'sessionDone', 'streak', 'night', 'trouble'];
+  const bubble = document.getElementById('bubble'), bubbleText = document.getElementById('bubbleText'),
+        bubbleTag = document.getElementById('bubbleTag');
+  let speech = null, hideTimer = null, typeTimer = null, autoTimer = null, lastLine = null;
+
+  function placeBubble() {
+    const a = (speech && speech.anchor) || { artboardX: 150, artboardY: 78 };
+    const box = document.getElementById('mascot').getBoundingClientRect();
+    const k = Math.min(box.width, box.height) / 500;               // fit: contain, square artboard
+    const ox = (box.width - 500 * k) / 2, oy = (box.height - 500 * k) / 2;
+    bubble.style.left = (ox + a.artboardX * k + 24) + 'px';        // tail sits ~24px left of the box's right edge
+    bubble.style.top = (oy + a.artboardY * k - 12) + 'px';
+  }
+
+  function say(category) {
+    if (!speech) return;
+    const asleep = !!(sleepProp && sleepProp.value);
+    if (asleep && category !== 'wake') { status('Đang ngủ nên không nói (chạm để đánh thức).'); return; }
+    const cat = speech.categories[category];
+    const pool = cat.lines.filter(l => l !== lastLine);
+    const line = pool[Math.floor(Math.random() * pool.length)];
+    lastLine = line;
+    const text = line.text.replace(/\{(\w+)\}/g, (_, k) => DEMO[k] ?? '');
+    if (line.mood) setMood(line.mood);
+    if (line.gesture === 'wave' && waveProp) waveProp.trigger();
+    bubbleTag.textContent = cat.label;
+    placeBubble();
+    clearTimeout(hideTimer); clearInterval(typeTimer);
+    bubble.classList.remove('show'); void bubble.offsetWidth; bubble.classList.add('show');
+    let i = 0; bubbleText.textContent = '';
+    typeTimer = setInterval(() => { bubbleText.textContent = text.slice(0, ++i); if (i >= text.length) clearInterval(typeTimer); }, 28);
+    hideTimer = setTimeout(() => bubble.classList.remove('show'), Math.max(3200, text.length * 70));
+    status(`say(${category}) · mood=${line.mood || '-'}${line.gesture ? ' · ' + line.gesture : ''}\n“${text}”`);
+  }
+
+  fetch(LINES_URL).then(res => res.json()).then(json => {
+    speech = json;
+    const box = document.getElementById('chat');
+    CHAT_BUTTONS.forEach(key => {
+      const b = document.createElement('button');
+      b.textContent = json.categories[key].label;
+      b.onclick = () => say(key);
+      box.appendChild(b);
+    });
+  }).catch(e => status('Không đọc được ' + LINES_URL + ': ' + e, true));
+
+  document.getElementById('autoChat').onclick = e => {
+    const on = !autoTimer;
+    if (on) { say(['greeting', 'cheer', 'chat'][Math.floor(Math.random() * 3)]);
+              autoTimer = setInterval(() => say(['greeting', 'cheer', 'chat'][Math.floor(Math.random() * 3)]), 7000); }
+    else { clearInterval(autoTimer); autoTimer = null; }
+    e.target.setAttribute('aria-pressed', String(on));
+  };
+  window.addEventListener('resize', () => bubble.classList.contains('show') && placeBubble());
+
+  document.getElementById('reload').onclick = load;
+  window.addEventListener('resize', () => r && r.resizeDrawingSurfaceToCanvas());
+  window.addEventListener('keydown', e => {
+    if (e.key >= '1' && e.key <= '7') setMood(MOODS[+e.key - 1][0]);
+    if (e.key === 's' || e.key === 'S') sleepBtn.click();
+    if (e.key === 'w' || e.key === 'W') document.getElementById('wave').click();
+    if (e.key === 't' || e.key === 'T') say(['greeting', 'cheer', 'chat'][Math.floor(Math.random() * 3)]);
+    if (e.code === 'Space') { e.preventDefault(); document.getElementById('toggle').click(); }
+  });
+  load();
+</script>
+</body>
+</html>

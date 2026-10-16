@@ -1,0 +1,106 @@
+{
+  "names": [
+    "ArmL",
+    "ArmR",
+    "Body",
+    "ChestLogo",
+    "HemBand",
+    "LegL",
+    "LegR",
+    "Shorts",
+    "Straps",
+    "Strings",
+    "Torso"
+  ],
+  "captures": [
+    {
+      "id": "t4-body",
+      "regions": [
+        {
+          "what": "torso white",
+          "box": [
+            203,
+            345,
+            10,
+            10
+          ],
+          "color": "F3F6FC",
+          "tol": 40,
+          "min": 0.8
+        },
+        {
+          "what": "chest logo (left kite)",
+          "box": [
+            236,
+            353,
+            4,
+            4
+          ],
+          "color": "547FE4",
+          "tol": 45,
+          "min": 0.8
+        },
+        {
+          "what": "shorts",
+          "box": [
+            224,
+            418,
+            10,
+            6
+          ],
+          "color": "3D4772",
+          "tol": 30,
+          "min": 0.8
+        },
+        {
+          "what": "left leg (under shorts shadow)",
+          "box": [
+            209,
+            439,
+            12,
+            5
+          ],
+          "color": "D2D8E6",
+          "tol": 30,
+          "min": 0.8
+        },
+        {
+          "what": "left shoe blue",
+          "box": [
+            208,
+            450,
+            14,
+            4
+          ],
+          "color": "547FE4",
+          "tol": 45,
+          "min": 0.6
+        },
+        {
+          "what": "left mitten tip blue",
+          "box": [
+            141,
+            377,
+            8,
+            6
+          ],
+          "color": "6D8DCC",
+          "tol": 35,
+          "min": 0.7
+        },
+        {
+          "what": "right mitten tip blue",
+          "box": [
+            351,
+            377,
+            8,
+            6
+          ],
+          "color": "6D8DCC",
+          "tol": 35,
+          "min": 0.7
+        }
+      ]
+    }
+  ]
+}

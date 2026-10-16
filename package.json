@@ -1,0 +1,57 @@
+{
+  "name": "nezfocus",
+  "private": true,
+  "packageManager": "pnpm@10.29.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:infra": "docker compose -f infra/docker-compose.yml up -d",
+    "dev:backend": "pnpm --filter backend start:dev",
+    "dev:mobile": "pnpm --filter mobile start",
+    "build": "pnpm -r build",
+    "lint": "oxlint apps packages",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "prepare": "husky",
+    "postinstall": "pnpm --filter @nezfocus/shared build"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.0.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.0.0",
+    "oxlint": "^1.58.0",
+    "prettier": "^3.4.2"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs}": [
+      "oxlint",
+      "prettier --write"
+    ],
+    "*.{json,yml,yaml}": "prettier --write"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ],
+    "rules": {
+      "scope-enum": [
+        2,
+        "always",
+        [
+          "mobile",
+          "backend",
+          "shared",
+          "mascot",
+          "infra",
+          "docs",
+          "ci",
+          "deps"
+        ]
+      ]
+    }
+  }
+}

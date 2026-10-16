@@ -1,0 +1,18 @@
+{
+  "names": ["isAsleep", "Sleep", "sleep_loop", "wake_startle", "FxSnore", "SleepBubble", "HitArea", "WakeOnTap"],
+  "min_types": {"StateMachineListenerSingle": 1, "ListenerViewModelChange": 1, "StateMachineLayer": 5},
+  "captures": [
+    {"id": "t9-awake", "regions": [
+      {"what": "awake by default: open eyes lit", "box": [180, 160, 150, 80], "color": "6EA6FB", "tol": 40, "min": 0.12}
+    ]},
+    {"id": "t9-asleep", "data": ["isAsleep=true"], "advance": 90, "regions": [
+      {"what": "asleep: eyes closed (only thin arcs lit)", "box": [180, 160, 150, 80], "color": "6EA6FB", "tol": 40, "max": 0.05}
+    ]},
+    {"id": "t9-startle", "data": ["isAsleep=true"], "steps": ["--advance=60", "--pointer=click@250,330", "--advance=12"], "regions": [
+      {"what": "tap wakes it with a startle: big round eyes lit", "box": [180, 140, 150, 100], "color": "6EA6FB", "tol": 40, "min": 0.12}
+    ]},
+    {"id": "t9-awake-after", "data": ["isAsleep=true"], "steps": ["--advance=60", "--pointer=click@250,330", "--advance=160"], "regions": [
+      {"what": "after the startle it is awake again (neutral eyes lit)", "box": [180, 160, 150, 80], "color": "6EA6FB", "tol": 40, "min": 0.12}
+    ]}
+  ]
+}

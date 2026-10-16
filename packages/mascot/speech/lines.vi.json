@@ -1,0 +1,195 @@
+{
+  "_about": "Câu thoại của Nez (tiếng Việt). App tự vẽ khung thoại; mỗi câu kèm mood/gesture để mascot diễn theo. {minutes}, {streak}, {name} là chỗ app điền số liệu thật. Không có câu so sánh thứ hạng (SRS DEC-05).",
+  "anchor": {
+    "artboardX": 150,
+    "artboardY": 78,
+    "note": "Điểm đuôi khung thoại trên artboard 500x500 (góc trên-trái đầu). Khung mọc lên-trái từ điểm này."
+  },
+  "categories": {
+    "greeting": {
+      "label": "Hỏi thăm",
+      "lines": [
+        {
+          "text": "Chào {name}! Hôm nay mình học gì nè?",
+          "mood": "happy",
+          "gesture": "wave"
+        },
+        {
+          "text": "Hế lô! Mình là Nez, bạn học cùng của bạn nè.",
+          "mood": "happy",
+          "gesture": "wave"
+        },
+        { "text": "Hôm nay của bạn thế nào rồi?", "mood": "neutral" },
+        {
+          "text": "Ăn sáng chưa đó? Não cần năng lượng để học nha.",
+          "mood": "wink"
+        },
+        {
+          "text": "Lâu quá không gặp, nhớ bạn ghê!",
+          "mood": "happy",
+          "gesture": "wave"
+        },
+        {
+          "text": "Tối qua ngủ đủ giấc không? Mắt bạn trông hơi mỏi á.",
+          "mood": "confused"
+        },
+        {
+          "text": "Nay học một mình hay vào phòng học với bạn bè?",
+          "mood": "neutral"
+        },
+        {
+          "text": "Có deadline nào đang dí bạn không đó?",
+          "mood": "surprised"
+        },
+        { "text": "Uống nước chưa? Mình nhắc nhẹ thôi nha.", "mood": "wink" }
+      ]
+    },
+    "cheer": {
+      "label": "Cổ vũ",
+      "lines": [
+        {
+          "text": "Cố lên! Chỉ 25 phút thôi, mình ngồi cùng bạn.",
+          "mood": "focus"
+        },
+        { "text": "Bạn làm tốt lắm, tiếp tục nha!", "mood": "happy" },
+        { "text": "Từng bước nhỏ cũng là tiến bộ đó.", "mood": "happy" },
+        {
+          "text": "Điện thoại để sang một bên nha, tập trung nè.",
+          "mood": "focus"
+        },
+        {
+          "text": "Khó quá thì chia nhỏ ra, mình làm từng phần.",
+          "mood": "neutral"
+        },
+        { "text": "Mình tin bạn làm được!", "mood": "wink" },
+        { "text": "Thêm một phiên nữa là xong rồi, cố lên!", "mood": "happy" },
+        {
+          "text": "Hôm nay chưa xong thì mai làm tiếp, đừng áp lực quá.",
+          "mood": "neutral"
+        },
+        {
+          "text": "Bạn đã tập trung {minutes} phút rồi đó, giỏi ghê!",
+          "mood": "happy"
+        }
+      ]
+    },
+    "chat": {
+      "label": "Tám chuyện",
+      "lines": [
+        {
+          "text": "Bạn biết không? Nghỉ ngắn giữa giờ giúp não nhớ bài lâu hơn đó.",
+          "mood": "wink"
+        },
+        {
+          "text": "Mình thích nghe tiếng gõ phím lúc bạn học ghê.",
+          "mood": "happy"
+        },
+        {
+          "text": "Tai nghe của mình sáng lên khi bạn tập trung đó, để ý chưa?",
+          "mood": "wink"
+        },
+        { "text": "Nghe lo-fi khi học có chill không bạn?", "mood": "happy" },
+        {
+          "text": "Hồi nãy mình suýt ngủ gật… đừng mách ai nha.",
+          "mood": "sleepy"
+        },
+        {
+          "text": "Mèo máy như mình cũng có ngày lười đó, hehe.",
+          "mood": "wink"
+        },
+        {
+          "text": "Học xong mình đi dạo một vòng cho khỏe không?",
+          "mood": "happy"
+        },
+        { "text": "Phòng học hôm nay đông vui ghê!", "mood": "happy" },
+        {
+          "text": "Mẹo nhỏ: viết ra việc cần làm trước khi bắt đầu nha.",
+          "mood": "focus"
+        },
+        {
+          "text": "Bàn học gọn gàng thì đầu óc cũng gọn gàng hơn đó.",
+          "mood": "neutral"
+        }
+      ]
+    },
+    "focusStart": {
+      "label": "Bắt đầu Focus",
+      "lines": [
+        {
+          "text": "Bắt đầu nè! Mình giữ yên lặng cho bạn tập trung.",
+          "mood": "focus"
+        },
+        { "text": "{minutes} phút tập trung, xuất phát!", "mood": "focus" }
+      ]
+    },
+    "breakTime": {
+      "label": "Giải lao",
+      "lines": [
+        { "text": "Giải lao thôi! Vươn vai cái nào.", "mood": "happy" },
+        {
+          "text": "Nghỉ chút, nhìn ra xa cho mắt đỡ mỏi nha.",
+          "mood": "neutral"
+        },
+        { "text": "Đứng dậy đi lại một chút đi bạn.", "mood": "wink" }
+      ]
+    },
+    "sessionDone": {
+      "label": "Xong phiên",
+      "lines": [
+        {
+          "text": "Xong một phiên rồi! Bạn đã tập trung {minutes} phút.",
+          "mood": "happy",
+          "gesture": "wave"
+        },
+        {
+          "text": "Tuyệt vời! Thưởng cho bản thân chút gì đi.",
+          "mood": "happy"
+        }
+      ]
+    },
+    "streak": {
+      "label": "Chuỗi ngày",
+      "lines": [
+        {
+          "text": "Chuỗi {streak} ngày liên tiếp! Giữ lửa nha.",
+          "mood": "happy"
+        },
+        {
+          "text": "Mất chuỗi rồi… không sao, mình bắt đầu lại từ hôm nay.",
+          "mood": "neutral"
+        }
+      ]
+    },
+    "wake": {
+      "label": "Bị đánh thức",
+      "lines": [
+        { "text": "Ơ! Mình đâu có ngủ đâu…", "mood": "surprised" },
+        { "text": "Giật cả mình! Mình tỉnh rồi nè.", "mood": "surprised" },
+        { "text": "Hả? Tới giờ học rồi hả?", "mood": "confused" }
+      ]
+    },
+    "night": {
+      "label": "Khuya",
+      "lines": [
+        { "text": "Khuya rồi đó, học nốt rồi ngủ sớm nha.", "mood": "sleepy" },
+        {
+          "text": "Mình buồn ngủ quá… bạn cũng nghỉ ngơi đi.",
+          "mood": "sleepy"
+        }
+      ]
+    },
+    "trouble": {
+      "label": "Lỗi / mất mạng",
+      "lines": [
+        {
+          "text": "Ơ, mạng hơi chập chờn. Đợi mình xíu nha.",
+          "mood": "confused"
+        },
+        {
+          "text": "Hình như có gì đó chưa đúng… mình thử lại nhé?",
+          "mood": "confused"
+        }
+      ]
+    }
+  }
+}

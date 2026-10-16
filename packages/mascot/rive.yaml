@@ -1,0 +1,15 @@
+name: nez-mascot
+main: Runtime
+exclude:
+  - docs
+  - tools
+  - tests
+  - reference
+  - dist
+  - playground
+logs:
+  file: build/rive.log
+  problems: build/problems.log
+push:
+  projectId: 1996572
+  fileId: 2620311

@@ -1,0 +1,15 @@
+{
+  "names": ["Visor", "Face", "EyeBlink", "EyesSet", "MouthSet", "FxSet", "EyesNeutral", "MouthSmile", "FxNone"],
+  "min_types": {"Solo": 3, "KeyFrameId": 3},
+  "captures": [
+    {"id": "t3-face", "regions": [
+      {"what": "visor navy above eyes", "box": [241, 150, 20, 10], "color": "2E3858", "tol": 40, "min": 0.9},
+      {"what": "left eye glow", "box": [194, 190, 10, 14], "color": "6EA6FB", "tol": 40, "min": 0.8},
+      {"what": "right eye glow", "box": [298, 190, 10, 14], "color": "6EA6FB", "tol": 40, "min": 0.8},
+      {"what": "left blush", "box": [175, 228, 6, 4], "color": "3F4F8A", "tol": 35, "min": 0.5}
+    ]},
+    {"id": "t3-small", "viewport": "120x120", "fit": "contain", "regions": [
+      {"what": "eye still readable at 120px", "box": [46, 45, 3, 4], "color": "6EA6FB", "tol": 50, "min": 0.5}
+    ]}
+  ]
+}

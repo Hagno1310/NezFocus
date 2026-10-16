@@ -1,0 +1,224 @@
+{
+  "names": [
+    "EyesSurprised",
+    "EyesSleepy",
+    "EyesConfused",
+    "MouthO",
+    "MouthSmall",
+    "MouthSlant",
+    "FxExclaim",
+    "FxZzz",
+    "FxQuestion",
+    "mood_surprised",
+    "mood_sleepy",
+    "mood_confused"
+  ],
+  "min_types": {
+    "TransitionViewModelCondition": 7
+  },
+  "captures": [
+    {
+      "id": "t7-neutral",
+      "regions": [
+        {
+          "what": "neutral: no o-mouth",
+          "box": [
+            249,
+            218,
+            4,
+            4
+          ],
+          "color": "6EA6FB",
+          "tol": 40,
+          "max": 0.2
+        },
+        {
+          "what": "neutral: upper eye lit",
+          "box": [
+            194,
+            183,
+            10,
+            8
+          ],
+          "color": "6EA6FB",
+          "tol": 40,
+          "min": 0.8
+        },
+        {
+          "what": "neutral: bottom of right eye lit",
+          "box": [
+            298,
+            213,
+            10,
+            4
+          ],
+          "color": "6EA6FB",
+          "tol": 40,
+          "min": 0.7
+        }
+      ]
+    },
+    {
+      "id": "t7-surprised",
+      "data": [
+        "mood=surprised"
+      ],
+      "regions": [
+        {
+          "what": "surprised: o mouth",
+          "box": [
+            249,
+            218,
+            4,
+            4
+          ],
+          "color": "6EA6FB",
+          "tol": 40,
+          "min": 0.8
+        },
+        {
+          "what": "surprised: exclamation",
+          "box": [
+            397,
+            30,
+            3,
+            12
+          ],
+          "color": "547FE4",
+          "tol": 45,
+          "min": 0.8
+        }
+      ]
+    },
+    {
+      "id": "t7-sleepy",
+      "data": [
+        "mood=sleepy"
+      ],
+      "regions": [
+        {
+          "what": "sleepy: upper eye dark (closed)",
+          "box": [
+            194,
+            183,
+            10,
+            8
+          ],
+          "color": "6EA6FB",
+          "tol": 40,
+          "max": 0.05
+        },
+        {
+          "what": "sleepy: zZ above the tilted head",
+          "box": [
+            395,
+            18,
+            26,
+            22
+          ],
+          "color": "547FE4",
+          "tol": 45,
+          "min": 0.15
+        }
+      ]
+    },
+    {
+      "id": "t7-sleepy-blink",
+      "data": [
+        "mood=sleepy"
+      ],
+      "advance": 206,
+      "regions": [
+        {
+          "what": "sleepy mid-blink keeps Zz",
+          "box": [
+            410,
+            18,
+            28,
+            22
+          ],
+          "color": "547FE4",
+          "tol": 45,
+          "min": 0.15
+        },
+        {
+          "what": "sleepy mid-blink: eyes never pop open",
+          "box": [
+            186,
+            165,
+            40,
+            55
+          ],
+          "color": "6EA6FB",
+          "tol": 40,
+          "max": 0.2
+        },
+        {
+          "what": "sleepy arcs stay visible mid-blink (blink gated off)",
+          "box": [
+            186,
+            165,
+            40,
+            55
+          ],
+          "color": "6EA6FB",
+          "tol": 45,
+          "min": 0.03
+        }
+      ]
+    },
+    {
+      "id": "t7-confused",
+      "data": [
+        "mood=confused"
+      ],
+      "regions": [
+        {
+          "what": "confused: smaller right eye",
+          "box": [
+            298,
+            213,
+            10,
+            4
+          ],
+          "color": "6EA6FB",
+          "tol": 40,
+          "max": 0.1
+        },
+        {
+          "what": "confused: question dot",
+          "box": [
+            381,
+            56,
+            14,
+            8
+          ],
+          "color": "547FE4",
+          "tol": 45,
+          "min": 0.2
+        }
+      ]
+    },
+    {
+      "id": "t7-happy-blink",
+      "data": [
+        "mood=happy"
+      ],
+      "advance": 206,
+      "regions": [
+        {
+          "what": "happy arcs stay visible mid-blink",
+          "box": [
+            193,
+            183,
+            12,
+            10
+          ],
+          "color": "6EA6FB",
+          "tol": 45,
+          "min": 0.15
+        }
+      ]
+    }
+  ]
+}

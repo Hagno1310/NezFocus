@@ -1,0 +1,11 @@
+**/node_modules
+**/dist
+**/.expo
+**/coverage
+**/.env
+**/.env.*
+.git
+.github
+docs
+packages/mascot
+apps/mobile

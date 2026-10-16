@@ -1,0 +1,34 @@
+# Local dev services for MVP-Đồ án (SRS 7.1.1). Credentials match apps/backend/.env.example.
+# Add LiveKit / Meilisearch / ClamAV when the features that need them start.
+name: nezfocus
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: nezfocus
+      POSTGRES_PASSWORD: nezfocus
+      POSTGRES_DB: nezfocus
+    ports: ['5432:5432']
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U nezfocus']
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ['6379:6379']
+
+  # S3-compatible storage (SRS names MinIO; MinIO stopped publishing community images).
+  s3:
+    image: chrislusf/seaweedfs:latest
+    command: server -s3 -s3.config=/etc/seaweedfs/s3.json -dir=/data
+    ports: ['8333:8333']
+    volumes:
+      - ./seaweedfs/s3.dev.json:/etc/seaweedfs/s3.json:ro
+      - s3data:/data
+
+volumes:
+  pgdata:
+  s3data:

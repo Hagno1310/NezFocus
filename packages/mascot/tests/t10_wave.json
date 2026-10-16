@@ -1,0 +1,73 @@
+{
+  "names": [
+    "wave",
+    "Gesture",
+    "hello_wave"
+  ],
+  "min_types": {
+    "ViewModelPropertyTrigger": 1,
+    "TransitionValueTriggerComparator": 1
+  },
+  "captures": [
+    {
+      "id": "t10-rest",
+      "advance": 22,
+      "regions": [
+        {
+          "what": "no wave: left arm hangs down, nothing raised beside the head",
+          "box": [
+            95,
+            255,
+            40,
+            25
+          ],
+          "color": "F3F6FC",
+          "tol": 40,
+          "max": 0.05
+        }
+      ]
+    },
+    {
+      "id": "t10-wave",
+      "data": [
+        "wave=1"
+      ],
+      "advance": 22,
+      "regions": [
+        {
+          "what": "wave: left sleeve raised beside the head",
+          "box": [
+            95,
+            255,
+            40,
+            25
+          ],
+          "color": "F3F6FC",
+          "tol": 40,
+          "min": 0.2
+        }
+      ]
+    },
+    {
+      "id": "t10-after",
+      "data": [
+        "wave=1"
+      ],
+      "advance": 200,
+      "regions": [
+        {
+          "what": "after the wave the arm is back down",
+          "box": [
+            95,
+            255,
+            40,
+            25
+          ],
+          "color": "F3F6FC",
+          "tol": 40,
+          "max": 0.05
+        }
+      ]
+    }
+  ]
+}

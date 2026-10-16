@@ -1,0 +1,102 @@
+{
+  "names": [
+    "Head",
+    "HeadShell",
+    "EarL",
+    "EarR",
+    "HeadphoneL",
+    "HeadphoneR"
+  ],
+  "transparent_artboard": true,
+  "captures": [
+    {
+      "id": "t2-head",
+      "regions": [
+        {
+          "what": "head shell white (above visor)",
+          "box": [
+            240,
+            80,
+            20,
+            20
+          ],
+          "color": "F3F6FC",
+          "tol": 40,
+          "min": 0.8
+        },
+        {
+          "what": "left ear inner (light blue)",
+          "box": [
+            152,
+            70,
+            8,
+            8
+          ],
+          "color": "BDD7FF",
+          "tol": 30,
+          "min": 0.8
+        },
+        {
+          "what": "right ear inner (light blue)",
+          "box": [
+            340,
+            70,
+            8,
+            8
+          ],
+          "color": "BDD7FF",
+          "tol": 30,
+          "min": 0.8
+        },
+        {
+          "what": "left headphone navy shell",
+          "box": [
+            108,
+            185,
+            8,
+            20
+          ],
+          "color": "3B4470",
+          "tol": 45,
+          "min": 0.7
+        },
+        {
+          "what": "left headphone dome, lit top",
+          "box": [
+            86,
+            170,
+            10,
+            18
+          ],
+          "color": "EAF2FF",
+          "tol": 30,
+          "min": 0.8
+        },
+        {
+          "what": "right headphone navy shell",
+          "box": [
+            384,
+            185,
+            8,
+            20
+          ],
+          "color": "3B4470",
+          "tol": 45,
+          "min": 0.7
+        },
+        {
+          "what": "background corner",
+          "box": [
+            5,
+            5,
+            20,
+            20
+          ],
+          "color": "1D1D1D",
+          "tol": 10,
+          "min": 0.95
+        }
+      ]
+    }
+  ]
+}

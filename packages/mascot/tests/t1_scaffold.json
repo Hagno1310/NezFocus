@@ -1,0 +1,43 @@
+{
+  "names": [
+    "Runtime",
+    "Character",
+    "Main",
+    "Mood",
+    "Mascot",
+    "mood",
+    "mood_neutral"
+  ],
+  "min_types": {
+    "DataEnumValue": 7,
+    "ViewModelInstanceEnum": 1,
+    "StateMachineLayer": 1
+  },
+  "transparent_artboard": true,
+  "captures": [
+    {
+      "id": "t1-empty",
+      "regions": [
+        {
+          "what": "top-left corner stays transparent",
+          "box": [
+            5,
+            5,
+            60,
+            60
+          ],
+          "color": "1D1D1D",
+          "tol": 10,
+          "min": 0.99
+        }
+      ]
+    },
+    {
+      "id": "t1-data",
+      "data": [
+        "mood=confused"
+      ],
+      "regions": []
+    }
+  ]
+}

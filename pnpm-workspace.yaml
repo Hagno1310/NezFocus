@@ -1,0 +1,9 @@
+packages:
+  - apps/*
+  - packages/*
+
+onlyBuiltDependencies:
+  - esbuild
+
+# Expo/Metro and native autolinking are most reliable with a flat node_modules.
+nodeLinker: hoisted

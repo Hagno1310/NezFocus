@@ -1,0 +1,214 @@
+{
+  "names": [
+    "EyesHappy",
+    "EyesWink",
+    "EyesFocus",
+    "MouthOpen",
+    "FxShine",
+    "FxSparkleLow",
+    "FxGlasses",
+    "mood_happy",
+    "mood_wink",
+    "mood_focus"
+  ],
+  "min_types": {
+    "TransitionViewModelCondition": 4,
+    "TransitionValueEnumComparator": 4
+  },
+  "captures": [
+    {
+      "id": "t6-neutral",
+      "regions": [
+        {
+          "what": "neutral: lower left eye lit",
+          "box": [
+            194,
+            203,
+            10,
+            8
+          ],
+          "color": "6EA6FB",
+          "tol": 40,
+          "min": 0.8
+        },
+        {
+          "what": "neutral: right eye centre-right lit",
+          "box": [
+            310,
+            194,
+            5,
+            6
+          ],
+          "color": "6EA6FB",
+          "tol": 40,
+          "min": 0.8
+        },
+        {
+          "what": "neutral: no open mouth",
+          "box": [
+            249,
+            222,
+            4,
+            3
+          ],
+          "color": "6EA6FB",
+          "tol": 40,
+          "max": 0.2
+        },
+        {
+          "what": "neutral: no glasses",
+          "box": [
+            172,
+            195,
+            3,
+            4
+          ],
+          "color": "89B8FD",
+          "tol": 30,
+          "max": 0.1
+        }
+      ]
+    },
+    {
+      "id": "t6-happy",
+      "data": [
+        "mood=happy"
+      ],
+      "regions": [
+        {
+          "what": "happy: lower left eye dark (arc eyes)",
+          "box": [
+            194,
+            203,
+            10,
+            8
+          ],
+          "color": "6EA6FB",
+          "tol": 40,
+          "max": 0.1
+        },
+        {
+          "what": "happy: arc top lit",
+          "box": [
+            195,
+            187,
+            8,
+            4
+          ],
+          "color": "6EA6FB",
+          "tol": 45,
+          "min": 0.5
+        },
+        {
+          "what": "happy: open mouth",
+          "box": [
+            249,
+            222,
+            4,
+            3
+          ],
+          "color": "6EA6FB",
+          "tol": 40,
+          "min": 0.7
+        }
+      ]
+    },
+    {
+      "id": "t6-wink",
+      "data": [
+        "mood=wink"
+      ],
+      "regions": [
+        {
+          "what": "wink: left eye stays open",
+          "box": [
+            194,
+            203,
+            10,
+            8
+          ],
+          "color": "6EA6FB",
+          "tol": 40,
+          "min": 0.8
+        },
+        {
+          "what": "wink: right eye is a chevron",
+          "box": [
+            310,
+            194,
+            5,
+            6
+          ],
+          "color": "6EA6FB",
+          "tol": 40,
+          "max": 0.1
+        },
+        {
+          "what": "wink: sparkle low-left",
+          "box": [
+            99,
+            301,
+            4,
+            4
+          ],
+          "color": "89B8FD",
+          "tol": 40,
+          "min": 0.7
+        }
+      ]
+    },
+    {
+      "id": "t6-focus",
+      "data": [
+        "mood=focus"
+      ],
+      "regions": [
+        {
+          "what": "focus: glasses rim",
+          "box": [
+            172,
+            195,
+            3,
+            4
+          ],
+          "color": "89B8FD",
+          "tol": 30,
+          "min": 0.4
+        },
+        {
+          "what": "focus: lower eye dark (arc eyes)",
+          "box": [
+            194,
+            203,
+            10,
+            8
+          ],
+          "color": "6EA6FB",
+          "tol": 40,
+          "max": 0.1
+        }
+      ]
+    },
+    {
+      "id": "t6-persist",
+      "data": [
+        "mood=wink"
+      ],
+      "advance": 300,
+      "regions": [
+        {
+          "what": "wink still active after 5s",
+          "box": [
+            98,
+            290,
+            4,
+            4
+          ],
+          "color": "89B8FD",
+          "tol": 40,
+          "min": 0.5
+        }
+      ]
+    }
+  ]
+}

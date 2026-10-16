@@ -13,7 +13,7 @@ App mobile học nhóm & chat/voice real-time cho sinh viên. Hiện chỉ làm 
 
 ## Bắt đầu
 
-Cần Node 22, pnpm 10, Docker, Android Studio (SDK + emulator).
+Cần Node 22, pnpm 10, Docker và một điện thoại Android.
 
 ```bash
 pnpm install                       # cũng build packages/shared
@@ -22,13 +22,14 @@ cp apps/backend/.env.example apps/backend/.env
 pnpm dev:backend                   # http://localhost:3000/api/v1/health
 ```
 
-Mobile (không dùng Expo Go, DEC-02):
+Mobile, chạy trên điện thoại Android thật, **không cần Android Studio**:
 
 ```bash
-cp apps/mobile/.env.example apps/mobile/.env
-pnpm --filter mobile android       # build dev client lần đầu, cần Android Studio
-pnpm dev:mobile                    # các lần sau: chỉ chạy Metro
+cp apps/mobile/.env.example apps/mobile/.env   # đặt IP LAN của máy tính
 ```
+
+- **Giai đoạn đầu (chưa có thư viện native):** cài app Expo Go trên điện thoại, chạy `pnpm --filter mobile start:go` rồi quét QR.
+- **Từ khi thêm LiveKit, Firebase, Notifee… (DEC-02):** build dev client trên cloud bằng `pnpm --filter mobile build:dev` (cần `npx eas-cli login` + `eas init` một lần), cài file APK lên máy. Sau đó hằng ngày chỉ cần `pnpm dev:mobile` rồi quét QR như Expo Go. Chỉ build lại khi thêm hoặc đổi thư viện native.
 
 Kiểm tra trước khi đẩy code: `pnpm lint && pnpm typecheck && pnpm test`.
 
@@ -36,7 +37,7 @@ Kiểm tra trước khi đẩy code: `pnpm lint && pnpm typecheck && pnpm test`.
 
 - Mọi feature truy về REQ-ID trong SRS. Quy tắc cho người và AI agent: [`AGENTS.md`](AGENTS.md).
 - Module mẫu để copy khi làm feature: `apps/backend/src/modules/_example`, `apps/mobile/src/features/_example`.
-- Commit theo [Conventional Commits](https://www.conventionalcommits.org): `feat(mobile): ...`, `fix(backend): ...`. Hook `commit-msg` kiểm tra tự động (husky bật sau khi `git init` + `pnpm install`).
+- Commit theo [Conventional Commits](https://www.conventionalcommits.org): `feat(mobile): ...`, `fix(backend): ...`. Hook `commit-msg` kiểm tra tự động.
 
 ## CI/CD (GitHub Actions)
 

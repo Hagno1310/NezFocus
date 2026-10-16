@@ -6,7 +6,7 @@ NezFocus: app mobile học nhóm cho sinh viên (đồ án môn App). pnpm monor
 - `apps/backend` — NestJS modular monolith, Drizzle + PostgreSQL.
 - `packages/shared` — code dùng chung app ↔ backend (zod schema, permission calculator, mã lỗi).
 - `packages/mascot` — mascot Runtime (Rive CLI). Quy tắc riêng: `packages/mascot/AGENTS.md`.
-- `docs/SRS_NezFocus.md` — **SRS, nguồn sự thật duy nhất** về chức năng. Bản trong repo là bản gốc hiện hành (kể cả khi header ghi "Draft"). Các lỗi đã biết của SRS: `docs/reviews/`. Gặp mục đang bị review đánh dấu thì hỏi người dùng trước khi làm.
+- `docs/SRS_NezFocus.md` — **SRS, nguồn sự thật duy nhất** về chức năng. Bản trong repo (**v1.3**, CR-02) là bản gốc hiện hành; review 16/10 đã được áp vào. Còn mở: các REQ đề xuất hoãn (label `de-xuat-hoan` trên Jira) và `DESIGN.md` chưa có — hỏi người dùng trước khi làm phần đó.
 
 Lệnh: xem `scripts` trong `package.json` ở root và từng package.
 

@@ -2,11 +2,12 @@
 
 NezFocus: app mobile học nhóm cho sinh viên (đồ án môn App). pnpm monorepo:
 
-- `apps/mobile` — React Native + Expo dev build, **chỉ Android** (quyết định 2026-10-16; SRS vẫn ghi iOS + Android, chờ CR). Bỏ qua phần iOS-only của SRS (APNs, CallKit/PushKit, Sign in with Apple) trừ khi người dùng yêu cầu. Quy tắc riêng: `apps/mobile/AGENTS.md`.
+- `apps/mobile` — React Native + Expo dev build, **chỉ Android** (DEC-30, SRS v1.3). Bỏ qua phần iOS-only của SRS (APNs, CallKit/PushKit, Sign in with Apple) trừ khi người dùng yêu cầu. Quy tắc riêng: `apps/mobile/AGENTS.md`.
 - `apps/backend` — NestJS modular monolith, Drizzle + PostgreSQL.
 - `packages/shared` — code dùng chung app ↔ backend (zod schema, permission calculator, mã lỗi).
 - `packages/mascot` — mascot Runtime (Rive CLI). Quy tắc riêng: `packages/mascot/AGENTS.md`.
-- `docs/SRS_NezFocus.md` — **SRS, nguồn sự thật duy nhất** về chức năng. Bản trong repo (**v1.3**, CR-02) là bản gốc hiện hành; review 16/10 đã được áp vào. Còn mở: các REQ đề xuất hoãn (label `de-xuat-hoan` trên Jira) và `DESIGN.md` chưa có — hỏi người dùng trước khi làm phần đó.
+- `docs/SRS_NezFocus.md` — **SRS, nguồn sự thật duy nhất** về chức năng. Bản trong repo (**v1.4**, CR-03, 17/10/2026) là bản gốc hiện hành: v1.3 (review 16/10) gộp với các quyết định khi thiết kế màn hình (Phụ lục 11.8). Còn mở: các REQ đề xuất hoãn (label `de-xuat-hoan` trên Jira).
+- `DESIGN.md` — **nguồn sự thật về giao diện** (màu, chữ, spacing, motion, mascot), chép nguyên từ repo thiết kế; đặc tả từng màn hình nằm ở repo thiết kế (`Docs/design/screens/`). Đọc trước khi làm UI; hỏi người dùng trước khi đi chệch. Không sửa file này ở đây — sửa bên repo thiết kế rồi chép sang.
 
 Bản đồ repo (cây thư mục, luồng code, chỗ đặt file mới, tra SRS nhanh): `OVERVIEW.md`. Đọc trước khi tìm file.
 

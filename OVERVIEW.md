@@ -4,7 +4,7 @@
 
 | Cần gì                                 | Đọc                                                                        |
 | -------------------------------------- | -------------------------------------------------------------------------- |
-| Chức năng phải làm (nguồn sự thật)     | [`docs/SRS_NezFocus.md`](docs/SRS_NezFocus.md) (v1.3)                      |
+| Chức năng phải làm (nguồn sự thật)     | [`docs/SRS_NezFocus.md`](docs/SRS_NezFocus.md) (v1.4)                      |
 | Luật bắt buộc cho người & agent        | [`AGENTS.md`](AGENTS.md), [`apps/mobile/AGENTS.md`](apps/mobile/AGENTS.md) |
 | Cài máy, chạy hằng ngày, xử lý sự cố   | [`docs/getting-started.md`](docs/getting-started.md)                       |
 | Kế hoạch, sprint, phân công, Epic Jira | [`docs/project-overview.md`](docs/project-overview.md)                     |
@@ -179,7 +179,7 @@ Build ra `dist/` (`pnpm install` tự build). Đang sửa shared thì chạy `pn
 - Mọi feature truy về `REQ-<NHÓM>-<SỐ>`. Trước khi code đọc REQ, AC (Given/When/Then), Release, Depends-on, DEC/ADR liên quan (SRS 0.2, 7.6).
 - SRS im lặng / mơ hồ / mâu thuẫn → **dừng, hỏi**, ghi câu trả lời vào SRS hoặc `docs/`.
 - Xong = từng AC (kể cả case âm) có test hoặc kiểm tra tay. Báo cáo cuối liệt kê AC đạt / chưa đạt.
-- REQ có label `de-xuat-hoan` trên Jira và `DESIGN.md` (chưa có) → hỏi trước khi làm.
+- REQ có label `de-xuat-hoan` trên Jira → hỏi trước khi làm. Giao diện theo `DESIGN.md` (root).
 
 ### Đặt tên
 

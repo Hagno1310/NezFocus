@@ -2,3 +2,5 @@ pnpm-lock.yaml
 packages/mascot/
 docs/SRS_NezFocus.md
 **/dist/
+# Chép nguyên từ repo thiết kế (định dạng design.md do gstack kiểm), không format lại
+DESIGN.md

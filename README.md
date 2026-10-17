@@ -13,6 +13,8 @@ App mobile học nhóm & chat/voice real-time cho sinh viên. Hiện chỉ làm 
 
 ## Bắt đầu
 
+**Người mới: đọc [`OVERVIEW.md`](OVERVIEW.md) trước** (bản đồ repo, luồng code, rule).
+
 **Hướng dẫn đầy đủ: [`docs/getting-started.md`](docs/getting-started.md)**, gồm cài đặt máy, chạy hằng ngày, quy trình task → branch → PR, build app và xử lý sự cố.
 
 Tóm tắt cho người đã cài Node 22, pnpm 10, Docker:

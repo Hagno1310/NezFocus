@@ -8,6 +8,8 @@ NezFocus: app mobile học nhóm cho sinh viên (đồ án môn App). pnpm monor
 - `packages/mascot` — mascot Runtime (Rive CLI). Quy tắc riêng: `packages/mascot/AGENTS.md`.
 - `docs/SRS_NezFocus.md` — **SRS, nguồn sự thật duy nhất** về chức năng. Bản trong repo (**v1.3**, CR-02) là bản gốc hiện hành; review 16/10 đã được áp vào. Còn mở: các REQ đề xuất hoãn (label `de-xuat-hoan` trên Jira) và `DESIGN.md` chưa có — hỏi người dùng trước khi làm phần đó.
 
+Bản đồ repo (cây thư mục, luồng code, chỗ đặt file mới, tra SRS nhanh): `OVERVIEW.md`. Đọc trước khi tìm file.
+
 Lệnh: xem `scripts` trong `package.json` ở root và từng package.
 
 ## Bám SRS

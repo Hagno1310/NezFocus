@@ -4,7 +4,7 @@
 
 | Cần gì                                 | Đọc                                                                        |
 | -------------------------------------- | -------------------------------------------------------------------------- |
-| Chức năng phải làm (nguồn sự thật)     | [`docs/SRS_NezFocus.md`](docs/SRS_NezFocus.md) (v1.4)                      |
+| Chức năng phải làm (nguồn sự thật)     | [`docs/SRS_NezFocus.md`](docs/SRS_NezFocus.md) (v1.5)                      |
 | Luật bắt buộc cho người & agent        | [`AGENTS.md`](AGENTS.md), [`apps/mobile/AGENTS.md`](apps/mobile/AGENTS.md) |
 | Cài máy, chạy hằng ngày, xử lý sự cố   | [`docs/getting-started.md`](docs/getting-started.md)                       |
 | Kế hoạch, sprint, phân công, Epic Jira | [`docs/project-overview.md`](docs/project-overview.md)                     |

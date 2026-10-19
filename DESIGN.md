@@ -220,7 +220,7 @@ components:
 
 **Creative North Star:** "Đèn bàn trong phòng tối." App là một căn phòng navy yên tĩnh, lấy màu từ visor của Runtime. Thứ duy nhất "sáng" là **nhịp chung**: con số đồng hồ, nhãn pha và những người đang ngồi cùng bạn. Sự vui tươi dành cho Runtime và các khoảnh khắc chúc mừng, không rải lên giao diện.
 
-**Bối cảnh sản phẩm:** App mobile học nhóm (iOS ≥ 15, Android ≥ 8; React Native) cho sinh viên Việt Nam: server/kênh kiểu Discord cộng lớp Study/Focus — Pomodoro đồng bộ trong phòng voice, phòng học im lặng, Solo Session, streak, Việc cần làm. Dùng chủ yếu buổi tối, trong phòng tối hoặc ký túc xá, điện thoại đặt cạnh sách: liếc đồng hồ rồi khóa màn hình.
+**Bối cảnh sản phẩm:** App mobile học nhóm (Android ≥ 8 ở MVP — DEC-30, iOS ở Backlog; React Native) cho sinh viên Việt Nam: server/kênh kiểu Discord cộng lớp Study/Focus — Pomodoro đồng bộ trong phòng voice, phòng học im lặng, Solo Session, streak, Việc cần làm. Dùng chủ yếu buổi tối, trong phòng tối hoặc ký túc xá, điện thoại đặt cạnh sách: liếc đồng hồ rồi khóa màn hình.
 
 **Chế độ theo màn hình:**
 - Experience — Study Room, Solo Session (đồng hồ chạy, nhìn lướt, cần tĩnh).
@@ -305,9 +305,9 @@ Mô phỏng mù màu (Machado 2009, mức nặng nhất, ΔE Lab): Tập trung �
 
 Đã loại: Lexend, Readex Pro (không `tnum`); Sora, Figtree (không có tiếng Việt). Manrope và Archivo Expanded đạt yêu cầu, là phương án dự phòng cho số.
 
-**Dấu tiếng Việt:** dấu chồng của Be Vietnam Pro vượt ascent ("Ẩ" cao 1.158em, ascent 1.0em) → luôn đặt `lineHeight` tường minh ≥ 1.4× (đã có trong thang); không để mặc định, iOS sẽ cắt dấu.
+**Dấu tiếng Việt:** dấu chồng của Be Vietnam Pro vượt ascent ("Ẩ" cao 1.158em, ascent 1.0em) → luôn đặt `lineHeight` tường minh ≥ 1.4× (đã có trong thang); không để mặc định, nền tảng sẽ cắt dấu.
 
-**Cỡ chữ 200%:** chữ thường co giãn tự do và được phép xuống dòng; tiêu đề giới hạn `maxFontSizeMultiplier` 1.6. Đồng hồ (`timer`, `stat`) không co giãn — đã ≥ 32pt — và có `accessibilityLabel` đọc thành lời ("còn 18 phút 42 giây"). Mức tối thiểu là 13 (`label`); ngoại lệ duy nhất là `tab` 11 cho nhãn tab bar và badge, theo quy ước iOS/Android. Nhãn ngắn dưới icon trong khung hẹp (`TabBar`, `RoomControl`) giới hạn phóng ×1.3 và có Large Content Viewer khi nhấn giữ. Vòng nhịp được giữ ở mọi cỡ chữ: chữ bên trong vòng chuyển ra dưới vòng.
+**Cỡ chữ 200%:** chữ thường co giãn tự do và được phép xuống dòng; tiêu đề giới hạn `maxFontSizeMultiplier` 1.6. Đồng hồ (`timer`, `stat`) không co giãn — đã ≥ 32pt — và có `accessibilityLabel` đọc thành lời ("còn 18 phút 42 giây"). Mức tối thiểu là 13 (`label`); ngoại lệ duy nhất là `tab` 11 cho nhãn tab bar và badge, theo quy ước iOS/Android. Nhãn ngắn dưới icon trong khung hẹp (`TabBar`, `RoomControl`) giới hạn phóng ×1.3 và nhấn giữ hiện tooltip có nhãn đầy đủ. Vòng nhịp được giữ ở mọi cỡ chữ: chữ bên trong vòng chuyển ra dưới vòng.
 
 ## Layout
 
@@ -344,8 +344,8 @@ Chỉ các component đã thực sự dựng trong bản xem trước (`Des/nezf
 
 ## Platform & Touch
 
-- Vùng chạm ≥ 48 ở mọi nơi (đạt cả 44pt iOS lẫn 48dp Android).
-- Giữ quy ước nền tảng: tab bar dưới, nút Back hệ thống Android đóng drawer/sheet trước, cử chỉ Back mép màn hình iOS không bị drawer chiếm (SRS 3.1).
+- Vùng chạm ≥ 48 ở mọi nơi (48dp Android; cũng đạt 44pt nếu iOS vào phạm vi).
+- Giữ quy ước nền tảng: tab bar dưới, nút Back hệ thống Android đóng drawer/sheet trước, cử chỉ Back ở mép màn hình (Android gesture navigation) không bị drawer chiếm (SRS 3.1).
 - Rung phản hồi: một nhịp nhẹ khi chuyển pha (app foreground), khi gửi reaction; tôn trọng cài đặt tắt rung.
 - Đồng hồ ngoài app: local notification chuyển pha (MVP) lặp lại đúng icon + nhãn + số.
 
@@ -413,3 +413,4 @@ Chỉ các component đã thực sự dựng trong bản xem trước (`Des/nezf
 | 16/10/2026 | Thêm presence, viền đang nói, ô video | Lộ ra khi viết spec component (`00-components.md` D1–D3); camera là MVP nhưng bản xem trước chưa có; SRS ghi "viền sáng" mâu thuẫn quy tắc không glow |
 | 17/10/2026 | Vòng nhịp chạy theo chiều kim đồng hồ từ 12 giờ ở mọi pha | Spec chỉ ghi vơi/đầy, chưa ghi chiều; cung Tập trung đang vẽ ngược (phát hiện khi user hỏi) |
 | 17/10/2026 | Danh sách ghi "còn N phút", không đếm giây | Số trần "18:42" ở tab Học bị đọc nhầm thành thời gian đã trôi qua; danh sách nhiều số nhảy từng giây kéo mắt |
+| 18/10/2026 | Chỉ Android ở MVP: bỏ quy ước riêng của iOS; giữ khung thiết kế 390 × 844 | DEC-30 (SRS v1.3). Khung 390 nằm giữa 360 và 412 dp phổ biến; đổi khung phải vẽ lại khoảng 200 frame (chốt khi làm area 02) |

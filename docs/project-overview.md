@@ -11,7 +11,7 @@ Tài liệu này trả lời: **dự án làm gì, ai làm phần nào, khi nào
 | **Hạn nộp**        | **15/12/2026**                                                                                                                                                                                |
 | **Mốc quan trọng** | Luồng demo chạy được trước **29/11/2026** để kịp pilot 2 tuần                                                                                                                                 |
 | **Nền tảng**       | Android (React Native + Expo); backend NestJS + PostgreSQL                                                                                                                                    |
-| **Đặc tả**         | [`SRS_NezFocus.md`](SRS_NezFocus.md) **v1.5** (gộp quyết định thiết kế 17–19/10, Phụ lục 11.8–11.9), review: [`reviews/2026-10-16-srs-v1.2-review.md`](reviews/2026-10-16-srs-v1.2-review.md) |
+| **Đặc tả**         | [`SRS_NezFocus.md`](SRS_NezFocus.md) **v1.8** (gộp quyết định thiết kế 17–23/10, Phụ lục 11.8–11.12), review: [`reviews/2026-10-16-srs-v1.2-review.md`](reviews/2026-10-16-srs-v1.2-review.md) |
 | **Jira**           | <https://nez-focus.atlassian.net/jira/software/projects/NF/boards/3/backlog> (Epic NF-1…NF-11, issue NF-12…NF-87)                                                                             |
 | **Repo**           | <https://github.com/Hagno1310/NezFocus>                                                                                                                                                       |
 
@@ -78,7 +78,7 @@ Sprint 2 tuần. Cuối mỗi sprint phải demo được mục tiêu trong cộ
 | S4     | 30/11–13/12 | Pilot chạy; streak, task, việc cần làm; hoàn thiện                                     | STUDY-03, 06, 08 · MSG-04 (chỉ ảnh) · AUTH-10 · SAFE-01 · sửa lỗi pilot · checklist DoD (SRS 9.6) · báo cáo + slide                                     |
 | —      | 14–15/12    | Đóng băng code, nộp & bảo vệ                                                           | —                                                                                                                                                       |
 
-> **Đang ở đâu:** S0 đã xong (repo, CI, Docker, EAS, dev client). Các Blocker của SRS đã sửa ở v1.3; v1.4–v1.5 gộp các quyết định khi thiết kế màn hình (17–19/10). Bắt đầu S1 từ 19/10.
+> **Đang ở đâu:** S0 đã xong (repo, CI, Docker, EAS, dev client). Các Blocker của SRS đã sửa ở v1.3; v1.4–v1.8 gộp các quyết định khi thiết kế màn hình (17–23/10). Bắt đầu S1 từ 19/10.
 
 ## 4. Epic & cách đọc Jira
 

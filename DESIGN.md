@@ -262,7 +262,7 @@ Vòng nhịp luôn neo ở 12 giờ và mép cung chạy theo chiều kim đồn
 
 Ba quy tắc cứng (rút ra từ chỗ các màu trùng nhau khi mô phỏng mù màu):
 1. Màu pha chỉ xuất hiện trong thành phần của phiên học (vòng nhịp, nhãn pha, mini-player, hàng phòng đang hoạt động, notification).
-2. Màu ngữ nghĩa (`success`/`warning`/`danger`) không bao giờ xuất hiện trong Study Room; lỗi trong phòng dùng banner trung tính kèm icon.
+2. Màu ngữ nghĩa (`success`/`warning`/`danger`) không xuất hiện trong Study Room; lỗi kết nối, quyền và trạng thái trong phòng dùng banner trung tính kèm icon. **Ngoại lệ (22/10/2026):** thao tác phá hủy (Dừng phiên học, Tắt Phòng học, Từ chối cuộc gọi đến) và lỗi nhập trong ô (sheet chu kỳ) được dùng `danger`, luôn kèm nhãn chữ.
 3. `warning` trùng họ màu với `phase-short`, nên chỉ xuất hiện dạng icon kèm chữ. `success`/`danger` trùng nhau với người mù màu đỏ–lục, nên luôn có icon (`circle-check` / `octagon-x`) và chữ.
 
 Hai nền phòng Nghỉ ngắn / Nghỉ dài gần như trùng nhau với người mù màu — có chủ đích: "Nghỉ" là một họ; hai pha nghỉ phân biệt bằng nhãn, icon và kiểu nét.
@@ -378,7 +378,7 @@ Chỉ các component đã thực sự dựng trong bản xem trước (`Des/nezf
 - Nên: giữ một hành động chính mỗi màn hình; hành động chính là màu đặc `primary`.
 - Nên: dùng dữ liệu thật trong biểu đồ và danh sách người; avatar chữ cái chỉ là trạng thái khi chưa có ảnh.
 - Nên: đặt `lineHeight` tường minh cho mọi chữ tiếng Việt.
-- Không nên: dùng màu pha ngoài phiên học, hay màu ngữ nghĩa trong Study Room.
+- Không nên: dùng màu pha ngoài phiên học, hay màu ngữ nghĩa trong Study Room (trừ ngoại lệ ở quy tắc 2).
 - Không nên: bọc mọi thứ trong thẻ bo góc có bóng; dùng gradient cho nút, chữ hay nhận diện.
 - Không nên: dùng `#547FE4` làm nền chữ trắng; dùng `#000000` làm nền tối.
 - Không nên: cho chữ số đồng hồ lăn/trượt — chỉ đổi giá trị để liếc là đọc được.
@@ -414,3 +414,5 @@ Chỉ các component đã thực sự dựng trong bản xem trước (`Des/nezf
 | 17/10/2026 | Vòng nhịp chạy theo chiều kim đồng hồ từ 12 giờ ở mọi pha | Spec chỉ ghi vơi/đầy, chưa ghi chiều; cung Tập trung đang vẽ ngược (phát hiện khi user hỏi) |
 | 17/10/2026 | Danh sách ghi "còn N phút", không đếm giây | Số trần "18:42" ở tab Học bị đọc nhầm thành thời gian đã trôi qua; danh sách nhiều số nhảy từng giây kéo mắt |
 | 18/10/2026 | Chỉ Android ở MVP: bỏ quy ước riêng của iOS; giữ khung thiết kế 390 × 844 | DEC-30 (SRS v1.3). Khung 390 nằm giữa 360 và 412 dp phổ biến; đổi khung phải vẽ lại khoảng 200 frame (chốt khi làm area 02) |
+| 22/10/2026 | Ngoại lệ `danger` trong Study Room cho thao tác phá hủy và lỗi nhập | Rà soát toàn bộ file: S-ROOM-04/05 (Dừng phiên, Tắt Phòng học), cuộc gọi đến và lỗi ô chu kỳ đã dùng `danger` theo spec C-09; người dùng cần tín hiệu mạnh trước thao tác không hoàn tác. Màu pha vẫn chỉ dành cho pha |
+| 22/10/2026 | Màn cuộc gọi dùng speaking-ring chuẩn, không dùng vòng `success` | Rà soát: vòng xanh quanh avatar ở S-CALL vừa trái speaking-ring vừa mang hai nghĩa (đang nói / đang đổ chuông); "đang đổ chuông" dùng nhịp mờ–rõ trung tính |

@@ -5,3 +5,7 @@
 *.jpg binary
 *.riv binary
 *.jar binary
+*.webp binary
+
+# Pencil design file: one JSON file of ~20 MB, a text diff is useless
+*.pen -diff linguist-generated=true

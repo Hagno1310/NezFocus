@@ -4,9 +4,9 @@
 
 ## Tài khoản
 
-**Tài khoản chưa xác thực** (Unverified account):
-Tài khoản đã đăng ký nhưng chưa xác nhận email. Chưa được vào app, chỉ thấy màn hình xác nhận email.
-_Avoid_: Unverified User (không còn là một vai người dùng)
+**Tài khoản chưa hoàn tất** (Incomplete account):
+Tài khoản vừa được tạo khi nhập đúng mã email (email đã xác nhận) nhưng chưa qua màn Hoàn tất tài khoản (tên hiển thị, username, mật khẩu, múi giờ, ngôn ngữ, điều khoản). Mọi lần đăng nhập đều về màn đó (v1.9, CR-16).
+_Avoid_: Tài khoản chưa xác thực, Unverified User, đăng ký chờ (đã bỏ ở v1.9)
 
 **Tài khoản đã xóa** (Deleted account):
 Tài khoản đang chờ xóa hoặc đã bị xóa, nhìn từ phía người khác. Ở mọi nơi đều hiển thị nhãn "Tài khoản đã bị xóa".
@@ -34,6 +34,10 @@ _Avoid_: admin nhóm
 Tiêu đề nhóm gom các kênh trong danh sách kênh của một Server, ví dụ "THÔNG TIN", "PHÒNG HỌC". Mỗi kênh thuộc tối đa một Category.
 _Avoid_: folder, thư mục, nhóm kênh
 
+**Kênh tin chào mừng** (System channel):
+Kênh text của một Server nhận tin hệ thống "X đã tham gia server". Người quản lý server chọn kênh này hoặc chọn "Không gửi". Study Server mặc định dùng `#chao-mung`, server thường dùng `#general`.
+_Avoid_: kênh hệ thống; "kênh chào mừng" khi muốn nói thiết lập (`#chao-mung` chỉ là tên kênh mặc định)
+
 **Study Server**:
 Server được tạo từ template học tập. Sau khi tạo, nó không khác server thường. Template chỉ quyết định cấu trúc kênh ban đầu và giá trị mặc định của Server ưu tiên.
 _Avoid_: server học tập, guild học tập
@@ -44,15 +48,21 @@ _Avoid_: server học tập, guild học tập, study guild
 
 **Study Room** (Phòng học):
 Voice channel được phép chạy Room Session. Voice channel không phải Study Room thì không có Focus.
-_Avoid_: phòng focus, focus channel
-
-**Silent Room** (Phòng im lặng):
-Voice channel mà mic của user tự tắt khi vào (user tự bật lại được). Đây là thuộc tính độc lập với việc kênh có phải Study Room hay không.
-_Avoid_: Silent Co-working Room, phòng học im lặng (đó là tên một kênh, không phải khái niệm)
+_Avoid_: phòng focus, focus channel; Silent Room, phòng im lặng (khái niệm đã bỏ ở SRS v1.9: vào phòng voice nào mic cũng tắt sẵn; "Phòng học im lặng" chỉ là tên một kênh trong mẫu Study Server)
 
 **Chế độ Học tập** (Study Mode):
 Khung giờ lặp lại do user tự đặt. Trong khung giờ đó, tin nhắn thường từ những server không phải Server ưu tiên chỉ tăng badge, không push.
 _Avoid_: Focus Mode, DND
+
+## Kiểm duyệt
+
+**Timeout** (Tạm khóa):
+Hình phạt có thời hạn người quản lý áp cho một member. Tới khi hết hạn hoặc được gỡ, người đó chỉ còn xem kênh, không gửi tin, react hay vào voice. Trên giao diện luôn gọi là "Tạm khóa", ví dụ "Bạn đang bị tạm khóa đến 21:30".
+_Avoid_: tạm khóa chat (nhãn cũ), mute (mute là tắt mic)
+
+**Đối tượng bị báo cáo** (Report target):
+Một tin nhắn, một hồ sơ hoặc một server bị báo cáo. Mọi báo cáo đang chờ về cùng một đối tượng nằm chung một chỗ, và một lần xử lý đóng tất cả các báo cáo đó.
+_Avoid_: "báo cáo" khi muốn nói thứ bị báo cáo
 
 ## Study/Focus
 
@@ -100,7 +110,7 @@ _Avoid_: giờ học, study time
 Ngày lịch tính theo timezone của user.
 
 **Qualified Day** (Ngày đạt):
-Local day mà user có tổng ≥ 15 focused minutes. Đây là đơn vị đo của streak và của chỉ số activation.
+Local day mà user có tổng ≥ 15 focused minutes. Đây là đơn vị đo của streak và của chỉ số activation. Lý do chọn ngưỡng 15 phút: DEC-43 trong SRS.
 _Avoid_: "hoàn thành Focus Session"
 
 **Study Streak**:

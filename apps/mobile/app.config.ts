@@ -14,7 +14,7 @@ const config: ExpoConfig = {
   android: {
     package: 'app.nezfocus',
     adaptiveIcon: {
-      backgroundColor: '#E6F4FE',
+      backgroundColor: '#547FE4',
       foregroundImage: './assets/android-icon-foreground.png',
       backgroundImage: './assets/android-icon-background.png',
       monochromeImage: './assets/android-icon-monochrome.png',

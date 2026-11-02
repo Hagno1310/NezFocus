@@ -11,7 +11,7 @@ Tài liệu này trả lời: **dự án làm gì, ai làm phần nào, khi nào
 | **Hạn nộp**        | **15/12/2026**                                                                                                                                                                                |
 | **Mốc quan trọng** | Luồng demo chạy được trước **29/11/2026** để kịp pilot 2 tuần                                                                                                                                 |
 | **Nền tảng**       | Android (React Native + Expo); backend NestJS + PostgreSQL                                                                                                                                    |
-| **Đặc tả**         | [`SRS_NezFocus.md`](SRS_NezFocus.md) **v1.8** (gộp quyết định thiết kế 17–23/10, Phụ lục 11.8–11.12), review: [`reviews/2026-10-16-srs-v1.2-review.md`](reviews/2026-10-16-srs-v1.2-review.md) |
+| **Đặc tả**         | [`SRS_NezFocus.md`](SRS_NezFocus.md) **v1.10** (gộp quyết định thiết kế 17–23/10, đợt mang quyết định của bản web về 30/10 và web quản trị 01/11, Phụ lục 11.8–11.14), review: [`reviews/2026-10-16-srs-v1.2-review.md`](reviews/2026-10-16-srs-v1.2-review.md) |
 | **Jira**           | <https://nez-focus.atlassian.net/jira/software/projects/NF/boards/3/backlog> (Epic NF-1…NF-11, issue NF-12…NF-87)                                                                             |
 | **Repo**           | <https://github.com/Hagno1310/NezFocus>                                                                                                                                                       |
 
@@ -24,7 +24,7 @@ App Android giúp sinh viên học nhóm theo mô hình **server/kênh** giống
 Điểm khác Discord là bộ tính năng **Study/Focus**:
 
 - **Room Session**: Pomodoro đồng bộ cho cả phòng học, mọi người thấy chung một đồng hồ.
-- **Silent Room**: phòng học im lặng, vào là tự tắt mic.
+- **Thống kê cá nhân**: chuỗi ngày, tiến độ hôm nay, xem theo tuần / tháng, lịch sử phiên.
 - **Solo Session**: tự học một mình theo chu kỳ focus/nghỉ.
 - **Study Streak**: đếm số ngày liên tiếp học đủ 15 phút.
 - **Task Board** và màn hình **"Việc cần làm"** gom task từ mọi server.
@@ -51,7 +51,7 @@ Thuật ngữ chính xác của từng khái niệm: [`GLOSSARY.md`](../GLOSSARY
 
 ### Không làm
 
-iOS, web, desktop, gói Premium, các mục Backlog ở SRS Mục 10.
+iOS, web client cho người dùng (web quản trị cho admin thì có, SRS 4.11), desktop, gói Premium, các mục Backlog ở SRS Mục 10.
 
 ## 2. Ai làm gì
 
@@ -78,7 +78,7 @@ Sprint 2 tuần. Cuối mỗi sprint phải demo được mục tiêu trong cộ
 | S4     | 30/11–13/12 | Pilot chạy; streak, task, việc cần làm; hoàn thiện                                     | STUDY-03, 06, 08 · MSG-04 (chỉ ảnh) · AUTH-10 · SAFE-01 · sửa lỗi pilot · checklist DoD (SRS 9.6) · báo cáo + slide                                     |
 | —      | 14–15/12    | Đóng băng code, nộp & bảo vệ                                                           | —                                                                                                                                                       |
 
-> **Đang ở đâu:** S0 đã xong (repo, CI, Docker, EAS, dev client). Các Blocker của SRS đã sửa ở v1.3; v1.4–v1.8 gộp các quyết định khi thiết kế màn hình (17–23/10). Bắt đầu S1 từ 19/10.
+> **Đang ở đâu:** S0 đã xong (repo, CI, Docker, EAS, dev client). Các Blocker của SRS đã sửa ở v1.3; v1.4–v1.8 gộp các quyết định khi thiết kế màn hình (17–23/10); v1.9 gộp CR-12 → CR-25 (30/10); v1.10 gộp CR-27 — web quản trị `apps/admin` và tài khoản admin riêng (01/11). Bắt đầu S1 từ 19/10.
 
 ## 4. Epic & cách đọc Jira
 
@@ -121,7 +121,7 @@ Các REQ sau đang là MVP trong SRS nhưng **đề xuất hoãn sang v1.x** đ�
 | 64 REQ MVP cho 3 người trong 8 tuần (RISK-01)            | Hoãn các mục ở mục 5; review scope cuối mỗi sprint                                          |
 | Voice/TURN thất bại sau NAT, mạng 4G (RISK-03)           | Làm VC-08 (TURN/TLS 443) cùng lúc với VC-01; test trên 4G thật trong S3                     |
 | Android tối ưu pin làm chết foreground service (RISK-06) | Test trên ít nhất 2 hãng máy trong S3                                                       |
-| ~~Chưa có `DESIGN.md` (hệ thống thiết kế UI)~~           | Đã có từ 17/10: `DESIGN.md` ở root (chép từ repo thiết kế), đặc tả màn hình ở repo thiết kế |
+| ~~Chưa có `DESIGN.md` (hệ thống thiết kế UI)~~           | Đã có từ 17/10: `DESIGN.md` ở root, đặc tả màn hình ở `docs/design/screens/`, bản vẽ `Des/nezfocus.pen` (chép từ thư mục thiết kế) |
 
 ## Phụ lục: trang About trên Atlassian
 

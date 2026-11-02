@@ -6,8 +6,9 @@ NezFocus: app mobile học nhóm cho sinh viên (đồ án môn App). pnpm monor
 - `apps/backend` — NestJS modular monolith, Drizzle + PostgreSQL.
 - `packages/shared` — code dùng chung app ↔ backend (zod schema, permission calculator, mã lỗi).
 - `packages/mascot` — mascot Runtime (Rive CLI). Quy tắc riêng: `packages/mascot/AGENTS.md`.
-- `docs/SRS_NezFocus.md` — **SRS, nguồn sự thật duy nhất** về chức năng. Bản trong repo (**v1.5**, CR-04, 19/10/2026) là bản gốc hiện hành: v1.3 (review 16/10) gộp với các quyết định khi thiết kế màn hình (Phụ lục 11.8 cho Auth & Onboarding, 11.9 cho Home & Chat và Việc cần làm). Còn mở: các REQ đề xuất hoãn (label `de-xuat-hoan` trên Jira).
-- `DESIGN.md` — **nguồn sự thật về giao diện** (màu, chữ, spacing, motion, mascot), chép nguyên từ repo thiết kế; đặc tả từng màn hình nằm ở repo thiết kế (`Docs/design/screens/`). Đọc trước khi làm UI; hỏi người dùng trước khi đi chệch. Không sửa file này ở đây — sửa bên repo thiết kế rồi chép sang.
+- `docs/SRS_NezFocus.md` — **SRS, nguồn sự thật duy nhất** về chức năng. Bản trong repo (**v1.10**, CR-27, 01/11/2026) là bản gốc hiện hành: v1.3 (review 16/10) gộp với các quyết định khi thiết kế màn hình (app mobile và web quản trị). Nội dung từng CR: `docs/SRS_v1.2_change_notes.md`. Còn mở: các REQ đề xuất hoãn (label `de-xuat-hoan` trên Jira).
+- `DESIGN.md` — **nguồn sự thật về giao diện** (màu, chữ, spacing, motion, mascot). Đặc tả từng màn hình (app và web quản trị): `docs/design/screens/` (mục lục ở `README.md` trong đó). Bản vẽ: `Des/nezfocus.pen` (mở bằng pen.dev; ảnh mascot ở `Des/assets/`, logo và icon gốc ở `Des/brand/`). Đọc trước khi làm UI; hỏi người dùng trước khi đi chệch.
+- `DESIGN.md`, `docs/SRS_NezFocus.md`, `docs/SRS_v1.2_change_notes.md`, `docs/WEB_BACKPORT.md`, `docs/design/` và `Des/` được **chép nguyên từ thư mục thiết kế**: không sửa ở đây, sửa bên đó rồi chép sang.
 
 Bản đồ repo (cây thư mục, luồng code, chỗ đặt file mới, tra SRS nhanh): `OVERVIEW.md`. Đọc trước khi tìm file.
 

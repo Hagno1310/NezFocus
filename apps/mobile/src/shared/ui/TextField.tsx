@@ -48,7 +48,11 @@ export function TextField({
   const [revealed, setRevealed] = useState(false);
   const editable = !disabled && !readonly;
 
-  const borderWidth = readonly ? 0 : focused || error ? 2 : 1;
+  const borderWidth = readonly
+    ? 0
+    : focused || error
+      ? size.strokeThick
+      : size.hairline;
   const borderColor = error
     ? colors.danger
     : focused
@@ -188,7 +192,7 @@ const styles = StyleSheet.create({
     ...typography.body,
     flex: 1,
     paddingVertical: 0,
-    minHeight: size.field - 2,
+    minHeight: size.field - size.hairline * 2,
     textAlignVertical: 'center',
   },
 });

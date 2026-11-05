@@ -1,13 +1,18 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
-import { radius, size, space, useTheme } from '../theme';
+import {
+  fontScale as textScale,
+  radius,
+  size,
+  space,
+  useTheme,
+} from '../theme';
 import { CODE_LENGTH, nextCode } from './logic';
 import { Text } from './Text';
 
 // Digit size is capped so "8" still fits the 48-wide cell at 200% (C-24: cells stay on one row).
 const DIGIT_MAX_SCALE = 1.25;
-const LARGE_TEXT = 2;
 
 // C-24. One hidden input takes the whole string (OS one-time-code suggestion, paste);
 // the six cells only display it. The parent clears `error` in `onChange`.
@@ -34,7 +39,7 @@ export function CodeInput({
   const { fontScale } = useWindowDimensions();
   const [focused, setFocused] = useState(false);
   const readOnly = verifying || disabled;
-  const large = fontScale >= LARGE_TEXT;
+  const large = fontScale >= textScale.large;
 
   const active =
     focused && !readOnly ? Math.min(value.length, CODE_LENGTH - 1) : -1;
@@ -44,7 +49,8 @@ export function CodeInput({
       {Array.from({ length: CODE_LENGTH }, (_, i) => {
         const digit = value[i] ?? '';
         const isActive = i === active && !error;
-        const borderWidth = error || isActive ? 2 : 1;
+        const borderWidth =
+          error || isActive ? size.strokeThick : size.hairline;
         return (
           <View
             key={i}

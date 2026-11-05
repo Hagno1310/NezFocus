@@ -7,6 +7,7 @@ import {
   radius,
   size,
   space,
+  touchSlop,
   useTheme,
   type ColorToken,
 } from '../theme';
@@ -14,8 +15,8 @@ import { Icon, type IconComponent } from './Icon';
 import { Text } from './Text';
 import { Tooltip } from './Tooltip';
 
-const GAP = 2;
-const slop = (size.touch - size.segment) / 2;
+const GAP = size.segmentInset;
+const slop = touchSlop(size.segment);
 
 export type Segment<K extends string> = {
   key: K;
@@ -150,8 +151,8 @@ export function TriState({
             accessibilityState={{ selected, disabled: off }}
             disabled={off}
             hitSlop={{
-              top: (size.touch - size.tri.height) / 2,
-              bottom: (size.touch - size.tri.height) / 2,
+              top: touchSlop(size.tri.height),
+              bottom: touchSlop(size.tri.height),
             }}
             onPress={() => onChange(o.value)}
             style={[

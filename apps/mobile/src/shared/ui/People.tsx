@@ -14,7 +14,7 @@ import { Icon } from './Icon';
 import { badgeText, initial, stackAvatars } from './logic';
 import { Text } from './Text';
 
-export type AvatarSize = 20 | 24 | 32 | 40 | 56 | 96;
+export type AvatarSize = (typeof size.avatar)[number];
 export type Presence = 'online' | 'idle' | 'dnd' | 'offline';
 
 const initialType: Record<AvatarSize, TypeVariant> = {
@@ -27,9 +27,8 @@ const initialType: Record<AvatarSize, TypeVariant> = {
 };
 
 // DESIGN.md › Presence: dot 10 on avatars 32–40, 14 on 56–96, cut out of the background by 2.
-const dotSize = (s: AvatarSize) => (s >= 56 ? 14 : 10);
-const RING = 2;
-const STACK_OVERLAP = -6;
+const dotSize = (s: AvatarSize): 'sm' | 'lg' => (s >= 56 ? 'lg' : 'sm');
+const RING = size.presence.cut;
 
 // C-13. `self` = the signed-in user (primary fill); `deleted` = default person glyph.
 export function Avatar({
@@ -97,14 +96,15 @@ export function Avatar({
 // Shape is the primary signal, colour secondary (DESIGN.md › Presence): solid · crescent · bar · hollow.
 export function PresenceDot({
   status,
-  size: d = 10,
+  size: dot = 'sm',
   ring = 'bg',
 }: {
   status: Presence;
-  size?: 10 | 14;
+  size?: keyof Omit<typeof size.presence, 'cut'>;
   ring?: ColorToken;
 }) {
   const { colors } = useTheme();
+  const d = size.presence[dot];
   const box = d + RING * 2;
   const c = box / 2;
   const r = d / 2;
@@ -166,7 +166,7 @@ export function AvatarStack({
           style={[
             styles.stackItem,
             {
-              marginLeft: i === 0 ? 0 : STACK_OVERLAP,
+              marginLeft: i === 0 ? 0 : size.avatarStackOverlap,
               borderColor: colors[ring],
             },
           ]}

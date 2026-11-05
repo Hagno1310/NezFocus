@@ -51,7 +51,7 @@ function People() {
           <PresenceDot key={p} status={p} />
         ))}
         {(['online', 'idle', 'dnd', 'offline'] as const).map((p) => (
-          <PresenceDot key={`${p}14`} status={p} size={14} />
+          <PresenceDot key={`${p}14`} status={p} size="lg" />
         ))}
       </Row>
       <Row>

@@ -65,6 +65,7 @@ export const darkColors: Colors = {
 export const fontFamily = {
   text: 'Be Vietnam Pro',
   numeric: 'Unbounded',
+  mono: 'JetBrains Mono',
 } as const;
 
 type Weight = '400' | '500' | '600' | '700' | '800';
@@ -106,6 +107,12 @@ export const typography = {
   'timer-long': numeric('500', 48, 56),
   stat: numeric('600', 32, 40),
   'numeric-inline': numeric('500', 13, 20),
+  mono: {
+    fontFamily: fontFamily.mono,
+    fontWeight: '400',
+    fontSize: 14,
+    lineHeight: 22,
+  } satisfies TypeStyle,
 };
 
 export type TypeVariant = keyof typeof typography;
@@ -147,6 +154,8 @@ export const size = {
   tabBar: 56,
   banner: 40,
   segment: 36,
+  // Gap between the segment track and the selected pill.
+  segmentInset: 2,
   tri: { width: 40, height: 32 },
   actionRow: 56,
   groupTitle: 28,
@@ -157,15 +166,26 @@ export const size = {
   codeCell: { width: 48, height: 56, largeHeight: 72 },
   badge: 16,
   badgeDot: 8,
-  icon: { sm: 16, md: 20, lg: 22, xl: 24 },
+  icon: { xs: 14, sm: 16, md: 20, lg: 22, xl: 24 },
   focusRing: 2,
   hairline: 1,
+  // Emphasis border: focused / error fields, checkbox frame (C-02, C-23, C-24).
+  strokeThick: 2,
+  // C-13 Avatar sizes; DESIGN.md › Presence: dot 10 on 32–40, 14 on 56–96, cut 2.
+  avatar: [20, 24, 32, 40, 56, 96] as const,
+  presence: { sm: 10, lg: 14, cut: 2 },
+  avatarStackOverlap: -6,
 };
 
-// DESIGN.md › Typography › Cỡ chữ 200%.
+// Slop that grows a visible height to the 48 touch target (00-components › Vùng chạm).
+export const touchSlop = (visible: number) =>
+  Math.max(0, (size.touch - visible) / 2);
+
+// DESIGN.md › Typography › Cỡ chữ 200%. `large`: system scale at which layouts switch.
 export const fontScale = {
   heading: 1.6,
   narrowLabel: 1.3,
+  large: 2,
 };
 
 // DESIGN.md › Elevation: only sheets and dialogs cast a shadow.

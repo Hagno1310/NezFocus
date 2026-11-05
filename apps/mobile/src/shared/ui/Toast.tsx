@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Keyboard, Pressable, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
-import { motion, radius, size, space, useTheme } from '../theme';
+import { radius, size, space, useTheme } from '../theme';
 import { Icon } from './Icon';
 import { Text } from './Text';
+import { fadeIn, fadeOut } from './transitions';
 import {
   initialToastState,
   toastReducer,
@@ -77,8 +78,8 @@ export function ToastHost() {
   return (
     <Animated.View
       key={toast.message}
-      entering={FadeIn.duration(motion.short)}
-      exiting={FadeOut.duration(motion.short)}
+      entering={fadeIn}
+      exiting={fadeOut}
       accessibilityLiveRegion="polite"
       pointerEvents="box-none"
       style={[styles.host, { bottom }]}
@@ -100,6 +101,7 @@ export function ToastHost() {
         {toast.action && (
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={toast.action.label}
             hitSlop={space[1]}
             onPress={() => {
               toast.action?.onPress();

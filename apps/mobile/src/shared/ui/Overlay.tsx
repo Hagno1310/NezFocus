@@ -15,9 +15,8 @@ import {
   usePanGesture,
 } from 'react-native-gesture-handler';
 import Animated, {
-  FadeIn,
-  SlideInDown,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
@@ -37,6 +36,7 @@ import { FormMessage } from './FormMessage';
 import { Icon, type IconComponent } from './Icon';
 import { dialogLayout } from './logic';
 import { Text } from './Text';
+import { fadeIn, sheetEnter } from './transitions';
 import { overlayClosed, overlayOpened } from './Toast';
 
 // Drag distance / speed that closes a sheet on release.
@@ -81,7 +81,7 @@ function Overlay({
       <GestureHandlerRootView style={styles.flex}>
         <KeyboardAvoidingView behavior="padding" style={styles.flex}>
           <Animated.View
-            entering={FadeIn.duration(motion.short)}
+            entering={fadeIn}
             style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }]}
           >
             <Pressable
@@ -161,7 +161,7 @@ export function Dialog({
       placement="center"
     >
       <Animated.View
-        entering={FadeIn.duration(motion.short)}
+        entering={fadeIn}
         accessibilityViewIsModal
         style={[
           styles.dialog,
@@ -207,9 +207,10 @@ function SheetFrame({
 }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const reduced = useReducedMotion();
   const drag = useSharedValue(0);
   const pan = usePanGesture({
-    activeOffsetY: 8,
+    activeOffsetY: space[2],
     enabled: dismissible,
     onUpdate: (e) => {
       'worklet';
@@ -230,7 +231,7 @@ function SheetFrame({
 
   return (
     <Animated.View
-      entering={SlideInDown.duration(motion.medium)}
+      entering={sheetEnter(reduced)}
       accessibilityViewIsModal
       style={[
         styles.sheet,
@@ -387,6 +388,7 @@ function ActionRow({
   return (
     <Pressable
       accessibilityRole={pickOne ? 'radio' : 'button'}
+      accessibilityLabel={item.label}
       accessibilityState={pickOne ? { selected: !!item.selected } : undefined}
       onPress={item.onPress}
       style={({ pressed }) => [

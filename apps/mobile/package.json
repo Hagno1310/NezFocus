@@ -4,6 +4,7 @@
   "main": "index.ts",
   "dependencies": {
     "@expo-google-fonts/be-vietnam-pro": "^0.4.1",
+    "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@expo-google-fonts/unbounded": "^0.4.1",
     "@nezfocus/shared": "workspace:*",
     "@react-navigation/bottom-tabs": "^7.21.0",

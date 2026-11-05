@@ -10,10 +10,11 @@ export function Icon({
   color = 'text-secondary',
 }: {
   as: IconComponent;
-  size?: keyof typeof sizes.icon | 14;
+  size?: keyof typeof sizes.icon;
   color?: ColorToken;
 }) {
   const { colors } = useTheme();
-  const px = size === 14 ? 14 : sizes.icon[size];
-  return <Glyph size={px} color={colors[color]} strokeWidth={2} />;
+  return (
+    <Glyph size={sizes.icon[size]} color={colors[color]} strokeWidth={2} />
+  );
 }

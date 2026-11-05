@@ -15,7 +15,15 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { motion, radius, size, space, typography, useTheme } from '../theme';
+import {
+  motion,
+  radius,
+  size,
+  space,
+  touchSlop,
+  typography,
+  useTheme,
+} from '../theme';
 import { Button, type ButtonProps } from './Button';
 import { Icon, type IconComponent } from './Icon';
 import { Text } from './Text';
@@ -48,8 +56,8 @@ export function Banner({
         <Pressable
           accessibilityRole="button"
           onPress={action.onPress}
-          // Label line is 20; slop brings the target to 48.
-          hitSlop={(size.touch - typography.label.lineHeight) / 2}
+          accessibilityLabel={action.label}
+          hitSlop={touchSlop(typography.label.lineHeight)}
         >
           <Text variant="label" weight="600" color="primary">
             {action.label}

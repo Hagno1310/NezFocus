@@ -8,7 +8,14 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { radius, size, space, useTheme, type ColorToken } from '../theme';
+import {
+  radius,
+  size,
+  space,
+  touchSlop,
+  useTheme,
+  type ColorToken,
+} from '../theme';
 import { Icon, type IconComponent } from './Icon';
 import { Text } from './Text';
 
@@ -44,7 +51,7 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const { colors } = useTheme();
-  const [focused, setFocused] = useState(false);
+  const ring = useFocusRing();
   const filled = variant === 'primary' || variant === 'danger';
   const inactive = disabled || loading;
 
@@ -65,7 +72,7 @@ export function Button({
         ? colors.danger
         : 'transparent';
   const height = heights[s];
-  const slop = (size.touch - height) / 2;
+  const slop = touchSlop(height);
 
   return (
     <Pressable
@@ -73,9 +80,8 @@ export function Button({
       accessibilityLabel={label}
       accessibilityState={{ disabled: inactive, busy: loading }}
       disabled={inactive}
-      hitSlop={slop > 0 ? { top: slop, bottom: slop } : undefined}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
+      hitSlop={{ top: slop, bottom: slop }}
+      {...ring.handlers}
       {...rest}
       style={({ pressed }) => [
         styles.base,
@@ -88,12 +94,7 @@ export function Button({
           borderWidth: size.hairline,
           borderColor: disabled ? colors.border : colors['border-input'],
         },
-        focused && {
-          outlineWidth: size.focusRing,
-          outlineOffset: size.focusRing,
-          outlineColor: colors.primary,
-          outlineStyle: 'solid',
-        },
+        ring.style,
         style,
       ]}
     >
@@ -113,7 +114,10 @@ export function Button({
           <View style={[styles.content, loading && styles.hidden]}>
             {icon && <Icon as={icon} size="md" color={fg} />}
             <Text
-              variant={s === 'S' ? 'body-sm' : 'body'}
+              // DESIGN.md: button-secondary and the S size use body-sm.
+              variant={
+                s === 'S' || variant === 'secondary' ? 'body-sm' : 'body'
+              }
               color={fg}
               numberOfLines={2}
               style={styles.label}
@@ -134,31 +138,54 @@ export function Button({
   );
 }
 
+// 00-components › Quy ước chung: `focused` (external keyboard, Switch Access) = ring 2 primary, gap 2.
+function useFocusRing() {
+  const { colors } = useTheme();
+  const [focused, setFocused] = useState(false);
+  return {
+    handlers: {
+      onFocus: () => setFocused(true),
+      onBlur: () => setFocused(false),
+    },
+    style: focused && {
+      outlineWidth: size.focusRing,
+      outlineOffset: size.focusRing,
+      outlineColor: colors.primary,
+      outlineStyle: 'solid' as const,
+    },
+  };
+}
+
 export function IconButton({
   icon,
   label,
   disabled = false,
-  color = 'text-secondary',
   ...rest
 }: Omit<PressableProps, 'children' | 'style'> & {
   icon: IconComponent;
   label: string;
-  color?: ColorToken;
 }) {
   const { colors } = useTheme();
+  const ring = useFocusRing();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
+      {...ring.handlers}
       {...rest}
       style={({ pressed }) => [
         styles.iconButton,
         pressed && { backgroundColor: colors['surface-2'] },
+        ring.style,
       ]}
     >
-      <Icon as={icon} size="lg" color={disabled ? 'text-tertiary' : color} />
+      <Icon
+        as={icon}
+        size="lg"
+        color={disabled ? 'text-tertiary' : 'text-secondary'}
+      />
     </Pressable>
   );
 }

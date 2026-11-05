@@ -26,12 +26,7 @@ export function ScreenHeader({
       ]}
     >
       {onBack && (
-        <IconButton
-          icon={ChevronLeft}
-          label={t('ui.back')}
-          onPress={onBack}
-          color="text-primary"
-        />
+        <IconButton icon={ChevronLeft} label={t('ui.back')} onPress={onBack} />
       )}
       {/* C-22: at 200% the title stays one line; the full name goes through accessibilityLabel. */}
       <Text

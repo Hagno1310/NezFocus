@@ -1,6 +1,6 @@
 import { ChevronRight } from 'lucide-react-native';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
-import { size, space, useTheme } from '../theme';
+import { fontScale as textScale, size, space, useTheme } from '../theme';
 import { Icon } from './Icon';
 import { AvatarStack } from './People';
 import { Text } from './Text';
@@ -27,7 +27,7 @@ export function SettingsRow({
   const { colors } = useTheme();
   const { fontScale } = useWindowDimensions();
   // C-15: at 200% the value moves under the label.
-  const stacked = fontScale >= 2;
+  const stacked = fontScale >= textScale.large;
   const valueText = people ? people.map((p) => p.name).join(', ') : value;
   const fg = disabled ? 'text-tertiary' : 'text-primary';
 

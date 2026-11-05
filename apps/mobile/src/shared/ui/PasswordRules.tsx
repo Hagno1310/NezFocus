@@ -2,7 +2,13 @@ import type { PasswordIssue } from '@nezfocus/shared';
 import { Circle, CircleCheck, CircleX } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
-import { size, space, typography, type ColorToken } from '../theme';
+import {
+  fontScale as textScale,
+  size,
+  space,
+  typography,
+  type ColorToken,
+} from '../theme';
 import { Icon, type IconComponent } from './Icon';
 import { passwordRuleStates, type RuleState } from './logic';
 import { Text } from './Text';
@@ -28,7 +34,7 @@ export function PasswordRules({
   const { t } = useTranslation();
   const { fontScale } = useWindowDimensions();
   // At 200% the 2-column grid becomes 1 column.
-  const columns = fontScale >= 2 ? 1 : 2;
+  const columns = fontScale >= textScale.large ? 1 : 2;
   return (
     <View style={styles.grid}>
       {passwordRuleStates(issues, submitted).map(([rule, state]) => {

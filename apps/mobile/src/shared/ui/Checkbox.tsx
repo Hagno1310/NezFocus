@@ -27,7 +27,8 @@ export function Checkbox({
 }: {
   checked: boolean;
   onChange?: (next: boolean) => void;
-  label?: string;
+  // Always set: it is the screen-reader name even when `children` draws the sentence.
+  label: string;
   children?: ReactNode;
   description?: string;
   error?: string | null;
@@ -73,12 +74,10 @@ export function Checkbox({
           </View>
         </View>
         <View style={styles.text}>
-          {label !== undefined ? (
+          {children ?? (
             <Text color={disabled ? 'text-tertiary' : 'text-primary'}>
               {label}
             </Text>
-          ) : (
-            children
           )}
           {description && (
             <Text variant="label" color="text-tertiary">
@@ -110,7 +109,7 @@ const styles = StyleSheet.create({
     width: size.checkbox,
     height: size.checkbox,
     borderRadius: radius.badge,
-    borderWidth: 2,
+    borderWidth: size.strokeThick,
     alignItems: 'center',
     justifyContent: 'center',
   },

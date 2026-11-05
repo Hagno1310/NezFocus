@@ -1,4 +1,5 @@
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { useIsFocused } from '@react-navigation/native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -27,7 +28,9 @@ export function TabBar({
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [tip, setTip] = useState<string | null>(null);
-  useToastAnchor(size.tabBar + insets.bottom);
+  // Only while Main is on top: a stack screen pushed over it has no tab bar under its toasts.
+  const onTop = useIsFocused();
+  useToastAnchor(onTop ? size.tabBar + insets.bottom : 0);
 
   return (
     <View

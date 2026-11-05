@@ -326,7 +326,11 @@ function Checkboxes() {
         onChange={setAge}
         label="Tôi đủ 18 tuổi trở lên"
       />
-      <Checkbox checked={terms} onChange={setTerms}>
+      <Checkbox
+        checked={terms}
+        onChange={setTerms}
+        label="Tôi đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư"
+      >
         <Text>
           Tôi đồng ý với{' '}
           <Text

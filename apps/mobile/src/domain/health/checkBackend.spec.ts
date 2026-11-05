@@ -2,15 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { checkBackend } from './checkBackend';
 
 describe('checkBackend', () => {
-  it('maps the health response to a status', async () => {
+  it('reports up when the health check answers', async () => {
     await expect(
       checkBackend({ ping: async () => ({ status: 'ok', db: 'up' }) }),
     ).resolves.toBe('up');
-    await expect(
-      checkBackend({ ping: async () => ({ status: 'ok', db: 'down' }) }),
-    ).resolves.toBe('degraded');
   });
 
+  // Backend answers 503 when the DB is down, so that also lands here.
   it('reports down when the request fails', async () => {
     await expect(
       checkBackend({ ping: () => Promise.reject(new Error('offline')) }),

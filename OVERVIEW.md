@@ -141,7 +141,7 @@ apps/mobile/
     │   ├── _example/          FEATURE MẪU — copy để bắt đầu
     │   └── auth calls chat friends server settings study tasks voice   ← .gitkeep
     ├── domain/<area>/         TS thuần (không import React/RN): interface repository + use case
-    ├── data/<area>/           Implement repository; data/api/client.ts = fetch wrapper đọc EXPO_PUBLIC_API_URL
+    ├── data/<area>/           Remote/Fake repository, index.ts chọn qua EXPO_PUBLIC_FAKE (data/fake.ts); data/api/client.ts = fetch wrapper
     └── shared/{ui,theme,i18n}/  Component, theme, i18n dùng chung (.gitkeep)
 ```
 
@@ -153,7 +153,7 @@ Screen ──► hook (TanStack Query) ──► use case (domain) ──► Rep
                                                         data/<area>/Remote<X>Repository ──► api()
 ```
 
-Ví dụ đầy đủ: `ExampleScreen` → `useBackendStatus` → `checkBackend` → `HealthRepository` ← `remoteHealthRepository`.
+Ví dụ đầy đủ: `ExampleScreen` → `useBackendStatus` → `checkBackend` → `HealthRepository` ← `healthRepository` (`data/health/index.ts` chọn Remote / Fake).
 
 - Screen **không** gọi `fetch`/WebSocket/LiveKit trực tiếp.
 - Use case trong `domain/` test bằng Vitest không cần thiết bị (`checkBackend.spec.ts`).
@@ -165,11 +165,12 @@ Ví dụ đầy đủ: `ExampleScreen` → `useBackendStatus` → `checkBackend`
 
 ## 6. Shared — `packages/shared`
 
-| File               | Nội dung                                                                               |
-| ------------------ | -------------------------------------------------------------------------------------- |
-| `src/errors.ts`    | `ErrorCode` (toàn bộ mã SRS 11.1, không tái sử dụng mã) + zod `ApiErrorBody` (SRS 5.2) |
-| `src/snowflake.ts` | zod `SnowflakeId`: chuỗi số 64-bit                                                     |
-| `src/index.ts`     | Barrel export — mọi thứ mới phải export ở đây                                          |
+| File                              | Nội dung                                                                                                 |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `src/errors.ts`                   | `ErrorCode` (toàn bộ mã SRS 11.1, không tái sử dụng mã) + zod `ApiErrorBody` (SRS 5.2)                   |
+| `src/snowflake.ts`                | zod `SnowflakeId`: chuỗi số 64-bit                                                                       |
+| `src/<mảng>/<chủ đề>.contract.ts` | Hợp đồng REST / event của từng mảng (mẫu: `health/health.contract.ts`; quy ước ở `docs/WORKFLOW.md` 4.1) |
+| `src/index.ts`                    | Barrel export — mọi thứ mới phải export ở đây                                                            |
 
 Build ra `dist/` (`pnpm install` tự build). Đang sửa shared thì chạy `pnpm --filter @nezfocus/shared dev` để app/backend thấy thay đổi.
 

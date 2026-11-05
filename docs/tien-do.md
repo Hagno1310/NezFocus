@@ -46,10 +46,10 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
   - Cần trước: P0-1
   - Trong lúc làm: P0-3.2 chờ P0-2.1 (Hiếu)
   - [x] mốc **P0-3.2** [#43](https://github.com/Hagno1310/NezFocus/issues/43) ApiClient, lưu token và refresh single-flight · người kia chờ: P0-4 (Hiếu), P2-A3 (Hiếu)
-- [ ] **P0-3b** [#3](https://github.com/Hagno1310/NezFocus/issues/3) Theme và component dùng chung
+- [x] **P0-3b** [#3](https://github.com/Hagno1310/NezFocus/issues/3) Theme và component dùng chung
   - Cần trước: P0-3
-  - [ ] mốc **P0-3b.2** [#45](https://github.com/Hagno1310/NezFocus/issues/45) Dialog / Sheet, Banner / Toast / EmptyState, SegmentedControl, Checkbox, CodeInput, FormMessage, PasswordRules · người kia chờ: P0-4 (Hiếu), P1-A1 (Hiếu)
-  - [ ] mốc **P0-3b.3** [#46](https://github.com/Hagno1310/NezFocus/issues/46) TabBar, Avatar / PresenceDot / Badge, SettingsRow · người kia chờ: P1-A1 (Hiếu), P1-A4 (Hiếu)
+  - [x] mốc **P0-3b.2** [#45](https://github.com/Hagno1310/NezFocus/issues/45) Dialog / Sheet, Banner / Toast / EmptyState, SegmentedControl, Checkbox, CodeInput, FormMessage, PasswordRules · người kia chờ: P0-4 (Hiếu), P1-A1 (Hiếu)
+  - [x] mốc **P0-3b.3** [#46](https://github.com/Hagno1310/NezFocus/issues/46) TabBar, Avatar / PresenceDot / Badge, SettingsRow · người kia chờ: P1-A1 (Hiếu), P1-A4 (Hiếu)
 - [ ] **P0-5** [#5](https://github.com/Hagno1310/NezFocus/issues/5) Gateway khung
   - Cần trước: P0-1, P0-3, P0-3b
   - Trong lúc làm: P0-5.2 chờ P0-2.3 (Hiếu)

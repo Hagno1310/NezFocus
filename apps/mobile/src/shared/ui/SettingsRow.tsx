@@ -75,7 +75,9 @@ export function SettingsRow({
       <View
         style={[
           styles.labels,
-          description || stacked || toggle ? styles.grow : styles.keep,
+          description || stacked || toggle || !(value || people)
+            ? styles.grow
+            : styles.keep,
         ]}
       >
         <Text color={fg} weight="500" numberOfLines={stacked ? undefined : 1}>

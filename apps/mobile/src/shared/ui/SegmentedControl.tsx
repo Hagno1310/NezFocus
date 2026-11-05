@@ -73,6 +73,8 @@ export function SegmentedControl<K extends string>({
               styles.segment,
               // C-20: a segment with a count is as wide as its text; the rest share the width.
               s.count === undefined ? styles.even : styles.fit,
+              // ponytail: 4 items get 8 side padding so labels fit at 360; re-check the 4-item C-20 frame.
+              segments.length >= 4 && styles.tight,
               selected && { backgroundColor: colors['surface-1'] },
               pressed &&
                 !selected && { backgroundColor: colors['overlay-pressed'] },
@@ -193,6 +195,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
   },
   even: { flex: 1, minWidth: 0 },
+  tight: { paddingHorizontal: space[2] },
   fit: { flexShrink: 0 },
   shrink: { flexShrink: 1 },
   tri: { alignSelf: 'flex-start' },

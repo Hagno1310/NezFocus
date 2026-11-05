@@ -124,12 +124,11 @@ export function Button({
               {label}
             </Text>
           </View>
+          {/* Gotcha: absoluteFill on ActivityIndicator itself shrinks it to a dot on Android. */}
           {loading && (
-            <ActivityIndicator
-              size="small"
-              color={colors[fg]}
-              style={StyleSheet.absoluteFill}
-            />
+            <View style={[StyleSheet.absoluteFill, styles.center]}>
+              <ActivityIndicator size="small" color={colors[fg]} />
+            </View>
           )}
         </>
       )}
@@ -205,6 +204,7 @@ const styles = StyleSheet.create({
     gap: space[1],
   },
   hidden: { opacity: 0 },
+  center: { alignItems: 'center', justifyContent: 'center' },
   label: { textAlign: 'center' },
   iconButton: {
     width: size.touch,

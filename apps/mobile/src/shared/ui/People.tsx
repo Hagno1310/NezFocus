@@ -29,6 +29,12 @@ const initialType: Record<AvatarSize, TypeVariant> = {
 // DESIGN.md › Presence: dot 10 on avatars 32–40, 14 on 56–96, cut out of the background by 2.
 const dotSize = (s: AvatarSize): 'sm' | 'lg' => (s >= 56 ? 'lg' : 'sm');
 const RING = size.presence.cut;
+// The dot sits on the circle's edge at 45° (bottom-right), so it touches the avatar at any size.
+const dotSpot = (s: AvatarSize, dot: 'sm' | 'lg') => {
+  const box = size.presence[dot] + RING * 2;
+  const at = (s / 2) * (1 + Math.SQRT1_2) - box / 2;
+  return { left: at, top: at };
+};
 
 // C-13. `self` = the signed-in user (primary fill); `deleted` = default person glyph.
 export function Avatar({
@@ -86,7 +92,7 @@ export function Avatar({
         )}
       </View>
       {presence && (
-        <View style={styles.dotCorner}>
+        <View style={[styles.dotCorner, dotSpot(s, dotSize(s))]}>
           <PresenceDot status={presence} size={dotSize(s)} ring={ring} />
         </View>
       )}
@@ -225,7 +231,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dotCorner: { position: 'absolute', right: -RING, bottom: -RING },
+  dotCorner: { position: 'absolute' },
   stack: { flexDirection: 'row', alignItems: 'center' },
   stackItem: { borderWidth: RING, borderRadius: radius.full },
   more: { marginLeft: space[1] },

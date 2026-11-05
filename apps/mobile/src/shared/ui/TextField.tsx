@@ -218,7 +218,9 @@ const styles = StyleSheet.create({
   input: {
     ...typography.body,
     flex: 1,
+    // Android TextInput adds its own side padding; the field already insets 16.
     paddingVertical: 0,
+    paddingHorizontal: 0,
     minHeight: size.field - size.hairline * 2,
     textAlignVertical: 'center',
   },

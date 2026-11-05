@@ -37,14 +37,16 @@ export function checkPassword(
   password: string,
   personal: { username?: string | null; email?: string | null } = {},
 ): PasswordIssue[] {
+  // NFC first: a decomposed "ệ" would otherwise count its accent as a special character.
+  const pw = password.normalize('NFC');
   const issues: PasswordIssue[] = [];
-  const length = [...password].length;
+  const length = [...pw].length;
   if (length < PASSWORD_MIN) issues.push('TOO_SHORT');
   if (length > PASSWORD_MAX) issues.push('TOO_LONG');
-  if (!/\p{Lu}/u.test(password)) issues.push('MISSING_UPPERCASE');
-  if (!/\p{Ll}/u.test(password)) issues.push('MISSING_LOWERCASE');
-  if (!/\p{Nd}/u.test(password)) issues.push('MISSING_DIGIT');
-  if (!/[^\p{L}\p{N}]/u.test(password)) issues.push('MISSING_SPECIAL');
+  if (!/\p{Lu}/u.test(pw)) issues.push('MISSING_UPPERCASE');
+  if (!/\p{Ll}/u.test(pw)) issues.push('MISSING_LOWERCASE');
+  if (!/\p{Nd}/u.test(pw)) issues.push('MISSING_DIGIT');
+  if (!/[^\p{L}\p{N}]/u.test(pw)) issues.push('MISSING_SPECIAL');
 
   // CR-28 #9: "is", not "contains", and case does not matter.
   const email = personal.email ? fold(personal.email) : null;

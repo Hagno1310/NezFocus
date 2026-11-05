@@ -49,6 +49,13 @@ describe('checkPassword (REQ-AUTH-01)', () => {
     expect(checkPassword('Ontap2026ệ')).toEqual(['MISSING_SPECIAL']);
   });
 
+  it('reads decomposed accents (NFD input) as letters, not special characters', () => {
+    expect(checkPassword('Ôntập2026x'.normalize('NFD'))).toEqual([
+      'MISSING_SPECIAL',
+    ]);
+    expect(checkPassword('Ab1!ệệệệ'.normalize('NFD'))).toEqual([]);
+  });
+
   it('treats a space as a special character', () => {
     expect(checkPassword('Ontap 2026')).toEqual([]);
   });

@@ -2,6 +2,8 @@
 
 Tin nhắn trực tiếp (DM 1-1, Group DM), danh sách bạn bè và lời mời kết bạn, gọi thoại / video 1-1.
 
+**(05/11/2026, CR-28 #8) Group DM là v1.x.** Bản MVP không có ✎ (tạo nhóm) ở S-DM-01, không có state `group` của S-DM-02, không có S-DM-03 và S-DM-06; hàng Group DM trong danh sách và tin "{Tên}: …" cũng chưa xuất hiện. Các mục và frame đó giữ nguyên để dùng ở v1.x.
+
 - Hành vi: SRS v1.9 Mục 3.1 (rail 💬, Tab Home, MiniPlayer, Cử chỉ / Back), 3.2 (DM & Friends), 3.5, 3.6 UF-07, 5.4 (`CALL_*`, `RELATIONSHIP_*`, `PRESENCE_UPDATE.activity`), 7.3.4, 7.5.3, 8.4.1, 8.4.2, REQ-FRIEND-01..04, REQ-DM-01..03, REQ-GDM-01..03, REQ-DMVC-01/03, REQ-NOTIF-01/02/05, REQ-MSG-02/05/11, REQ-AUTH-05, DEC-03, DEC-07, DEC-29. **Không ở MVP:** gọi nhóm trong Group DM (REQ-DMVC-02, v1.x), UI gọi gốc khi app bị kill (REQ-DMVC-04, v1.x, DEC-07).
 - Component: [00-components.md](00-components.md) — `ChannelHeader · dm` (C-04), `MessageBubble` (C-10, tin hệ thống cuộc gọi), `Composer` (C-11), `MemberRow` (C-28), `SegmentedControl` (C-20), `FilterChip` (C-30), `SearchField` / `TextField` (C-02), `RoomControl` (C-17), `ParticipantTile · video` / `· floating` (C-07), `MiniPlayer · call` (C-08), `ServerRail` (C-26), `ScreenHeader` (C-22), `ChipStatus` (C-21), `BottomSheet` / `ActionSheet` / `Dialog` (C-09), `DMRow` (C-32), `FriendRow` (C-33), `NotificationRow` (C-31, `friend_request`, `friend_accepted`). Nhìn thế nào: [DESIGN.md](../../../DESIGN.md) (chế độ **Operate**; màn cuộc gọi **Experience**).
 - Hành vi chốt 20/10/2026 khi viết spec này (21 câu, chủ dự án đồng ý cả 21): tách Tin nhắn (drawer) / Bạn bè / Thêm bạn / Thông tin nhóm; DM xếp theo hoạt động, chưa đọc = tên đậm + badge; 40303 một câu chung ở mọi nơi; hủy kết bạn và chặn có xác nhận; DM với người chưa là bạn có dải "chưa là bạn bè"; DM 1-1 có 📞 🎥, Group DM không gọi; bật camera giữa cuộc gọi; gọi khi đang ở phòng thì hỏi rời phòng; thu nhỏ cuộc gọi thành `MiniPlayer · call`; notification cuộc gọi có nút Nghe / Từ chối; chỉ nhỡ (không phải từ chối) mới vào tab Thông báo; mascot chỉ ở empty của S-DM-01 / S-DM-04. Hành vi mới ghi ở `SRS_v1.2_change_notes.md` mục 11 (CR-06, đã áp vào SRS v1.6 ngày 21/10/2026).
@@ -277,7 +279,7 @@ Không áp dụng: `loading` riêng (danh sách bạn có trong cache, FRIEND-04
 | State | Khác gì so với default | Chữ / hành động riêng |
 |---|---|---|
 | `default` | Như bố cục | |
-| `group` | Group DM "Ôn thi cùng nhau": header avatar nhóm (2 avatar chồng), dòng phụ "4 thành viên" (không username, không hoạt động); ô phải là 👥 (không có 📞 🎥 — gọi nhóm là v1.x); có tin hệ thống "Bình đã tạo nhóm", "Bình đã thêm Dũng vào nhóm" | |
+| `group` · **v1.x** (CR-28 #8) | Group DM "Ôn thi cùng nhau": header avatar nhóm (2 avatar chồng), dòng phụ "4 thành viên" (không username, không hoạt động); ô phải là 👥 (không có 📞 🎥 — gọi nhóm là v1.x); có tin hệ thống "Bình đã tạo nhóm", "Bình đã thêm Dũng vào nhóm" | |
 | `new-dm` | Chưa có tin: khối đầu cuộc trò chuyện ở đáy (Avatar 96, tên, username, "Đây là đầu cuộc trò chuyện của bạn và Lan.") — mẫu: Lan (bạn bè, ngoại tuyến, chưa từng nhắn); header "Lan lan.vu", không dòng phụ; 📞 🎥 vẫn hiện (gọi được người ngoại tuyến, CR-25 #4) | |
 | `not-friend` | DM với người cùng server chưa là bạn (DM-02): dải dưới header "Bạn và Khánh chưa là bạn bè" · `Button · secondary · S` "Kết bạn" · `Button · text · S` "Chặn" (v1.9, CR-25 #9). Người kia đã mời mình: "Khánh muốn kết bạn" · `primary · S` "Chấp nhận" · `text · S` "Chặn" (luật bằng chữ, không frame riêng). Header "Khánh khanh.le", dòng phụ "Không làm phiền" | "Chặn" → `block-confirm` (S-DM-04) |
 | `not-friend-sent` 🆕 | (v1.9) An vừa bấm "Kết bạn" (một bước, không lời nhắn): dải thành "Đã gửi lời mời kết bạn cho Khánh" · `text · S` "Hủy lời mời" · `text · S` "Chặn" | Hủy lời mời → dải về `not-friend`, không hỏi lại |
@@ -306,7 +308,7 @@ Không áp dụng: `forbidden` RBAC (DM không dùng quyền server; thay bằng
 
 ---
 
-## S-DM-03 · Tạo nhóm / thêm vào nhóm
+## S-DM-03 · Tạo nhóm / thêm vào nhóm · v1.x (CR-28 #8)
 
 **Mục đích:** chọn 2–9 bạn để tạo Group DM, hoặc thêm bạn vào nhóm đang có.
 **REQ:** GDM-01/02/03.
@@ -335,7 +337,7 @@ Không áp dụng: `forbidden` RBAC (DM không dùng quyền server; thay bằng
 
 ---
 
-## S-DM-06 · Thông tin nhóm 🆕
+## S-DM-06 · Thông tin nhóm 🆕 · v1.x (CR-28 #8)
 
 **Mục đích:** xem thành viên, đổi tên nhóm, thêm người, rời nhóm.
 **REQ:** GDM-02/03, MSG-11.

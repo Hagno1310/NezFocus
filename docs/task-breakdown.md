@@ -12,7 +12,8 @@ B  ──  khung app    ──►  Solo Session  ──►  bạn bè, DM       
             ▲ chờ nhau nhiều nhất ở đây      ▲ vài chỗ chạm nhau, gỡ bằng hợp đồng + dữ liệu giả
 ```
 
-- Mỗi dòng task = một GitHub issue (tạo bằng `/to-tickets`). Không có ước lượng thời gian; nhóm tự xếp vào sprint.
+- Mỗi dòng task = một issue cha trên GitHub (`Hagno1310/NezFocus`, đã đăng 05/11/2026), ticket con là sub-issue. Không có ước lượng thời gian; nhóm tự xếp vào sprint.
+- **Chọn việc và theo dõi tiến độ: [`tien-do.md`](tien-do.md)** (ô tick, thứ tự nên làm, ai đang chờ ai). File này là kế hoạch gốc, không tick ở đây.
 - Làm một task thế nào (hợp đồng, dữ liệu giả, skill, git, thiết kế): [`WORKFLOW.md`](WORKFLOW.md).
 - Đặc tả màn hình: `docs/design/screens/<file>.md`, mã màn hình dạng `S-AUTH-02`.
 
@@ -121,6 +122,6 @@ Mảng Học của B ở P1 gần như không phụ thuộc A (chỉ cần đăn
 
 ## 4. Phạm vi
 
-Đã chốt (05/11/2026, CR-28): MSG-04 chỉ gửi ảnh (video, tệp, quét virus sang v1.x); outbox chỉ cho tin nhắn (reaction, việc, đánh dấu đã đọc khi offline thì nút vô hiệu). Đề xuất hoãn, cả nhóm chưa chốt: MSG-02 link preview, GDM-01…03, NOTIF-04 — ticket hiện **không** có các mục này. Bản này **không xếp** các mục đó vào task nào.
+Đã chốt (05/11/2026, CR-28): MSG-04 chỉ gửi ảnh (video, tệp, quét virus sang v1.x); outbox chỉ cho tin nhắn (reaction, việc, đánh dấu đã đọc khi offline thì nút vô hiệu). Hoãn sang v1.x (cả nhóm chốt cùng ngày): link preview của MSG-02 (Markdown vẫn làm, ticket P2-A3.5), GDM-01…03, NOTIF-04 AC2 (silent push xóa thông báo trên thiết bị khác). Bản này **không xếp** các mục đó vào task nào.
 
 Nếu trễ, cắt tiếp theo thứ tự (đều là Should, không nằm trong luồng demo): MSG-10 ghim → MSG-06 typing → VC-05 → STUDY-16 → AUTH-06 phần ảnh đại diện → DM-02. Cả nhóm quyết trước khi cắt.

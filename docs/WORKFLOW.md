@@ -38,7 +38,16 @@ Gõ lệnh skill là việc của người; phần lớn skill này không tự 
 
 Khi SRS hoặc spec đổi: sửa luôn các ticket chưa đóng có chép AC / trạng thái bị ảnh hưởng (SRS vẫn là nguồn).
 
-Ticket **sẵn sàng** khi mọi issue chặn nó đã đóng. Chỉ nhận ticket sẵn sàng của mảng mình (hoặc của người kia khi đã thống nhất cân lại).
+**Chọn việc: nhìn [`tien-do.md`](tien-do.md), không cần lọc trên GitHub.** Mỗi dòng ở đó là một phiên agent (một issue cha hoặc một ticket đứng riêng), xếp theo thứ tự nên làm cho từng người. Luật ngắn:
+
+1. Giai đoạn hiện tại, cột của mình, từ trên xuống; dòng **làm được** khi mọi mục "Cần trước" đã tick.
+2. Dòng có "Trong lúc làm" vẫn bắt đầu được: ticket con đó chờ người kia, dùng Fake hoặc bỏ qua (mục 5).
+3. Ô "mốc" (hợp đồng, hoặc ticket người kia đang chờ) làm và merge sớm.
+4. Hết việc ở giai đoạn này: làm trước giai đoạn sau, hoặc bàn với người kia để cân lại.
+
+Quan hệ chặn trên GitHub là bản đồ chi tiết cho agent (ticket con nào cần gì). Phần lớn là thứ tự **trong** một issue cha, agent tự làm lần lượt trong một phiên; chỉ quan hệ giữa hai người mới làm ai đó phải chờ, và `tien-do.md` đã ghi sẵn các chỗ đó.
+
+**Tick `tien-do.md` trong chính PR đóng việc đó** (agent sửa file lúc chạy `/pr`; ô "mốc" hợp đồng tick trong PR hợp đồng), nên ô đã tick = đã merge vào `main`. Việc mới thêm sau (mục trên) thì thêm dòng vào `tien-do.md` trong cùng PR tạo ticket.
 
 ## 4. Không phải chờ nhau: hợp đồng và dữ liệu giả
 
@@ -72,7 +81,7 @@ Issue cha ghi sẵn ở mục **Bắt đầu**: thứ tự ticket con, ticket h�
 | 6    | 🤖             | Hết ticket con: cập nhật branch từ `main` (chưa push nên được rebase), chạy lại lint / typecheck / test (thêm e2e nếu chạm DB), `/code-review` so với `main` rồi sửa                                                                                                  |
 | 7    | 🤖 → 👤        | Báo cáo AC đạt / chưa của từng ticket con và **liệt kê việc người cần làm**                                                                                                                                                                                           |
 | 8    | 👤             | Làm các bước 👤 của từng ticket con: thử trên điện thoại (web quản trị: trình duyệt) so frame ở từng trạng thái; build lại dev client nếu có thư viện native. Lệch thì bảo agent sửa                                                                                  |
-| 9    | 👤             | Push, bảo agent mở **một PR** (`/pr`, `Closes` từng ticket con, AC đạt / chưa, ảnh cạnh frame)                                                                                                                                                                        |
+| 9    | 👤             | Push, bảo agent mở **một PR** (`/pr`, `Closes` từng ticket con, AC đạt / chưa, ảnh cạnh frame); 🤖 tick dòng của issue cha (và ô "mốc" của nó) trong `tien-do.md`, commit vào PR này                                                                                  |
 | 10   | 👤 (người kia) | Review từng commit, CI xanh → Squash and merge; các ticket con tự đóng                                                                                                                                                                                                |
 
 - **Issue cha lớn** (từ 5 ticket con): mục Bắt đầu gợi ý chỗ chia 2 phiên. Phiên dài thì agent kém chú ý tới phần đầu, nên khi context đã nặng: `/handoff`, mở phiên mới, gõ lại `/implement #<số issue cha>` (agent bỏ qua ticket con đã xong).
@@ -89,7 +98,7 @@ Dùng thay mục 5 khi issue cha có nhiều ticket con không phụ thuộc nha
 | 3    | 🤖      | Tạo integration branch `feat/<số issue cha>-<mo-ta>`; mỗi ticket con một agent trong một worktree, làm bằng `/tdd`; xong thì gộp vào integration branch; cuối cùng `/code-review` và sửa |
 | 4    | 🤖 → 👤 | Báo cáo AC đạt / chưa của từng ticket con và việc người cần làm                                                                                                                          |
 | 5    | 👤      | Kéo integration branch, làm các bước 👤 của từng ticket con                                                                                                                              |
-| 6    | 👤      | Push, bảo agent mở PR (`Closes` mọi ticket con); người kia review, CI xanh → Squash and merge                                                                                            |
+| 6    | 👤      | Push, bảo agent mở PR (`Closes` mọi ticket con; 🤖 tick dòng trong `tien-do.md`); người kia review, CI xanh → Squash and merge                                                           |
 
 Cụm việc chưa có issue cha (ý tưởng mới, yêu cầu từ pilot): `/grilling` chốt chỗ chưa rõ → `/to-spec` → `/to-tickets` → rồi như trên.
 

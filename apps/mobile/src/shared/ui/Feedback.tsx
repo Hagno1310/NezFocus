@@ -47,7 +47,7 @@ export function Banner({
       {icon === 'spinner' ? (
         <ActivityIndicator size="small" color={colors['text-secondary']} />
       ) : (
-        <Icon as={icon} size="md" color="text-secondary" />
+        <Icon as={icon} size="sm" color="text-secondary" />
       )}
       <Text variant="label" style={styles.flex}>
         {text}
@@ -190,8 +190,9 @@ const styles = StyleSheet.create({
   empty: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: space[2],
-    padding: space[4],
+    gap: space[2] + space[1],
+    paddingVertical: space[4],
+    paddingHorizontal: space[3],
   },
   centerText: { textAlign: 'center' },
 });

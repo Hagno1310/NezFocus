@@ -1,7 +1,7 @@
 import { ChevronRight } from 'lucide-react-native';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { fontScale as textScale, size, space, useTheme } from '../theme';
-import { Icon } from './Icon';
+import { Icon, type IconComponent } from './Icon';
 import { AvatarStack } from './People';
 import { Text } from './Text';
 
@@ -10,6 +10,7 @@ import { Text } from './Text';
 // ponytail: `switch` variant is P2 in the spec (S-SET, area 07); add it with that screen.
 export function SettingsRow({
   label,
+  icon,
   description,
   value,
   people,
@@ -17,6 +18,8 @@ export function SettingsRow({
   disabled = false,
 }: {
   label: string;
+  // Board SettingsRow has an optional leading 22 icon.
+  icon?: IconComponent;
   // Also the reason line when `disabled`.
   description?: string;
   value?: string;
@@ -36,7 +39,7 @@ export function SettingsRow({
       {people && <AvatarStack people={people} size={24} />}
       {valueText && (
         <Text
-          variant="body-sm"
+          variant="body"
           color={disabled ? 'text-tertiary' : 'text-secondary'}
           numberOfLines={1}
           style={styles.shrink}
@@ -61,6 +64,13 @@ export function SettingsRow({
         pressed && { backgroundColor: colors['overlay-pressed'] },
       ]}
     >
+      {icon && (
+        <Icon
+          as={icon}
+          size="lg"
+          color={disabled ? 'text-tertiary' : 'text-secondary'}
+        />
+      )}
       {/* C-15: a one-line row keeps the label whole; the value takes the rest and truncates. */}
       <View
         style={[
@@ -68,12 +78,13 @@ export function SettingsRow({
           description || stacked ? styles.grow : styles.keep,
         ]}
       >
-        <Text color={fg} numberOfLines={stacked ? undefined : 1}>
+        <Text color={fg} weight="500" numberOfLines={stacked ? undefined : 1}>
           {label}
         </Text>
         {description && (
           <Text
             variant="label"
+            weight="400"
             color={disabled ? 'text-tertiary' : 'text-secondary'}
           >
             {description}
@@ -82,11 +93,7 @@ export function SettingsRow({
         {stacked && valueNode}
       </View>
       {!stacked && valueNode}
-      <Icon
-        as={ChevronRight}
-        size="md"
-        color={disabled ? 'text-tertiary' : 'text-secondary'}
-      />
+      <Icon as={ChevronRight} size="md" color="text-tertiary" />
     </Pressable>
   );
 }
@@ -96,7 +103,7 @@ const styles = StyleSheet.create({
     minHeight: size.settingsRow,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space[2],
+    gap: space[2] + space[1],
     paddingVertical: space[2],
   },
   labels: { gap: space[1] / 2 },

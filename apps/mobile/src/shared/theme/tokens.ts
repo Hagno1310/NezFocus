@@ -117,6 +117,9 @@ export const typography = {
 
 export type TypeVariant = keyof typeof typography;
 
+// C-24 "`stat` nhỏ": board `C-15 · … · FormMessage` › CodeInput draws Unbounded 600 at 26.
+export const codeDigit = numeric('600', 26, 32);
+
 export const radius = {
   badge: 4,
   input: 8,
@@ -166,11 +169,13 @@ export const size = {
   codeCell: { width: 48, height: 56, largeHeight: 72 },
   badge: 16,
   badgeDot: 8,
-  icon: { xs: 14, sm: 16, md: 20, lg: 22, xl: 24 },
+  icon: { xs: 14, sm: 16, base: 18, md: 20, lg: 22, xl: 24 },
   focusRing: 2,
   hairline: 1,
   // Emphasis border: focused / error fields, checkbox frame (C-02, C-23, C-24).
   strokeThick: 2,
+  // Boards (TextField help, PasswordRules, Segment/item): icon–text gap 6 in small rows.
+  iconGap: 6,
   // C-13 Avatar sizes; DESIGN.md › Presence: dot 10 on 32–40, 14 on 56–96, cut 2.
   avatar: [20, 24, 32, 40, 56, 96] as const,
   presence: { sm: 10, lg: 14, cut: 2 },

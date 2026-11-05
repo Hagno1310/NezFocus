@@ -8,6 +8,8 @@ import {
   ScrollView,
   StyleSheet,
   View,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
 import {
   GestureDetector,
@@ -177,7 +179,7 @@ export function Dialog({
           <Text variant="headline" accessibilityRole="header">
             {title}
           </Text>
-          {body && <Text>{body}</Text>}
+          {body && <Text color="text-secondary">{body}</Text>}
         </ScrollView>
         {error && <FormMessage tone="error" text={error} />}
         {layout === 'row' ? (
@@ -196,17 +198,22 @@ export function Dialog({
   );
 }
 
+// Drag-to-close wrapper shared by both sheets. `children` receives the handle so each sheet
+// places it inside its own card. `handleGap`: board distance from the handle to what follows.
 function SheetFrame({
   onDismiss,
   dismissible,
+  handleGap,
+  style,
   children,
 }: {
   onDismiss: () => void;
   dismissible: boolean;
-  children: ReactNode;
+  handleGap: number;
+  style: StyleProp<ViewStyle>;
+  children: (handle: ReactNode) => ReactNode;
 }) {
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
   const drag = useSharedValue(0);
   const pan = usePanGesture({
@@ -229,28 +236,24 @@ function SheetFrame({
     transform: [{ translateY: drag.get() }],
   }));
 
+  // Boards draw the handle 8 below the sheet top; the row is taller so it is easy to grab.
+  const handle = (
+    <GestureDetector gesture={pan}>
+      <View style={[styles.handleRow, { marginBottom: handleGap - space[2] }]}>
+        <View
+          style={[styles.handle, { backgroundColor: colors['border-input'] }]}
+        />
+      </View>
+    </GestureDetector>
+  );
+
   return (
     <Animated.View
       entering={sheetEnter(reduced)}
       accessibilityViewIsModal
-      style={[
-        styles.sheet,
-        {
-          backgroundColor: colors['surface-1'],
-          paddingBottom: insets.bottom + space[3],
-        },
-        sheetShadow(colors),
-        dragStyle,
-      ]}
+      style={[style, dragStyle]}
     >
-      <GestureDetector gesture={pan}>
-        <View style={styles.handleRow}>
-          <View
-            style={[styles.handle, { backgroundColor: colors['border-input'] }]}
-          />
-        </View>
-      </GestureDetector>
-      {children}
+      {children(handle)}
     </Animated.View>
   );
 }
@@ -271,6 +274,8 @@ export function BottomSheet({
   error?: string | null;
   onDismiss: () => void;
 }) {
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const busy = !!action?.loading;
   return (
     <Overlay
@@ -279,17 +284,37 @@ export function BottomSheet({
       dismissible={!busy}
       placement="bottom"
     >
-      <SheetFrame onDismiss={onDismiss} dismissible={!busy}>
-        <View style={styles.sheetBody}>
-          <Text variant="title-2" accessibilityRole="header">
-            {title}
-          </Text>
-          <ScrollView style={styles.shrink} keyboardShouldPersistTaps="handled">
-            {children}
-          </ScrollView>
-          {error && <FormMessage tone="error" text={error} />}
-          {action && <Button size="L" fullWidth {...action} />}
-        </View>
+      <SheetFrame
+        onDismiss={onDismiss}
+        dismissible={!busy}
+        handleGap={space[3]}
+        style={[
+          styles.sheet,
+          {
+            backgroundColor: colors['surface-1'],
+            paddingBottom: insets.bottom + space[4],
+          },
+          sheetShadow(colors),
+        ]}
+      >
+        {(handle) => (
+          <>
+            {handle}
+            <View style={styles.sheetBody}>
+              <Text variant="title-2" accessibilityRole="header">
+                {title}
+              </Text>
+              <ScrollView
+                style={styles.shrink}
+                keyboardShouldPersistTaps="handled"
+              >
+                {children}
+              </ScrollView>
+              {error && <FormMessage tone="error" text={error} />}
+              {action && <Button size="L" fullWidth {...action} />}
+            </View>
+          </>
+        )}
       </SheetFrame>
     </Overlay>
   );
@@ -305,7 +330,8 @@ export type ActionItem = {
 
 export type ActionGroup = { title?: string; items: ActionItem[] };
 
-// C-09 ActionSheet: optional head, groups (a titled group is pick-one with a check), separate Cancel.
+// C-09 ActionSheet (board master): a floating card with optional head and groups (a titled
+// group is pick-one with a check), and Cancel in its own card below.
 export function ActionSheet({
   visible,
   title,
@@ -321,6 +347,12 @@ export function ActionSheet({
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const card = [
+    styles.actionCard,
+    { backgroundColor: colors['surface-1'] },
+    sheetShadow(colors),
+  ];
   return (
     <Overlay
       visible={visible}
@@ -328,49 +360,75 @@ export function ActionSheet({
       dismissible
       placement="bottom"
     >
-      <SheetFrame onDismiss={onDismiss} dismissible>
-        {(title || subtitle) && (
-          <View style={styles.actionHead}>
-            {title && (
-              <Text variant="headline" numberOfLines={1}>
-                {title}
-              </Text>
-            )}
-            {subtitle && (
-              <Text variant="label" color="text-secondary">
-                {subtitle}
-              </Text>
-            )}
-          </View>
-        )}
-        <ScrollView style={styles.shrink}>
-          {groups.map((g, gi) => (
-            <View
-              key={g.title ?? gi}
-              accessibilityRole={g.title ? 'radiogroup' : undefined}
-            >
-              {g.title && (
-                <View style={styles.groupTitle}>
-                  <Text variant="label" weight="600" color="text-tertiary">
-                    {g.title}
-                  </Text>
+      <SheetFrame
+        onDismiss={onDismiss}
+        dismissible
+        handleGap={space[1]}
+        style={[
+          styles.actionSheet,
+          { paddingBottom: insets.bottom + space[4] },
+        ]}
+      >
+        {(handle) => (
+          <>
+            <View style={[card, styles.actionGroups]}>
+              {handle}
+              {(title || subtitle) && (
+                <View style={styles.actionHead}>
+                  {title && (
+                    <Text variant="headline" numberOfLines={1}>
+                      {title}
+                    </Text>
+                  )}
+                  {subtitle && (
+                    <Text variant="label" color="text-secondary">
+                      {subtitle}
+                    </Text>
+                  )}
                 </View>
               )}
-              {g.items.map((item) => (
-                <ActionRow key={item.label} item={item} pickOne={!!g.title} />
-              ))}
+              <ScrollView style={styles.shrink}>
+                {groups.map((g, gi) => (
+                  <View
+                    key={g.title ?? gi}
+                    accessibilityRole={g.title ? 'radiogroup' : undefined}
+                  >
+                    {g.title && (
+                      <View style={styles.groupTitle}>
+                        <Text
+                          variant="label"
+                          weight="600"
+                          color="text-tertiary"
+                        >
+                          {g.title}
+                        </Text>
+                      </View>
+                    )}
+                    {g.items.map((item) => (
+                      <ActionRow
+                        key={item.label}
+                        item={item}
+                        pickOne={!!g.title}
+                      />
+                    ))}
+                  </View>
+                ))}
+              </ScrollView>
             </View>
-          ))}
-        </ScrollView>
-        <View style={[styles.cancelGap, { borderTopColor: colors.border }]}>
-          <ActionRow
-            item={{
-              label: t('ui.cancel'),
-              icon: undefined,
-              onPress: onDismiss,
-            }}
-          />
-        </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('ui.cancel')}
+              onPress={onDismiss}
+              style={({ pressed }) => [
+                card,
+                styles.actionCancel,
+                pressed && { backgroundColor: colors['surface-2'] },
+              ]}
+            >
+              <Text weight="600">{t('ui.cancel')}</Text>
+            </Pressable>
+          </>
+        )}
       </SheetFrame>
     </Overlay>
   );
@@ -380,7 +438,7 @@ function ActionRow({
   item,
   pickOne = false,
 }: {
-  item: Omit<ActionItem, 'icon'> & { icon?: IconComponent };
+  item: ActionItem;
   pickOne?: boolean;
 }) {
   const { colors } = useTheme();
@@ -396,13 +454,11 @@ function ActionRow({
         pressed && { backgroundColor: colors['overlay-pressed'] },
       ]}
     >
-      {item.icon && (
-        <Icon
-          as={item.icon}
-          size="lg"
-          color={item.destructive ? 'danger' : 'text-secondary'}
-        />
-      )}
+      <Icon
+        as={item.icon}
+        size="lg"
+        color={item.destructive ? 'danger' : 'text-secondary'}
+      />
       <Text color={tone} style={styles.flex}>
         {item.label}
       </Text>
@@ -426,7 +482,7 @@ const styles = StyleSheet.create({
     padding: space[4],
     gap: space[3],
   },
-  dialogText: { gap: space[2] },
+  dialogText: { gap: space[3] },
   rowActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -437,9 +493,10 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
+    paddingHorizontal: space[3],
   },
   handleRow: {
-    height: space[4],
+    height: space[2] * 2 + size.handle.height,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -448,8 +505,26 @@ const styles = StyleSheet.create({
     height: size.handle.height,
     borderRadius: radius.full,
   },
-  sheetBody: { paddingHorizontal: space[3], gap: space[3], flexShrink: 1 },
-  actionHead: { paddingHorizontal: space[3], paddingBottom: space[2] },
+  sheetBody: { gap: space[3], flexShrink: 1 },
+  // Board ActionSheet: outer padding 8 (24 at the bottom), cards radius 24, gap 8.
+  actionSheet: {
+    maxHeight: '90%',
+    paddingHorizontal: space[2],
+    paddingTop: space[2],
+    gap: space[2],
+  },
+  actionCard: { borderRadius: radius.sheet },
+  actionGroups: { paddingBottom: space[2], flexShrink: 1 },
+  actionHead: {
+    paddingHorizontal: space[3],
+    paddingVertical: space[2],
+    gap: space[1] / 2,
+  },
+  actionCancel: {
+    height: size.actionRow,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   groupTitle: {
     height: size.groupTitle,
     justifyContent: 'center',
@@ -462,5 +537,4 @@ const styles = StyleSheet.create({
     gap: space[3],
     paddingHorizontal: space[3],
   },
-  cancelGap: { borderTopWidth: size.hairline, marginTop: space[1] },
 });

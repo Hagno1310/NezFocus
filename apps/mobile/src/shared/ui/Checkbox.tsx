@@ -59,44 +59,42 @@ export function Checkbox({
       : 'on-primary';
 
   return (
-    <View style={styles.wrap}>
-      <Pressable
-        accessibilityRole="checkbox"
-        accessibilityLabel={label}
-        accessibilityState={{ checked: on, disabled: inactive }}
-        disabled={inactive}
-        onPress={() => onChange?.(!checked)}
-        style={styles.row}
-      >
-        <View style={styles.boxSlot}>
-          <View style={[styles.box, boxStyle]}>
-            {on && <Icon as={Check} size="sm" color={tick} />}
-          </View>
+    <Pressable
+      accessibilityRole="checkbox"
+      accessibilityLabel={label}
+      accessibilityState={{ checked: on, disabled: inactive }}
+      disabled={inactive}
+      onPress={() => onChange?.(!checked)}
+      style={styles.row}
+    >
+      <View style={styles.boxSlot}>
+        <View style={[styles.box, boxStyle]}>
+          {on && <Icon as={Check} size="sm" color={tick} />}
         </View>
-        <View style={styles.text}>
-          {children ?? (
-            <Text color={disabled ? 'text-tertiary' : 'text-primary'}>
-              {label}
-            </Text>
-          )}
-          {description && (
-            <Text variant="label" color="text-tertiary">
-              {description}
-            </Text>
-          )}
-        </View>
-      </Pressable>
-      {error && <FormMessage tone="error" text={error} />}
-    </View>
+      </View>
+      <View style={styles.text}>
+        {children ?? (
+          <Text color={disabled ? 'text-tertiary' : 'text-primary'}>
+            {label}
+          </Text>
+        )}
+        {description && (
+          <Text variant="label" color="text-tertiary">
+            {description}
+          </Text>
+        )}
+        {/* Board Checkbox › CB error sits in the text column, under the sentence. */}
+        {error && <FormMessage variant="field" tone="error" text={error} />}
+      </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: space[1] },
   row: {
     minHeight: size.touch,
     flexDirection: 'row',
-    gap: space[2],
+    gap: space[2] + space[1],
     alignItems: 'flex-start',
   },
   // Keeps the box on the first text line when the sentence wraps.
@@ -114,6 +112,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
+    gap: space[1],
     flex: 1,
     paddingVertical: (size.touch - typography.body.lineHeight) / 2,
   },

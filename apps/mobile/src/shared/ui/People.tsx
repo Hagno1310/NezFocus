@@ -68,8 +68,8 @@ export function Avatar({
         {deleted ? (
           <Icon
             as={UserRound}
-            size={s >= 40 ? 'xl' : 'sm'}
-            color="text-secondary"
+            size={s >= 56 ? 'xl' : s >= 40 ? 'md' : 'sm'}
+            color="text-tertiary"
           />
         ) : uri ? (
           <Image source={{ uri }} style={{ width: s, height: s }} />
@@ -131,7 +131,8 @@ export function PresenceDot({
         <Circle cx={c} cy={c} r={r} fill={tone} />
       )}
       {status === 'idle' && (
-        <Circle cx={c - r * 0.5} cy={c - r * 0.5} r={r * 0.65} fill={cut} />
+        // Board PresenceDot/idle: cut-out r = 0.6 r, centred 0.6 r up-left of the dot.
+        <Circle cx={c - r * 0.6} cy={c - r * 0.6} r={r * 0.6} fill={cut} />
       )}
       {status === 'dnd' && (
         <Rect

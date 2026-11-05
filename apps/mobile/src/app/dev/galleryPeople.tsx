@@ -1,3 +1,4 @@
+import { Clock3, Languages } from 'lucide-react-native';
 import { View } from 'react-native';
 import {
   Avatar,
@@ -83,6 +84,7 @@ function Settings() {
     <View>
       <SettingsRow
         label="Múi giờ"
+        icon={Clock3}
         value="GMT+7 · Hồ Chí Minh"
         onPress={() => {}}
       />
@@ -93,6 +95,7 @@ function Settings() {
       />
       <SettingsRow
         label="Ngôn ngữ"
+        icon={Languages}
         value="Tiếng Việt"
         description="Áp dụng cả khi offline"
         onPress={() => {}}

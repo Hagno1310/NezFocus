@@ -112,12 +112,11 @@ export function Button({
           )}
           {/* Loading keeps the label in layout (invisible) so the width does not change. */}
           <View style={[styles.content, loading && styles.hidden]}>
-            {icon && <Icon as={icon} size="md" color={fg} />}
+            {icon && <Icon as={icon} size="base" color={fg} />}
+            {/* Board C-01: every variant 16/600; the S row size (not drawn) keeps body-sm. */}
             <Text
-              // DESIGN.md: button-secondary and the S size use body-sm.
-              variant={
-                s === 'S' || variant === 'secondary' ? 'body-sm' : 'body'
-              }
+              variant={s === 'S' ? 'body-sm' : 'body'}
+              weight="600"
               color={fg}
               numberOfLines={2}
               style={styles.label}

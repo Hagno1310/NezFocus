@@ -22,7 +22,10 @@ export function ScreenHeader({
     <View
       style={[
         styles.bar,
-        { backgroundColor: colors.bg, paddingLeft: onBack ? 0 : space[3] },
+        {
+          backgroundColor: colors.bg,
+          paddingLeft: onBack ? space[1] : space[3],
+        },
       ]}
     >
       {onBack && (
@@ -49,6 +52,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingRight: space[1],
+    gap: space[1],
   },
   title: { flex: 1 },
 });

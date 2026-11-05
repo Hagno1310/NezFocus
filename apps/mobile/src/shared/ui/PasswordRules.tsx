@@ -50,7 +50,12 @@ export function PasswordRules({
             <View style={styles.iconBox}>
               <Icon as={l.icon} size="sm" color={l.tint} />
             </View>
-            <Text variant="label" color={l.text} style={styles.flex}>
+            <Text
+              variant="label"
+              weight="400"
+              color={l.text}
+              style={styles.flex}
+            >
               {label}
             </Text>
           </View>
@@ -62,7 +67,7 @@ export function PasswordRules({
 
 const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: space[1] },
-  item: { flexDirection: 'row', gap: space[1], paddingRight: space[2] },
+  item: { flexDirection: 'row', gap: size.iconGap, paddingRight: space[2] },
   iconBox: {
     height: typography.label.lineHeight,
     justifyContent: 'center',

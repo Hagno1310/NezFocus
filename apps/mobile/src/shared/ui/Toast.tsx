@@ -3,7 +3,7 @@ import { Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
-import { radius, size, space, useTheme } from '../theme';
+import { radius, space, touchSlop, typography, useTheme } from '../theme';
 import { Icon } from './Icon';
 import { Text } from './Text';
 import { fadeIn, fadeOut } from './transitions';
@@ -86,29 +86,20 @@ export function ToastHost() {
       style={[styles.host, { bottom }]}
     >
       {/* C-14: inverted surface, no shadow; every icon takes the text colour. */}
-      <View
-        style={[
-          styles.toast,
-          {
-            backgroundColor: colors['text-primary'],
-            paddingRight: toast.action ? space[1] : space[3],
-          },
-        ]}
-      >
-        {toast.icon && <Icon as={toast.icon} size="md" color="bg" />}
-        <Text variant="body-sm" color="bg" style={styles.message}>
+      <View style={[styles.toast, { backgroundColor: colors['text-primary'] }]}>
+        {toast.icon && <Icon as={toast.icon} size="base" color="bg" />}
+        <Text variant="body-sm" weight="500" color="bg" style={styles.message}>
           {toast.message}
         </Text>
         {toast.action && (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={toast.action.label}
-            hitSlop={space[1]}
+            hitSlop={touchSlop(typography['body-sm'].lineHeight)}
             onPress={() => {
               toast.action?.onPress();
               dispatch({ type: 'dismiss' });
             }}
-            style={styles.action}
           >
             <Text variant="body-sm" weight="600" color="primary-inverse">
               {toast.action.label}
@@ -122,19 +113,14 @@ export function ToastHost() {
 
 const styles = StyleSheet.create({
   host: { position: 'absolute', left: space[3], right: space[3] },
+  // Board Toast: padding 12 / 16, gap 12; the action is plain text with a 48 slop.
   toast: {
-    minHeight: size.touch,
     borderRadius: radius.button,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space[2],
-    paddingLeft: space[3],
-    paddingVertical: space[1],
+    gap: space[2] + space[1],
+    paddingHorizontal: space[3],
+    paddingVertical: space[2] + space[1],
   },
-  message: { flex: 1, paddingVertical: space[1] },
-  action: {
-    minHeight: size.buttonS,
-    justifyContent: 'center',
-    paddingHorizontal: space[2],
-  },
+  message: { flex: 1 },
 });

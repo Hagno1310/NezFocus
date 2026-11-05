@@ -1,8 +1,14 @@
 import { Eye, EyeOff, Search, X } from 'lucide-react-native';
 import { useState, type ComponentRef, type Ref } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
-import { radius, size, space, typography, useTheme } from '../theme';
+import {
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View,
+  type TextInputProps,
+} from 'react-native';
+import { radius, size, space, touchSlop, typography, useTheme } from '../theme';
 import { IconButton } from './Button';
 import { FormMessage } from './FormMessage';
 import { Icon, type IconComponent } from './Icon';
@@ -64,7 +70,12 @@ export function TextField({
   return (
     <View style={styles.wrap}>
       <View style={styles.labelRow}>
-        <Text variant="label" color="text-secondary" style={styles.flex}>
+        <Text
+          variant="label"
+          weight="600"
+          color="text-secondary"
+          style={styles.flex}
+        >
           {label}
         </Text>
         {counterMax !== undefined && (
@@ -86,7 +97,7 @@ export function TextField({
           multiline && styles.multiline,
         ]}
       >
-        {icon && <Icon as={icon} size="md" color="text-tertiary" />}
+        {icon && <Icon as={icon} size="base" color="text-tertiary" />}
         <TextInput
           ref={ref}
           accessibilityLabel={label}
@@ -132,9 +143,9 @@ export function TextField({
         )}
       </View>
       {error ? (
-        <FormMessage tone="error" text={error} />
+        <FormMessage variant="field" tone="error" text={error} />
       ) : helper ? (
-        <FormMessage tone="info" text={helper} />
+        <FormMessage variant="field" tone="info" text={helper} />
       ) : null}
     </View>
   );
@@ -151,7 +162,7 @@ export function SearchField({ value, onChangeText, ref, ...rest }: BaseProps) {
         { backgroundColor: colors['surface-2'] },
       ]}
     >
-      <Icon as={Search} size="md" color="text-tertiary" />
+      <Icon as={Search} size="base" color="text-tertiary" />
       <TextInput
         ref={ref}
         value={value}
@@ -162,21 +173,30 @@ export function SearchField({ value, onChangeText, ref, ...rest }: BaseProps) {
         selectionColor={colors.primary}
         returnKeyType="search"
         {...rest}
-        style={[styles.input, { color: colors['text-primary'] }]}
+        style={[
+          styles.input,
+          styles.searchInput,
+          { color: colors['text-primary'] },
+        ]}
       />
+      {/* An 18 icon in the 44 field; slop keeps the 48 touch target without growing the field. */}
       {!!value && (
-        <IconButton
-          icon={X}
-          label={t('ui.clear')}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('ui.clear')}
+          hitSlop={touchSlop(size.icon.base)}
           onPress={() => onChangeText?.('')}
-        />
+          style={styles.clear}
+        >
+          <Icon as={X} size="base" color="text-secondary" />
+        </Pressable>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: space[1] },
+  wrap: { gap: size.iconGap },
   labelRow: { flexDirection: 'row', alignItems: 'baseline', gap: space[2] },
   flex: { flex: 1 },
   field: {
@@ -187,7 +207,14 @@ const styles = StyleSheet.create({
     gap: space[2],
   },
   multiline: { alignItems: 'flex-start' },
-  search: { paddingLeft: space[3] },
+  // Board SearchField: 44 high, radius 12, padding 12.
+  search: {
+    minHeight: size.buttonM,
+    borderRadius: radius.button,
+    paddingHorizontal: space[2] + space[1],
+  },
+  clear: { alignItems: 'center', justifyContent: 'center' },
+  searchInput: { minHeight: size.buttonM },
   input: {
     ...typography.body,
     flex: 1,

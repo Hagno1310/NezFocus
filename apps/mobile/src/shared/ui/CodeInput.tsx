@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 import {
+  codeDigit,
   fontScale as textScale,
   radius,
   size,
@@ -11,8 +12,8 @@ import {
 import { CODE_LENGTH, nextCode } from './logic';
 import { Text } from './Text';
 
-// Digit size is capped so "8" still fits the 48-wide cell at 200% (C-24: cells stay on one row).
-const DIGIT_MAX_SCALE = 1.25;
+// Digit (26) is capped so "8" still fits the 48-wide cell at 200% (C-24: cells stay on one row).
+const DIGIT_MAX_SCALE = 1.5;
 
 // C-24. One hidden input takes the whole string (OS one-time-code suggestion, paste);
 // the six cells only display it. The parent clears `error` in `onChange`.
@@ -74,6 +75,7 @@ export function CodeInput({
           >
             <Text
               variant="stat"
+              style={codeDigit}
               allowFontScaling
               maxFontSizeMultiplier={DIGIT_MAX_SCALE}
               color={disabled ? 'text-tertiary' : 'text-primary'}

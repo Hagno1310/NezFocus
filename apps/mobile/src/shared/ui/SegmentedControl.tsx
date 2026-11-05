@@ -77,7 +77,7 @@ export function SegmentedControl<K extends string>({
                 !selected && { backgroundColor: colors['overlay-pressed'] },
             ]}
           >
-            {s.icon && <Icon as={s.icon} size="sm" color={fg} />}
+            {/* Board Segment/item: label, icon 14, then "· 3" in the label's style. */}
             <Text
               variant="body-sm"
               weight={selected ? '600' : '500'}
@@ -88,13 +88,15 @@ export function SegmentedControl<K extends string>({
             >
               {s.label}
             </Text>
+            {s.icon && <Icon as={s.icon} size="xs" color={fg} />}
             {s.count !== undefined && (
               <Text
-                variant="label"
+                variant="body-sm"
+                weight={selected ? '600' : '500'}
                 color={fg}
                 maxFontSizeMultiplier={fontScale.narrowLabel}
               >
-                {s.count}
+                {`· ${s.count}`}
               </Text>
             )}
             {tip === s.key && <Tooltip text={s.label} />}
@@ -185,9 +187,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: space[1],
-    paddingHorizontal: space[2],
-    borderRadius: radius.button - GAP,
+    gap: size.iconGap,
+    paddingHorizontal: space[3],
+    borderRadius: radius.input,
   },
   even: { flex: 1, minWidth: 0 },
   fit: { flexShrink: 0 },
@@ -195,10 +197,10 @@ const styles = StyleSheet.create({
   tri: { alignSelf: 'flex-start' },
   triItem: {
     width: size.tri.width,
-    height: size.tri.height - GAP * 2,
+    height: size.tri.height,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: radius.button - GAP,
+    borderRadius: radius.badge,
   },
   dim: { opacity: 0.4 },
 });

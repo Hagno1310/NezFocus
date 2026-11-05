@@ -113,9 +113,9 @@ export function Button({
           {/* Loading keeps the label in layout (invisible) so the width does not change. */}
           <View style={[styles.content, loading && styles.hidden]}>
             {icon && <Icon as={icon} size="base" color={fg} />}
-            {/* Board C-01: every variant 16/600; the S row size (not drawn) keeps body-sm. */}
+            {/* Board C-01: every variant and size (48 / 44 / 40) is 16/600. */}
             <Text
-              variant={s === 'S' ? 'body-sm' : 'body'}
+              variant="body"
               weight="600"
               color={fg}
               numberOfLines={2}

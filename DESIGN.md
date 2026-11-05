@@ -146,7 +146,7 @@ components:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.on-primary}"
     fontSize: "{typography.body.fontSize}"
-    fontWeight: "{typography.body.fontWeight}"
+    fontWeight: 600
     rounded: "{rounded.button}"
     height: 44px
     padding: 0 16px
@@ -154,10 +154,10 @@ components:
     backgroundColor: "{colors.bg}"
     textColor: "{colors.primary}"
     borderColor: "{colors.border-input}"
-    fontSize: "{typography.body-sm.fontSize}"
-    fontWeight: "{typography.body-sm.fontWeight}"
+    fontSize: "{typography.body.fontSize}"
+    fontWeight: 600
     rounded: "{rounded.button}"
-    height: 40px
+    height: 44px
     padding: 0 16px
   chip-status:
     textColor: "{colors.text-secondary}"
@@ -222,6 +222,8 @@ components:
   button-danger:
     backgroundColor: "{colors.danger}"
     textColor: "{colors.bg}"
+    fontSize: "{typography.body.fontSize}"
+    fontWeight: 600
     rounded: "{rounded.button}"
     height: 44px
   badge-count-neutral:
@@ -364,7 +366,7 @@ Bo góc theo vai trò, không một bán kính cho mọi thứ: `badge` 4 · `in
 
 Chỉ các component đã thực sự dựng trong bản xem trước (`Des/nezfocus.pen`). Đặc tả đủ trạng thái nằm ở `Docs/design/screens/00-components.md`.
 
-- **button-primary** — một hành động chính mỗi màn hình. Nhấn: nền tối đi 8%; vô hiệu: `surface-3` + `text-tertiary`; đang xử lý: giữ nguyên kích thước, thay nhãn bằng spinner nhỏ.
+- **button-primary** — một hành động chính mỗi màn hình. Nhãn `body` 16 đậm 600 ở mọi biến thể và mọi cỡ (L 48 · M 44 · S 40). Nhấn: nền tối đi 8%; vô hiệu: `surface-3` + `text-tertiary`; đang xử lý: giữ nguyên kích thước, thay nhãn bằng spinner nhỏ.
 - **button-secondary** — viền `border-input`, chữ `primary` (ví dụ "Vào" trên hàng phòng).
 - **chip-status** — trạng thái không bấm được (vai trò Host trong phiên học, quan hệ trong hồ sơ "Bạn bè" / "Đã chặn"): icon 14 + nhãn, viền mảnh.
 - **room-control / room-control-main** — nút tròn trong Study Room kèm nhãn chữ bên dưới; nút chính (Tạm dừng / Tiếp tục) đảo màu `text-primary`. Không dùng màu pha hay `primary` cho điều khiển trong phòng, để không trùng `phase-long`/`phase-focus`.
@@ -540,3 +542,4 @@ Thêm 01/11/2026 (SRS v1.10, CR-27, Mục 4.11; chế độ cập nhật của `
 | 02/11/2026 | "Dấu vết in xuống": biên nhận giữ thẻ người bị báo cáo, ghi thêm lời nhắn và ghi chú nội bộ | Duyệt frame W1: tình trạng mới (tin đã xóa, đang bị khóa tới …) là một phần của dấu vết; admin cần thấy lại đúng lời đã gửi |
 | 02/11/2026 | Bỏ màn chặn dưới 1024: trang trong khung giữ bố cục 1024 và cuộn ngang; trang đăng nhập co theo cửa sổ | Duyệt W4 (`ui-feature-spec-vi`): màn chặn khóa ngoài người phóng to trình duyệt (1366 phóng 150% = 910px) và việc gấp trên điện thoại; với 1–5 admin, không khóa ai ngoài quan trọng hơn bố cục ở màn hẹp. Co giãn xuống 768 / điện thoại để v1.x |
 | 02/11/2026 | Người dùng mới và người hoạt động tách thành hai biểu đồ nhỏ; người dùng mới thành cột đặc `primary` (bỏ đường đứt `text-secondary`) | W3 Q2 (`ui-feature-spec-vi`): 0–3 người mới / ngày so với ~130 người hoạt động — chung một thang thì đường người mới nằm sát đáy; hai trục là lỗi kinh điển |
+| 06/11/2026 | Nhãn nút (`button-primary`, `button-secondary`, `button-danger`) đậm 600, cỡ 16 ở mọi cỡ nút; `button-secondary` cao 44 như master (S 40 vẫn dùng trên hàng danh sách) | Dựng component P0-3b (#3): board `C-01 · Button` vẽ mọi biến thể và cả ba cỡ 48 / 44 / 40 bằng 16/600, token cũ ghi 400 (và 14 cho nút phụ) nên code theo token sẽ lệch board. Sửa token theo board, không đổi frame |

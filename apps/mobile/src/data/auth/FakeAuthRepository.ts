@@ -2,14 +2,10 @@ import { ErrorCode, type CurrentUser } from '@nezfocus/shared';
 import type { AuthRepository } from '../../domain/auth/AuthRepository';
 import { ApiError } from '../api/client';
 
-// EXPO_PUBLIC_FAKE=auth (docs/WORKFLOW.md 4.2). Sample data: docs/design/screens/README.md.
-// - an.nguyen@gmail.com is An's completed account; any other email is a new, incomplete account.
-// - OTP code 123456 is right; anything else is 40003 with attempts_left counting down from 4.
-// - Password for An: NezFocus@2026; anything else is 40102.
-// - binh.tran, chi.le, dung.pham are taken usernames.
-export const FAKE_CODE = '123456';
-export const FAKE_PASSWORD = 'NezFocus@2026';
-const AN_EMAIL = 'an.nguyen@gmail.com';
+// EXPO_PUBLIC_FAKE=auth (WORKFLOW 4.2): An + usernames from screens/README.md, email from spec 01.
+const AN_EMAIL = 'an.nguyen@gmail.com'; // completed account; any other email = new, incomplete
+export const FAKE_CODE = '123456'; // any other code → 40003, attempts_left counts down
+export const FAKE_PASSWORD = 'NezFocus@2026'; // An's only password; anything else → 40102
 const TAKEN = new Set(['an.nguyen', 'binh.tran', 'chi.le', 'dung.pham']);
 
 const fail = (status: number, code: number, extra = {}) =>
@@ -82,8 +78,9 @@ export function createFakeAuthRepository(delayMs = 300): AuthRepository {
     async completeAccount(body) {
       await wait();
       if (TAKEN.has(body.username)) throw fail(409, ErrorCode.Conflict);
+      if (!current) throw fail(401, ErrorCode.TokenInvalid); // needs a session, like the real API
       current = {
-        ...(current ?? userFor('new@example.com')),
+        ...current,
         username: body.username,
         display_name: body.display_name,
         account_completed: true,

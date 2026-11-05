@@ -12,8 +12,7 @@ export type SessionUser = { id: string; email: string };
 type SessionState = {
   status: SessionStatus;
   user: SessionUser | null;
-  // AUTH-04 AC5: what P0-4.3 needs for the banner, the prefilled email, and returning to the same
-  // screen when the same account signs back in. `navigationState` is React Navigation's root state.
+  // AUTH-04 AC5: banner reason, prefilled email, and the root navigation state to return to (P0-4.3).
   ended: {
     reason: EndReason;
     user: SessionUser | null;
@@ -23,8 +22,7 @@ type SessionState = {
   navigationState: unknown; // latest root state, kept so endSession can snapshot it
 };
 
-// Client state lives in vanilla Zustand stores under domain/ so data/ (ApiClient) can update them
-// without React; screens read them with `useStore(sessionStore, selector)` from 'zustand'.
+// Vanilla Zustand so data/ (ApiClient) can update it without React; screens use `useStore`.
 export const sessionStore = createStore<SessionState>(() => ({
   status: 'signed-out',
   user: null,
@@ -49,7 +47,8 @@ export const markAccountIncomplete = () => {
 };
 
 export const endSession = (reason: EndReason) => {
-  const { user, navigationState } = sessionStore.getState();
+  const { status, user, navigationState } = sessionStore.getState();
+  if (status === 'signed-out') return; // concurrent 401s: keep the first snapshot
   sessionStore.setState({
     status: 'signed-out',
     user: null,

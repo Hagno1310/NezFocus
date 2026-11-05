@@ -3,8 +3,7 @@ export type DrawerSide = 'left' | 'right';
 // Pan fails after this many px the wrong way, before the drawer's 5px activation offset.
 const WRONG_WAY_PX = 3;
 
-// Both Home drawers listen across the whole content, so each pan must only start in its own
-// direction or a left swipe would also grab the left drawer (SRS 3.1 › Cử chỉ).
+// Both drawers listen across the whole content, so each pan starts only in its own direction (SRS 3.1 › Cử chỉ).
 export function drawerGesture(
   side: DrawerSide,
   { leftOpen, rightOpen }: { leftOpen: boolean; rightOpen: boolean },

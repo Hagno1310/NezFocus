@@ -6,8 +6,7 @@ import type {
   SessionResponse,
 } from '@nezfocus/shared';
 
-// Implementations keep the returned tokens themselves; callers update sessionStore from the user.
-// Errors are ApiError (data/api) with SRS 11.1 codes, from the Fake too.
+// Implementations store the tokens; callers update sessionStore. Errors: ApiError with SRS 11.1 codes.
 export interface AuthRepository {
   sendEmailCode(email: string): Promise<EmailCodeSentResponse>;
   verifyEmailCode(email: string, code: string): Promise<EmailSignInResponse>;

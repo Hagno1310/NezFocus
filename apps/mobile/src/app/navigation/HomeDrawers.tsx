@@ -20,15 +20,14 @@ type RightParamList = { Channel: undefined };
 const Left = createDrawerNavigator<LeftParamList>();
 const Right = createDrawerNavigator<RightParamList>();
 
-type Open = { leftOpen: boolean; rightOpen: boolean };
+type DrawerOpenState = { leftOpen: boolean; rightOpen: boolean };
 
-function drawerOptions(side: DrawerSide, open: Open, width: number) {
+function drawerOptions(side: DrawerSide, open: DrawerOpenState, width: number) {
   const { swipeEnabled, failOffsetX } = drawerGesture(side, open);
   return {
     headerShown: false,
     drawerPosition: side,
-    // Swipes may start anywhere in the content (SRS 3.1 › Cử chỉ); Android gesture navigation
-    // keeps the screen-edge strip for system Back before the app ever sees the touch.
+    // SRS 3.1: swipe from anywhere in the content; Android keeps the edge strip for system Back itself.
     swipeEdgeWidth: width,
     swipeEnabled,
     // Gotcha: drawer types say RNGH 3 `PanGesture`, but it builds a legacy Gesture.Pan() at runtime.
@@ -70,7 +69,10 @@ function ChannelPlaceholder() {
 export function HomeDrawers() {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
-  const [open, setOpen] = useState<Open>({ leftOpen: false, rightOpen: false });
+  const [open, setOpen] = useState<DrawerOpenState>({
+    leftOpen: false,
+    rightOpen: false,
+  });
 
   return (
     <Left.Navigator

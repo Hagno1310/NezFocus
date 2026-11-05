@@ -132,8 +132,16 @@ function MainTabs() {
 export function RootNavigator() {
   const { t } = useTranslation();
   const status = useStore(sessionStore, (s) => s.status);
+  // Spec 01 › Phiên đăng nhập kết thúc: an ended session lands on S-AUTH-04, not Welcome.
+  const sessionEnded = useStore(sessionStore, (s) => s.ended !== null);
   const upgradeRequired = useStore(sessionStore, (s) => s.upgradeRequired);
   const dev = useDevActions();
+
+  const signInScreen = (
+    <Stack.Screen name="SignIn" options={{ title: t('screens.signIn') }}>
+      {() => <Placeholder title={t('screens.signIn')} actions={[dev.signIn]} />}
+    </Stack.Screen>
+  );
 
   if (upgradeRequired)
     return (
@@ -148,6 +156,7 @@ export function RootNavigator() {
     <Stack.Navigator>
       {status === 'signed-out' && (
         <Stack.Group>
+          {sessionEnded && signInScreen}
           <Stack.Screen
             name="Welcome"
             component={WelcomePlaceholder}
@@ -165,11 +174,7 @@ export function RootNavigator() {
           >
             {() => <Placeholder title={t('screens.enterCode')} />}
           </Stack.Screen>
-          <Stack.Screen name="SignIn" options={{ title: t('screens.signIn') }}>
-            {() => (
-              <Placeholder title={t('screens.signIn')} actions={[dev.signIn]} />
-            )}
-          </Stack.Screen>
+          {!sessionEnded && signInScreen}
           <Stack.Screen
             name="ForgotPassword"
             options={{ title: t('screens.forgotPassword') }}

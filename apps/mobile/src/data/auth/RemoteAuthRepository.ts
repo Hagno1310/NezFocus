@@ -8,12 +8,11 @@ import {
 } from '@nezfocus/shared';
 import type { AuthRepository } from '../../domain/auth/AuthRepository';
 import { api } from '../api';
+import type { Tokens } from '../api/client';
 import { getDeviceInfo } from './deviceInfo';
 import { secureTokenStore } from './secureTokenStore';
 
-const keep = async <T extends { access_token: string; refresh_token: string }>(
-  session: T,
-) => {
+const storeTokens = async <T extends Tokens>(session: T) => {
   await secureTokenStore.set({
     access_token: session.access_token,
     refresh_token: session.refresh_token,
@@ -31,7 +30,7 @@ export const remoteAuthRepository: AuthRepository = {
       }),
     ),
   verifyEmailCode: async (email, code) =>
-    keep(
+    storeTokens(
       EmailSignInResponse.parse(
         await api.request(AuthRoutes.verifyEmailCode, {
           method: 'POST',
@@ -41,7 +40,7 @@ export const remoteAuthRepository: AuthRepository = {
       ),
     ),
   login: async (email, password) =>
-    keep(
+    storeTokens(
       SessionResponse.parse(
         await api.request(AuthRoutes.login, {
           method: 'POST',

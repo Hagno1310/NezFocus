@@ -36,6 +36,19 @@ describe('sessionStore', () => {
     });
   });
 
+  it('a second endSession (concurrent 401s) keeps the first snapshot', () => {
+    signIn(an, { completed: true });
+    setNavigationState({ index: 0, routes: [{ name: 'Main' }] });
+    endSession('revoked');
+    setNavigationState({ index: 0, routes: [{ name: 'SignIn' }] });
+    endSession('expired');
+    expect(sessionStore.getState().ended).toMatchObject({
+      reason: 'revoked',
+      user: an,
+      navigationState: { routes: [{ name: 'Main' }] },
+    });
+  });
+
   it('signing in again clears the ended session; a plain sign-out leaves none', () => {
     signIn(an, { completed: true });
     endSession('expired');

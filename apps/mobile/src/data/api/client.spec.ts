@@ -194,6 +194,15 @@ describe('ApiClient', () => {
     expect(onUpgradeRequired).toHaveBeenCalled();
   });
 
+  it('42601 from the refresh call also opens Update required', async () => {
+    const { client, onUpgradeRequired } = setup({
+      refreshReply: () =>
+        json(426, { code: ErrorCode.UpgradeRequired, message: 'x' }),
+    });
+    await expect(client.request('/users/@me')).rejects.toBeInstanceOf(ApiError);
+    expect(onUpgradeRequired).toHaveBeenCalled();
+  });
+
   it('maps the error body to code, message, errors, retry_after', async () => {
     const { client } = setup({
       route: () =>

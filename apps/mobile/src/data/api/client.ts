@@ -97,8 +97,7 @@ export function createApiClient(deps: ApiClientDeps) {
     deps.onSessionEnded(reason);
   }
 
-  // REQ-AUTH-04: single-flight — concurrent 40100s share one refresh. Resolves to the new access
-  // token, or null once the session has ended.
+  // REQ-AUTH-04 single-flight: concurrent 40100s share one refresh; null = the session ended.
   function refresh(): Promise<string | null> {
     refreshing ??= (async () => {
       const current = await deps.tokens.get();
@@ -119,6 +118,7 @@ export function createApiClient(deps: ApiClientDeps) {
           await endSession(endReason(reason));
           return null;
         }
+        notify(result.error);
         throw result.error;
       }
       const pair = TokenPairResponse.parse(result.data);
@@ -143,8 +143,10 @@ export function createApiClient(deps: ApiClientDeps) {
     opts: RequestOptions = {},
   ): Promise<T> {
     const auth = opts.auth ?? true;
-    const used = auth ? (await deps.tokens.get())?.access_token : undefined;
-    let result = await send(path, opts, used);
+    const sentToken = auth
+      ? (await deps.tokens.get())?.access_token
+      : undefined;
+    let result = await send(path, opts, sentToken);
 
     if (!result.ok && auth && result.error.code === ErrorCode.TokenInvalid) {
       const failed = result.error;
@@ -155,7 +157,7 @@ export function createApiClient(deps: ApiClientDeps) {
       }
       // Another request may have refreshed while this one was in flight.
       const latest = (await deps.tokens.get())?.access_token;
-      const token = latest && latest !== used ? latest : await refresh();
+      const token = latest && latest !== sentToken ? latest : await refresh();
       if (!token) throw failed;
       result = await send(path, opts, token);
       if (!result.ok && result.error.code === ErrorCode.TokenInvalid) {

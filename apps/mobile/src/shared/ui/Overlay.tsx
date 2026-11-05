@@ -38,7 +38,7 @@ import { FormMessage } from './FormMessage';
 import { Icon, type IconComponent } from './Icon';
 import { dialogLayout } from './logic';
 import { Text } from './Text';
-import { fadeIn, fadeOut, sheetEnter, sheetExit } from './transitions';
+import { exitMs, fadeIn, fadeOut, sheetEnter, sheetExit } from './transitions';
 import { overlayClosed, overlayOpened } from './Toast';
 
 // Drag distance / speed that closes a sheet on release.
@@ -59,30 +59,30 @@ function Overlay({
   children: ReactNode;
 }) {
   const { colors } = useTheme();
-  // S-MOD-04: no toast over a sheet or dialog.
-  useEffect(() => {
-    if (!visible) return;
-    overlayOpened();
-    return overlayClosed;
-  }, [visible]);
-
-  // DESIGN.md › Motion (exit ease-in): the Modal outlives `visible` by one exit so the
-  // unmounting content can play its `exiting` animation.
+  // The Modal outlives `visible` by one exit so the unmounting content can animate out.
   const [lingering, setLingering] = useState(visible);
   if (visible && !lingering) setLingering(true);
   useEffect(() => {
     if (visible) return;
-    const id = setTimeout(() => setLingering(false), motion.short);
+    const id = setTimeout(() => setLingering(false), exitMs);
     return () => clearTimeout(id);
   }, [visible]);
+  const shown = visible || lingering;
+
+  // S-MOD-04: no toast over a sheet or dialog, including while it fades out.
+  useEffect(() => {
+    if (!shown) return;
+    overlayOpened();
+    return overlayClosed;
+  }, [shown]);
 
   const close = () => {
-    if (dismissible) onDismiss();
+    if (visible && dismissible) onDismiss();
   };
   return (
     <Modal
       transparent
-      visible={visible || lingering}
+      visible={shown}
       animationType="none"
       statusBarTranslucent
       navigationBarTranslucent
@@ -215,8 +215,7 @@ export function Dialog({
   );
 }
 
-// Drag-to-close wrapper shared by both sheets. `children` receives the handle so each sheet
-// places it inside its own card. `handleGap`: board distance from the handle to what follows.
+// `children` gets the drag handle so each sheet can place it inside its own card.
 function SheetFrame({
   onDismiss,
   dismissible,
@@ -226,12 +225,20 @@ function SheetFrame({
 }: {
   onDismiss: () => void;
   dismissible: boolean;
+  // Board distance from the handle to the content below it.
   handleGap: number;
   style: StyleProp<ViewStyle>;
   children: (handle: ReactNode) => ReactNode;
 }) {
   const { colors } = useTheme();
   const reduced = useReducedMotion();
+  const insets = useSafeAreaInsets();
+  // Render once with the fade exit before closing, so a dragged sheet does not snap back.
+  const [dragged, setDragged] = useState(false);
+  const dismissFromDrag = () => {
+    setDragged(true);
+    requestAnimationFrame(onDismiss);
+  };
   const drag = useSharedValue(0);
   const pan = usePanGesture({
     activeOffsetY: space[2],
@@ -243,7 +250,7 @@ function SheetFrame({
     onDeactivate: (e) => {
       'worklet';
       if (e.translationY > DISMISS_DISTANCE || e.velocityY > DISMISS_VELOCITY) {
-        scheduleOnRN(onDismiss);
+        scheduleOnRN(dismissFromDrag);
       } else {
         drag.set(withTiming(0, { duration: motion.short }));
       }
@@ -267,9 +274,9 @@ function SheetFrame({
   return (
     <Animated.View
       entering={sheetEnter(reduced)}
-      exiting={sheetExit(reduced)}
+      exiting={sheetExit(reduced, dragged)}
       accessibilityViewIsModal
-      style={[style, dragStyle]}
+      style={[style, { paddingBottom: insets.bottom + space[4] }, dragStyle]}
     >
       {children(handle)}
     </Animated.View>
@@ -293,7 +300,6 @@ export function BottomSheet({
   onDismiss: () => void;
 }) {
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const busy = !!action?.loading;
   return (
     <Overlay
@@ -308,10 +314,7 @@ export function BottomSheet({
         handleGap={space[3]}
         style={[
           styles.sheet,
-          {
-            backgroundColor: colors['surface-1'],
-            paddingBottom: insets.bottom + space[4],
-          },
+          { backgroundColor: colors['surface-1'] },
           sheetShadow(colors),
         ]}
       >
@@ -348,8 +351,7 @@ export type ActionItem = {
 
 export type ActionGroup = { title?: string; items: ActionItem[] };
 
-// C-09 ActionSheet (board master): a floating card with optional head and groups (a titled
-// group is pick-one with a check), and Cancel in its own card below.
+// C-09 ActionSheet (board master): floating card of groups, Cancel in its own card below.
 export function ActionSheet({
   visible,
   title,
@@ -365,7 +367,6 @@ export function ActionSheet({
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const card = [
     styles.actionCard,
     { backgroundColor: colors['surface-1'] },
@@ -382,10 +383,7 @@ export function ActionSheet({
         onDismiss={onDismiss}
         dismissible
         handleGap={space[1]}
-        style={[
-          styles.actionSheet,
-          { paddingBottom: insets.bottom + space[4] },
-        ]}
+        style={styles.actionSheet}
       >
         {(handle) => (
           <>

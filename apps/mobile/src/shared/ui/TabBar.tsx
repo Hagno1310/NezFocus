@@ -123,7 +123,6 @@ const styles = StyleSheet.create({
     gap: space[1] / 2,
   },
   pressed: { transform: [{ scale: PRESSED_SCALE }] },
-  // Board `Tab item` › Tab icon wrap (24): badge at (14, −4), dot at (19, −1).
-  badgeSpot: { position: 'absolute', left: 14, top: -4 },
-  dotSpot: { position: 'absolute', left: 19, top: -1 },
+  badgeSpot: { position: 'absolute', ...size.tabBadge },
+  dotSpot: { position: 'absolute', ...size.tabDot },
 });

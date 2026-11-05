@@ -153,7 +153,7 @@ Nhãn                                  12/200     ← label · bộ đếm (tùy
 
 ### Biến thể
 - `TextField`: nhãn luôn nằm **trên** ô (không làm nhãn nổi trong ô — nhãn nổi dễ cắt dấu tiếng Việt). Kiểu con: `password` (nút hiện/ẩn mật khẩu: mặc định ẩn `eye`; đang hiện thì chữ thật + icon `eye-off`), `multiline` (mô tả task, cao tối đa 5 dòng rồi cuộn).
-- `SearchField`: không nhãn; icon `search` trái, nút xóa `x` phải khi có chữ; nền `surface-2`, không viền. Tìm không phân biệt dấu (NFR-I18N-03) — placeholder ghi rõ: "Tìm thành viên, kênh…".
+- `SearchField`: không nhãn; icon `search` trái, nút xóa `x` phải khi có chữ; nền `surface-2`, không viền; cao 44, `rounded.button`, đệm ngang 12, icon 18 (theo master `SearchField`, 06/11/2026). Tìm không phân biệt dấu (NFR-I18N-03) — placeholder ghi rõ: "Tìm thành viên, kênh…".
 
 ### Trạng thái
 
@@ -658,7 +658,7 @@ Lưới 2 cột `ParticipantTile · video` (3:4), cách `space-2`; quá 6 ô th�
 └──────────────┴──────────────┘
 ```
 - Mục đang chọn: nền `surface-1`, chữ `text-primary` đậm 600; mục khác: chữ `text-secondary`. Không dùng `primary` hay màu pha.
-- Mục có thể kèm số đếm (`label`) hoặc icon 16.
+- Mục có thể kèm icon 14 và số đếm (theo master `Segment/item`, 06/11/2026): thứ tự nhãn · icon · "· 3", số đếm cùng kiểu chữ với nhãn (`body-sm`).
 - State: `default`, `pressed`, `disabled` (một mục), chữ dài cắt `…` (mỗi mục chia đều chiều ngang; mục có số đếm rộng theo chữ, các mục còn lại chia đều).
 - Cỡ chữ 200% (chốt 20/10/2026, area 09): nhãn chỉ phóng tối đa ×1.3 (như nhãn `TabBar`, `RoomControl`), vẫn một hàng, thiếu chỗ thì cắt `…`; nhấn giữ hiện tooltip nhãn đầy đủ.
 - Accessibility: `accessibilityRole="tablist"`, mỗi mục là `tab` có `selected`.
@@ -707,13 +707,14 @@ Bảng `C-21` trong Pencil có thêm `OS/StatusBar` — thanh trạng thái củ
 
 ```
   Nhãn                          Giá trị   ›     ← cao 56; master không có đệm ngang — nơi dùng đặt (thường 16)
+  [icon 22]                                      ← tùy chọn, `text-secondary` (master `SettingsRow` › `SR icon`, 06/11/2026)
   Dòng mô tả (tùy chọn)                          ← label, text-secondary
 ```
 
 | Biến thể | Bên phải |
 |---|---|
 | `value` | Giá trị `text-secondary` + `chevron-right`; chạm → màn hình hoặc sheet chọn |
-| `switch` | Công tắc (P2, đặc tả khi làm 07) |
+| `switch` | Công tắc `Switch` (master trên bảng C-34: 48 × 28, núm 22; bật `primary`, tắt `surface-3`, vô hiệu mờ 40%). Cả hàng là một vùng chạm, đọc màn hình là "switch" kèm trạng thái (06/11/2026) |
 | `nav` | Chỉ `chevron-right` |
 | `value · avatar` (22/10/2026, S-TASK-03) | Giá trị là **avatar chồng**: `Avatar` 24 viền 2 màu `bg`, lệch −6, tối đa 3 rồi "+N", kèm tên ("An, Bình") `text-secondary` + `chevron-right`. Pencil: Replace ô giá trị `Mk28S` của instance `SettingsRow` bằng cụm avatar |
 

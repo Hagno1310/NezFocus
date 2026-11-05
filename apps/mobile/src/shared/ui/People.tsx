@@ -68,6 +68,7 @@ export function Avatar({
         {deleted ? (
           <Icon
             as={UserRound}
+            // Board Avatar/deleted: 20 on the 40 avatar; scaled for the other sizes.
             size={s >= 56 ? 'xl' : s >= 40 ? 'md' : 'sm'}
             color="text-tertiary"
           />

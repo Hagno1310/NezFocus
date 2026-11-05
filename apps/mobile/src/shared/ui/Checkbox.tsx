@@ -59,38 +59,45 @@ export function Checkbox({
       : 'on-primary';
 
   return (
-    <Pressable
-      accessibilityRole="checkbox"
-      accessibilityLabel={label}
-      accessibilityState={{ checked: on, disabled: inactive }}
-      disabled={inactive}
-      onPress={() => onChange?.(!checked)}
-      style={styles.row}
-    >
-      <View style={styles.boxSlot}>
-        <View style={[styles.box, boxStyle]}>
-          {on && <Icon as={Check} size="sm" color={tick} />}
+    <View style={styles.wrap}>
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityLabel={label}
+        accessibilityState={{ checked: on, disabled: inactive }}
+        disabled={inactive}
+        onPress={() => onChange?.(!checked)}
+        style={styles.row}
+      >
+        <View style={styles.boxSlot}>
+          <View style={[styles.box, boxStyle]}>
+            {on && <Icon as={Check} size="sm" color={tick} />}
+          </View>
         </View>
-      </View>
-      <View style={styles.text}>
-        {children ?? (
-          <Text color={disabled ? 'text-tertiary' : 'text-primary'}>
-            {label}
-          </Text>
-        )}
-        {description && (
-          <Text variant="label" color="text-tertiary">
-            {description}
-          </Text>
-        )}
-        {/* Board Checkbox › CB error sits in the text column, under the sentence. */}
-        {error && <FormMessage variant="field" tone="error" text={error} />}
-      </View>
-    </Pressable>
+        <View style={styles.text}>
+          {children ?? (
+            <Text color={disabled ? 'text-tertiary' : 'text-primary'}>
+              {label}
+            </Text>
+          )}
+          {description && (
+            <Text variant="label" color="text-tertiary">
+              {description}
+            </Text>
+          )}
+        </View>
+      </Pressable>
+      {/* Board CB error sits under the sentence; outside the Pressable so TalkBack reads it. */}
+      {error && (
+        <View style={styles.errorIndent}>
+          <FormMessage variant="field" tone="error" text={error} />
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrap: { gap: space[1] },
   row: {
     minHeight: size.touch,
     flexDirection: 'row',
@@ -111,6 +118,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  errorIndent: { paddingLeft: size.checkbox + space[2] + space[1] },
   text: {
     gap: space[1],
     flex: 1,

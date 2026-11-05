@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 import {
+  disabledOpacity,
   fontScale,
   radius,
   size,
@@ -202,5 +203,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radius.badge,
   },
-  dim: { opacity: 0.4 },
+  dim: { opacity: disabledOpacity },
 });

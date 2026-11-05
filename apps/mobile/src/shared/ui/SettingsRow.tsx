@@ -36,6 +36,7 @@ export function SettingsRow({
   const stacked = fontScale >= textScale.large;
   const valueText = people ? people.map((p) => p.name).join(', ') : value;
   const fg = disabled ? 'text-tertiary' : 'text-primary';
+  const secondaryFg = disabled ? 'text-tertiary' : 'text-secondary';
 
   const valueNode = (people || value) && (
     <View style={[styles.value, !description && !stacked && styles.valueFill]}>
@@ -43,7 +44,7 @@ export function SettingsRow({
       {valueText && (
         <Text
           variant="body"
-          color={disabled ? 'text-tertiary' : 'text-secondary'}
+          color={secondaryFg}
           numberOfLines={1}
           style={styles.shrink}
         >
@@ -69,13 +70,7 @@ export function SettingsRow({
         pressed && { backgroundColor: colors['overlay-pressed'] },
       ]}
     >
-      {icon && (
-        <Icon
-          as={icon}
-          size="lg"
-          color={disabled ? 'text-tertiary' : 'text-secondary'}
-        />
-      )}
+      {icon && <Icon as={icon} size="lg" color={secondaryFg} />}
       {/* C-15: a one-line row keeps the label whole; the value takes the rest and truncates. */}
       <View
         style={[
@@ -87,11 +82,7 @@ export function SettingsRow({
           {label}
         </Text>
         {description && (
-          <Text
-            variant="label"
-            weight="400"
-            color={disabled ? 'text-tertiary' : 'text-secondary'}
-          >
+          <Text variant="label" weight="400" color={secondaryFg}>
             {description}
           </Text>
         )}

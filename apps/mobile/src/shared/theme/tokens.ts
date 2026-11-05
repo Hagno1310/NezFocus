@@ -181,9 +181,17 @@ export const size = {
   avatar: [20, 24, 32, 40, 56, 96] as const,
   presence: { sm: 10, lg: 14, cut: 2 },
   avatarStackOverlap: -6,
+  // DESIGN.md › Mascot: empty state 96–120; board EmptyState draws 112.
+  mascotEmpty: 112,
+  // Board Tab item › Tab icon wrap (24): badge and dot positions.
+  tabBadge: { left: 14, top: -4 },
+  tabDot: { left: 19, top: -1 },
 };
 
 // Slop that grows a visible height to the 48 touch target (00-components › Vùng chạm).
+// Boards dim a disabled control to 40% (C-20 TriState, C-34 Switch).
+export const disabledOpacity = 0.4;
+
 export const touchSlop = (visible: number) =>
   Math.max(0, (size.touch - visible) / 2);
 

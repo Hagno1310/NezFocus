@@ -1,8 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { radius, size, touchSlop, useTheme } from '../theme';
+import { disabledOpacity, radius, size, touchSlop, useTheme } from '../theme';
 
-// Board `C-34 · … · Switch`: track 48 × 28, knob 22 inset 3; on = primary, off = surface-3.
-// Drawn rather than RN Switch so it matches the board in both themes.
+// Drawn, not RN Switch, to match board C-34 (48 × 28, knob 22) in both themes.
 export function Switch({
   value,
   onChange,
@@ -60,5 +59,5 @@ const styles = StyleSheet.create({
     height: size.switch.knob,
     borderRadius: radius.full,
   },
-  dim: { opacity: 0.4 },
+  dim: { opacity: disabledOpacity },
 });

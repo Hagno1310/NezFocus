@@ -111,7 +111,6 @@ export function SystemBanner({
 
 // C-14 EmptyState: one centered block. `mascot` = Runtime neutral (DESIGN.md › Mascot); off = `inline`.
 // ponytail: static image (Des/assets, background removed) until the Rive runtime lands with Welcome.
-const MASCOT_SIZE = 112; // board EmptyState › ES mascot, inside DESIGN.md's 96–120
 export function EmptyState({
   title,
   body,
@@ -205,5 +204,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[3],
   },
   centerText: { textAlign: 'center' },
-  mascot: { width: MASCOT_SIZE, height: MASCOT_SIZE },
+  mascot: { width: size.mascotEmpty, height: size.mascotEmpty },
 });

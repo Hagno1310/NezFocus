@@ -11,6 +11,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { setNavigationState } from '../domain/session/sessionStore';
 import { fontFamily, useTheme, type Theme } from '../shared/theme';
+import { ToastHost } from '../shared/ui/Toast';
 import { linking } from './navigation/linking';
 import { RootNavigator } from './navigation/RootNavigator';
 
@@ -55,6 +56,7 @@ export default function App() {
           >
             <RootNavigator />
           </NavigationContainer>
+          <ToastHost />
           <StatusBar style={theme.scheme === 'dark' ? 'light' : 'dark'} />
         </QueryClientProvider>
       </SafeAreaProvider>

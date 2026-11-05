@@ -24,6 +24,7 @@ export const vi = {
     back: 'Quay lại',
     clear: 'Xóa',
     close: 'Đóng',
+    cancel: 'Hủy',
     showPassword: 'Hiện mật khẩu',
     hidePassword: 'Ẩn mật khẩu',
     codeInput: 'Mã xác nhận 6 số',
@@ -51,6 +52,8 @@ export const vi = {
     },
     badgeDot: 'Đang trong phiên học',
     deletedUser: 'Tài khoản đã xóa',
+    position: '{{index}} trên {{total}}',
+    tri: { deny: 'Từ chối', default: 'Mặc định', allow: 'Cho phép' },
   },
   placeholder: {
     note: 'Màn tạm — thay bằng màn thật ở ticket sau',

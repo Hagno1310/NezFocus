@@ -1,6 +1,6 @@
 import { Bell, LogIn, Mail, Plus, Settings } from 'lucide-react-native';
-import { useState, type ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   space,
@@ -14,36 +14,10 @@ import { Button, IconButton } from '../../shared/ui/Button';
 import { ScreenHeader } from '../../shared/ui/ScreenHeader';
 import { Text } from '../../shared/ui/Text';
 import { SearchField, TextField } from '../../shared/ui/TextField';
+import { FormSections } from './galleryForms';
+import { Caption, Row, Section, Stack } from './kit';
 
 // Dev-only board mirror (P0-3b): one section per C-NN board, sample data from docs/design/screens/README.md.
-
-export function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
-  const { colors } = useTheme();
-  return (
-    <View style={[styles.section, { borderColor: colors.border }]}>
-      <Text variant="title-2">{title}</Text>
-      {children}
-    </View>
-  );
-}
-
-export function Caption({ children }: { children: string }) {
-  return (
-    <Text variant="label" color="text-tertiary">
-      {children}
-    </Text>
-  );
-}
-
-export const Row = ({ children }: { children: ReactNode }) => (
-  <View style={styles.row}>{children}</View>
-);
 
 const preferences: ThemePreference[] = ['system', 'light', 'dark'];
 
@@ -89,14 +63,14 @@ function Buttons() {
   return (
     <>
       {variants.map((v) => (
-        <View key={v} style={styles.stack}>
+        <Stack key={v}>
           <Caption>{`${v} · default / disabled / loading`}</Caption>
           <Row>
             <Button variant={v} label="Bắt đầu" />
             <Button variant={v} label="Bắt đầu" disabled />
             <Button variant={v} label="Bắt đầu" loading />
           </Row>
-        </View>
+        </Stack>
       ))}
       <Caption>Kích cỡ L 48 · M 44 · S 40, kèm icon</Caption>
       <Row>
@@ -230,18 +204,11 @@ export function UiGallery() {
       <Section title="C-22 · ScreenHeader">
         <Headers />
       </Section>
+      <FormSections />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: space[3], gap: space[4] },
-  section: { gap: space[3], paddingTop: space[3], borderTopWidth: 1 },
-  stack: { gap: space[2] },
-  row: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: space[2],
-    alignItems: 'center',
-  },
 });

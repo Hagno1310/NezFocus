@@ -1,9 +1,10 @@
-import { Eye, EyeOff, Info, OctagonX, Search, X } from 'lucide-react-native';
+import { Eye, EyeOff, Search, X } from 'lucide-react-native';
 import { useState, type ComponentRef, type Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 import { radius, size, space, typography, useTheme } from '../theme';
 import { IconButton } from './Button';
+import { FormMessage } from './FormMessage';
 import { Icon, type IconComponent } from './Icon';
 import { Text } from './Text';
 
@@ -127,33 +128,10 @@ export function TextField({
         )}
       </View>
       {error ? (
-        <FieldNote tone="error" text={error} />
+        <FormMessage tone="error" text={error} />
       ) : helper ? (
-        <FieldNote tone="info" text={helper} />
+        <FormMessage tone="info" text={helper} />
       ) : null}
-    </View>
-  );
-}
-
-function FieldNote({ tone, text }: { tone: 'error' | 'info'; text: string }) {
-  const error = tone === 'error';
-  return (
-    <View
-      style={styles.note}
-      accessibilityLiveRegion={error ? 'polite' : 'none'}
-    >
-      <Icon
-        as={error ? OctagonX : Info}
-        size="sm"
-        color={error ? 'danger' : 'text-secondary'}
-      />
-      <Text
-        variant="label"
-        color={error ? 'danger' : 'text-secondary'}
-        style={styles.flex}
-      >
-        {text}
-      </Text>
     </View>
   );
 }
@@ -212,11 +190,5 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     minHeight: size.field - 2,
     textAlignVertical: 'center',
-  },
-  note: {
-    flexDirection: 'row',
-    gap: space[1],
-    alignItems: 'flex-start',
-    paddingTop: 2,
   },
 });

@@ -25,6 +25,7 @@ export const en: Strings = {
     back: 'Back',
     clear: 'Clear',
     close: 'Close',
+    cancel: 'Cancel',
     showPassword: 'Show password',
     hidePassword: 'Hide password',
     codeInput: '6-digit code',
@@ -52,6 +53,8 @@ export const en: Strings = {
     },
     badgeDot: 'In a study session',
     deletedUser: 'Deleted account',
+    position: '{{index}} of {{total}}',
+    tri: { deny: 'Deny', default: 'Default', allow: 'Allow' },
   },
   placeholder: {
     note: 'Placeholder — replaced by the real screen in a later ticket',

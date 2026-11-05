@@ -2,9 +2,12 @@ pnpm-lock.yaml
 packages/mascot/
 docs/SRS_NezFocus.md
 **/dist/
-# Chép nguyên từ repo thiết kế (định dạng design.md do gstack kiểm), không format lại
+# Tài liệu thiết kế (DESIGN.md theo định dạng gstack kiểm), không format lại
 DESIGN.md
 docs/design/
 docs/SRS_v1.2_change_notes.md
 docs/WEB_BACKPORT.md
 Des/
+
+# Skill chép từ mattpocock/skills (quản lý bằng skills-lock.json), không format lại
+.claude/

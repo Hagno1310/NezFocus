@@ -318,7 +318,7 @@ Không áp dụng: `error` (danh sách server/kênh luôn có cache từ `READY`
 | `pins` | Tin ghim mới nhất trên cùng, mỗi tin dạng `MessageBubble · pinned` (tên, giờ theo luật v1.9, 3 dòng đầu, cắt `…`). Mẫu của `#hoi-dap` (sửa 22/10/2026 — bản cũ trùng tin của `#thong-bao` mà lệch ngày; v1.9, CR-19 #3 cách ghi giờ): Bình "Hôm qua 21:05" "Lời giải đề giữa kỳ 2024 đã có ở #tai-lieu…", Chi "16/10/2026 19:40" công thức tọa độ cực, Tuấn "12/10/2026 08:30" "Hỏi bài nhớ ghi rõ chương và số câu…" | Nhấn giữ (có `MANAGE_MESSAGES`) → "Bỏ ghim" |
 | `pins-empty` | Chưa có tin ghim | "Chưa có tin nhắn được ghim" · "Người quản lý kênh nhấn giữ một tin nhắn để ghim." |
 | `loading` | `Skeleton` 8 hàng thành viên / 4 hàng task | |
-| `offline` | Dữ liệu cache, `Banner · offline`; "Thêm việc" vẫn bấm được (task vào outbox, 7.3.2); tìm việc chỉ trong dữ liệu đã lưu, dòng `label` dưới ô tìm | "Đang offline · chỉ tìm trong việc đã lưu trên máy" |
+| `offline` | Dữ liệu cache, `Banner · offline`; "Thêm việc" và ô trạng thái `disabled` (CR-28: outbox ở MVP chỉ cho tin nhắn); tìm việc chỉ trong dữ liệu đã lưu, dòng `label` dưới ô tìm | "Đang offline · chỉ tìm trong việc đã lưu trên máy" · dòng lý do "Cần kết nối mạng để thêm hoặc đổi việc" |
 
 Mục đang chọn của `SegmentedControl` nhớ theo kênh trong phiên mở app; mở lần đầu là "Thành viên". Kênh voice (S-HOME-08): chỉ 2 mục "Thành viên" · "Ghim", nhóm đầu là "TRONG PHÒNG — 9".
 
@@ -326,7 +326,7 @@ Không áp dụng: `error` (dữ liệu có từ cache / `READY`), `forbidden` (
 
 ### Tương tác
 - Chạm thành viên → S-HOME-10. Chạm task → S-TASK-02 (cùng màn hình với tab Việc; TabBar vẫn sáng Home; Back về kênh, drawer phải mở lại ở mục Việc). "Thêm việc" → S-TASK-03 `create`. Chạm tin ghim → đóng drawer, cuộn tới tin (tải `around=<id>` nếu chưa có).
-- (v1.9, CR-20 #2) Chạm ô trạng thái → công tắc Xong / mở lại như ở tab Việc (C-12), **gửi ngay**; "Hoàn tác" là một lần đổi mới về trạng thái trước lần chạm; `Toast` 6 giây, hàng đổi nhóm khi toast ẩn. Offline: Hoàn tác rút lần đổi khỏi outbox.
+- (v1.9, CR-20 #2) Chạm ô trạng thái → công tắc Xong / mở lại như ở tab Việc (C-12), **gửi ngay**; "Hoàn tác" là một lần đổi mới về trạng thái trước lần chạm; `Toast` 6 giây, hàng đổi nhóm khi toast ẩn. Offline: công tắc `disabled` (CR-28; "Hoàn tác rút lần đổi khỏi outbox" là v1.x).
 - (v1.9, CR-20 #10) Nhấn giữ hàng việc → `task-row-menu`. Hàng `pending` / lưu thất bại giữ luật cũ (nhấn giữ → "Xóa bản nháp").
 - Danh sách thành viên không tự xếp lại khi có người đổi online/offline lúc đang mở; xếp lại khi mở lại drawer. Dòng hoạt động cập nhật mỗi phút, không đếm giây.
 
@@ -413,9 +413,12 @@ Icon: "Sao chép link tin" `link`, "Gỡ xem trước link" `link-2-off`. "Sao c
 ```
 
 ### Trạng thái
+
+**(05/11/2026, CR-28) MVP-Đồ án chỉ gửi ảnh** (REQ-MSG-04): `picking` chỉ còn hai lựa chọn "Ảnh" (photo picker, chỉ ảnh) và "Chụp ảnh" — frame `S-HOME-05 · picking` đã sửa theo. Phần dành cho tệp không phải ảnh (ô tệp 64 × 160 và ô PDF trong `uploading` / `checking`, `unsupported` với tệp thực thi, lý do virus của `rejected`) là **v1.x**: frame giữ nguyên để dùng sau, bản MVP chỉ dựng phần ảnh (`rejected · fake-type`, `too-large`, `too-many` vẫn áp cho ảnh).
+
 | State | Khác gì | Chữ / hành động riêng |
 |---|---|---|
-| `picking` | `BottomSheet` 3 lựa chọn, icon + nhãn | "Ảnh & video" (photo picker, không cần quyền thư viện) · "Chụp ảnh" · "Tệp" |
+| `picking` | `BottomSheet` 2 lựa chọn, icon + nhãn (CR-28; v1.x thêm lại "Tệp" và video) | "Ảnh" (photo picker, không cần quyền thư viện) · "Chụp ảnh" |
 | `uploading` | Như bố cục: thumbnail ảnh là **ảnh xem trước** (cắt vuông) ngay từ lúc chọn; tệp đang tải phủ scrim + vòng tiến độ; tệp xong có dấu ✓ (tròn `primary` 24, `check` `on-primary`) ở giữa; (v1.9, CR-19 #9) ô tệp không phải ảnh rộng 160: icon loại + tên + cỡ ("de-giua…2025.pdf" · "1,8 MB"); ô có lớp phủ trạng thái thì chữ trạng thái thay tên + cỡ. Tải lên ngay khi chọn; ➤ bấm được — tin vào `pending` và chỉ gửi khi mọi tệp xong và qua kiểm tra | "Đang tải lên 1/3"; `x` trên thumbnail → hủy tệp đó; TalkBack: "de-giua-ky-2025.pdf, đang tải lên 62%" |
 | `checking` 🆕 | (v1.9, CR-19 #7) Ô tải xong chờ backend kiểm tra: lớp phủ + vòng xoay + "Đang kiểm tra" (ô PDF: chữ thay tên + cỡ; ô ảnh: chỉ vòng xoay). Frame: ảnh ✓, PDF `checking` | |
 | `upload-failed` | Thumbnail lỗi: icon `rotate-cw` thay vòng tiến độ, viền `danger` | "Tải lên thất bại · chạm để thử lại" (mạng rớt, MSG-04 AC4 — không tạo tin trùng) |
@@ -717,7 +720,7 @@ Không áp dụng: `empty`, `forbidden` (ai thấy tin thì xem được tệp),
 | S-HOME-01 | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ (+ `timed-out`; v1.9 bỏ `no-history`) | — không cần quyền |
 | S-HOME-02 | ✔ | ✔ | ✔ `no-server` | — cache từ `READY` | ✔ | ✔ `no-connect` | — |
 | S-HOME-03 | ✔ `members` | ✔ | ✔ `task-empty`, `pins-empty` | — cache | ✔ | — ai mở kênh cũng xem được | — |
-| S-HOME-04 | ✔ | — tức thì | — | toast | — thao tác vào outbox | ✔ `timed-out` | — |
+| S-HOME-04 | ✔ | — tức thì | — | toast | thao tác cần mạng `disabled` kèm lý do; "Gửi lại" / "Xóa tin nhắn" của tin lỗi vẫn được (CR-28) | ✔ `timed-out` | — |
 | S-HOME-05 | ✔ `uploading` | — (`checking` là bước kiểm tra) | — | ✔ `upload-failed`, `rejected` | ✔ (chữ riêng) | `+` ẩn | photo picker không cần; camera → S-MOD-05 |
 | S-HOME-06 | ✔ | — | — | ✔ `create-error`, `join-error` | ✔ | — | — |
 | S-HOME-07 | ✔ | ✔ | — | ✔ | ✔ | ✔ | — |

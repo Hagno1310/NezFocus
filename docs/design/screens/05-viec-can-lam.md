@@ -77,7 +77,7 @@ Tab Việc: mọi việc của mình từ mọi server, chi tiết một việc 
 | `loading` | Lần đầu, chưa có cache: 6 `Skeleton` hàng task | |
 | `empty` | Không có việc nào: `EmptyState · inline` (không mascot) giữa vùng danh sách; ẩn chip lọc và nút tìm | "Chưa có việc nào" · "Việc được giao cho bạn ở các kênh có Task Board sẽ hiện ở đây." |
 | `all-done` | Còn việc đã xong, không còn việc chưa xong; nút tìm vẫn có | "Xong hết rồi" · "Không còn việc nào cần làm." + nhóm "ĐÃ XONG — 3" (thu gọn) bên dưới |
-| `offline` | `Banner · offline` dưới tiêu đề; danh sách lần đồng bộ gần nhất; đổi trạng thái vẫn được (outbox), hàng đang chờ gửi mờ 50% | "Bạn đang offline" (STUDY-08 AC3) |
+| `offline` | `Banner · offline` dưới tiêu đề; danh sách lần đồng bộ gần nhất; ô trạng thái `disabled`, dòng lý do dưới banner (CR-28: outbox ở MVP chỉ cho tin nhắn) | "Bạn đang offline" (STUDY-08 AC3) · "Cần kết nối mạng để đổi trạng thái việc" |
 | `filter-server` | Chip "Nhóm đồ án Mobile" đang chọn: chỉ việc của server đó, dòng phụ bỏ tên server ("Quá hạn · 16/10 · 23:59", "05/11 · 23:59"). Hàng chip giữ ở đầu (thấy "Tất cả") nếu chip đang chọn vừa trọn trong màn; nếu không, cuộn vừa đủ để chip đang chọn hiện trọn, cách mép phải 16 (mẫu: chip "Nhóm đồ án Mobile" rộng 162 không vừa ở vị trí đầu, nên "Tất cả" bị cắt một phần) | |
 | `done-expanded` | Nhóm "ĐÃ XONG — 3" mở (mọi việc đã xong, không còn mốc 7 ngày — DEC-40 sửa): mới xong trên cùng, mỗi hàng ô tick xanh, tiêu đề gạch ngang, dòng phụ "Xong · 17/10 · 22:05 · Ôn thi Giải tích 2" / "Xong · 16/10 · 09:30 · Ôn thi Giải tích 2" / "Xong · 15/10 · 21:40 · Nhóm đồ án Mobile". 3 việc (≤ 50) nên không có "Xem thêm" — "Xem thêm" vẽ ở Edge `many-done` | |
 | `marked-done` | Vừa chạm ô trạng thái của "Đọc tài liệu chương 5": thay đổi **đã gửi ngay** (DEC-41 sửa); hàng gạch ngang, dòng phụ đổi thành "Xong · Hôm nay · 20:12 · Ôn thi Giải tích 2", `Toast` "Đã xong · Hoàn tác" (6 giây); hàng chuyển xuống nhóm Đã xong khi toast ẩn (luật hiển thị); badge tab Việc giảm (3 → 2) | "Hoàn tác" → gửi lại trạng thái trước lần chạm (Cần làm) |
@@ -157,7 +157,7 @@ Không áp dụng: `error` (luôn có cache; lỗi tải lại dùng `Toast` "Kh
 | `delete-confirm` | `Dialog` "Xóa việc này?" · "Việc sẽ biến mất khỏi Task Board và danh sách của mọi người." · "Hủy" / "Xóa" (`danger`). Nền là `creator` (có hàng Người tạo "Bình (bạn)"). Xóa xong, mọi mục hộp thư của việc biến mất (06) | |
 | `lost-access` | Mở từ push / deep link / mục hộp thư khi mình đã mất quyền xem kênh, việc đã bị xóa, hoặc Task Board của kênh đang tắt (v1.9, CR-17): thân màn hình là thông báo căn giữa + icon neo `eye-off` 56 | "Bạn không còn xem được việc này" · "Việc đã bị xóa, Task Board của kênh đang tắt, hoặc bạn không còn ở kênh chứa nó." · "Về Việc cần làm" |
 | `loading` | Mở từ push, chưa có cache: `Skeleton` tiêu đề + 3 hàng | |
-| `offline` | `Banner · offline`; đổi trạng thái / nhận việc vào outbox (hàng hoặc segmented mờ tới khi gửi xong, dòng "Sẽ gửi khi có mạng"). Chỉ thêm hai thứ đó: mọi phần khác giữ như `assignee` (Người tạo, "Rút khỏi việc này", Lịch sử, "Xem toàn bộ lịch sử"); màn dài hơn chiều cao khung nên phần cuối nằm dưới mép, cuộn được | |
+| `offline` | `Banner · offline`; segmented trạng thái, "Nhận việc" / "Rút khỏi việc này" `disabled` kèm dòng "Cần kết nối mạng để đổi việc" (CR-28). Chỉ thêm hai thứ đó: mọi phần khác giữ như `assignee` (Người tạo, "Rút khỏi việc này", Lịch sử, "Xem toàn bộ lịch sử"); màn dài hơn chiều cao khung nên phần cuối nằm dưới mép, cuộn được | |
 
 Không áp dụng: `empty` (việc luôn có tiêu đề), `os-permission`.
 
@@ -220,7 +220,7 @@ Không áp dụng: `loading` (form trống / dữ liệu có sẵn), `empty`, `f
 |---|---|---|---|---|---|---|---|
 | S-TASK-01 | ✔ | ✔ | ✔ (+ `all-done`, `search-empty`) | toast khi làm mới | ✔ | — chỉ hiện việc còn xem được | — |
 | S-TASK-02 | ✔ `assignee` | ✔ | — | toast | ✔ | ✔ `viewer` (ẩn thao tác), `lost-access` | — |
-| S-TASK-03 | ✔ `create` | — | — | ✔ `invalid-assignee` | outbox: lưu được, việc mới ở dạng chờ gửi | nút mở form ẩn | — |
+| S-TASK-03 | ✔ `create` | — | — | ✔ `invalid-assignee` | nút "Lưu" `disabled` kèm lý do (CR-28) | nút mở form ẩn | — |
 
 ## Edge case (rà ngày 19/10/2026; bổ sung v1.9 ngày 30/10/2026)
 
@@ -231,7 +231,7 @@ Frame nằm trong nhóm "05 · Việc cần làm — Edge case" (hàng ngay dư�
 |---|---|---|
 | `removed-while-viewing` — An đang xem "Nộp báo cáo giữa kỳ" thì Bình gỡ An | Màn chuyển sang dạng người chỉ xem: trạng thái thành hàng chữ, hàng Người tạo "Bình" giữ nguyên, nhóm Người được giao chỉ còn Bình, mất "Rút khỏi việc này", hiện "Tôi làm" ở đáy; Lịch sử thêm "Bình đã gỡ bạn · 20:12"; `Toast` "Bình đã gỡ bạn khỏi việc này". Việc rời danh sách của An ở lần làm mới tiếp theo; mục `task_assigned` của việc ở hộp thư giữ nguyên chữ (06) | STUDY-06, STUDY-08 AC2, NOTIF-05 |
 | `board-disabled` — Task Board bị tắt đúng lúc đang thêm việc | `FormMessage` trên nút: "Task Board của kênh này vừa bị tắt nên không thêm được việc."; chữ đã nhập giữ nguyên | STUDY-06 AC6 (40302) |
-| `offline-create-failed` — tạo việc lúc offline, có mạng lại thì lưu thất bại | Hàng việc trên Task Board: ô trạng thái rỗng, dòng phụ icon `circle-alert` + "Không lưu được · Thử lại" (`danger`); chạm → thử lại, nhấn giữ → "Xóa bản nháp". Đang ở trong Task Board của một kênh nên dòng phụ mọi hàng chỉ có hạn (có giờ), không ghi tên server | 7.3.2 (outbox), 40016 |
+| `offline-create-failed` · **v1.x** (CR-28: MVP không tạo việc khi offline) — tạo việc lúc offline, có mạng lại thì lưu thất bại | Hàng việc trên Task Board: ô trạng thái rỗng, dòng phụ icon `circle-alert` + "Không lưu được · Thử lại" (`danger`); chạm → thử lại, nhấn giữ → "Xóa bản nháp". Đang ở trong Task Board của một kênh nên dòng phụ mọi hàng chỉ có hạn (có giờ), không ghi tên server | 7.3.2 (outbox), 40016 |
 | `many-tasks` — 12 quá hạn, 8 hôm nay | Badge tab Việc "20" (> 99 → "99+"); nhóm "QUÁ HẠN — 12" dài, xếp **hạn tăng dần** ("Quá hạn · 11/10 · 23:59" trên cùng … "Quá hạn · 16/10 · 23:59", hàng cuối là việc quá hạn trong hôm nay "Quá hạn · Hôm nay · 19:00"; trùng hạn: tạo trước đứng trước — luật "Thứ tự trong nhóm"), danh sách cuộn; tiêu đề nhóm không dính | STUDY-08, C-13 |
 | `many-done` 🆕 — (v1.9) An đã xong 64 việc | Nhóm "ĐÃ XONG — 64" mở, frame vẽ ở vị trí đã cuộn tới **cuối trang đầu** (việc thứ 48–50, mới xong trên cùng nên đây là việc xong sớm nhất của trang): "Làm bài tập chương 1" (Xong · 03/10 · 21:30 · Ôn thi Giải tích 2), "Chép đề cương môn học" (Xong · 02/10 · 22:10 · Ôn thi Giải tích 2), "Cài đặt Android Studio" (Xong · 02/10 · 08:45 · Nhóm đồ án Mobile), rồi `Button · text` "Xem thêm" căn giữa. Chạm → tải 50 việc tiếp (Skeleton 2 hàng ở cuối). Offline: "Xem thêm" `disabled` (cache chỉ giữ trang đầu). Badge tab Việc không đổi (chỉ tính quá hạn + hôm nay) | DEC-40 sửa, STUDY-08, 7.3.2 |
 | `long-title-list` / `long-title-detail` — tiêu đề 200 ký tự, mô tả 2000 ký tự | Danh sách: tiêu đề tối đa 2 dòng, cắt `…`; dòng phụ một dòng, hạn có giờ, cắt tên server trước; giữ đủ các nhóm như `default` (SAU ĐÓ, KHÔNG HẠN, "ĐÃ XONG — 3" — nhóm cuối nằm ngay dưới mép, danh sách cuộn). Chi tiết: tiêu đề và mô tả hiện đủ, màn cuộn; có hàng Người tạo | STUDY-06 (≤ 200 / ≤ 2000) |
@@ -251,7 +251,7 @@ Frame nằm trong nhóm "05 · Việc cần làm — Edge case" (hàng ngay dư�
 | Hai người cùng bấm "Tôi làm" | Cả hai thành Assignee (không giới hạn, DEC-25); Lịch sử ghi hai dòng |
 | Qua mốc hạn / nửa đêm khi đang xem | Dòng phụ đổi thành "Quá hạn · Hôm nay · 21:00" (hoặc "Quá hạn · 17/10 · 23:59" sau nửa đêm) tại chỗ, badge tab Việc cập nhật; hàng chỉ đổi nhóm khi mở lại tab hoặc kéo làm mới |
 | Kênh đã có 500 việc chưa xong | "Thêm việc" vẫn hiện; lưu → `FormMessage` "Kênh đã có 500 việc chưa xong. Đánh dấu xong hoặc xóa bớt để thêm việc mới." (STUDY-06, `40018`) |
-| **Hoàn tác khi đang offline** (v1.9, CR-20 #2) | Lần đổi trạng thái còn nằm trong outbox thì "Hoàn tác" rút nó khỏi outbox: ô về như cũ, hàng hết mờ, không gửi gì, Lịch sử không có dòng nào. Lần đổi đã gửi xong thì Hoàn tác là một lần đổi mới (vào outbox nếu đang offline) |
+| **Hoàn tác khi đang offline** · **v1.x** (CR-28: offline không đổi trạng thái được) (v1.9, CR-20 #2) | Lần đổi trạng thái còn nằm trong outbox thì "Hoàn tác" rút nó khỏi outbox: ô về như cũ, hàng hết mờ, không gửi gì, Lịch sử không có dòng nào. Lần đổi đã gửi xong thì Hoàn tác là một lần đổi mới (vào outbox nếu đang offline) |
 | **Hoàn tác vướng 500 việc** (v1.9, CR-20 #2) | Hoàn tác (hoặc mở lại từ tick xanh / menu) về chưa xong khi kênh đã có 500 việc chưa xong → `40018`: ô về lại Xong, `Toast` "Kênh đã có 500 việc chưa xong. Đánh dấu xong hoặc xóa bớt rồi mở lại." (không có Hoàn tác) |
 | Hạn dưới 2 giờ khi tạo | Không gửi các lời nhắc đã lỡ mốc (24 giờ / 2 giờ trước hạn); chỉ gửi mốc còn ở tương lai |
 

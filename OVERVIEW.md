@@ -2,19 +2,20 @@
 
 Đọc file này trước tiên (người mới và AI agent). Nó trả lời: **cái gì ở đâu, code mới đặt vào đâu, phải theo luật nào**. Chi tiết nằm ở các file được link; khi mâu thuẫn, thứ tự ưu tiên là `docs/SRS_NezFocus.md` → `AGENTS.md` → file này.
 
-| Cần gì                                 | Đọc                                                                        |
-| -------------------------------------- | -------------------------------------------------------------------------- |
-| Chức năng phải làm (nguồn sự thật)     | [`docs/SRS_NezFocus.md`](docs/SRS_NezFocus.md) (v1.5)                      |
-| Luật bắt buộc cho người & agent        | [`AGENTS.md`](AGENTS.md), [`apps/mobile/AGENTS.md`](apps/mobile/AGENTS.md) |
-| Cài máy, chạy hằng ngày, xử lý sự cố   | [`docs/getting-started.md`](docs/getting-started.md)                       |
-| Kế hoạch, sprint, phân công, Epic Jira | [`docs/project-overview.md`](docs/project-overview.md)                     |
-| Thuật ngữ domain (dùng đúng tên)       | [`GLOSSARY.md`](GLOSSARY.md)                                               |
+| Cần gì                               | Đọc                                                                        |
+| ------------------------------------ | -------------------------------------------------------------------------- |
+| Chức năng phải làm (nguồn sự thật)   | [`docs/SRS_NezFocus.md`](docs/SRS_NezFocus.md) (v1.11)                     |
+| Luật bắt buộc cho người & agent      | [`AGENTS.md`](AGENTS.md), [`apps/mobile/AGENTS.md`](apps/mobile/AGENTS.md) |
+| Cài máy, chạy hằng ngày, xử lý sự cố | [`docs/getting-started.md`](docs/getting-started.md)                       |
+| Ai làm gì, thứ tự giai đoạn          | [`docs/task-breakdown.md`](docs/task-breakdown.md)                         |
+| Quy trình làm một task (skill, git)  | [`docs/WORKFLOW.md`](docs/WORKFLOW.md)                                     |
+| Thuật ngữ domain (dùng đúng tên)     | [`GLOSSARY.md`](GLOSSARY.md)                                               |
 
 ## 1. Dự án trong 30 giây
 
 - App **Android** học nhóm cho sinh viên: server/kênh/chat/voice kiểu Discord + lớp Study/Focus (Room Session, Solo Session, streak, Task Board).
 - Đồ án môn App, team 3 người, hạn nộp **15/12/2026**. Chỉ làm REQ có Release `MVP-Đồ án`.
-- Task trên Jira project **NF**: 1 issue = 1 REQ, AC dạng checkbox.
+- Task là GitHub Issues của repo; mỗi issue ghi REQ, AC dạng checkbox, màn hình + frame (`docs/agents/issue-tracker.md`).
 - Trạng thái hiện tại (17/10/2026): **base repo xong, chưa có feature nào**. Chỉ có module `health`, hai module mẫu `_example` và các folder `.gitkeep` chờ làm.
 
 ## 2. Tech stack
@@ -179,7 +180,7 @@ Build ra `dist/` (`pnpm install` tự build). Đang sửa shared thì chạy `pn
 - Mọi feature truy về `REQ-<NHÓM>-<SỐ>`. Trước khi code đọc REQ, AC (Given/When/Then), Release, Depends-on, DEC/ADR liên quan (SRS 0.2, 7.6).
 - SRS im lặng / mơ hồ / mâu thuẫn → **dừng, hỏi**, ghi câu trả lời vào SRS hoặc `docs/`.
 - Xong = từng AC (kể cả case âm) có test hoặc kiểm tra tay. Báo cáo cuối liệt kê AC đạt / chưa đạt.
-- REQ có label `de-xuat-hoan` trên Jira → hỏi trước khi làm. Giao diện theo `DESIGN.md` (root).
+- REQ có label `de-xuat-hoan` trên GitHub Issues → hỏi trước khi làm. Giao diện theo `DESIGN.md` (root).
 
 ### Đặt tên
 
@@ -204,10 +205,10 @@ Build ra `dist/` (`pnpm install` tự build). Đang sửa shared thì chạy `pn
 
 ### Git
 
-- Branch: `feat/NF-12-<mo-ta-ngan>` (`fix/`, `refactor/`…).
-- Commit: Conventional Commits có key Jira — `feat(backend): NF-12 register account`. Scope hợp lệ: `mobile backend shared mascot infra docs ci deps`.
-- PR vào `main`: CI xanh + 1 approve, Squash and merge, mô tả liệt kê AC đạt/chưa.
-- **AI agent**: không `git commit/push/rebase/reset --hard`; để thay đổi chưa commit, kết thúc bằng tóm tắt + gợi ý commit message.
+- Branch: `feat/<số issue>-<mo-ta-ngan>` (`fix/`, `refactor/`…).
+- Commit: Conventional Commits, footer `Refs #<số>`, không có dòng `Co-Authored-By`. Scope hợp lệ: `mobile backend shared mascot infra docs ci deps`.
+- PR vào `main`: `Closes #<số>`, CI xanh + người kia approve, Squash and merge, mô tả liệt kê AC đạt/chưa.
+- **AI agent**: được commit và merge giữa các branch trên máy; không push, không merge vào `main`, không `reset --hard` / `rebase` branch đã push (chi tiết `AGENTS.md` mục Git).
 
 ## 8. Tra SRS nhanh
 
@@ -250,10 +251,10 @@ Chạy ở root repo. Cài đặt lần đầu và xử lý sự cố: [`docs/ge
 
 ## 10. Checklist cho AI agent khi nhận task
 
-1. Lấy REQ-ID từ issue Jira NF → đọc REQ + AC + Depends-on trong SRS (mục 8 ở trên).
+1. Đọc issue (`gh issue view <số>`) → đọc REQ + AC + Depends-on trong SRS (mục 8 ở trên).
 2. Kiểm tra Release là `MVP-Đồ án`; không phải → hỏi.
 3. Copy module mẫu (`_example`) của backend và/hoặc mobile, đặt vào đúng bounded context.
 4. Code theo luồng mục 4 / mục 5; tên theo `GLOSSARY.md`; schema dùng chung đưa vào `packages/shared`.
 5. Viết test cho từng AC, case âm dùng đúng `ErrorCode`.
 6. Chạy `pnpm lint && pnpm typecheck && pnpm test` (thêm e2e nếu chạm DB).
-7. Không commit. Báo cáo: REQ-ID, AC đạt/chưa đạt, file đã đổi, gợi ý commit message.
+7. Commit trên branch của ticket (không push). Báo cáo: REQ-ID, AC đạt/chưa đạt, file đã đổi. Quy trình đầy đủ: `docs/WORKFLOW.md`.

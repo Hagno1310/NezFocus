@@ -32,16 +32,16 @@ Tài liệu cho **mọi thành viên NezFocus**, nhất là người mới vào.
 
 Đọc lướt để biết các tên gọi bên dưới là gì.
 
-| Tên            | Là gì                                                                                                     |
-| -------------- | --------------------------------------------------------------------------------------------------------- |
-| **pnpm**       | Trình quản lý package (thay npm). Repo là _monorepo_: nhiều project (app, backend, shared) trong một repo |
-| **Docker**     | Chạy Postgres, Redis, S3 trên máy bạn mà không cần cài từng thứ                                           |
-| **Backend**    | API NestJS chạy trên máy bạn ở cổng 3000. Điện thoại gọi tới đây                                          |
-| **Metro**      | Server đóng gói code JS của app. Điện thoại tải code từ Metro mỗi lần mở app                              |
-| **Dev client** | File APK riêng của NezFocus, cài lên điện thoại một lần, dùng để chạy code đang phát triển                |
-| **Expo Go**    | App có sẵn trên Google Play, dùng thay dev client khi chưa có APK (thiếu nhiều tính năng native)          |
-| **EAS**        | Dịch vụ build APK trên cloud của Expo, nhờ đó không ai cần cài Android Studio                             |
-| **Jira (NF)**  | Nơi giao task. Mỗi issue là một REQ trong SRS                                                             |
+| Tên               | Là gì                                                                                                     |
+| ----------------- | --------------------------------------------------------------------------------------------------------- |
+| **pnpm**          | Trình quản lý package (thay npm). Repo là _monorepo_: nhiều project (app, backend, shared) trong một repo |
+| **Docker**        | Chạy Postgres, Redis, S3 trên máy bạn mà không cần cài từng thứ                                           |
+| **Backend**       | API NestJS chạy trên máy bạn ở cổng 3000. Điện thoại gọi tới đây                                          |
+| **Metro**         | Server đóng gói code JS của app. Điện thoại tải code từ Metro mỗi lần mở app                              |
+| **Dev client**    | File APK riêng của NezFocus, cài lên điện thoại một lần, dùng để chạy code đang phát triển                |
+| **Expo Go**       | App có sẵn trên Google Play, dùng thay dev client khi chưa có APK (thiếu nhiều tính năng native)          |
+| **EAS**           | Dịch vụ build APK trên cloud của Expo, nhờ đó không ai cần cài Android Studio                             |
+| **GitHub Issues** | Nơi giao task. Mỗi issue là một task trong `docs/task-breakdown.md`, ghi REQ + AC + màn hình              |
 
 Bức tranh khi chạy:
 
@@ -63,11 +63,10 @@ Mỗi thành viên làm **một lần**. Cuối mục này, app trên điện th
 
 Nhắn trưởng nhóm để được mời vào:
 
-| Nơi                                 | Để làm gì                        |
-| ----------------------------------- | -------------------------------- |
-| GitHub `Hagno1310/NezFocus` (Write) | Clone, push branch, mở PR        |
-| Jira `nez-focus.atlassian.net`      | Nhận và cập nhật task            |
-| Link tải APK dev client             | Cài app lên điện thoại (mục 1.5) |
+| Nơi                                 | Để làm gì                             |
+| ----------------------------------- | ------------------------------------- |
+| GitHub `Hagno1310/NezFocus` (Write) | Clone, push branch, mở PR, nhận issue |
+| Link tải APK dev client             | Cài app lên điện thoại (mục 1.5)      |
 
 ### 1.2. Cài công cụ
 
@@ -169,39 +168,39 @@ Cần chạy **cả ba**, mỗi lệnh một terminal, ở thư mục gốc repo
 
 ## 3. Quy trình làm một task
 
+Bản đầy đủ (skill, hợp đồng, dữ liệu giả, thiết kế, chạy agent song song): [`WORKFLOW.md`](WORKFLOW.md). Tóm tắt:
+
 ```text
-Jira: chọn issue → In Progress → branch → code + test từng AC → lint/typecheck/test → PR → review → Squash merge → Jira: Done
+GitHub Issue sẵn sàng → nhận (assign) → branch → code + test từng AC → lint/typecheck/test → thử trên điện thoại → push → PR (Closes #số) → review → Squash merge (issue tự đóng)
 ```
 
 ### 3.1. Nhận việc
 
-1. Mở [board Jira](https://nez-focus.atlassian.net/jira/software/projects/NF/boards/3).
-2. Chọn issue của mình trong sprint hiện tại. Chỉ nhận issue **không còn bị chặn**: mọi issue ở mục _"is blocked by"_ đã Done.
-3. Kéo issue sang **In Progress**.
-4. Đọc REQ tương ứng trong SRS và các **Acceptance Criteria** (AC) dạng checkbox trong issue. SRS chưa rõ hoặc mâu thuẫn → hỏi nhóm, đừng tự đoán.
+1. Mở tab **Issues** của repo, lọc nhãn mảng của mình (`mang-a` / `mang-b`) và giai đoạn đang làm.
+2. Chỉ nhận issue **sẵn sàng**: mọi issue chặn nó (mục _Blocked by_) đã đóng. Nhận bằng nút Assign hoặc `gh issue edit <số> --add-assignee @me`.
+3. Đọc REQ tương ứng trong SRS, các **Acceptance Criteria** (AC) trong issue, spec màn hình và frame ghi trong issue. SRS hoặc spec chưa rõ → hỏi nhóm, đừng tự đoán.
 
 ### 3.2. Tạo branch và code
 
 ```powershell
 git switch main
 git pull
-git switch -c feat/NF-12-dang-ky-tai-khoan
+git switch -c feat/12-dang-ky-tai-khoan
 ```
 
-- Tên branch: `<loại>/NF-<số>-<mo-ta-ngan>`, ví dụ `feat/NF-21-tao-server`, `fix/NF-40-fanout-sai-quyen`.
+- Tên branch: `<loại>/<số issue>-<mo-ta-ngan>`, ví dụ `feat/21-tao-server`, `fix/40-fanout-sai-quyen`.
 - Bắt đầu bằng cách copy module mẫu (`_example`) của backend và/hoặc app. Các bước cụ thể: [`OVERVIEW.md`](../OVERVIEW.md) mục 4 và 5.
 - Viết test cho **từng AC**, kể cả case âm (dùng đúng mã lỗi SRS 11.1).
 
 ### 3.3. Commit
 
-Theo [Conventional Commits](https://www.conventionalcommits.org), có key Jira để Jira tự liên kết:
+Theo [Conventional Commits](https://www.conventionalcommits.org), footer trỏ tới issue. Không thêm dòng `Co-Authored-By`.
 
 ```text
-feat(backend): NF-12 register account with email verification
-fix(mobile): NF-39 typing indicator not clearing after 10s
-```
+feat(backend): register account with email verification
 
-Cấu trúc: `<loại>(<scope>): NF-<số> <mô tả>`.
+Refs #12
+```
 
 | Loại                   | Dùng khi                        |
 | ---------------------- | ------------------------------- |
@@ -226,12 +225,10 @@ Cả ba phải pass. CI chạy lại đúng các bước này, cộng e2e test v
 
 ### 3.5. Pull Request
 
-1. `git push -u origin feat/NF-12-dang-ky-tai-khoan`, mở PR vào `main`.
-2. Tiêu đề PR giống commit chính, ví dụ `feat(backend): NF-12 register account`.
-3. Mô tả liệt kê **AC nào đạt, AC nào chưa**.
-4. Cần **CI xanh** và **ít nhất 1 thành viên khác approve**.
-5. Merge bằng **Squash and merge**, rồi xóa branch.
-6. Trên Jira: tích các AC đã đạt, chuyển issue sang **Done**.
+1. `git push -u origin feat/12-dang-ky-tai-khoan`, mở PR vào `main`.
+2. Tiêu đề PR giống commit chính. Mô tả có `Closes #12`, liệt kê **AC nào đạt, AC nào chưa**, kèm ảnh màn hình cạnh frame.
+3. Cần **CI xanh** và **người kia approve**.
+4. Merge bằng **Squash and merge**, rồi xóa branch. Issue tự đóng.
 
 ---
 
@@ -389,8 +386,7 @@ Build mất khoảng 10–20 phút, chưa tính hàng đợi của tài khoản 
 
 ### 9.4. Cấp quyền cho thành viên mới
 
-| Nơi                            | Việc cần làm                                       |
-| ------------------------------ | -------------------------------------------------- |
-| GitHub `Hagno1310/NezFocus`    | Settings → Collaborators → mời với quyền **Write** |
-| Jira `nez-focus.atlassian.net` | Settings → User management → Invite users          |
-| Expo (tùy chọn)                | Chỉ khi thành viên cần tự build app                |
+| Nơi                         | Việc cần làm                                       |
+| --------------------------- | -------------------------------------------------- |
+| GitHub `Hagno1310/NezFocus` | Settings → Collaborators → mời với quyền **Write** |
+| Expo (tùy chọn)             | Chỉ khi thành viên cần tự build app                |

@@ -6,13 +6,19 @@ NezFocus: app mobile học nhóm cho sinh viên (đồ án môn App). pnpm monor
 - `apps/backend` — NestJS modular monolith, Drizzle + PostgreSQL.
 - `packages/shared` — code dùng chung app ↔ backend (zod schema, permission calculator, mã lỗi).
 - `packages/mascot` — mascot Runtime (Rive CLI). Quy tắc riêng: `packages/mascot/AGENTS.md`.
-- `docs/SRS_NezFocus.md` — **SRS, nguồn sự thật duy nhất** về chức năng. Bản trong repo (**v1.10**, CR-27, 01/11/2026) là bản gốc hiện hành: v1.3 (review 16/10) gộp với các quyết định khi thiết kế màn hình (app mobile và web quản trị). Nội dung từng CR: `docs/SRS_v1.2_change_notes.md`. Còn mở: các REQ đề xuất hoãn (label `de-xuat-hoan` trên Jira).
+- `docs/SRS_NezFocus.md` — **SRS, nguồn sự thật duy nhất** về chức năng (**v1.11**, CR-28, 05/11/2026). Nội dung từng CR: `docs/SRS_v1.2_change_notes.md`. Còn mở: các REQ đề xuất hoãn (label `de-xuat-hoan` trên GitHub Issues).
 - `DESIGN.md` — **nguồn sự thật về giao diện** (màu, chữ, spacing, motion, mascot). Đặc tả từng màn hình (app và web quản trị): `docs/design/screens/` (mục lục ở `README.md` trong đó). Bản vẽ: `Des/nezfocus.pen` (mở bằng pen.dev; ảnh mascot ở `Des/assets/`, logo và icon gốc ở `Des/brand/`). Đọc trước khi làm UI; hỏi người dùng trước khi đi chệch.
-- `DESIGN.md`, `docs/SRS_NezFocus.md`, `docs/SRS_v1.2_change_notes.md`, `docs/WEB_BACKPORT.md`, `docs/design/` và `Des/` được **chép nguyên từ thư mục thiết kế**: không sửa ở đây, sửa bên đó rồi chép sang.
+- Từ 05/11/2026 **bản gốc** của SRS, change notes, `GLOSSARY.md`, `DESIGN.md`, `docs/design/` và `Des/` nằm trong repo này (thư mục thiết kế cũ chỉ còn để tham khảo). Sửa qua PR theo thứ tự SRS → spec → frame → code (`docs/WORKFLOW.md` mục 8). `Des/nezfocus.pen` chỉ một người sửa. `DESIGN.md` giữ định dạng do gstack kiểm; `.prettierignore` không format các file này.
 
 Bản đồ repo (cây thư mục, luồng code, chỗ đặt file mới, tra SRS nhanh): `OVERVIEW.md`. Đọc trước khi tìm file.
 
 Lệnh: xem `scripts` trong `package.json` ở root và từng package.
+
+## Quy trình
+
+Hai người, chia theo mảng: ai làm gì ở `docs/task-breakdown.md`; làm một việc từ ticket tới merge ở `docs/WORKFLOW.md`. Đọc cả hai trước khi nhận ticket. Chỉ sửa module backend và `features/` thuộc mảng của ticket, trừ khi ticket ghi khác.
+
+**Skill:** chỉ dùng bộ Matt Pocock trong `.claude/skills/` (phiên bản ở `skills-lock.json`). Không dùng bộ skill khác có thể đang cài trên máy (vd `agent-skills:*`), để hai người chạy cùng một quy trình. Luật dự án thắng mặc định của skill: SRS → file này → `docs/WORKFLOW.md` → skill. Ví dụ: skill bảo commit thì vẫn theo mục Git dưới đây; skill không biết về thiết kế thì vẫn làm `docs/WORKFLOW.md` mục 7.
 
 ## Bám SRS
 
@@ -47,7 +53,23 @@ Viết comment một dòng, chỉ để nói **vì sao**: ràng buộc từ SRS 
 
 ## Git
 
-Task nằm trên Jira project **NF** (https://nez-focus.atlassian.net/jira/software/projects/NF/boards/3/backlog): 1 issue = 1 REQ, AC dạng checkbox. Branch `feat/NF-12-req-auth-01-dang-ky`, commit message có key Jira để tự liên kết (`feat(backend): NF-12 register account`).
+Task là GitHub Issues của repo (quy ước nhãn, body, branch: `docs/agents/issue-tracker.md`). Branch `<loại>/<số issue>-<mo-ta-ngan>`, vd `feat/12-dang-ky-tai-khoan`. PR có `Closes #<số>`.
 
-Người dùng tự commit. Agent để thay đổi ở trạng thái chưa commit, kết thúc bằng tóm tắt thay đổi và gợi ý commit message dạng Conventional Commits (`feat(mobile): …`; scope: mobile, backend, shared, mascot, infra, docs, ci, deps).
-Không chạy `git commit`, `git push`, `git rebase`, `git reset --hard` hay sửa lịch sử.
+- Agent **được** `git commit` và merge giữa các branch **trên máy** (branch ticket, integration branch của `/implement-spec`). Trên GitHub, agent được gán issue cho người đang làm (`gh issue edit --add-assignee`), bình luận / tích AC trên issue, và **mở PR khi người bảo** (sau khi người đã push).
+- Agent **không** push, không merge vào `main`, không approve PR, không `reset --hard`, không `rebase` branch đã push, không sửa lịch sử. Push và merge vào `main` là việc của người.
+- Commit message: Conventional Commits (`feat(mobile): …`; scope: mobile, backend, shared, mascot, infra, docs, ci, deps), footer `Refs #<số>`. **Không thêm dòng `Co-Authored-By`** hay bất kỳ dòng ghi công agent nào.
+- Kết thúc mỗi việc: tóm tắt đã đổi gì, AC đạt / chưa đạt.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues của `Hagno1310/NezFocus`, thao tác bằng `gh`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Năm nhãn mặc định (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` + SRS (DEC / ADR nằm trong SRS, không có `docs/adr/`). See `docs/agents/domain.md`.

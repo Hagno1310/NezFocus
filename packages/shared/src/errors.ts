@@ -4,6 +4,7 @@ import { z } from 'zod';
 export const ErrorCode = {
   ValidationError: 40001,
   TokenLinkInvalid: 40002,
+  VerificationCodeInvalid: 40003,
   OwnershipTransferRequired: 40010,
   MaxServersReached: 40011,
   OwnerCannotLeave: 40012,
@@ -11,6 +12,9 @@ export const ErrorCode = {
   UnsupportedFileType: 40014,
   PremiumRequired: 40015,
   InvalidTaskAssignee: 40016,
+  InvalidTaskDueDate: 40017,
+  MaxOpenTasksReached: 40018,
+  FileBlocked: 40019,
   RateLimited: 40029,
   SlowModeRateLimited: 40030,
   InviteInvalid: 40041,
@@ -26,10 +30,10 @@ export const ErrorCode = {
   InsufficientRoleHierarchy: 40301,
   Forbidden: 40302,
   CannotMessageUser: 40303,
-  EmailNotVerified: 40305,
   BannedFromServer: 40306,
   MemberTimedOut: 40307,
   AccountSuspended: 40308,
+  AccountIncomplete: 40309,
   NotFound: 40401,
   Conflict: 40901,
   FriendRequestAlreadyPending: 40902,
@@ -39,6 +43,8 @@ export const ErrorCode = {
   AccountLinkRequired: 40906,
   IdempotencyKeyReused: 40907,
   AlreadyFriends: 40908,
+  ReportTargetChanged: 40909,
+  AdminSubjectChanged: 40910,
   UpgradeRequired: 42601,
   InternalError: 50000,
   ServiceUnavailable: 50301,
@@ -58,6 +64,9 @@ export const ApiErrorBody = z.object({
     .optional(),
   request_id: z.string().optional(),
   retry_after: z.number().nullable().optional(),
+  attempts_left: z.number().int().optional(), // 40003
+  // 40100 / 40103: why the session ended (SessionEndReason; admin web has its own values)
+  reason: z.string().optional(),
 });
 
 export type ApiErrorBody = z.infer<typeof ApiErrorBody>;

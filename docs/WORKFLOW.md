@@ -8,8 +8,12 @@ File này trả lời: **làm một việc từ đầu đến cuối như thế 
 | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | Cài repo, dev client, chạy được app trên điện thoại                                            | [`getting-started.md`](getting-started.md)                                                                             |
 | `gh auth login`                                                                                | Agent tạo / đọc / đóng issue bằng `gh`                                                                                 |
+| `pnpm install` trong repo                                                                      | Bật hook pre-commit (Prettier đúng phiên bản trong lockfile); thiếu bước này CI dễ đỏ vì format                        |
+| `git config user.name` và `user.email` trùng tài khoản GitHub của mình                         | Commit mới được GitHub tính đúng người (email có thể là địa chỉ `noreply` trong GitHub › Settings › Emails)            |
 | Cài app Pen (pen.dev), cấu hình MCP `pencil` cho agent, mở `Des/nezfocus.pen` khi làm màn hình | Để agent chụp frame. Không cài được thì nhờ người kia xuất ảnh frame đính vào ticket                                   |
 | Agent nhận skill trong `.claude/skills/` (bộ Matt Pocock, phiên bản ghi ở `skills-lock.json`)  | Máy có cài bộ skill khác (vd `agent-skills:*`) thì **không dùng trong repo này**, để hai người chạy cùng một quy trình |
+
+**Người chạy agent lần đầu (Thùy):** làm hết bảng trên, rồi chọn dòng ghi "Thùy chạy phiên" trong [`tien-do.md`](tien-do.md). Mở phiên agent trong repo, gõ `/implement #<số issue cha>`; agent tự làm từng ticket con và hỏi khi cần (trả lời được thì trả lời, không chắc thì hỏi người kèm ở cột đó). Làm các bước 👤 trong ticket (thử trên điện thoại, so với frame). Cuối phiên: tự push và bảo agent `/pr` để PR mang tên mình; người kèm review. Các bước chi tiết: mục 5.
 
 ## 2. Skill nào dùng lúc nào
 

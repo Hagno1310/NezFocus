@@ -9,6 +9,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 3. Dòng có "Trong lúc làm" thì vẫn bắt đầu được: ticket con đó chờ người kia, agent dùng Fake nếu ticket ghi, không thì bỏ qua và làm sau (WORKFLOW mục 5).
 4. Dòng trên cùng chưa làm được thì xuống dòng kế tiếp. Hết việc ở giai đoạn này thì được làm trước giai đoạn sau, hoặc bàn với người kia để giúp.
 5. Có ô con **"mốc"** (hợp đồng, hoặc ticket người kia đang chờ) thì làm và merge sớm: người kia đang đợi nó.
+6. Dòng ghi **"Thùy chạy phiên"**: Thùy mở phiên agent, commit và mở PR bằng tài khoản của mình; người ở cột đó kèm (trả lời khi Thùy hỏi, review PR). Không ai chờ các dòng này nên làm chậm cũng không chặn ai, riêng P0-7 có P1-B1 (Hoàng) chờ nên làm sớm.
 
 ## Tick khi nào
 
@@ -34,7 +35,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
   - [ ] mốc **P0-2.3** [#41](https://github.com/Hagno1310/NezFocus/issues/41) Backend: đăng nhập mật khẩu, chống dò mật khẩu, refresh token (AUTH-02, AUTH-04) · người kia chờ: P0-5 (Hoàng)
 - [ ] **P0-6** [#53](https://github.com/Hagno1310/NezFocus/issues/53) Bộ tính quyền trong shared và PermissionService (ROLE-08)
   - Cần trước: P0-1
-- [ ] **P0-7** [#54](https://github.com/Hagno1310/NezFocus/issues/54) Seed dữ liệu dev
+- [ ] **P0-7** [#54](https://github.com/Hagno1310/NezFocus/issues/54) Seed dữ liệu dev · **Thùy chạy phiên**
   - Cần trước: P0-2
 - [ ] **P0-4** [#4](https://github.com/Hagno1310/NezFocus/issues/4) Màn hình đăng ký và đăng nhập
   - Cần trước: P0-2, P0-3.2 (Hoàng), P0-3b.2 (Hoàng)
@@ -76,7 +77,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 - [ ] **P1-A4** [#9](https://github.com/Hagno1310/NezFocus/issues/9) Tài khoản: đăng xuất và phiên, quên / đổi mật khẩu, hồ sơ
   - Cần trước: P0-2, P0-4, P0-5.2 (Hoàng)
   - Trong lúc làm: P1-A4.4 chờ P1-B4.1 (Hoàng); P1-A4.4 chờ P1-B3.1 (Hoàng); P1-A4.4 chờ P0-3b.3 (Hoàng)
-- [ ] **P1-A5** [#10](https://github.com/Hagno1310/NezFocus/issues/10) Cài đặt cá nhân còn lại: quyền riêng tư, thông báo, giao diện / ngôn ngữ / múi giờ
+- [ ] **P1-A5** [#10](https://github.com/Hagno1310/NezFocus/issues/10) Cài đặt cá nhân còn lại: quyền riêng tư, thông báo, giao diện / ngôn ngữ / múi giờ · **Thùy chạy phiên**
   - Cần trước: P0-4, P1-A1, P1-A4, P1-B4.1 (Hoàng)
   - Trong lúc làm: P1-A5.2 chờ P1-B4.2 (Hoàng); P1-A5.3 chờ P1-B2.3 (Hoàng)
 
@@ -150,7 +151,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 
 - [ ] **P3-A1** [#21](https://github.com/Hagno1310/NezFocus/issues/21) Sửa / xóa / trả lời / react tin nhắn, link tin (MSG-05, S-HOME-04)
   - Cần trước: P2-A1, P2-A3
-- [ ] **P3-A2** [#22](https://github.com/Hagno1310/NezFocus/issues/22) Đính kèm ảnh (MSG-04) và ghim tin (MSG-10)
+- [ ] **P3-A2** [#22](https://github.com/Hagno1310/NezFocus/issues/22) Đính kèm ảnh (MSG-04) và ghim tin (MSG-10) · **Thùy chạy phiên**
   - Cần trước: P2-A3, P2-A4, P3-A1
 - [ ] **P3-A3** [#23](https://github.com/Hagno1310/NezFocus/issues/23) Kiểm duyệt thành viên: tạm khóa, mời ra, cấm, audit log (ROLE-05, ROLE-07, ROLE-09)
   - Cần trước: P2-A2, P3-B1.1 (Hoàng)
@@ -172,7 +173,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
   - Cần trước: P2-B4
   - [ ] mốc **P3-B5.1** [#152](https://github.com/Hagno1310/NezFocus/issues/152) Hợp đồng push trong shared · hợp đồng · người kia chờ: P4-A1 (Hiếu)
   - [ ] mốc **P3-B5.2** [#153](https://github.com/Hagno1310/NezFocus/issues/153) Backend push: token, gửi FCM theo APP_STATE (NOTIF-02) · người kia chờ: P4-A1 (Hiếu)
-- [ ] **P3-B2** [#27](https://github.com/Hagno1310/NezFocus/issues/27) Cài đặt Phòng học (STUDY-11, S-SET-07)
+- [ ] **P3-B2** [#27](https://github.com/Hagno1310/NezFocus/issues/27) Cài đặt Phòng học (STUDY-11, S-SET-07) · **Thùy chạy phiên**
   - Cần trước: P1-A2 (Hiếu), P3-B3
   - [ ] mốc **P3-B2.1** [#143](https://github.com/Hagno1310/NezFocus/issues/143) Hợp đồng Phòng học trong shared (focus_control, chu kỳ) · hợp đồng · người kia chờ: P4-A2 (Hiếu)
 - [ ] **P3-B3** [#28](https://github.com/Hagno1310/NezFocus/issues/28) Room Session: phiên học chung trong Phòng học (STUDY-01, S-ROOM-02…06, S-ROOM-08)
@@ -184,7 +185,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
   - Cần trước: P2-A4 (Hiếu), P2-B3, P3-B1, P3-B3, P3-B5
   - Trong lúc làm: P3-B6.5 chờ P2-A1 (Hiếu)
   - [ ] mốc **P3-B6.1** [#155](https://github.com/Hagno1310/NezFocus/issues/155) Hợp đồng cuộc gọi 1-1 trong shared (kèm tin hệ thống cuộc gọi) · hợp đồng
-- [ ] **P3-B7** [#31](https://github.com/Hagno1310/NezFocus/issues/31) Chat trong phòng voice (S-HOME-08, DEC-35)
+- [ ] **P3-B7** [#31](https://github.com/Hagno1310/NezFocus/issues/31) Chat trong phòng voice (S-HOME-08, DEC-35) · **Thùy chạy phiên**
   - Cần trước: P2-A3.2 (Hiếu), P2-A4.1 (Hiếu), P3-B3
   - Trong lúc làm: P3-B7.2 chờ P2-A3.4 (Hiếu); P3-B7.2 chờ P2-A4.4 (Hiếu); P3-B7.2 chờ P2-A2.3 (Hiếu)
 
@@ -194,7 +195,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 
 ### P4 · Làm chung
 
-- [ ] **P4-AB** [#35](https://github.com/Hagno1310/NezFocus/issues/35) OpenAPI sinh từ code, sửa lỗi pilot, báo cáo và slide
+- [ ] **P4-AB** [#35](https://github.com/Hagno1310/NezFocus/issues/35) OpenAPI sinh từ code, sửa lỗi pilot, báo cáo và slide · **Thùy chạy phiên**
   - Cần trước: P4-A4, P4-B1, P4-B2
 
 ### P4 · Hiếu

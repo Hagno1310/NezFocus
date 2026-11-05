@@ -3,14 +3,17 @@ import {
   ErrorCode,
   type ClientPlatform,
   type DeviceInfo,
+  type SessionEndReason,
   type TokenPairResponse,
 } from '@nezfocus/shared';
 import { AppError } from '../../common/app-error.js';
 import { Clock } from '../../common/clock.js';
 import { SnowflakeGenerator } from '../../common/snowflake.js';
+import { SessionRevoker } from '../gateway/session-revoker.js';
 import { SessionRepository } from './session.repository.js';
 import {
   ACCESS_TOKEN_SECONDS,
+  hashRefreshToken,
   REFRESH_TOKEN_SECONDS,
   TokenService,
 } from './token.service.js';
@@ -51,7 +54,17 @@ export class SessionService {
     private readonly tokens: TokenService,
     private readonly ids: SnowflakeGenerator,
     private readonly clock: Clock,
+    private readonly revoker: SessionRevoker,
   ) {}
+
+  private refreshExpiry() {
+    return new Date(this.clock.now().getTime() + REFRESH_TOKEN_SECONDS * 1000);
+  }
+
+  // REQ-AUTH-02: "new device" = this device id never signed in to this account.
+  isKnownDevice(userId: bigint, deviceId: string) {
+    return this.sessions.hasDeviceSession(userId, deviceId);
+  }
 
   async start(
     userId: bigint,
@@ -69,12 +82,7 @@ export class SessionService {
         platform: client.platform,
         ipPrefix: ipPrefix(client.ip),
       },
-      {
-        tokenHash: refresh.hash,
-        expiresAt: new Date(
-          this.clock.now().getTime() + REFRESH_TOKEN_SECONDS * 1000,
-        ),
-      },
+      { tokenHash: refresh.hash, expiresAt: this.refreshExpiry() },
     );
     return {
       access_token: await this.tokens.signAccess({ userId, sessionId }),
@@ -82,5 +90,43 @@ export class SessionService {
       expires_in: ACCESS_TOKEN_SECONDS,
       session_id: sessionId.toString(),
     };
+  }
+
+  // REQ-AUTH-04 rotation: each refresh token works once; a second use revokes the family.
+  async refresh(refreshToken: string): Promise<TokenPairResponse> {
+    const oldHash = hashRefreshToken(refreshToken);
+    const state = await this.sessions.findRefreshToken(oldHash);
+    if (!state)
+      throw new AppError(ErrorCode.TokenInvalid, 'Invalid refresh token');
+    if (state.revokedAt) throw sessionEnded(state.revokeReason);
+    if (state.usedAt) return this.reuseDetected(state.sessionId);
+    if (state.expiresAt <= this.clock.now())
+      throw new AppError(ErrorCode.TokenInvalid, 'Refresh token expired');
+
+    const next = this.tokens.newRefreshToken();
+    const rotated = await this.sessions.rotate(
+      oldHash,
+      { tokenHash: next.hash, expiresAt: this.refreshExpiry() },
+      this.clock.now(),
+    );
+    if (!rotated) return this.reuseDetected(state.sessionId);
+    return {
+      access_token: await this.tokens.signAccess({
+        userId: state.userId,
+        sessionId: state.sessionId,
+      }),
+      refresh_token: next.token,
+      expires_in: ACCESS_TOKEN_SECONDS,
+    };
+  }
+
+  async revoke(sessionId: bigint, reason: SessionEndReason) {
+    await this.sessions.revoke(sessionId, reason, this.clock.now());
+    await this.revoker.disconnect(sessionId, reason);
+  }
+
+  private async reuseDetected(sessionId: bigint): Promise<never> {
+    await this.revoke(sessionId, 'reuse_detected');
+    throw sessionEnded('reuse_detected');
   }
 }

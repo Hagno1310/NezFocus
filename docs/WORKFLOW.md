@@ -110,11 +110,12 @@ export const healthRepository = pickRepository('health', {
 - Module chủ là `@Global()`, `providers` + `exports`: `{ provide: EventPublisher, useClass: LogEventPublisher }`. Module khác inject theo kiểu `constructor(private readonly events: EventPublisher)`, không import bản tạm; test truyền object giả.
 - Có bản thật thì chủ module chỉ đổi `useClass`; module gọi không sửa.
 
-| Interface             | Module chủ      | Ai  | Ticket |
-| --------------------- | --------------- | --- | ------ |
-| `EventPublisher`      | `gateway`       | B   | P0-5   |
-| `PermissionService`   | `permissions`   | A   | P0-6   |
-| `NotificationService` | `notifications` | B   | P2-B4  |
+| Interface             | Module chủ      | Ai  | Ticket                              |
+| --------------------- | --------------- | --- | ----------------------------------- |
+| `EventPublisher`      | `gateway`       | B   | P0-5                                |
+| `SessionRevoker`      | `gateway`       | B   | P0-5.2 (bản tạm ghi log: A, P0-2.3) |
+| `PermissionService`   | `permissions`   | A   | P0-6                                |
+| `NotificationService` | `notifications` | B   | P2-B4                               |
 
 ### 4.4 Dữ liệu mẫu
 

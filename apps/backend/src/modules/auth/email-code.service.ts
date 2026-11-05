@@ -16,7 +16,7 @@ const MAX_WRONG_ATTEMPTS = 5;
 const MAX_SENDS_PER_DAY = 10;
 const DAY = 24 * 60 * 60;
 
-const hashCode = (email: string, code: string) =>
+export const hashEmailCode = (email: string, code: string) =>
   createHash('sha256').update(`${email}:${code}`).digest('hex');
 
 const codeInvalid = () =>
@@ -53,7 +53,7 @@ export class EmailCodeService {
     await this.codes.upsert({
       email,
       purpose: 'sign_in',
-      codeHash: hashCode(email, code),
+      codeHash: hashEmailCode(email, code),
       expiresAt: new Date(
         this.clock.now().getTime() + EMAIL_CODE_TTL_SECONDS * 1000,
       ),
@@ -78,7 +78,7 @@ export class EmailCodeService {
     }
 
     const expected = Buffer.from(row.codeHash, 'hex');
-    const actual = Buffer.from(hashCode(email, code), 'hex');
+    const actual = Buffer.from(hashEmailCode(email, code), 'hex');
     if (timingSafeEqual(expected, actual)) {
       await this.codes.delete(email, 'sign_in');
       return;

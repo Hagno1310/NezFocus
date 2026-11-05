@@ -4,7 +4,7 @@ import { MemoryKeyValueStore } from '../../redis/key-value-store.js';
 import type { AuthMailer } from './auth-mailer.js';
 import type { EmailCodeRow } from './auth.schema.js';
 import type { EmailCodeRepository } from './email-code.repository.js';
-import { EmailCodeService } from './email-code.service.js';
+import { EmailCodeService, hashEmailCode } from './email-code.service.js';
 
 const fakeRepo = () => {
   const rows = new Map<string, EmailCodeRow>();
@@ -158,5 +158,23 @@ describe('EmailCodeService', () => {
     const err = await errorOf(service.send(AN, PHONE));
     expect(err).toMatchObject({ code: ErrorCode.RateLimited });
     expect(sent).toHaveLength(10);
+  });
+});
+
+describe('EmailCodeService code purposes', () => {
+  it('rejects a password-reset code at the sign-in step like a wrong code (AUTH-02 AC7)', async () => {
+    const { service, rows, clock, lastCode } = setup();
+    await service.send(AN, PHONE);
+    const resetCode = lastCode() === '424242' ? '434343' : '424242';
+    rows.set(`${AN}|reset_password`, {
+      email: AN,
+      purpose: 'reset_password',
+      codeHash: hashEmailCode(AN, resetCode),
+      expiresAt: new Date(clock.now().getTime() + 15 * 60 * 1000),
+      attempts: 0,
+      createdAt: clock.now(),
+    });
+    const err = await errorOf(service.consume(AN, resetCode));
+    expect(err).toMatchObject({ code: ErrorCode.VerificationCodeInvalid });
   });
 });

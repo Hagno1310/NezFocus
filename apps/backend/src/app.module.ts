@@ -4,6 +4,7 @@ import { CommonModule } from './common/common.module.js';
 import { validateEnv } from './config/env.js';
 import { DbModule } from './db/db.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { GatewayModule } from './modules/gateway/gateway.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { RedisModule } from './redis/redis.module.js';
 
@@ -13,6 +14,7 @@ import { RedisModule } from './redis/redis.module.js';
     CommonModule,
     DbModule,
     RedisModule,
+    GatewayModule,
     HealthModule,
     AuthModule,
   ],

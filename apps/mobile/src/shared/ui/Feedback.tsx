@@ -1,8 +1,9 @@
 import { BellOff, MicOff, WifiOff } from 'lucide-react-native';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   StyleSheet,
   View,
@@ -108,21 +109,30 @@ export function SystemBanner({
   }
 }
 
-// C-14 EmptyState: one centered block. `inline` drops the illustration.
+// C-14 EmptyState: one centered block. `mascot` = Runtime neutral (DESIGN.md › Mascot); off = `inline`.
+// ponytail: static image (Des/assets, background removed) until the Rive runtime lands with Welcome.
+const MASCOT_SIZE = 112; // board EmptyState › ES mascot, inside DESIGN.md's 96–120
 export function EmptyState({
   title,
   body,
   action,
-  illustration,
+  mascot = false,
 }: {
   title: string;
   body?: string;
   action?: ButtonProps;
-  illustration?: ReactNode;
+  mascot?: boolean;
 }) {
   return (
     <View style={styles.empty}>
-      {illustration}
+      {mascot && (
+        <Image
+          source={require('../../../assets/mascot/runtime-neutral.webp')}
+          style={styles.mascot}
+          accessibilityIgnoresInvertColors
+          importantForAccessibility="no"
+        />
+      )}
       <Text variant="title-2" style={styles.centerText}>
         {title}
       </Text>
@@ -195,4 +205,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[3],
   },
   centerText: { textAlign: 'center' },
+  mascot: { width: MASCOT_SIZE, height: MASCOT_SIZE },
 });

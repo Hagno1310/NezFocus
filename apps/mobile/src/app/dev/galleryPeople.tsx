@@ -1,4 +1,5 @@
 import { Clock3, Languages } from 'lucide-react-native';
+import { useState } from 'react';
 import { View } from 'react-native';
 import {
   Avatar,
@@ -80,6 +81,8 @@ function People() {
 }
 
 function Settings() {
+  const [sound, setSound] = useState(true);
+  const [activity, setActivity] = useState(false);
   return (
     <View>
       <SettingsRow
@@ -101,6 +104,21 @@ function Settings() {
         onPress={() => {}}
       />
       <SettingsRow label="Quyền riêng tư" onPress={() => {}} />
+      <SettingsRow
+        label="Âm báo chuyển pha"
+        toggle={{ value: sound, onChange: setSound }}
+      />
+      <SettingsRow
+        label="Hiện hoạt động học"
+        description="Bạn bè và người cùng server thấy bạn đang học"
+        toggle={{ value: activity, onChange: setActivity }}
+      />
+      <SettingsRow
+        label="Thông báo"
+        description="Thông báo đang tắt trong cài đặt máy"
+        toggle={{ value: true, onChange: () => {} }}
+        disabled
+      />
       <SettingsRow label="Người thực hiện" people={team} onPress={() => {}} />
       <SettingsRow
         label="Kênh"

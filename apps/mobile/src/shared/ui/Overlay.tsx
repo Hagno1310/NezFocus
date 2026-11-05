@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react-native';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   KeyboardAvoidingView,
@@ -38,7 +38,7 @@ import { FormMessage } from './FormMessage';
 import { Icon, type IconComponent } from './Icon';
 import { dialogLayout } from './logic';
 import { Text } from './Text';
-import { fadeIn, sheetEnter } from './transitions';
+import { fadeIn, fadeOut, sheetEnter, sheetExit } from './transitions';
 import { overlayClosed, overlayOpened } from './Toast';
 
 // Drag distance / speed that closes a sheet on release.
@@ -66,13 +66,23 @@ function Overlay({
     return overlayClosed;
   }, [visible]);
 
+  // DESIGN.md › Motion (exit ease-in): the Modal outlives `visible` by one exit so the
+  // unmounting content can play its `exiting` animation.
+  const [lingering, setLingering] = useState(visible);
+  if (visible && !lingering) setLingering(true);
+  useEffect(() => {
+    if (visible) return;
+    const id = setTimeout(() => setLingering(false), motion.short);
+    return () => clearTimeout(id);
+  }, [visible]);
+
   const close = () => {
     if (dismissible) onDismiss();
   };
   return (
     <Modal
       transparent
-      visible={visible}
+      visible={visible || lingering}
       animationType="none"
       statusBarTranslucent
       navigationBarTranslucent
@@ -82,16 +92,22 @@ function Overlay({
       {/* Gotcha: a Modal is a separate native root, so gestures need their own root view. */}
       <GestureHandlerRootView style={styles.flex}>
         <KeyboardAvoidingView behavior="padding" style={styles.flex}>
-          <Animated.View
-            entering={fadeIn}
-            style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }]}
-          >
-            <Pressable
-              style={styles.flex}
-              onPress={close}
-              importantForAccessibility="no"
-            />
-          </Animated.View>
+          {visible && (
+            <Animated.View
+              entering={fadeIn}
+              exiting={fadeOut}
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: colors.scrim },
+              ]}
+            >
+              <Pressable
+                style={styles.flex}
+                onPress={close}
+                importantForAccessibility="no"
+              />
+            </Animated.View>
+          )}
           <View
             pointerEvents="box-none"
             style={[
@@ -99,7 +115,7 @@ function Overlay({
               placement === 'center' ? styles.center : styles.bottom,
             ]}
           >
-            {children}
+            {visible && children}
           </View>
         </KeyboardAvoidingView>
       </GestureHandlerRootView>
@@ -164,6 +180,7 @@ export function Dialog({
     >
       <Animated.View
         entering={fadeIn}
+        exiting={fadeOut}
         accessibilityViewIsModal
         style={[
           styles.dialog,
@@ -250,6 +267,7 @@ function SheetFrame({
   return (
     <Animated.View
       entering={sheetEnter(reduced)}
+      exiting={sheetExit(reduced)}
       accessibilityViewIsModal
       style={[style, dragStyle]}
     >

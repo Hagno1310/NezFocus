@@ -3,17 +3,18 @@ import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { fontScale as textScale, size, space, useTheme } from '../theme';
 import { Icon, type IconComponent } from './Icon';
 import { AvatarStack } from './People';
+import { Switch } from './Switch';
 import { Text } from './Text';
 
 // C-15. No horizontal padding: the screen sets it (usually 16).
-// `value` = value variant, `people` = value · avatar variant, neither = nav variant.
-// ponytail: `switch` variant is P2 in the spec (S-SET, area 07); add it with that screen.
+// `value` = value variant, `people` = value · avatar variant, `toggle` = switch variant, none = nav.
 export function SettingsRow({
   label,
   icon,
   description,
   value,
   people,
+  toggle,
   onPress,
   disabled = false,
 }: {
@@ -24,6 +25,8 @@ export function SettingsRow({
   description?: string;
   value?: string;
   people?: { name: string; uri?: string | null }[];
+  // The whole row flips the switch (one target, one screen-reader stop).
+  toggle?: { value: boolean; onChange: (next: boolean) => void };
   onPress?: () => void;
   disabled?: boolean;
 }) {
@@ -52,13 +55,15 @@ export function SettingsRow({
 
   return (
     <Pressable
-      accessibilityRole="button"
+      accessibilityRole={toggle ? 'switch' : 'button'}
       accessibilityLabel={[label, valueText, description]
         .filter(Boolean)
         .join(', ')}
-      accessibilityState={{ disabled }}
+      accessibilityState={
+        toggle ? { disabled, checked: toggle.value } : { disabled }
+      }
       disabled={disabled}
-      onPress={onPress}
+      onPress={toggle ? () => toggle.onChange(!toggle.value) : onPress}
       style={({ pressed }) => [
         styles.row,
         pressed && { backgroundColor: colors['overlay-pressed'] },
@@ -75,7 +80,7 @@ export function SettingsRow({
       <View
         style={[
           styles.labels,
-          description || stacked ? styles.grow : styles.keep,
+          description || stacked || toggle ? styles.grow : styles.keep,
         ]}
       >
         <Text color={fg} weight="500" numberOfLines={stacked ? undefined : 1}>
@@ -93,7 +98,16 @@ export function SettingsRow({
         {stacked && valueNode}
       </View>
       {!stacked && valueNode}
-      <Icon as={ChevronRight} size="md" color="text-tertiary" />
+      {toggle ? (
+        <View
+          pointerEvents="none"
+          importantForAccessibility="no-hide-descendants"
+        >
+          <Switch value={toggle.value} label={label} disabled={disabled} />
+        </View>
+      ) : (
+        <Icon as={ChevronRight} size="md" color="text-tertiary" />
+      )}
     </Pressable>
   );
 }

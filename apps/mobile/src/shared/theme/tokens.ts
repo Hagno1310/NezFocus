@@ -160,6 +160,7 @@ export const size = {
   // Gap between the segment track and the selected pill.
   segmentInset: 2,
   tri: { width: 40, height: 32 },
+  switch: { width: 48, height: 28, knob: 22, inset: 3 },
   actionRow: 56,
   groupTitle: 28,
   settingsRow: 56,

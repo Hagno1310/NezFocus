@@ -12,7 +12,7 @@ import {
   ListChecks,
   Timer,
 } from 'lucide-react-native';
-import { useState } from 'react';
+import { useState, type ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from 'zustand';
 import {
@@ -23,9 +23,12 @@ import {
 } from '../../domain/session/sessionStore';
 import { currentLanguage, setLanguage } from '../../shared/i18n';
 import { TabBar } from '../../shared/ui/TabBar';
-import { UiGallery } from '../dev/UiGallery';
 import { HomeDrawers } from './HomeDrawers';
 import { Placeholder } from './Placeholder';
+// Metro folds __DEV__ before collecting dependencies, so release bundles leave the gallery out.
+const UiGallery: ComponentType | null = __DEV__
+  ? (require('../dev/UiGallery') as typeof import('../dev/UiGallery')).UiGallery
+  : null;
 
 export type RootStackParamList = {
   // Auth stack (spec 01): no TabBar.
@@ -240,7 +243,7 @@ export function RootNavigator() {
           options={{ headerShown: false }}
         />
       )}
-      {__DEV__ && (
+      {UiGallery && (
         <Stack.Screen
           name="UiGallery"
           component={UiGallery}

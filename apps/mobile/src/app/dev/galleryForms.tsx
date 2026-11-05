@@ -227,8 +227,9 @@ function Feedback() {
           }
         />
       </Row>
-      <Caption>EmptyState · có hành động / inline</Caption>
+      <Caption>EmptyState · mascot + hành động / inline</Caption>
       <EmptyState
+        mascot
         title="Chưa có việc nào"
         body="Thêm việc đầu tiên để cả nhóm cùng theo dõi."
         action={{ label: 'Thêm việc đầu tiên' }}

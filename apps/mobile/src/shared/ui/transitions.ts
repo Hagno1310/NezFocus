@@ -3,6 +3,7 @@ import {
   FadeOut,
   ReduceMotion,
   SlideInDown,
+  SlideOutDown,
 } from 'react-native-reanimated';
 import { motion } from '../theme';
 
@@ -17,3 +18,8 @@ export const fadeOut = FadeOut.duration(motion.short).reduceMotion(
 
 export const sheetEnter = (reduced: boolean) =>
   reduced ? fadeIn : SlideInDown.duration(motion.medium);
+
+export const sheetExit = (reduced: boolean) =>
+  reduced
+    ? fadeOut
+    : SlideOutDown.duration(motion.short).reduceMotion(ReduceMotion.Never);

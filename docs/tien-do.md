@@ -42,10 +42,10 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 
 ### P0 · Hoàng
 
-- [ ] **P0-3** [#2](https://github.com/Hagno1310/NezFocus/issues/2) Khung app
+- [x] **P0-3** [#2](https://github.com/Hagno1310/NezFocus/issues/2) Khung app
   - Cần trước: P0-1
   - Trong lúc làm: P0-3.2 chờ P0-2.1 (Hiếu)
-  - [ ] mốc **P0-3.2** [#43](https://github.com/Hagno1310/NezFocus/issues/43) ApiClient, lưu token và refresh single-flight · người kia chờ: P0-4 (Hiếu), P2-A3 (Hiếu)
+  - [x] mốc **P0-3.2** [#43](https://github.com/Hagno1310/NezFocus/issues/43) ApiClient, lưu token và refresh single-flight · người kia chờ: P0-4 (Hiếu), P2-A3 (Hiếu)
 - [ ] **P0-3b** [#3](https://github.com/Hagno1310/NezFocus/issues/3) Theme và component dùng chung
   - Cần trước: P0-3
   - [ ] mốc **P0-3b.2** [#45](https://github.com/Hagno1310/NezFocus/issues/45) Dialog / Sheet, Banner / Toast / EmptyState, SegmentedControl, Checkbox, CodeInput, FormMessage, PasswordRules · người kia chờ: P0-4 (Hiếu), P1-A1 (Hiếu)

@@ -33,6 +33,7 @@ export const overlayClosed = () =>
   dispatch({ type: 'overlay', open: false, now: Date.now() });
 
 // S-MOD-04 › Vị trí toast: the screen's bottom bar registers its height while mounted.
+// ponytail: one anchor at a time; sum the bars once MiniPlayer stacks on TabBar (P1-B2.2, #82).
 export function useToastAnchor(height: number) {
   useEffect(() => {
     useToastStore.setState({ anchor: height });

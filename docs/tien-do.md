@@ -23,7 +23,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 
 ### P0 · Làm chung
 
-- [ ] **P0-1** [#38](https://github.com/Hagno1310/NezFocus/issues/38) Chốt quy ước hợp đồng, dữ liệu giả và seed
+- [x] **P0-1** [#38](https://github.com/Hagno1310/NezFocus/issues/38) Chốt quy ước hợp đồng, dữ liệu giả và seed
   - Cần trước: không có
 
 ### P0 · Hiếu

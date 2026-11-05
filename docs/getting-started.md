@@ -99,7 +99,7 @@ copy apps\backend\.env.example apps\backend\.env
 copy apps\mobile\.env.example apps\mobile\.env
 ```
 
-`apps/backend/.env` giữ nguyên là chạy được.
+`apps/backend/.env` giữ nguyên là chạy được. Khi `.env.example` có thêm biến (vd P0-2 thêm `JWT_SECRET`), chép dòng đó sang `.env` của mình: thiếu biến thì backend dừng ngay lúc khởi động và in tên biến thiếu.
 
 `apps/mobile/.env` phải sửa IP thành **IP Wi-Fi của máy bạn**. Chạy `ipconfig`, tìm card Wi-Fi, lấy dòng _IPv4 Address_:
 
@@ -296,14 +296,15 @@ pnpm db:studio       # (tùy chọn) giao diện xem dữ liệu
 
 ## 6. Biến môi trường
 
-| File                | Biến                                                | Ý nghĩa                                                                 |
-| ------------------- | --------------------------------------------------- | ----------------------------------------------------------------------- |
-| `apps/backend/.env` | `DATABASE_URL`                                      | Chuỗi kết nối Postgres (mặc định khớp `infra/docker-compose.yml`)       |
-|                     | `PORT`                                              | Cổng API, mặc định 3000                                                 |
-|                     | `WORKER_ID`                                         | 0–1023, phần worker của Snowflake ID (mỗi instance backend một giá trị) |
-|                     | `REDIS_URL`, `S3_*`                                 | Redis và object storage (SeaweedFS)                                     |
-| `apps/mobile/.env`  | `EXPO_PUBLIC_API_URL`                               | Địa chỉ API điện thoại gọi tới; dùng IP Wi-Fi của máy tính              |
-| `infra/.env.prod`   | `API_DOMAIN`, `BACKEND_IMAGE`, `POSTGRES_*`, `S3_*` | Chỉ dùng trên server deploy                                             |
+| File                | Biến                                                              | Ý nghĩa                                                                 |
+| ------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `apps/backend/.env` | `DATABASE_URL`                                                    | Chuỗi kết nối Postgres (mặc định khớp `infra/docker-compose.yml`)       |
+|                     | `PORT`                                                            | Cổng API, mặc định 3000                                                 |
+|                     | `WORKER_ID`                                                       | 0–1023, phần worker của Snowflake ID (mỗi instance backend một giá trị) |
+|                     | `REDIS_URL`, `S3_*`                                               | Redis và object storage (SeaweedFS)                                     |
+|                     | `JWT_SECRET`                                                      | Khóa ký access token (≥ 32 ký tự); production không nhận giá trị mẫu    |
+| `apps/mobile/.env`  | `EXPO_PUBLIC_API_URL`                                             | Địa chỉ API điện thoại gọi tới; dùng IP Wi-Fi của máy tính              |
+| `infra/.env.prod`   | `API_DOMAIN`, `BACKEND_IMAGE`, `POSTGRES_*`, `S3_*`, `JWT_SECRET` | Chỉ dùng trên server deploy                                             |
 
 Biến có tiền tố `EXPO_PUBLIC_` được đóng vào app và **ai cũng đọc được**: không đặt secret vào đó.
 

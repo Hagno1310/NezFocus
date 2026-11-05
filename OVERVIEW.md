@@ -153,7 +153,7 @@ Screen ──► hook (TanStack Query) ──► use case (domain) ──► Rep
                                                         data/<area>/Remote<X>Repository ──► api()
 ```
 
-Ví dụ đầy đủ: `ExampleScreen` → `useBackendStatus` → `checkBackend` → `HealthRepository` ← `remoteHealthRepository`.
+Ví dụ đầy đủ: `ExampleScreen` → `useBackendStatus` → `checkBackend` → `HealthRepository` ← `healthRepository` (`data/health/index.ts` chọn Remote / Fake).
 
 - Screen **không** gọi `fetch`/WebSocket/LiveKit trực tiếp.
 - Use case trong `domain/` test bằng Vitest không cần thiết bị (`checkBackend.spec.ts`).

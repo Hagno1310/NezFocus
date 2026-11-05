@@ -83,7 +83,7 @@ Quy ước chi tiết dưới đây chốt ở P0-1 (#38). Ví dụ chạy đư�
 export const HealthRoutes = { check: '/health' } as const;
 export const HealthResponse = z.object({
   status: z.literal('ok'),
-  db: z.enum(['up', 'down']),
+  db: z.literal('up'),
 });
 export type HealthResponse = z.infer<typeof HealthResponse>;
 

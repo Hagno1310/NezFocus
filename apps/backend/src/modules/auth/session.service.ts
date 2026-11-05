@@ -25,14 +25,32 @@ export type StartedSession = TokenPairResponse & { session_id: string };
 // NFR-PRIV-02: keep only the network part (IPv4 /24, IPv6 /48).
 export const ipPrefix = (ip: string | undefined): string | null => {
   if (!ip) return null;
-  const v4 = ip.replace(/^::ffff:/, '');
+  const v4 = ip.replace(/^::ffff:/i, '');
   if (/^\d+\.\d+\.\d+\.\d+$/.test(v4))
     return v4.split('.').slice(0, 3).join('.') + '.0';
-  return ip.split(':').slice(0, 3).join(':') + '::';
+  // Expand "::" so a compressed address still yields its first three groups.
+  const [head, tail = ''] = ip.split('::');
+  const left = head ? head.split(':') : [];
+  const right = tail ? tail.split(':') : [];
+  const groups = [
+    ...left,
+    ...Array<string>(Math.max(0, 8 - left.length - right.length)).fill('0'),
+    ...right,
+  ];
+  return groups.slice(0, 3).join(':') + '::';
 };
 
-// CR-28 #11: a revoked session answers with its reason; reuse has its own code.
+// CR-28 #11: a revoked session answers 40100 with why it ended (no reason = expired).
 export const sessionEnded = (reason: string | null) =>
+  new AppError(
+    ErrorCode.TokenInvalid,
+    'Session ended',
+    undefined,
+    reason ? { reason } : {},
+  );
+
+// SRS 11.1: 40103 belongs to the refresh step; elsewhere a reused family is just 40100 + reason.
+export const refreshRejected = (reason: string | null) =>
   reason === 'reuse_detected'
     ? new AppError(
         ErrorCode.RefreshTokenReused,
@@ -40,12 +58,7 @@ export const sessionEnded = (reason: string | null) =>
         undefined,
         { reason },
       )
-    : new AppError(
-        ErrorCode.TokenInvalid,
-        'Session ended',
-        undefined,
-        reason ? { reason } : {},
-      );
+    : sessionEnded(reason);
 
 @Injectable()
 export class SessionService {
@@ -98,7 +111,7 @@ export class SessionService {
     const state = await this.sessions.findRefreshToken(oldHash);
     if (!state)
       throw new AppError(ErrorCode.TokenInvalid, 'Invalid refresh token');
-    if (state.revokedAt) throw sessionEnded(state.revokeReason);
+    if (state.revokedAt) throw refreshRejected(state.revokeReason);
     if (state.usedAt) return this.reuseDetected(state.sessionId);
     if (state.expiresAt <= this.clock.now())
       throw new AppError(ErrorCode.TokenInvalid, 'Refresh token expired');
@@ -127,6 +140,6 @@ export class SessionService {
 
   private async reuseDetected(sessionId: bigint): Promise<never> {
     await this.revoke(sessionId, 'reuse_detected');
-    throw sessionEnded('reuse_detected');
+    throw refreshRejected('reuse_detected');
   }
 }

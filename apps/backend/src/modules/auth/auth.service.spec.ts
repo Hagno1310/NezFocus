@@ -374,6 +374,33 @@ describe('AuthService.login (AUTH-02)', () => {
     await expect(login(s, PASSWORD)).resolves.toBeDefined();
   });
 
+  it('starts the 10-minute wait at the 5th wrong try, even when tries are spread out (AC3)', async () => {
+    const s = setup();
+    await account(s);
+    await errorOf(login(s, 'Sai2026!!'));
+    s.clock.advance(9 * 60);
+    for (let i = 0; i < 4; i++) await errorOf(login(s, 'Sai2026!!'));
+    s.clock.advance(5 * 60);
+    const blocked = await errorOf(login(s, PASSWORD));
+    expect(blocked).toMatchObject({
+      code: ErrorCode.RateLimited,
+      details: { retryAfter: 300 },
+    });
+  });
+
+  it('checks at most 5 passwords when wrong tries arrive together (AC3)', async () => {
+    const s = setup();
+    await account(s);
+    const results = await Promise.all(
+      Array.from({ length: 20 }, () => errorOf(login(s, 'Sai2026!!'))),
+    );
+    const codes = results.map((e) => (e as { code: number }).code);
+    expect(
+      codes.filter((c) => c === ErrorCode.InvalidCredentials),
+    ).toHaveLength(5);
+    expect(codes.filter((c) => c === ErrorCode.RateLimited)).toHaveLength(15);
+  });
+
   it('blocks an IP after 20 wrong tries in an hour, whatever the email (AC3)', async () => {
     const s = setup();
     await account(s);

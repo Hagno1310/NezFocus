@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, gt, lt, sql } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
 import { emailCodes, type EmailCodeRow } from './auth.schema.js';
 
@@ -33,14 +33,29 @@ export class EmailCodeRepository {
     return row;
   }
 
-  // Atomic, so parallel wrong guesses cannot share one attempt.
-  async addAttempt(email: string, purpose: EmailCodePurpose) {
+  // Takes one guess before the code is compared, in one statement, so parallel requests
+  // cannot get more than `maxAttempts` comparisons. Undefined = no live code left.
+  async reserveAttempt(
+    email: string,
+    purpose: EmailCodePurpose,
+    maxAttempts: number,
+    now: Date,
+  ) {
     const [row] = await this.db
       .update(emailCodes)
       .set({ attempts: sql`${emailCodes.attempts} + 1` })
-      .where(this.match(email, purpose))
-      .returning({ attempts: emailCodes.attempts });
-    return row?.attempts ?? Number.POSITIVE_INFINITY;
+      .where(
+        and(
+          this.match(email, purpose),
+          lt(emailCodes.attempts, maxAttempts),
+          gt(emailCodes.expiresAt, now),
+        ),
+      )
+      .returning({
+        attempts: emailCodes.attempts,
+        codeHash: emailCodes.codeHash,
+      });
+    return row;
   }
 
   async delete(email: string, purpose: EmailCodePurpose) {

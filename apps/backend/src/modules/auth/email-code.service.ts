@@ -15,6 +15,7 @@ import { EmailCodeRepository } from './email-code.repository.js';
 const MAX_WRONG_ATTEMPTS = 5;
 const MAX_SENDS_PER_DAY = 10;
 const DAY = 24 * 60 * 60;
+const PURPOSE = 'sign_in';
 
 export const hashEmailCode = (email: string, code: string) =>
   createHash('sha256').update(`${email}:${code}`).digest('hex');
@@ -46,13 +47,13 @@ export class EmailCodeService {
     const deviceKey = `email-code:device:${deviceId}`;
     const previous = await this.kv.get(deviceKey);
     if (previous && previous !== email)
-      await this.codes.delete(previous, 'sign_in');
+      await this.codes.delete(previous, PURPOSE);
     await this.kv.set(deviceKey, email, EMAIL_CODE_TTL_SECONDS);
 
     const code = randomInt(0, 1_000_000).toString().padStart(6, '0');
     await this.codes.upsert({
       email,
-      purpose: 'sign_in',
+      purpose: PURPOSE,
       codeHash: hashEmailCode(email, code),
       expiresAt: new Date(
         this.clock.now().getTime() + EMAIL_CODE_TTL_SECONDS * 1000,
@@ -67,26 +68,27 @@ export class EmailCodeService {
 
   // Resolves once for the right code; the code is gone afterwards.
   async consume(email: string, code: string): Promise<void> {
-    const row = await this.codes.find(email, 'sign_in');
-    if (!row) throw codeInvalid();
-    if (
-      row.expiresAt <= this.clock.now() ||
-      row.attempts >= MAX_WRONG_ATTEMPTS
-    ) {
-      await this.codes.delete(email, 'sign_in');
+    const attempt = await this.codes.reserveAttempt(
+      email,
+      PURPOSE,
+      MAX_WRONG_ATTEMPTS,
+      this.clock.now(),
+    );
+    if (!attempt) {
+      // Expired or used up: clear it so the next send starts clean.
+      await this.codes.delete(email, PURPOSE);
       throw codeInvalid();
     }
 
-    const expected = Buffer.from(row.codeHash, 'hex');
+    const expected = Buffer.from(attempt.codeHash, 'hex');
     const actual = Buffer.from(hashEmailCode(email, code), 'hex');
     if (timingSafeEqual(expected, actual)) {
-      await this.codes.delete(email, 'sign_in');
+      await this.codes.delete(email, PURPOSE);
       return;
     }
 
-    const attempts = await this.codes.addAttempt(email, 'sign_in');
-    const attemptsLeft = Math.max(0, MAX_WRONG_ATTEMPTS - attempts);
-    if (attemptsLeft === 0) await this.codes.delete(email, 'sign_in');
+    const attemptsLeft = Math.max(0, MAX_WRONG_ATTEMPTS - attempt.attempts);
+    if (attemptsLeft === 0) await this.codes.delete(email, PURPOSE);
     throw new AppError(
       ErrorCode.VerificationCodeInvalid,
       'Wrong code',

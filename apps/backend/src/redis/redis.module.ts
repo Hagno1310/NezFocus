@@ -24,6 +24,15 @@ class RedisKeyValueStore extends KeyValueStore {
     };
   }
 
+  async decrement(key: string) {
+    // Plain DECR on a missing key would create -1 with no expiry.
+    await this.redis.eval(
+      "if redis.call('exists', KEYS[1]) == 1 then return redis.call('decr', KEYS[1]) end return 0",
+      1,
+      key,
+    );
+  }
+
   async peek(key: string): Promise<Window> {
     const [value, ttl] = await Promise.all([
       this.redis.get(key),

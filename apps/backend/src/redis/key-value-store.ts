@@ -7,6 +7,8 @@ export type Window = { count: number; resetIn: number };
 export abstract class KeyValueStore {
   // +1; the first hit opens a window of `windowSeconds`. resetIn = seconds until the window closes.
   abstract increment(key: string, windowSeconds: number): Promise<Window>;
+  // -1 on a live counter, keeping its window; no-op when the key is gone.
+  abstract decrement(key: string): Promise<void>;
   abstract peek(key: string): Promise<Window>;
   abstract get(key: string): Promise<string | null>;
   abstract set(key: string, value: string, ttlSeconds: number): Promise<void>;
@@ -47,6 +49,11 @@ export class MemoryKeyValueStore extends KeyValueStore {
       count: Number(entry.value),
       resetIn: this.resetIn(entry.expiresAt),
     };
+  }
+
+  async decrement(key: string) {
+    const entry = this.live(key);
+    if (entry) entry.value = String(Number(entry.value) - 1);
   }
 
   async peek(key: string): Promise<Window> {

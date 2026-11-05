@@ -88,7 +88,7 @@ describe('Password sign-in and refresh (e2e)', () => {
       .get('/e2e-probe')
       .auth(rotated.body.access_token, { type: 'bearer' })
       .expect(401);
-    expect(probe.body).toMatchObject({ code: 40103, reason: 'reuse_detected' });
+    expect(probe.body).toMatchObject({ code: 40100, reason: 'reuse_detected' });
   });
 
   it('answers 40102 the same way for a wrong password and an unknown email (AUTH-02 AC2)', async () => {

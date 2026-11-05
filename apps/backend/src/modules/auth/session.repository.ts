@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import type { SessionEndReason } from '@nezfocus/shared';
 import { and, eq, isNull } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
 import { users } from '../users/users.schema.js';
@@ -94,7 +95,7 @@ export class SessionRepository {
   }
 
   // Keeps the first reason when called twice.
-  async revoke(sessionId: bigint, reason: string, now: Date) {
+  async revoke(sessionId: bigint, reason: SessionEndReason, now: Date) {
     await this.db
       .update(authSessions)
       .set({ revokedAt: now, revokeReason: reason })

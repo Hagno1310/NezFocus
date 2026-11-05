@@ -188,3 +188,10 @@ describe('ipPrefix (NFR-PRIV-02)', () => {
     expect(ipPrefix(undefined)).toBeNull();
   });
 });
+
+describe('ipPrefix with compressed IPv6', () => {
+  it('expands "::" before cutting', () => {
+    expect(ipPrefix('2001:db8::1')).toBe('2001:db8:0::');
+    expect(ipPrefix('::1')).toBe('0:0:0::');
+  });
+});

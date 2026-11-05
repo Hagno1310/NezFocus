@@ -29,6 +29,7 @@ import { SessionService, type ClientInfo } from './session.service.js';
 const USERNAME_CHECKS_PER_MINUTE = 30;
 const FAILS_PER_ACCOUNT_IP = 5;
 const ACCOUNT_IP_WINDOW = 10 * 60;
+const BLOCK_SECONDS = 10 * 60;
 const FAILS_PER_IP = 20;
 const IP_WINDOW = 60 * 60;
 
@@ -89,13 +90,20 @@ export class AuthService {
   ): Promise<SessionResponse> {
     const ip = client.ip ?? 'unknown';
     const pairKey = `login:fail:${body.email}:${ip}`;
+    const blockKey = `login:block:${body.email}:${ip}`;
     const ipKey = `login:fail-ip:${ip}`;
-    for (const [key, limit] of [
-      [pairKey, FAILS_PER_ACCOUNT_IP],
-      [ipKey, FAILS_PER_IP],
-    ] as const) {
-      const window = await this.kv.peek(key);
-      if (window.count >= limit) throw rateLimited(window.resetIn);
+
+    const block = await this.kv.peek(blockKey);
+    if (block.count > 0) throw rateLimited(block.resetIn);
+
+    // Each attempt takes its slot before the password is checked, so parallel requests
+    // cannot slip past the limits. A success gives the slots back.
+    const perIp = await this.kv.increment(ipKey, IP_WINDOW);
+    if (perIp.count > FAILS_PER_IP) throw rateLimited(perIp.resetIn);
+    const perPair = await this.kv.increment(pairKey, ACCOUNT_IP_WINDOW);
+    if (perPair.count > FAILS_PER_ACCOUNT_IP) {
+      await this.kv.decrement(ipKey);
+      throw rateLimited(await this.blockPair(blockKey));
     }
 
     const user = await this.users.findByEmail(body.email);
@@ -109,8 +117,9 @@ export class AuthService {
           )
           .then(() => false);
     if (!user || !valid) {
-      await this.kv.increment(pairKey, ACCOUNT_IP_WINDOW);
-      await this.kv.increment(ipKey, IP_WINDOW);
+      // AC3: the 5th wrong try starts a full 10-minute wait.
+      if (perPair.count === FAILS_PER_ACCOUNT_IP)
+        await this.blockPair(blockKey);
       throw new AppError(
         ErrorCode.InvalidCredentials,
         'Wrong email or password',
@@ -118,8 +127,17 @@ export class AuthService {
     }
 
     await this.kv.delete(pairKey);
+    await this.kv.decrement(ipKey);
     const session = await this.startWithAlert(user, body.device, client);
     return { ...session, user: toCurrentUser(user) };
+  }
+
+  // Returns the seconds left on the block (an earlier parallel request may have set it).
+  private async blockPair(blockKey: string) {
+    const existing = await this.kv.peek(blockKey);
+    if (existing.count > 0) return existing.resetIn;
+    await this.kv.set(blockKey, '1', BLOCK_SECONDS);
+    return BLOCK_SECONDS;
   }
 
   private async startWithAlert(

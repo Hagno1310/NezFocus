@@ -17,12 +17,17 @@ const fakeRepo = () => {
         createdAt: new Date(),
       });
     },
-    find: async (email: string, purpose: string) =>
-      rows.get(key(email, purpose)),
-    addAttempt: async (email: string, purpose: string) => {
-      const row = rows.get(key(email, purpose))!;
+    // Mirrors the single UPDATE … WHERE attempts < max AND expires_at > now.
+    reserveAttempt: async (
+      email: string,
+      purpose: string,
+      max: number,
+      now: Date,
+    ) => {
+      const row = rows.get(key(email, purpose));
+      if (!row || row.attempts >= max || row.expiresAt <= now) return undefined;
       row.attempts += 1;
-      return row.attempts;
+      return { attempts: row.attempts, codeHash: row.codeHash };
     },
     delete: async (email: string, purpose: string) => {
       rows.delete(key(email, purpose));
@@ -176,5 +181,26 @@ describe('EmailCodeService code purposes', () => {
     });
     const err = await errorOf(service.consume(AN, resetCode));
     expect(err).toMatchObject({ code: ErrorCode.VerificationCodeInvalid });
+  });
+});
+
+describe('EmailCodeService under parallel guesses', () => {
+  it('compares at most 5 guesses even when they arrive together (AUTH-13 AC2)', async () => {
+    const { service, lastCode } = setup();
+    await service.send(AN, PHONE);
+    const right = lastCode();
+    const guesses = Array.from({ length: 20 }, (_, i) =>
+      String(i).padStart(6, '0') === right
+        ? '999999'
+        : String(i).padStart(6, '0'),
+    );
+    const results = await Promise.all(
+      guesses.map((g) => errorOf(service.consume(AN, g))),
+    );
+    const compared = results.filter(
+      (e) =>
+        (e as { code?: number }).code === ErrorCode.VerificationCodeInvalid,
+    );
+    expect(compared).toHaveLength(5);
   });
 });

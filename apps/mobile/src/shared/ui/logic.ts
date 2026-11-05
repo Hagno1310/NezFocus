@@ -36,3 +36,18 @@ export const dialogLayout = (labels: readonly string[]): 'row' | 'column' =>
   labels.length === 2 && labels.every((l) => l.trim().split(/\s+/).length <= 2)
     ? 'row'
     : 'column';
+
+const BADGE_MAX = 99;
+const STACK_MAX = 3;
+
+export const badgeText = (count: number): string | null =>
+  count <= 0 ? null : count > BADGE_MAX ? `${BADGE_MAX}+` : String(count);
+
+// NFC so a decomposed "Á" stays one letter with its mark.
+export const initial = (name: string): string =>
+  [...name.normalize('NFC').trim()][0]?.toLocaleUpperCase('vi') ?? '?';
+
+export const stackAvatars = <T>(people: readonly T[]) => ({
+  shown: people.slice(0, STACK_MAX),
+  more: Math.max(0, people.length - STACK_MAX),
+});

@@ -52,6 +52,7 @@ export const en: Strings = {
       offline: 'Offline',
     },
     badgeDot: 'In a study session',
+    badgeCount: '{{count}} new',
     deletedUser: 'Deleted account',
     position: '{{index}} of {{total}}',
     tri: { deny: 'Deny', default: 'Default', allow: 'Allow' },

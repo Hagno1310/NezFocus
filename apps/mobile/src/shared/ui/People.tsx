@@ -1,0 +1,243 @@
+import { UserRound } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
+import { Image, StyleSheet, View } from 'react-native';
+import Svg, { Circle, Rect } from 'react-native-svg';
+import {
+  radius,
+  size,
+  space,
+  useTheme,
+  type ColorToken,
+  type TypeVariant,
+} from '../theme';
+import { Icon } from './Icon';
+import { badgeText, initial, stackAvatars } from './logic';
+import { Text } from './Text';
+
+export type AvatarSize = 20 | 24 | 32 | 40 | 56 | 96;
+export type Presence = 'online' | 'idle' | 'dnd' | 'offline';
+
+const initialType: Record<AvatarSize, TypeVariant> = {
+  20: 'tab',
+  24: 'tab',
+  32: 'label',
+  40: 'body',
+  56: 'title-2',
+  96: 'title-1',
+};
+
+// DESIGN.md › Presence: dot 10 on avatars 32–40, 14 on 56–96, cut out of the background by 2.
+const dotSize = (s: AvatarSize) => (s >= 56 ? 14 : 10);
+const RING = 2;
+const STACK_OVERLAP = -6;
+
+// C-13. `self` = the signed-in user (primary fill); `deleted` = default person glyph.
+export function Avatar({
+  name,
+  uri,
+  size: s = 40,
+  self = false,
+  deleted = false,
+  presence,
+  ring = 'bg',
+}: {
+  name: string;
+  uri?: string | null;
+  size?: AvatarSize;
+  self?: boolean;
+  deleted?: boolean;
+  presence?: Presence;
+  // Colour behind the avatar: used for the presence cut-out.
+  ring?: ColorToken;
+}) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const label = deleted ? t('ui.deletedUser') : name;
+  const fill = self && !deleted ? colors.primary : colors['surface-3'];
+  return (
+    <View
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={
+        presence ? `${label}, ${t(`ui.presence.${presence}`)}` : label
+      }
+      style={{ width: s, height: s }}
+    >
+      <View
+        style={[styles.circle, { width: s, height: s, backgroundColor: fill }]}
+      >
+        {deleted ? (
+          <Icon
+            as={UserRound}
+            size={s >= 40 ? 'xl' : 'sm'}
+            color="text-secondary"
+          />
+        ) : uri ? (
+          <Image source={{ uri }} style={{ width: s, height: s }} />
+        ) : (
+          <Text
+            variant={initialType[s]}
+            weight="600"
+            color={self ? 'on-primary' : 'text-primary'}
+            allowFontScaling={false}
+          >
+            {initial(name)}
+          </Text>
+        )}
+      </View>
+      {presence && (
+        <View style={styles.dotCorner}>
+          <PresenceDot status={presence} size={dotSize(s)} ring={ring} />
+        </View>
+      )}
+    </View>
+  );
+}
+
+// Shape is the primary signal, colour secondary (DESIGN.md › Presence): solid · crescent · bar · hollow.
+export function PresenceDot({
+  status,
+  size: d = 10,
+  ring = 'bg',
+}: {
+  status: Presence;
+  size?: 10 | 14;
+  ring?: ColorToken;
+}) {
+  const { colors } = useTheme();
+  const box = d + RING * 2;
+  const c = box / 2;
+  const r = d / 2;
+  const cut = colors[ring];
+  const tone = {
+    online: colors.success,
+    idle: colors.warning,
+    dnd: colors.danger,
+    offline: colors['text-tertiary'],
+  }[status];
+  return (
+    <Svg width={box} height={box}>
+      <Circle cx={c} cy={c} r={c} fill={cut} />
+      {status === 'offline' ? (
+        <Circle
+          cx={c}
+          cy={c}
+          r={r - d * 0.15}
+          fill={cut}
+          stroke={tone}
+          strokeWidth={d * 0.3}
+        />
+      ) : (
+        <Circle cx={c} cy={c} r={r} fill={tone} />
+      )}
+      {status === 'idle' && (
+        <Circle cx={c - r * 0.5} cy={c - r * 0.5} r={r * 0.65} fill={cut} />
+      )}
+      {status === 'dnd' && (
+        <Rect
+          x={c - r * 0.6}
+          y={c - d * 0.1}
+          width={r * 1.2}
+          height={d * 0.2}
+          rx={d * 0.1}
+          fill={cut}
+        />
+      )}
+    </Svg>
+  );
+}
+
+export function AvatarStack({
+  people,
+  size: s = 24,
+  ring = 'bg',
+}: {
+  people: { name: string; uri?: string | null }[];
+  size?: AvatarSize;
+  ring?: ColorToken;
+}) {
+  const { colors } = useTheme();
+  const { shown, more } = stackAvatars(people);
+  return (
+    <View style={styles.stack}>
+      {shown.map((p, i) => (
+        <View
+          key={`${p.name}-${i}`}
+          style={[
+            styles.stackItem,
+            {
+              marginLeft: i === 0 ? 0 : STACK_OVERLAP,
+              borderColor: colors[ring],
+            },
+          ]}
+        >
+          <Avatar name={p.name} uri={p.uri} size={s} />
+        </View>
+      ))}
+      {more > 0 && (
+        <Text variant="label" color="text-secondary" style={styles.more}>
+          +{more}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+// C-13 Badge. `count · neutral` is for pending reports (not red: red means unread / mention).
+export function Badge({
+  count,
+  tone = 'danger',
+}: {
+  count: number | 'dot';
+  tone?: 'danger' | 'neutral';
+}) {
+  const { colors } = useTheme();
+  if (count === 'dot')
+    return <View style={[styles.dot, { backgroundColor: colors.danger }]} />;
+  const text = badgeText(count);
+  if (!text) return null;
+  const neutral = tone === 'neutral';
+  return (
+    <View
+      style={[
+        styles.badge,
+        { backgroundColor: neutral ? colors['surface-3'] : colors.danger },
+      ]}
+    >
+      <Text
+        variant="tab"
+        weight="700"
+        color={neutral ? 'text-primary' : 'bg'}
+        allowFontScaling={false}
+      >
+        {text}
+      </Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  circle: {
+    borderRadius: radius.full,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dotCorner: { position: 'absolute', right: -RING, bottom: -RING },
+  stack: { flexDirection: 'row', alignItems: 'center' },
+  stackItem: { borderWidth: RING, borderRadius: radius.full },
+  more: { marginLeft: space[1] },
+  badge: {
+    minWidth: size.badge,
+    height: size.badge,
+    paddingHorizontal: space[1],
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dot: {
+    width: size.badgeDot,
+    height: size.badgeDot,
+    borderRadius: radius.full,
+  },
+});

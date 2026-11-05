@@ -51,6 +51,7 @@ export const vi = {
       offline: 'Ngoại tuyến',
     },
     badgeDot: 'Đang trong phiên học',
+    badgeCount: '{{count}} mới',
     deletedUser: 'Tài khoản đã xóa',
     position: '{{index}} trên {{total}}',
     tri: { deny: 'Từ chối', default: 'Mặc định', allow: 'Cho phép' },

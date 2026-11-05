@@ -5,6 +5,14 @@ import {
   type NativeStackScreenProps,
 } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
+import {
+  Bell,
+  CircleUser,
+  House,
+  ListChecks,
+  Timer,
+} from 'lucide-react-native';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from 'zustand';
 import {
@@ -14,6 +22,7 @@ import {
   signOut,
 } from '../../domain/session/sessionStore';
 import { currentLanguage, setLanguage } from '../../shared/i18n';
+import { TabBar } from '../../shared/ui/TabBar';
 import { UiGallery } from '../dev/UiGallery';
 import { HomeDrawers } from './HomeDrawers';
 import { Placeholder } from './Placeholder';
@@ -116,9 +125,24 @@ function MainTabs() {
   const { t } = useTranslation();
   const dev = useDevActions();
   const gallery = useGalleryAction();
+  // ponytail: sample badges for comparing with the C-03 board; real counts arrive in P2 (NOTIF-01).
+  const [sampleBadges, setSampleBadges] = useState(false);
+  const tabs = {
+    Home: { icon: House, badge: sampleBadges ? 3 : undefined },
+    Study: { icon: Timer, badge: sampleBadges ? ('dot' as const) : undefined },
+    Tasks: { icon: ListChecks, badge: sampleBadges ? 12 : undefined },
+    Inbox: { icon: Bell, badge: sampleBadges ? 120 : undefined },
+    Me: { icon: CircleUser },
+  };
+  const badgeToggle = __DEV__
+    ? [{ label: 'Badge mẫu', onPress: () => setSampleBadges((b) => !b) }]
+    : [];
   return (
     // CR-15: Back at the root of any other tab returns to Home, keeping that tab's state.
-    <Tab.Navigator backBehavior="firstRoute">
+    <Tab.Navigator
+      backBehavior="firstRoute"
+      tabBar={(props) => <TabBar {...props} tabs={tabs} />}
+    >
       <Tab.Screen
         name="Home"
         component={HomeDrawers}
@@ -137,7 +161,7 @@ function MainTabs() {
         {() => (
           <Placeholder
             title={t('tabs.me')}
-            actions={[dev.language, dev.signOut, ...gallery]}
+            actions={[dev.language, dev.signOut, ...gallery, ...badgeToggle]}
           />
         )}
       </Tab.Screen>

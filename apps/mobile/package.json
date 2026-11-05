@@ -40,7 +40,7 @@
     "doctor": "npx expo-doctor",
     "test": "vitest run",
     "start:go": "expo start --go",
-    "build:dev": "eas build --profile development --platform android"
+    "build:dev": "npx eas-cli@latest build --profile development --platform android"
   },
   "private": true
 }

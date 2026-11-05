@@ -28,7 +28,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 
 ### P0 · Hiếu
 
-- [ ] **P0-2** [#1](https://github.com/Hagno1310/NezFocus/issues/1) Backend đăng nhập tối thiểu
+- [x] **P0-2** [#1](https://github.com/Hagno1310/NezFocus/issues/1) Backend đăng nhập tối thiểu
   - Cần trước: P0-1
   - [x] mốc **P0-2.1** [#39](https://github.com/Hagno1310/NezFocus/issues/39) Hợp đồng auth trong shared · hợp đồng · người kia chờ: P0-3 (Hoàng)
   - [ ] mốc **P0-2.2** [#40](https://github.com/Hagno1310/NezFocus/issues/40) Backend: gửi / nhập mã email và Hoàn tất tài khoản (AUTH-01, AUTH-13) · người kia chờ: P1-B1 (Hoàng)

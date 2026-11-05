@@ -80,6 +80,8 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 - [ ] **P1-A5** [#10](https://github.com/Hagno1310/NezFocus/issues/10) Cài đặt cá nhân còn lại: quyền riêng tư, thông báo, giao diện / ngôn ngữ / múi giờ · **Thùy chạy phiên**
   - Cần trước: P0-4, P1-A1, P1-A4, P1-B4.1 (Hoàng)
   - Trong lúc làm: P1-A5.2 chờ P1-B4.2 (Hoàng); P1-A5.3 chờ P1-B2.3 (Hoàng)
+- [ ] **P1-A6** [#196](https://github.com/Hagno1310/NezFocus/issues/196) Gửi email thật: SMTP qua hàng đợi, mẫu song ngữ, Mailpit cho dev
+  - Cần trước: P0-2
 
 ### P1 · Hoàng
 
@@ -222,4 +224,4 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
   - [ ] mốc **P4-B1.1** [#187](https://github.com/Hagno1310/NezFocus/issues/187) Hợp đồng Hộp thư trong shared · hợp đồng · người kia chờ: P4-A4 (Hiếu)
 - [ ] **P4-B2** [#37](https://github.com/Hagno1310/NezFocus/issues/37) Bản preview, crash report, checklist phát hành, chạy pilot
   - Cần trước: P3-B3, P3-B4, P3-B5
-  - Trong lúc làm: P4-B2.2 chờ P2-A3 (Hiếu); P4-B2.3 chờ P3-A4.4 (Hiếu); P4-B2.4 chờ P4-A2 (Hiếu); P4-B2.4 chờ P4-A4.8 (Hiếu)
+  - Trong lúc làm: P4-B2.2 chờ P2-A3 (Hiếu); P4-B2.3 chờ P3-A4.4 (Hiếu); P4-B2.4 chờ P4-A2 (Hiếu); P4-B2.4 chờ P4-A4.8 (Hiếu); P4-B2.4 chờ P1-A6 (Hiếu)

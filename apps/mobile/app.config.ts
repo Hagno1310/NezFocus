@@ -19,10 +19,11 @@ const config: ExpoConfig = {
       backgroundImage: './assets/android-icon-background.png',
       monochromeImage: './assets/android-icon-monochrome.png',
     },
-    predictiveBackGestureEnabled: false,
+    // NFR-MOB-14: predictive back preview on Android 14+.
+    predictiveBackGestureEnabled: true,
   },
   platforms: ['android'],
-  plugins: ['expo-dev-client'],
+  plugins: ['expo-dev-client', 'expo-localization'],
   // EAS project @hagnovn/nezfocus — shared by the team and CI.
   extra: { eas: { projectId: 'b3823344-a088-479a-a6d6-39e10015445f' } },
 };

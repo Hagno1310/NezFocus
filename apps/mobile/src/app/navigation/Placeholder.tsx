@@ -1,9 +1,12 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { space } from '../../shared/theme';
+import { Button } from '../../shared/ui/Button';
+import { Text } from '../../shared/ui/Text';
 
 type Action = { label: string; onPress: () => void };
 
-// ponytail: unstyled stand-in until shared/ui lands (P0-3b); each screen ticket replaces its placeholder.
+// ponytail: stand-in screen; each screen ticket replaces its placeholder.
 export function Placeholder({
   title,
   actions = [],
@@ -14,19 +17,19 @@ export function Placeholder({
   const { t } = useTranslation();
   return (
     <View style={styles.container}>
-      <Text accessibilityRole="header" style={styles.title}>
+      <Text variant="title-2" accessibilityRole="header">
         {title}
       </Text>
-      <Text>{t('placeholder.note')}</Text>
+      <Text variant="body-sm" color="text-secondary">
+        {t('placeholder.note')}
+      </Text>
       {actions.map((a) => (
-        <Pressable
+        <Button
           key={a.label}
-          accessibilityRole="button"
+          variant="secondary"
+          label={a.label}
           onPress={a.onPress}
-          style={styles.button}
-        >
-          <Text>{a.label}</Text>
-        </Pressable>
+        />
       ))}
     </View>
   );
@@ -37,8 +40,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: space[2],
+    padding: space[3],
   },
-  title: { fontSize: 24, fontWeight: '600' },
-  button: { minHeight: 48, paddingHorizontal: 16, justifyContent: 'center' },
 });

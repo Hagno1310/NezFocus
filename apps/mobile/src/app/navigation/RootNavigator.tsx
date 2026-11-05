@@ -1,8 +1,10 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import {
   createNativeStackNavigator,
+  type NativeStackNavigationProp,
   type NativeStackScreenProps,
 } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useStore } from 'zustand';
 import {
@@ -12,6 +14,7 @@ import {
   signOut,
 } from '../../domain/session/sessionStore';
 import { currentLanguage, setLanguage } from '../../shared/i18n';
+import { UiGallery } from '../dev/UiGallery';
 import { HomeDrawers } from './HomeDrawers';
 import { Placeholder } from './Placeholder';
 
@@ -27,6 +30,7 @@ export type RootStackParamList = {
   // Replaces everything while sessionStore.upgradeRequired (42601 on any request, NFR-MOB-12).
   UpdateRequired: undefined; // S-AUTH-00
   Invite: { code: string };
+  UiGallery: undefined; // dev only (P0-3b)
   ChannelLink: { serverId: string; channelId: string; messageId?: string };
 };
 
@@ -69,11 +73,21 @@ function useDevActions() {
   };
 }
 
+// Only inside a screen: useNavigation throws at the RootNavigator level.
+function useGalleryAction() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  return __DEV__
+    ? [{ label: 'UI Gallery', onPress: () => navigation.navigate('UiGallery') }]
+    : [];
+}
+
 function WelcomePlaceholder({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, 'Welcome'>) {
   const { t } = useTranslation();
   const dev = useDevActions();
+  const gallery = useGalleryAction();
   const links = [
     ['CreateAccount', t('screens.createAccount')],
     ['EnterCode', t('screens.enterCode')],
@@ -92,6 +106,7 @@ function WelcomePlaceholder({
         dev.incomplete,
         dev.language,
         dev.upgrade,
+        ...gallery,
       ]}
     />
   );
@@ -100,6 +115,7 @@ function WelcomePlaceholder({
 function MainTabs() {
   const { t } = useTranslation();
   const dev = useDevActions();
+  const gallery = useGalleryAction();
   return (
     // CR-15: Back at the root of any other tab returns to Home, keeping that tab's state.
     <Tab.Navigator backBehavior="firstRoute">
@@ -121,7 +137,7 @@ function MainTabs() {
         {() => (
           <Placeholder
             title={t('tabs.me')}
-            actions={[dev.language, dev.signOut]}
+            actions={[dev.language, dev.signOut, ...gallery]}
           />
         )}
       </Tab.Screen>
@@ -197,6 +213,13 @@ export function RootNavigator() {
         <Stack.Screen
           name="Main"
           component={MainTabs}
+          options={{ headerShown: false }}
+        />
+      )}
+      {__DEV__ && (
+        <Stack.Screen
+          name="UiGallery"
+          component={UiGallery}
           options={{ headerShown: false }}
         />
       )}

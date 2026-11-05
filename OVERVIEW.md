@@ -136,12 +136,12 @@ apps/mobile/
 ├── plugins/                   Config plugin native tự viết (.gitkeep)
 ├── assets/                    Icon, splash
 └── src/
-    ├── app/App.tsx            Providers (QueryClient); sau này gắn React Navigation
+    ├── app/App.tsx            Providers + NavigationContainer; app/navigation/ = cây điều hướng (placeholder), linking
     ├── features/<area>/       UI: screens/, hooks/, components/
     │   ├── _example/          FEATURE MẪU — copy để bắt đầu
     │   └── auth calls chat friends server settings study tasks voice   ← .gitkeep
     ├── domain/<area>/         TS thuần (không import React/RN): interface repository + use case
-    ├── data/<area>/           Remote/Fake repository, index.ts chọn qua EXPO_PUBLIC_FAKE (data/fake.ts); data/api/client.ts = fetch wrapper
+    ├── data/<area>/           Remote/Fake repository, index.ts chọn qua EXPO_PUBLIC_FAKE (data/fake.ts); data/api = ApiClient (token, refresh single-flight, lỗi SRS 5.2)
     └── shared/{ui,theme,i18n}/  Component, theme, i18n dùng chung (.gitkeep)
 ```
 
@@ -157,7 +157,7 @@ Ví dụ đầy đủ: `ExampleScreen` → `useBackendStatus` → `checkBackend`
 
 - Screen **không** gọi `fetch`/WebSocket/LiveKit trực tiếp.
 - Use case trong `domain/` test bằng Vitest không cần thiết bị (`checkBackend.spec.ts`).
-- State: TanStack Query cho dữ liệu backend, Zustand cho state client — mỗi dữ liệu một chỗ.
+- State: TanStack Query cho dữ liệu backend, Zustand cho state client — mỗi dữ liệu một chỗ. Store Zustand viết bằng `zustand/vanilla` trong `domain/<area>/` (vd `domain/session/sessionStore.ts`: phiên, lý do phiên kết thúc, cờ cần cập nhật app) để `data/` cập nhật được; màn đọc bằng `useStore`.
 - `android/` sinh tự động (CNG), không commit, không sửa tay.
 - Thêm thư viện: `pnpm exec expo install <pkg>` (không `pnpm add`). Thư viện có native code → phải build lại dev client (`pnpm --filter mobile build:dev`) và báo cả nhóm.
 - Expo đổi API mỗi SDK: tra docs đúng phiên bản (`https://docs.expo.dev/versions/v58.0.0/`), không code theo trí nhớ.

@@ -88,7 +88,7 @@ export const HealthResponse = z.object({
 export type HealthResponse = z.infer<typeof HealthResponse>;
 
 // apps/backend: @Get(HealthRoutes.check) async check(): Promise<HealthResponse>
-// apps/mobile:  ping: () => api(HealthRoutes.check)
+// apps/mobile:  ping: () => api.request(HealthRoutes.check, { auth: false })
 ```
 
 ### 4.2 Dữ liệu giả trên app

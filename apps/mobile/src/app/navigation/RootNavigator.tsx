@@ -6,8 +6,10 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useStore } from 'zustand';
 import {
+  requireUpgrade,
   sessionStore,
-  setSessionStatus,
+  signIn,
+  signOut,
 } from '../../domain/session/sessionStore';
 import { currentLanguage, setLanguage } from '../../shared/i18n';
 import { HomeDrawers } from './HomeDrawers';
@@ -22,7 +24,7 @@ export type RootStackParamList = {
   ForgotPassword: undefined; // S-AUTH-05
   CompleteAccount: undefined; // S-ONB-01
   Main: undefined;
-  // Reachable in every session state: 42601 can arrive on any request (NFR-MOB-12).
+  // Replaces everything while sessionStore.upgradeRequired (42601 on any request, NFR-MOB-12).
   UpdateRequired: undefined; // S-AUTH-00
   Invite: { code: string };
   ChannelLink: { serverId: string; channelId: string; messageId?: string };
@@ -39,6 +41,8 @@ type TabParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
+const sampleUser = { id: '1', email: 'an.nguyen@gmail.com' };
+
 const toggleLanguage = () =>
   setLanguage(currentLanguage() === 'vi' ? 'en' : 'vi');
 
@@ -47,20 +51,21 @@ function useDevActions() {
   return {
     signIn: {
       label: t('placeholder.fakeSignIn'),
-      onPress: () => setSessionStatus('signed-in'),
+      onPress: () => signIn(sampleUser, { completed: true }),
     },
     incomplete: {
       label: t('placeholder.fakeIncomplete'),
-      onPress: () => setSessionStatus('incomplete'),
+      onPress: () => signIn(sampleUser, { completed: false }),
     },
     signOut: {
       label: t('placeholder.signOut'),
-      onPress: () => setSessionStatus('signed-out'),
+      onPress: signOut,
     },
     language: {
       label: t('placeholder.switchLanguage'),
       onPress: toggleLanguage,
     },
+    upgrade: { label: t('screens.updateRequired'), onPress: requireUpgrade },
   };
 }
 
@@ -74,7 +79,6 @@ function WelcomePlaceholder({
     ['EnterCode', t('screens.enterCode')],
     ['SignIn', t('screens.signIn')],
     ['ForgotPassword', t('screens.forgotPassword')],
-    ['UpdateRequired', t('screens.updateRequired')],
   ] as const;
   return (
     <Placeholder
@@ -87,6 +91,7 @@ function WelcomePlaceholder({
         dev.signIn,
         dev.incomplete,
         dev.language,
+        dev.upgrade,
       ]}
     />
   );
@@ -127,7 +132,17 @@ function MainTabs() {
 export function RootNavigator() {
   const { t } = useTranslation();
   const status = useStore(sessionStore, (s) => s.status);
+  const upgradeRequired = useStore(sessionStore, (s) => s.upgradeRequired);
   const dev = useDevActions();
+
+  if (upgradeRequired)
+    return (
+      <Stack.Navigator>
+        <Stack.Screen name="UpdateRequired" options={{ headerShown: false }}>
+          {() => <Placeholder title={t('screens.updateRequired')} />}
+        </Stack.Screen>
+      </Stack.Navigator>
+    );
 
   return (
     <Stack.Navigator>
@@ -180,9 +195,6 @@ export function RootNavigator() {
           options={{ headerShown: false }}
         />
       )}
-      <Stack.Screen name="UpdateRequired" options={{ headerShown: false }}>
-        {() => <Placeholder title={t('screens.updateRequired')} />}
-      </Stack.Screen>
       <Stack.Screen name="Invite" options={{ title: t('screens.invite') }}>
         {() => <Placeholder title={t('screens.invite')} />}
       </Stack.Screen>

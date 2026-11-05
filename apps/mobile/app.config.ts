@@ -23,7 +23,7 @@ const config: ExpoConfig = {
     predictiveBackGestureEnabled: true,
   },
   platforms: ['android'],
-  plugins: ['expo-dev-client', 'expo-localization'],
+  plugins: ['expo-dev-client', 'expo-localization', 'expo-secure-store'],
   // EAS project @hagnovn/nezfocus — shared by the team and CI.
   extra: { eas: { projectId: 'b3823344-a088-479a-a6d6-39e10015445f' } },
 };

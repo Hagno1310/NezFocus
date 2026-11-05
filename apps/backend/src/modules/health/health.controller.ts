@@ -7,7 +7,9 @@ import {
 import { HealthRoutes, type HealthResponse } from '@nezfocus/shared';
 import { sql } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
+import { Public } from '../auth/auth.decorators.js';
 
+@Public()
 @Controller()
 export class HealthController {
   constructor(@Inject(DB) private readonly db: Db) {}

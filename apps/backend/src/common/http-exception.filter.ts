@@ -29,11 +29,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof AppError) {
       status = exception.status;
+      const { retryAfter, attemptsLeft, reason } = exception.details;
       body = {
         code: exception.code,
         message: exception.message,
         errors: exception.errors,
+        retry_after: retryAfter,
+        attempts_left: attemptsLeft,
+        reason,
       };
+      if (retryAfter !== undefined) res.setHeader('Retry-After', retryAfter);
     } else if (exception instanceof HttpException) {
       status = exception.getStatus();
       const code =
@@ -47,8 +52,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
       this.logger.error({ requestId, err: exception });
     }
 
-    res
-      .status(status)
-      .json({ ...body, request_id: requestId, retry_after: null });
+    res.status(status).json({
+      ...body,
+      request_id: requestId,
+      retry_after: body.retry_after ?? null,
+    });
   }
 }

@@ -1,7 +1,7 @@
 import { PipeTransform } from '@nestjs/common';
 import { ErrorCode } from '@nezfocus/shared';
 import type { ZodType } from 'zod';
-import { AppError } from './app-error.js';
+import { AppError, type FieldErrors } from './app-error.js';
 
 // Usage: @Body(new ZodValidationPipe(CreateFooBody)) body: CreateFooBody
 export class ZodValidationPipe<T> implements PipeTransform<unknown, T> {
@@ -11,11 +11,17 @@ export class ZodValidationPipe<T> implements PipeTransform<unknown, T> {
     const result = this.schema.safeParse(value);
     if (result.success) return result.data;
 
-    const errors: Record<string, { code: string; message: string }[]> = {};
+    const errors: FieldErrors = {};
     for (const issue of result.error.issues) {
       const field = issue.path.join('.') || '_';
+      // Shared rules (checkUsername / checkPassword) put their own code in params.
+      const ruleCode =
+        issue.code === 'custom'
+          ? (issue.params as { code?: unknown } | undefined)?.code
+          : undefined;
       (errors[field] ??= []).push({
-        code: issue.code.toUpperCase(),
+        code:
+          typeof ruleCode === 'string' ? ruleCode : issue.code.toUpperCase(),
         message: issue.message,
       });
     }

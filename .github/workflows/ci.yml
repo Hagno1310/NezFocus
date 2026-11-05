@@ -22,8 +22,13 @@ jobs:
         ports: ['5432:5432']
         options: >-
           --health-cmd "pg_isready -U nezfocus" --health-interval 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
     env:
       DATABASE_URL: postgres://nezfocus:nezfocus@localhost:5432/nezfocus
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: ci-only-jwt-secret-0123456789abcdef0123456789
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6

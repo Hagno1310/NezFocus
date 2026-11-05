@@ -69,6 +69,57 @@ Quan hệ chặn trên GitHub là bản đồ chi tiết cho agent (ticket con n
 
 **Task chỉ xong khi đã nối với hàng thật**: phần người kia xong thì tắt Fake / bản tạm và chạy lại luồng.
 
+Quy ước chi tiết dưới đây chốt ở P0-1 (#38). Ví dụ chạy được: hợp đồng `health` (shared → backend `HealthController` → app `data/health/`).
+
+### 4.1 Hợp đồng trong `packages/shared`
+
+- Một file cho một chủ đề: `src/<mảng>/<chủ đề>.contract.ts` (vd `auth/auth.contract.ts`, `gateway/events.contract.ts`). Mỗi file thêm **một dòng** `export *` vào `src/index.ts`; không đặt `index.ts` trong từng mảng.
+- Tên: request `<Hành động><Đối tượng>Request` (vd `RegisterEmailCodeRequest`), response `<Đối tượng>Response` (vd `TokenPairResponse`). Schema zod và type cùng tên. Key `snake_case` như JSON thật, id dùng `SnowflakeId`.
+- Đường dẫn: object `<Mảng>Routes` trong cùng file, path tương đối với `/api/v1`, tham số viết `:id` (Nest đọc thẳng; app tự thay).
+- Mã lỗi: dùng `ErrorCode` có sẵn, không khai báo lại. Comment một dòng ở endpoint ghi REQ và mã lỗi có thể trả.
+
+```ts
+// packages/shared/src/health/health.contract.ts
+export const HealthRoutes = { check: '/health' } as const;
+export const HealthResponse = z.object({
+  status: z.literal('ok'),
+  db: z.enum(['up', 'down']),
+});
+export type HealthResponse = z.infer<typeof HealthResponse>;
+
+// apps/backend: @Get(HealthRoutes.check) async check(): Promise<HealthResponse>
+// apps/mobile:  ping: () => api(HealthRoutes.check)
+```
+
+### 4.2 Dữ liệu giả trên app
+
+- `src/data/<mảng>/Remote<X>Repository.ts` và `Fake<X>Repository.ts` cùng implement interface trong `src/domain/<mảng>/`. `src/data/<mảng>/index.ts` chọn một bằng `pickRepository` (`src/data/fake.ts`); hook và use case chỉ import từ `index.ts`.
+- `EXPO_PUBLIC_FAKE` (trong `apps/mobile/.env`) là danh sách tên thư mục `src/data/<mảng>/`, phân cách bằng dấu phẩy, vd `EXPO_PUBLIC_FAKE=auth,servers`. Để trống = gọi backend thật. Đổi biến thì khởi động lại Metro (`expo start -c`) vì giá trị được đóng vào bundle.
+
+```ts
+// apps/mobile/src/data/health/index.ts
+export const healthRepository = pickRepository('health', {
+  remote: remoteHealthRepository,
+  fake: fakeHealthRepository,
+});
+```
+
+### 4.3 Interface dùng chung giữa module backend
+
+- Chủ module khai báo **abstract class** (dùng làm token DI, không cần chuỗi) cùng bản tạm trong `src/modules/<module chủ>/<tên>.ts`, vd `modules/gateway/event-publisher.ts` có `EventPublisher` và `LogEventPublisher`.
+- Module chủ là `@Global()`, `providers` + `exports`: `{ provide: EventPublisher, useClass: LogEventPublisher }`. Module khác inject theo kiểu `constructor(private readonly events: EventPublisher)`, không import bản tạm; test truyền object giả.
+- Có bản thật thì chủ module chỉ đổi `useClass`; module gọi không sửa.
+
+| Interface             | Module chủ      | Ai  | Ticket |
+| --------------------- | --------------- | --- | ------ |
+| `EventPublisher`      | `gateway`       | B   | P0-5   |
+| `PermissionService`   | `permissions`   | A   | P0-6   |
+| `NotificationService` | `notifications` | B   | P2-B4  |
+
+### 4.4 Dữ liệu mẫu
+
+Fake và seed (P0-7) dùng đúng **bộ dữ liệu mẫu** ở [`design/screens/README.md`](design/screens/README.md) (An, Bình, Chi, Dũng; "Ôn thi Giải tích 2"…; giờ mẫu theo area), để màn hình so được với frame. Không đặt tên ngoài bộ đó. Chưa có file fixture dùng chung app ↔ backend; thêm khi hai bên cần cùng id.
+
 ## 5. Đường ngắn (mặc định): một phiên agent cho một issue cha
 
 Mỗi issue cha (nhãn `spec`) là một dòng task trong `task-breakdown.md`, gồm vài ticket con. Mặc định **một phiên agent làm trọn một issue cha**: các ticket con lần lượt, mỗi ticket con một commit, cuối cùng một PR. Ticket không có issue cha (vd P0-6) thì một phiên cho một ticket, cùng các bước dưới đây.

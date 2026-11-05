@@ -16,7 +16,7 @@ Lệnh: xem `scripts` trong `package.json` ở root và từng package.
 
 ## Quy trình
 
-Hai người, chia theo mảng: ai làm gì ở `docs/task-breakdown.md`; làm một việc từ ticket tới merge ở `docs/WORKFLOW.md`. Đọc cả hai trước khi nhận ticket. Chọn việc theo `docs/tien-do.md`; khi mở PR đóng một issue cha (hoặc PR hợp đồng), tick dòng / ô "mốc" tương ứng trong file đó, commit vào cùng PR. Chỉ sửa module backend và `features/` thuộc mảng của ticket, trừ khi ticket ghi khác.
+Hai người, chia theo mảng: ai làm gì ở `docs/task-breakdown.md`; làm một việc từ ticket tới merge ở `docs/WORKFLOW.md`. Đọc cả hai trước khi nhận ticket. Chọn việc theo `docs/tien-do.md`; khi mở PR đóng một issue cha (hoặc PR hợp đồng), tick dòng / ô "mốc" tương ứng trong file đó, commit vào cùng PR. Xong ticket thì bàn giao qua ticket: điều người làm sau cần biết ghi vào mục Nguồn của issue đang chờ nó, không chỉ trong PR (WORKFLOW mục 5). Chỉ sửa module backend và `features/` thuộc mảng của ticket, trừ khi ticket ghi khác.
 
 **Skill:** chỉ dùng bộ Matt Pocock trong `.claude/skills/` (phiên bản ở `skills-lock.json`). Không dùng bộ skill khác có thể đang cài trên máy (vd `agent-skills:*`), để hai người chạy cùng một quy trình. Luật dự án thắng mặc định của skill: SRS → file này → `docs/WORKFLOW.md` → skill. Ví dụ: skill bảo commit thì vẫn theo mục Git dưới đây; skill không biết về thiết kế thì vẫn làm `docs/WORKFLOW.md` mục 7.
 

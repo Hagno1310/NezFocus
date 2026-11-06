@@ -87,14 +87,16 @@ export function timerOf(snap: SoloSnapshot, localNow: Date): SoloTimer | null {
   const left =
     deadline === null ? s.paused_remaining_ms! : deadline - now.getTime();
   const end = s.status === 'running' ? new Date(deadline!) : null;
+  const totalMs =
+    s.status === 'waiting'
+      ? SOLO_WAIT_LIMIT_MS
+      : phaseMinutes(s.cycle_config, s.phase) * 60_000;
   return {
     status: s.status,
     phase: s.phase,
-    remainingMs: Math.max(0, left),
-    totalMs:
-      s.status === 'waiting'
-        ? SOLO_WAIT_LIMIT_MS
-        : phaseMinutes(s.cycle_config, s.phase) * 60_000,
+    // The offset carries the network delay of its response, so cap at the phase length (no 25:01).
+    remainingMs: Math.min(totalMs, Math.max(0, left)),
+    totalMs,
     round: s.focus_phases_done + (s.phase === 'focus' ? 1 : 0),
     next:
       end &&

@@ -138,7 +138,7 @@ function Running({ snap, timer }: { snap: SoloSnapshot; timer: SoloTimer }) {
 
   return (
     <>
-      <ScrollView contentContainerStyle={styles.body}>
+      <ScrollView contentContainerStyle={[styles.body, styles.hero]}>
         <FocusTimer
           phase={phase}
           state={status}
@@ -158,8 +158,8 @@ function Running({ snap, timer }: { snap: SoloSnapshot; timer: SoloTimer }) {
         {status === 'waiting' && (
           <Button
             size="L"
-            fullWidth
             label={t('study.continue')}
+            style={styles.continue}
             onPress={() => act({ action: 'continue' })}
           />
         )}
@@ -324,6 +324,10 @@ const styles = StyleSheet.create({
     gap: space[3],
     padding: space[3],
   },
+  // Board S-STUDY-02 waiting: "Học tiếp" 240 × 48 under the ring, hero gap 12.
+  continue: { width: 240 },
+  // Board: the hero sits 16 under the header, not centred; controls stay at the bottom.
+  hero: { gap: space[2] + space[1], justifyContent: 'flex-start' },
   ended: { gap: space[2] },
   controls: {
     flexDirection: 'row',

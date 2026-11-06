@@ -70,6 +70,14 @@ describe('timerOf', () => {
     );
   });
 
+  it('a fresh phase never reads more than its length (network delay in the offset)', () => {
+    const fresh = {
+      ...snap({ phase_ends_at: iso(at(22, 19)) }),
+      offsetMs: -400,
+    };
+    expect(timerOf(fresh, at(21, 29))?.remainingMs).toBe(50 * 60_000);
+  });
+
   it('with long breaks on, the next break is named: long after every N rounds', () => {
     const cfg = {
       focus_min: 50,

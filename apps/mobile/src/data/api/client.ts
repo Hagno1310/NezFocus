@@ -73,8 +73,7 @@ export function createApiClient(deps: ApiClientDeps) {
     };
     if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
     if (token) headers.Authorization = `Bearer ${token}`;
-    // fetch has no timeout of its own; a request the server took but never answered would hang
-    // its caller, and every Solo command queued behind it.
+    // fetch never times out: an unanswered request would block every Solo command queued behind it.
     const abort = new AbortController();
     const timer = setTimeout(() => abort.abort(), REQUEST_TIMEOUT_MS);
     const res = await deps

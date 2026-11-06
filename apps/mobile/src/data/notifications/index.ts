@@ -7,6 +7,23 @@ const ASKED_KEY = 'notifications.asked';
 
 export type NotificationAccess = 'granted' | 'denied' | 'undetermined';
 
+type Alarm = { at: Date; title: string; body: string };
+
+let queue: Promise<void> = Promise.resolve();
+
+async function schedule(items: Alarm[]) {
+  await Notifications.cancelAllScheduledNotificationsAsync();
+  for (const { at, title, body } of items)
+    await Notifications.scheduleNotificationAsync({
+      content: { title, body, data: { open: 'solo' } },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: at,
+        channelId: STUDY_CHANNEL,
+      },
+    });
+}
+
 export const studyNotifications = {
   setupChannel: (name: string) =>
     Notifications.setNotificationChannelAsync(STUDY_CHANNEL, {
@@ -14,22 +31,13 @@ export const studyNotifications = {
       importance: Notifications.AndroidImportance.HIGH,
     }),
 
-  // SRS 7.3.6 step 3: every change cancels everything scheduled and schedules again.
-  async replace(items: { at: Date; title: string; body: string }[]) {
-    await Notifications.cancelAllScheduledNotificationsAsync();
-    for (const { at, title, body } of items)
-      await Notifications.scheduleNotificationAsync({
-        content: { title, body, data: { open: 'solo' } },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DATE,
-          date: at,
-          channelId: STUDY_CHANNEL,
-        },
-      });
+  // SRS 7.3.6 step 3: cancel all, schedule again; queued so close updates never interleave.
+  replace(items: Alarm[]) {
+    queue = queue.then(() => schedule(items)).catch(() => undefined);
+    return queue;
   },
 
-  // Android 13+ reports "denied" for a permission never asked yet; until we ask (and while the
-  // system still lets us), that is "undetermined", not the S-STUDY-EDGE notif-denied state.
+  // Android 13+ says "denied" before we ever asked; that is "undetermined", not notif-denied.
   async access(): Promise<NotificationAccess> {
     const { granted, canAskAgain } = await Notifications.getPermissionsAsync();
     if (granted) return 'granted';

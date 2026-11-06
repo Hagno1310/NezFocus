@@ -1,12 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { studyNotifications } from '../../../data/notifications';
 import { size, space } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import { Mascot } from '../../../shared/ui/Mascot';
 import { Text } from '../../../shared/ui/Text';
 import { useLastCycle, useStartSolo } from '../hooks/useSolo';
+import { notificationPrompt } from '../hooks/useSoloAlerts';
 
 // S-ROOM-09 first-focus: explained before the system dialog, once. "Để sau" still starts (no dialog).
 export function AskNotifications({ onStarted }: { onStarted: () => void }) {
@@ -15,9 +15,7 @@ export function AskNotifications({ onStarted }: { onStarted: () => void }) {
   const cycle = useLastCycle((s) => s.cycle);
   const start = useStartSolo();
   const go = async (allow: boolean) => {
-    await (
-      allow ? studyNotifications.request() : studyNotifications.markAsked()
-    ).catch(() => undefined);
+    await notificationPrompt.answer(allow);
     start.mutate(cycle, { onSettled: onStarted });
   };
   return (

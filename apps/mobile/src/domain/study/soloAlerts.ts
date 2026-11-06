@@ -7,8 +7,7 @@ export type SoloAlert =
 
 const MINUTE = 60_000;
 
-// SRS 7.3.6 step 2: Solo schedules up to the end of the current break only; the next focus waits
-// for "Học tiếp" by the user. `localNow` and the result are phone times.
+// SRS 7.3.6 step 2: only up to the end of the current break; the next focus waits for "Học tiếp".
 export function soloAlerts(snap: SoloSnapshot, localNow: Date): SoloAlert[] {
   const s = snap.session;
   if (s.status !== 'running') return [];

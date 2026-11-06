@@ -173,6 +173,18 @@ describe('Solo Session (e2e)', () => {
     await u.start().expect(201);
   });
 
+  it('a session whose wait ran out never blocks the next start, even before anything read it', async () => {
+    const u = await signedIn();
+    const id = (await u.start().expect(201)).body.solo_session.id as string;
+    clock.advance(41 * 60);
+    await u.renew();
+    await u.start().expect(201);
+    expect((await u.get(id).expect(200)).body.solo_session).toMatchObject({
+      status: 'ended',
+      end_reason: 'wait_timeout',
+    });
+  });
+
   it("every change reaches the user's devices as SOLO_SESSION_UPDATE", async () => {
     const u = await signedIn();
     const id = (await u.start().expect(201)).body.solo_session.id as string;

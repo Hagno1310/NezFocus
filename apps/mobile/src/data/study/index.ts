@@ -14,9 +14,15 @@ export const soloRepository: SoloRepository = {
 
 // ponytail: SecureStore as the only key-value store installed; move to op-sqlite / MMKV when one lands.
 const KEY = 'solo.last-id';
+const STOPPED_KEY = 'solo.stopped-here';
 
 export const soloMemory: SoloMemory = {
   lastId: () => SecureStore.getItemAsync(KEY),
   remember: (id) => SecureStore.setItemAsync(KEY, id),
-  forget: () => SecureStore.deleteItemAsync(KEY),
+  forget: async () => {
+    await SecureStore.deleteItemAsync(KEY);
+    await SecureStore.deleteItemAsync(STOPPED_KEY);
+  },
+  stoppedHere: () => SecureStore.getItemAsync(STOPPED_KEY),
+  markStoppedHere: (id) => SecureStore.setItemAsync(STOPPED_KEY, id),
 };

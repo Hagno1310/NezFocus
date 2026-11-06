@@ -34,8 +34,7 @@ export const overlayOpened = () => dispatch({ type: 'overlay', open: true });
 export const overlayClosed = () =>
   dispatch({ type: 'overlay', open: false, now: Date.now() });
 
-// S-MOD-04 › Vị trí toast: each bottom bar registers its height while mounted; the toast sits above
-// their sum, so it clears MiniPlayer stacked on TabBar.
+// S-MOD-04 › Vị trí toast: bottom bars (TabBar, MiniPlayer) add up; the toast sits above them all.
 export function useToastAnchor(height: number) {
   const id = useId();
   useEffect(() => {

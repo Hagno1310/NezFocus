@@ -9,6 +9,7 @@ import {
 } from '@nezfocus/shared';
 import { ZodValidationPipe } from '../../common/zod-validation.pipe.js';
 import { CurrentUser, type AuthUser } from '../auth/auth.decorators.js';
+import { toSoloResponse, toSoloSessionJson } from './solo-session.dto.js';
 import { SoloSessionService } from './solo-session.service.js';
 
 // SRS 5.3 Study: Solo Session (REQ-STUDY-10).
@@ -17,33 +18,41 @@ export class SoloSessionController {
   constructor(private readonly solo: SoloSessionService) {}
 
   @Post(SoloRoutes.start)
-  start(
+  async start(
     @CurrentUser() user: AuthUser,
     @Body(new ZodValidationPipe(StartSoloSessionRequest))
     body: StartSoloSessionRequest,
   ): Promise<SoloSessionResponse> {
-    return this.solo.start(user.userId, body.cycle_config);
+    return toSoloResponse(
+      await this.solo.start(user.userId, body.cycle_config),
+    );
   }
 
   @Get(SoloRoutes.current)
-  current(@CurrentUser() user: AuthUser): Promise<CurrentSoloSessionResponse> {
-    return this.solo.current(user.userId);
+  async current(
+    @CurrentUser() user: AuthUser,
+  ): Promise<CurrentSoloSessionResponse> {
+    const { record, now } = await this.solo.current(user.userId);
+    return {
+      solo_session: record && toSoloSessionJson(record),
+      backend_time: now.toISOString(),
+    };
   }
 
   @Get(SoloRoutes.byId(':id'))
-  get(
+  async get(
     @CurrentUser() user: AuthUser,
     @Param('id', new ZodValidationPipe(SnowflakeId)) id: string,
   ): Promise<SoloSessionResponse> {
-    return this.solo.get(user.userId, BigInt(id));
+    return toSoloResponse(await this.solo.get(user.userId, BigInt(id)));
   }
 
   @Patch(SoloRoutes.byId(':id'))
-  act(
+  async act(
     @CurrentUser() user: AuthUser,
     @Param('id', new ZodValidationPipe(SnowflakeId)) id: string,
     @Body(new ZodValidationPipe(SoloAction)) body: SoloAction,
   ): Promise<SoloSessionResponse> {
-    return this.solo.act(user.userId, BigInt(id), body);
+    return toSoloResponse(await this.solo.act(user.userId, BigInt(id), body));
   }
 }

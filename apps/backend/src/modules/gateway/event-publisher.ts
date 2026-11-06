@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { DispatchEventName, DispatchPayload } from '@nezfocus/shared';
+import { GatewaySessions } from './gateway-sessions.js';
 
 // SRS 5.4 DISPATCH. Owner: gateway (B). Other modules inject this and never touch sockets.
 export abstract class EventPublisher {
@@ -22,25 +23,28 @@ export abstract class EventPublisher {
   ): Promise<void>;
 }
 
-// ponytail: stand-in until P0-5.2 (#51); only logs.
 @Injectable()
-export class LogEventPublisher extends EventPublisher {
+export class GatewayEventPublisher extends EventPublisher {
   private readonly logger = new Logger('EventPublisher');
 
-  private log(target: string, t: string) {
-    this.logger.log(`would dispatch ${t} to ${target}`);
-    return Promise.resolve();
+  constructor(private readonly sessions: GatewaySessions) {
+    super();
   }
 
-  toUser(userId: bigint, t: DispatchEventName) {
-    return this.log(`user ${userId}`, t);
+  toUser<T extends DispatchEventName>(
+    userId: bigint,
+    t: T,
+    d: DispatchPayload<T>,
+  ) {
+    return this.sessions.dispatchToUser(userId, t, d);
   }
 
-  toChannel(channelId: bigint, t: DispatchEventName) {
-    return this.log(`channel ${channelId}`, t);
+  // ponytail: needs membership + VIEW_CHANNEL (P2-B1 #18); logs until then.
+  async toChannel(channelId: bigint, t: DispatchEventName) {
+    this.logger.warn(`${t} to channel ${channelId} dropped: not wired yet`);
   }
 
-  toServer(serverId: bigint, t: DispatchEventName) {
-    return this.log(`server ${serverId}`, t);
+  async toServer(serverId: bigint, t: DispatchEventName) {
+    this.logger.warn(`${t} to server ${serverId} dropped: not wired yet`);
   }
 }

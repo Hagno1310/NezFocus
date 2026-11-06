@@ -318,7 +318,7 @@ Dialog này chỉ cho phòng **đang có** phiên. Đang Solo mà tự bắt đ�
 
 ## S-ROOM-07 · Notification chuyển pha (màn hình khóa)
 
-**REQ:** STUDY-01 AC4, STUDY-10, 7.3.6, NOTIF-02. Local notification (Notifee), kênh Android "Nhắc học tập". Mỗi notification có icon app; **không** mascot, không ảnh.
+**REQ:** STUDY-01 AC4, STUDY-10, 7.3.6, NOTIF-02. Local notification (`expo-notifications`, v1.11 CR-28 #16), kênh Android "Nhắc học tập". Mỗi notification có icon app; **không** mascot, không ảnh.
 
 | State | Tiêu đề | Nội dung |
 |---|---|---|

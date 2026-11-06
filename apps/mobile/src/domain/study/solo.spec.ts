@@ -1,6 +1,7 @@
 import type { SoloSession, SoloSessionResponse } from '@nezfocus/shared';
 import { describe, expect, it } from 'vitest';
 import {
+  acceptSnapshot,
   applyLocally,
   endingOf,
   receiveSoloEvent,
@@ -381,5 +382,27 @@ describe('snapshotOf (SRS 7.3.6 clock_offset)', () => {
     expect(snapshotOf(r, { received: t0 + 5000 }, false, prev).offsetMs).toBe(
       -5000,
     );
+  });
+});
+
+describe('acceptSnapshot (stale answers never undo an ending)', () => {
+  const running = snap();
+  const stopped = snap(ended(), true);
+
+  it('takes a newer state of the shown session', () => {
+    expect(acceptSnapshot(running, stopped, null)).toBe(stopped);
+  });
+
+  it('an ended session never goes back to running (a late answer from before "Dừng")', () => {
+    expect(acceptSnapshot(stopped, running, null)).toBe(stopped);
+  });
+
+  it('a session closed with "Xong" stays closed', () => {
+    expect(acceptSnapshot(null, running, '42')).toBeNull();
+  });
+
+  it('a different session (started on another device) is taken', () => {
+    const other = snap({ id: '43' });
+    expect(acceptSnapshot(stopped, other, '42')).toBe(other);
   });
 });

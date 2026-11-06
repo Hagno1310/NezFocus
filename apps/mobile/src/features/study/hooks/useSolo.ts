@@ -13,6 +13,7 @@ import { ApiError } from '../../../data/api';
 import { soloMemory, soloRepository } from '../../../data/study';
 import { sessionStore } from '../../../domain/session/sessionStore';
 import {
+  acceptSnapshot,
   applyLocally,
   receiveSoloEvent,
   restoreSolo,
@@ -30,6 +31,12 @@ const timed = async <R>(call: () => Promise<R>) => {
   return { r: await call(), sent };
 };
 
+// The session closed with "Xong": late answers or events about it must not bring it back.
+let closedId: string | null = null;
+
+// One queue for every Solo command, so an earlier answer can never land after a later one.
+const scope = { id: 'solo' };
+
 const read = (qc: QueryClient) =>
   qc.getQueryData<SoloSnapshot | null>(SOLO) ?? null;
 
@@ -40,8 +47,15 @@ export function useSolo() {
   return (
     useQuery({
       queryKey: SOLO,
-      queryFn: () =>
-        restoreSolo(soloRepository, soloMemory, read(qc), Date.now),
+      queryFn: async () => {
+        const next = await restoreSolo(
+          soloRepository,
+          soloMemory,
+          read(qc),
+          Date.now,
+        );
+        return next && acceptSnapshot(read(qc), next, closedId);
+      },
       enabled: signedIn,
     }).data ?? null
   );
@@ -53,7 +67,7 @@ export function useSoloSync() {
   const snap = useSolo();
   useGatewayEvent('SOLO_SESSION_UPDATE', (d) => {
     qc.setQueryData<SoloSnapshot | null>(SOLO, (prev) =>
-      receiveSoloEvent(prev ?? null, d, Date.now()),
+      receiveSoloEvent(prev ?? null, d, Date.now(), closedId),
     );
     if (d.solo_session.status !== 'ended')
       void soloMemory.remember(d.solo_session.id);
@@ -74,6 +88,7 @@ export function useSoloSync() {
 export function useStartSolo() {
   const qc = useQueryClient();
   return useMutation({
+    scope,
     mutationFn: (cycle: CycleConfig) =>
       timed(() => soloRepository.start(cycle)),
     onSuccess: async ({ r, sent }) => {
@@ -93,6 +108,7 @@ export function useStartSolo() {
 export function useSoloAction() {
   const qc = useQueryClient();
   return useMutation({
+    scope,
     mutationFn: ({ id, action }: { id: string; action: SoloAction }) =>
       timed(() => soloRepository.act(id, action)),
     onMutate: async ({ action }) => {
@@ -119,7 +135,11 @@ export function useSoloAction() {
       const stoppedHere = action.action === 'stop' || !!prev?.stoppedHere;
       qc.setQueryData(
         SOLO,
-        snapshotOf(r, { sent, received: Date.now() }, stoppedHere, prev),
+        acceptSnapshot(
+          prev,
+          snapshotOf(r, { sent, received: Date.now() }, stoppedHere, prev),
+          closedId,
+        ),
       );
       if (action.action === 'stop') await soloMemory.forget();
     },
@@ -133,6 +153,7 @@ export function useSoloAction() {
 export function useCloseSolo() {
   const qc = useQueryClient();
   return () => {
+    closedId = read(qc)?.session.id ?? closedId;
     qc.setQueryData(SOLO, null);
     void soloMemory.forget();
   };

@@ -234,17 +234,34 @@ export async function restoreSolo(
   }
 }
 
+// Answers and Gateway events can arrive late or out of order. An ending is one-way, and a session
+// closed with "Xong" (`closedId`) is gone for this screen, so neither can be undone by a stale copy.
+export function acceptSnapshot(
+  shown: SoloSnapshot | null,
+  next: SoloSnapshot,
+  closedId: string | null,
+): SoloSnapshot | null {
+  if (next.session.id === closedId) return shown;
+  const reopened =
+    shown?.session.id === next.session.id &&
+    shown.session.status === 'ended' &&
+    next.session.status !== 'ended';
+  return reopened ? shown : next;
+}
+
 export function receiveSoloEvent(
   shown: SoloSnapshot | null,
   r: SoloSessionResponse,
   receivedAt: number,
+  closedId: string | null = null,
 ): SoloSnapshot | null {
   const same = shown?.session.id === r.solo_session.id;
   if (r.solo_session.status === 'ended' && !same) return shown;
-  return snapshotOf(
+  const next = snapshotOf(
     r,
     { received: receivedAt },
     same && shown.stoppedHere,
     shown,
   );
+  return acceptSnapshot(shown, next, closedId);
 }

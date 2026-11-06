@@ -6,7 +6,8 @@ export type FocusInterval = {
   end: Date;
   phaseEndsAt?: Date | null;
 };
-export type DayCredit = { localDate: string; seconds: number };
+// capped: the 16 h cap dropped some of this day's seconds (S-STUDY-EDGE long-session).
+export type DayCredit = { localDate: string; seconds: number; capped: boolean };
 
 const formatters = new Map<string, Intl.DateTimeFormat>();
 // en-CA formats as YYYY-MM-DD, the shape of a Postgres DATE.
@@ -53,12 +54,17 @@ export function creditFocus(
     }
   }
   return [...msByDate]
-    .map(([date, ms]) => ({
-      localDate: date,
-      seconds: Math.min(
-        Math.floor(ms / 1000),
-        Math.max(0, DAILY_FOCUS_CAP_SECONDS - (alreadyByDate[date] ?? 0)),
-      ),
-    }))
-    .filter((c) => c.seconds > 0);
+    .map(([date, ms]) => {
+      const raw = Math.floor(ms / 1000);
+      const room = Math.max(
+        0,
+        DAILY_FOCUS_CAP_SECONDS - (alreadyByDate[date] ?? 0),
+      );
+      return {
+        localDate: date,
+        seconds: Math.min(raw, room),
+        capped: raw > room,
+      };
+    })
+    .filter((c) => c.seconds > 0 || c.capped);
 }

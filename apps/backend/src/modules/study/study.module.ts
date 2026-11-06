@@ -1,8 +1,19 @@
 import { Module } from '@nestjs/common';
+import { BullSoloScheduler, SoloPhaseWorker } from './solo-phase.queue.js';
+import { SoloSessionController } from './solo-session.controller.js';
+import { SoloSessionRepository } from './solo-session.repository.js';
+import { SoloScheduler, SoloSessionService } from './solo-session.service.js';
 import { StudyStatsRepository } from './study-stats.repository.js';
 
 @Module({
-  providers: [StudyStatsRepository],
-  exports: [StudyStatsRepository],
+  controllers: [SoloSessionController],
+  providers: [
+    StudyStatsRepository,
+    SoloSessionRepository,
+    SoloSessionService,
+    { provide: SoloScheduler, useClass: BullSoloScheduler },
+    SoloPhaseWorker,
+  ],
+  exports: [StudyStatsRepository, SoloSessionService],
 })
 export class StudyModule {}

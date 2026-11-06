@@ -2,3 +2,4 @@
 export * from '../modules/users/users.schema.js';
 export * from '../modules/auth/auth.schema.js';
 export * from '../modules/study/study.schema.js';
+export * from '../modules/study/solo.schema.js';

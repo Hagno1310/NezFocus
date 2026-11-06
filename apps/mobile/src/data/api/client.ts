@@ -7,6 +7,8 @@ import {
 } from '@nezfocus/shared';
 import type { EndReason } from '../../domain/session/sessionStore';
 
+export const REQUEST_TIMEOUT_MS = 15_000;
+
 export type Tokens = { access_token: string; refresh_token: string };
 
 export interface TokenStore {
@@ -71,11 +73,18 @@ export function createApiClient(deps: ApiClientDeps) {
     };
     if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
     if (token) headers.Authorization = `Bearer ${token}`;
-    const res = await deps.fetch(`${deps.baseUrl}${path}`, {
-      method: opts.method ?? 'GET',
-      headers,
-      body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
-    });
+    // fetch has no timeout of its own; a request the server took but never answered would hang
+    // its caller, and every Solo command queued behind it.
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), REQUEST_TIMEOUT_MS);
+    const res = await deps
+      .fetch(`${deps.baseUrl}${path}`, {
+        method: opts.method ?? 'GET',
+        headers,
+        body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+        signal: abort.signal,
+      })
+      .finally(() => clearTimeout(timer));
     if (res.status === 204) return { ok: true as const, data: undefined };
     const json: unknown = await res.json().catch(() => null);
     if (res.ok) return { ok: true as const, data: json };

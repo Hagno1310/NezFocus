@@ -6,3 +6,4 @@ export * from './auth/auth.contract.js';
 export * from './gateway/gateway.contract.js';
 export * from './gateway/events.contract.js';
 export * from './study/focused-time.js';
+export * from './study/solo.contract.js';

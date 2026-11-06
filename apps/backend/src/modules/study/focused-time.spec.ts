@@ -12,7 +12,7 @@ describe('creditFocus', () => {
   it('AC5: leaving at 12:40 of a focus phase credits 760 seconds', () => {
     expect(
       creditFocus([focus('2026-11-06T13:00:00Z', 12, 40)], HCM, {}),
-    ).toEqual([{ localDate: '2026-11-06', seconds: 760 }]);
+    ).toEqual([{ localDate: '2026-11-06', seconds: 760, capped: false }]);
   });
 
   it('AC6: five exits at 2:59 add up to 14:55, not 10 minutes', () => {
@@ -20,15 +20,15 @@ describe('creditFocus', () => {
       focus(`2026-11-06T0${h}:00:00Z`, 2, 59),
     );
     expect(creditFocus(exits, HCM, {})).toEqual([
-      { localDate: '2026-11-06', seconds: 895 },
+      { localDate: '2026-11-06', seconds: 895, capped: false },
     ]);
   });
 
   it('(4) splits a phase crossing local midnight between the two days', () => {
     // 23:50 → 00:15 in Ho Chi Minh City.
     expect(creditFocus([focus('2026-11-06T16:50:00Z', 25)], HCM, {})).toEqual([
-      { localDate: '2026-11-06', seconds: 600 },
-      { localDate: '2026-11-07', seconds: 900 },
+      { localDate: '2026-11-06', seconds: 600, capped: false },
+      { localDate: '2026-11-07', seconds: 900, capped: false },
     ]);
   });
 
@@ -36,21 +36,24 @@ describe('creditFocus', () => {
     // Same instants are 11:50 → 12:15 in New York: one day.
     expect(
       creditFocus([focus('2026-11-06T16:50:00Z', 25)], 'America/New_York', {}),
-    ).toEqual([{ localDate: '2026-11-06', seconds: 1500 }]);
+    ).toEqual([{ localDate: '2026-11-06', seconds: 1500, capped: false }]);
   });
 
   it('(4) credits only up to 16 hours per local day', () => {
     const already = { '2026-11-06': 15 * 3600 + 50 * 60 };
     expect(
       creditFocus([focus('2026-11-06T08:00:00Z', 25)], HCM, already),
-    ).toEqual([{ localDate: '2026-11-06', seconds: 600 }]);
+    ).toEqual([{ localDate: '2026-11-06', seconds: 600, capped: true }]);
   });
 
   it('(4) a full day credits nothing but the next day still counts', () => {
     const already = { '2026-11-06': 16 * 3600 };
     expect(
       creditFocus([focus('2026-11-06T16:50:00Z', 25)], HCM, already),
-    ).toEqual([{ localDate: '2026-11-07', seconds: 900 }]);
+    ).toEqual([
+      { localDate: '2026-11-06', seconds: 0, capped: true },
+      { localDate: '2026-11-07', seconds: 900, capped: false },
+    ]);
   });
 
   it('AC3/AC4: a stop arriving an hour late is clipped to the phase schedule', () => {
@@ -60,7 +63,7 @@ describe('creditFocus', () => {
       phaseEndsAt: focus('2026-11-06T13:00:00Z', 25).end,
     };
     expect(creditFocus([late], HCM, {})).toEqual([
-      { localDate: '2026-11-06', seconds: 1500 },
+      { localDate: '2026-11-06', seconds: 1500, capped: false },
     ]);
   });
 
@@ -70,7 +73,7 @@ describe('creditFocus', () => {
       phaseEndsAt: focus('2026-11-06T13:00:00Z', 25).end,
     };
     expect(creditFocus([early], HCM, {})).toEqual([
-      { localDate: '2026-11-06', seconds: 450 },
+      { localDate: '2026-11-06', seconds: 450, capped: false },
     ]);
   });
 });

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Controller, Get, type INestApplication } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
+import { Test, type TestingModuleBuilder } from '@nestjs/testing';
 import { TERMS_VERSION } from '@nezfocus/shared';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
@@ -30,15 +30,19 @@ export class CapturingMailer extends AuthMailer {
   }
 }
 
-export async function createTestApp() {
+// `override` swaps more providers, e.g. a fixed Clock.
+export async function createTestApp(
+  override: (b: TestingModuleBuilder) => TestingModuleBuilder = (b) => b,
+) {
   const mailer = new CapturingMailer();
-  const moduleRef = await Test.createTestingModule({
-    imports: [AppModule],
-    controllers: [ProbeController],
-  })
-    .overrideProvider(AuthMailer)
-    .useValue(mailer)
-    .compile();
+  const moduleRef = await override(
+    Test.createTestingModule({
+      imports: [AppModule],
+      controllers: [ProbeController],
+    })
+      .overrideProvider(AuthMailer)
+      .useValue(mailer),
+  ).compile();
   const app = moduleRef.createNestApplication();
   configureApp(app);
   await app.init();
@@ -60,6 +64,10 @@ export const http = (app: INestApplication) => {
         .set('X-Client-Platform', 'android'),
     get: (path: string) =>
       request(server).get(`/api/v1${path}`).set('X-Client-Platform', 'android'),
+    patch: (path: string) =>
+      request(server)
+        .patch(`/api/v1${path}`)
+        .set('X-Client-Platform', 'android'),
   };
 };
 

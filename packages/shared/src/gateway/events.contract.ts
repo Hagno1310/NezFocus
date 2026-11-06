@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { CurrentUser } from '../auth/auth.contract.js';
 import { SnowflakeId } from '../snowflake.js';
+import { SoloSessionResponse } from '../study/solo.contract.js';
 import type { DispatchFrame } from './gateway.contract.js';
 
 // P0 READY: the rest of SRS 5.4 (servers, DMs, read states, relationships) is added by the area that owns it.
@@ -15,6 +16,7 @@ export const DispatchEvents = {
   READY: Ready,
   RESUMED: z.object({}),
   USER_UPDATE: CurrentUser,
+  SOLO_SESSION_UPDATE: SoloSessionResponse, // REQ-STUDY-10: every change, to every session of the user
 } satisfies Record<string, z.ZodType>;
 
 export type DispatchEventName = keyof typeof DispatchEvents;

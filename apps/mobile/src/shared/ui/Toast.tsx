@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,11 +17,13 @@ import {
 
 export type { Toast };
 
-// `anchor`: distance from the screen bottom to the top of the bottom bar (TabBar, button group).
-const useToastStore = create<ToastState & { anchor: number }>(() => ({
-  ...initialToastState,
-  anchor: 0,
-}));
+// `anchors`: heights of the bars stacked at the screen bottom (TabBar, MiniPlayer, button group).
+const useToastStore = create<ToastState & { anchors: Record<string, number> }>(
+  () => ({
+    ...initialToastState,
+    anchors: {},
+  }),
+);
 
 const dispatch = (e: ToastEvent) =>
   useToastStore.setState((s) => toastReducer(s, e));
@@ -32,13 +34,19 @@ export const overlayOpened = () => dispatch({ type: 'overlay', open: true });
 export const overlayClosed = () =>
   dispatch({ type: 'overlay', open: false, now: Date.now() });
 
-// S-MOD-04 › Vị trí toast: the screen's bottom bar registers its height while mounted.
-// ponytail: one anchor at a time; sum the bars once MiniPlayer stacks on TabBar (P1-B2.2, #82).
+// S-MOD-04 › Vị trí toast: each bottom bar registers its height while mounted; the toast sits above
+// their sum, so it clears MiniPlayer stacked on TabBar.
 export function useToastAnchor(height: number) {
+  const id = useId();
   useEffect(() => {
-    useToastStore.setState({ anchor: height });
-    return () => useToastStore.setState({ anchor: 0 });
-  }, [height]);
+    const set = (h: number | undefined) =>
+      useToastStore.setState(({ anchors }) => {
+        const { [id]: _, ...rest } = anchors;
+        return { anchors: h ? { ...rest, [id]: h } : rest };
+      });
+    set(height);
+    return () => set(undefined);
+  }, [id, height]);
 }
 
 function useKeyboardHeight() {
@@ -62,7 +70,9 @@ export function ToastHost() {
   const insets = useSafeAreaInsets();
   const keyboard = useKeyboardHeight();
   const current = useToastStore((s) => s.current);
-  const anchor = useToastStore((s) => s.anchor);
+  const anchor = useToastStore((s) =>
+    Object.values(s.anchors).reduce((a, b) => a + b, 0),
+  );
 
   useEffect(() => {
     if (!current) return;

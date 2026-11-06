@@ -51,3 +51,20 @@ export const stackAvatars = <T>(people: readonly T[]) => ({
   shown: people.slice(0, STACK_MAX),
   more: Math.max(0, people.length - STACK_MAX),
 });
+
+// C-06 ring: strokeDasharray drawing only [from, to] of a circle (lengths from 12 o'clock, clockwise).
+export function arcDash(
+  circumference: number,
+  from: number,
+  to: number,
+): number[] {
+  if (to - from <= 0) return [0, circumference];
+  return [0, from, to - from, circumference];
+}
+
+// C-06: always minutes:seconds (120:00 at most), rounded up so a fresh 50-minute phase reads 50:00.
+export function clockText(ms: number): string {
+  const s = Math.ceil(ms / 1000);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`;
+}

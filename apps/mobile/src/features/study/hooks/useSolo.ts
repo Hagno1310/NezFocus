@@ -9,8 +9,8 @@ import {
 import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
 import { create } from 'zustand';
-import { ApiError } from '../../../data/api';
 import { soloMemory, soloRepository } from '../../../data/study';
+import { gatewayStore } from '../../../domain/gateway/gatewayStore';
 import { sessionStore } from '../../../domain/session/sessionStore';
 import {
   acceptSnapshot,
@@ -22,6 +22,7 @@ import {
   type SoloSnapshot,
 } from '../../../domain/study/solo';
 import { useGatewayEvent } from '../../gateway/hooks/useGatewayEvent';
+import { useSoloAlertSchedule } from './useSoloAlerts';
 
 const SOLO = ['solo'] as const;
 
@@ -65,6 +66,16 @@ export function useSolo() {
 export function useSoloSync() {
   const qc = useQueryClient();
   const snap = useSolo();
+  useSoloAlertSchedule(snap);
+  // Events missed while the Gateway was away (a stop during a reconnect) arrive as a refetch.
+  useEffect(
+    () =>
+      gatewayStore.subscribe((s, prev) => {
+        if (s.status === 'connected' && prev.status !== 'connected')
+          void qc.invalidateQueries({ queryKey: SOLO });
+      }),
+    [qc],
+  );
   useGatewayEvent('SOLO_SESSION_UPDATE', (d) => {
     qc.setQueryData<SoloSnapshot | null>(SOLO, (prev) =>
       receiveSoloEvent(prev ?? null, d, Date.now(), closedId),
@@ -143,9 +154,8 @@ export function useSoloAction() {
       );
       if (action.action === 'stop') await soloMemory.forget();
     },
-    onError: (e) => {
-      if (e instanceof ApiError) void qc.invalidateQueries({ queryKey: SOLO });
-    },
+    // Whatever failed (40901, timeout, offline), the backend may still have applied it: ask it.
+    onError: () => qc.invalidateQueries({ queryKey: SOLO }),
   });
 }
 

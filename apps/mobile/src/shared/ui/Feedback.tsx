@@ -3,7 +3,6 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   StyleSheet,
   View,
@@ -27,6 +26,7 @@ import {
 } from '../theme';
 import { Button, type ButtonProps } from './Button';
 import { Icon, type IconComponent } from './Icon';
+import { Mascot } from './Mascot';
 import { Text } from './Text';
 
 // C-14 Banner: neutral full-bleed strip under the header; usable inside Study Room.
@@ -110,7 +110,6 @@ export function SystemBanner({
 }
 
 // C-14 EmptyState: one centered block. `mascot` = Runtime neutral (DESIGN.md › Mascot); off = `inline`.
-// ponytail: static image (Des/assets, background removed) until the Rive runtime lands with Welcome.
 export function EmptyState({
   title,
   body,
@@ -124,14 +123,7 @@ export function EmptyState({
 }) {
   return (
     <View style={styles.empty}>
-      {mascot && (
-        <Image
-          source={require('../../../assets/mascot/runtime-neutral.webp')}
-          style={styles.mascot}
-          accessibilityIgnoresInvertColors
-          importantForAccessibility="no"
-        />
-      )}
+      {mascot && <Mascot mood="neutral" size={size.mascotEmpty} />}
       <Text variant="title-2" style={styles.centerText}>
         {title}
       </Text>
@@ -204,5 +196,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[3],
   },
   centerText: { textAlign: 'center' },
-  mascot: { width: size.mascotEmpty, height: size.mascotEmpty },
 });

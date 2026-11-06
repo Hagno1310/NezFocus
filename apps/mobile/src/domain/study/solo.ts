@@ -80,7 +80,7 @@ const phaseMinutes = (c: CycleConfig, phase: FocusPhase) =>
       ? (c.long_break_min ?? c.short_break_min)
       : c.short_break_min;
 
-function nextBreak(s: SoloSession): BreakName {
+export function nextBreak(s: SoloSession): BreakName {
   // Same rule as the backend machine: the pending config decides the next break.
   const every = (s.next_cycle_config ?? s.cycle_config).long_break_every;
   if (!every) return 'break';

@@ -109,6 +109,21 @@ export const en: Strings = {
       more: 'Study more',
       again: 'Study again',
     },
+    alerts: {
+      channel: 'Study reminders',
+      toBreak: 'Focus is over — {{minutes}} min short break',
+      toLongBreak: 'Focus is over — {{minutes}} min long break',
+      waiting: 'Break is over, tap to keep going',
+      exactAlarmOff: 'Phase alerts may be a few minutes late',
+      exactAlarmAllow: 'Allow on-time alerts',
+      denied: 'Notifications are off · you will not know when the break ends',
+      enable: 'Turn on notifications',
+      askTitle: 'Know when study time is up',
+      askBody:
+        'NezFocus reminds you when a break starts and when it ends, even with the screen locked.',
+      askAllow: 'Allow notifications',
+      askLater: 'Not now',
+    },
     waitingLeft: '{{time}} left to keep going',
     sheet: {
       chooseTitle: 'Choose a cycle',

@@ -1,4 +1,6 @@
 import '../shared/i18n';
+import { studyNotifications } from '../data/notifications';
+import { i18n } from '../shared/i18n';
 import {
   DarkTheme,
   DefaultTheme,
@@ -48,6 +50,12 @@ function navigationTheme({ scheme, colors }: Theme): NavigationTheme {
 export default function App() {
   const theme = useTheme();
   useEffect(startGatewayLifecycle, []);
+  // REQ-STUDY-10 / SRS 7.3.5: the "Nhắc học tập" channel exists from launch.
+  useEffect(() => {
+    void studyNotifications
+      .setupChannel(i18n.t('study.alerts.channel'))
+      .catch(() => undefined);
+  }, []);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

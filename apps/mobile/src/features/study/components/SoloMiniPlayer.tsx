@@ -16,10 +16,17 @@ import { Text } from '../../../shared/ui/Text';
 import { useToastAnchor } from '../../../shared/ui/Toast';
 import { size } from '../../../shared/theme';
 import { useNow, useSolo, useSoloAction } from '../hooks/useSolo';
+import { useOpenSoloFromNotification } from '../hooks/useSoloAlerts';
 
 const icons = { focus: LampDesk, short_break: Coffee, long_break: Moon };
 
 // S-ROOM-08 `solo` / `solo-waiting`: above the TabBar on every tab except the Solo screen itself.
+// Mounted with the tab bar so it also catches the tap that cold-started the app.
+export function SoloNotificationOpener({ onOpen }: { onOpen: () => void }) {
+  useOpenSoloFromNotification(onOpen);
+  return null;
+}
+
 export function SoloMiniPlayer({ onOpen }: { onOpen: () => void }) {
   const { t } = useTranslation();
   const snap = useSolo();

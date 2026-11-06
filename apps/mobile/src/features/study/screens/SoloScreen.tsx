@@ -1,6 +1,7 @@
 import type { SoloAction } from '@nezfocus/shared';
 import { useNavigation } from '@react-navigation/native';
 import {
+  BellOff,
   Pause,
   Play,
   SkipForward,
@@ -9,7 +10,7 @@ import {
 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from 'zustand';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
@@ -21,17 +22,21 @@ import {
   type SoloTimer,
 } from '../../../domain/study/solo';
 import { size, space, useTheme } from '../../../shared/theme';
+import { studyNotifications } from '../../../data/notifications';
 import { Button } from '../../../shared/ui/Button';
+import { Banner } from '../../../shared/ui/Feedback';
 import {
   FocusTimer,
   phaseRoomColor,
   RoomControl,
 } from '../../../shared/ui/Focus';
 import { Icon } from '../../../shared/ui/Icon';
+import { Mascot } from '../../../shared/ui/Mascot';
 import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { Text } from '../../../shared/ui/Text';
 import { ConnectionBanner } from '../../gateway/components/ConnectionBanner';
 import { CycleSheet } from '../components/CycleSheet';
+import { useNotificationAccess } from '../hooks/useSoloAlerts';
 import { cycleText, durationText, hhmm } from '../format';
 import {
   useCloseSolo,
@@ -40,12 +45,6 @@ import {
   useSoloAction,
   useStartSolo,
 } from '../hooks/useSolo';
-
-const mascots = {
-  happy: require('../../../../assets/mascot/runtime-happy.webp'),
-  sleepy: require('../../../../assets/mascot/runtime-sleepy.webp'),
-  neutral: require('../../../../assets/mascot/runtime-neutral.webp'),
-};
 
 // S-STUDY-02 · Học một mình.
 export function SoloScreen() {
@@ -92,6 +91,10 @@ export function SoloScreen() {
 
 function Running({ snap, timer }: { snap: SoloSnapshot; timer: SoloTimer }) {
   const { t } = useTranslation();
+  const access = useNotificationAccess();
+  // S-STUDY-EDGE notif-denied replaces exact-alarm-off: a late alarm means nothing with no notifications.
+  const denied = access?.access === 'denied';
+  const exactOff = access?.access === 'granted' && !access.exactAlarm;
   const online = useStore(gatewayStore, (s) => s.online);
   const action = useSoloAction();
   const [editing, setEditing] = useState(false);
@@ -124,10 +127,9 @@ function Running({ snap, timer }: { snap: SoloSnapshot; timer: SoloTimer }) {
   // DESIGN.md › Mascot: none in focus and none while waiting (sleeping contradicts "Học tiếp").
   const mascot =
     phase !== 'focus' && status !== 'waiting' ? (
-      <Image
-        source={phase === 'long_break' ? mascots.happy : mascots.sleepy}
-        style={styles.ringMascot}
-        accessibilityIgnoresInvertColors
+      <Mascot
+        mood={phase === 'long_break' ? 'happy' : 'sleepy'}
+        size={size.mascotRing}
       />
     ) : undefined;
 
@@ -138,6 +140,16 @@ function Running({ snap, timer }: { snap: SoloSnapshot; timer: SoloTimer }) {
 
   return (
     <>
+      {denied && (
+        <Banner
+          icon={BellOff}
+          text={t('study.alerts.denied')}
+          action={{
+            label: t('study.alerts.enable'),
+            onPress: () => void Linking.openSettings(),
+          }}
+        />
+      )}
       <ScrollView contentContainerStyle={[styles.body, styles.hero]}>
         <FocusTimer
           phase={phase}
@@ -155,6 +167,19 @@ function Running({ snap, timer }: { snap: SoloSnapshot; timer: SoloTimer }) {
             minutes: Math.ceil(timer.remainingMs / 60_000),
           })}
         />
+        {exactOff && (
+          <View style={styles.exact}>
+            <Text variant="label" color="text-secondary">
+              {t('study.alerts.exactAlarmOff')}
+            </Text>
+            <Button
+              variant="text"
+              size="S"
+              label={t('study.alerts.exactAlarmAllow')}
+              onPress={() => void studyNotifications.openExactAlarmSettings()}
+            />
+          </View>
+        )}
         {status === 'waiting' && (
           <Button
             size="L"
@@ -270,10 +295,9 @@ function Ended({
       >
         {/* Spec 04: happy on a summary, neutral when it ran out, none when nothing counted. */}
         {!tooShort && (
-          <Image
-            source={kind === 'expired' ? mascots.neutral : mascots.happy}
-            style={styles.endMascot}
-            accessibilityIgnoresInvertColors
+          <Mascot
+            mood={kind === 'expired' ? 'neutral' : 'happy'}
+            size={size.mascotSummary}
           />
         )}
         <Text variant="title-2" style={styles.center}>
@@ -326,6 +350,7 @@ const styles = StyleSheet.create({
   },
   // Board S-STUDY-02 waiting: "Học tiếp" 240 × 48 under the ring, hero gap 12.
   continue: { width: 240 },
+  exact: { alignItems: 'center' },
   // Board: the hero sits 16 under the header, not centred; controls stay at the bottom.
   hero: { gap: space[2] + space[1], justifyContent: 'flex-start' },
   ended: { gap: space[2] },
@@ -336,8 +361,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[3],
     paddingBottom: space[4],
   },
-  ringMascot: { width: size.mascotRing, height: size.mascotRing },
-  endMascot: { width: size.mascotSummary, height: size.mascotSummary },
   total: { flexDirection: 'row', alignItems: 'baseline', gap: space[1] },
   row: { flexDirection: 'row', alignItems: 'center', gap: size.iconGap },
   center: { textAlign: 'center' },

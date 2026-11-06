@@ -1,6 +1,11 @@
 import { ErrorCode } from '@nezfocus/shared';
 import { describe, expect, it, vi } from 'vitest';
-import { ApiError, createApiClient, type Tokens } from './client';
+import {
+  ApiError,
+  createApiClient,
+  REQUEST_TIMEOUT_MS,
+  type Tokens,
+} from './client';
 
 const json = (status: number, body: unknown, headers?: HeadersInit) =>
   new Response(JSON.stringify(body), { status, headers });
@@ -249,5 +254,35 @@ describe('ApiClient', () => {
     expect(new Headers(init.headers).get('Content-Type')).toBe(
       'application/json',
     );
+  });
+});
+
+describe('ApiClient timeout', () => {
+  it('gives up on a request that never answers, so nothing queued behind it waits forever', async () => {
+    vi.useFakeTimers();
+    try {
+      // Like a server that took the request and died: no answer until the signal aborts.
+      const hang = (_: string, init: RequestInit) =>
+        new Promise<Response>((_, reject) =>
+          init.signal?.addEventListener('abort', () =>
+            reject(new Error('aborted')),
+          ),
+        );
+      const client = createApiClient({
+        baseUrl: 'http://api',
+        fetch: hang as unknown as typeof globalThis.fetch,
+        tokens: memoryTokens({ access_token: 'a1', refresh_token: 'r1' }),
+        clientHeaders: () => ({}),
+        onSessionEnded: vi.fn(),
+        onAccountIncomplete: vi.fn(),
+        onUpgradeRequired: vi.fn(),
+      });
+      const pending = client.request('/slow');
+      const check = expect(pending).rejects.toThrow();
+      await vi.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
+      await check;
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

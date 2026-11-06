@@ -55,12 +55,18 @@ const config: ExpoConfig = {
     },
     // NFR-MOB-14: predictive back preview on Android 14+.
     predictiveBackGestureEnabled: true,
+    // SRS 7.3.6: phase-change notifications on time (Android 12+ asks the user; 14+ starts off).
+    permissions: ['android.permission.SCHEDULE_EXACT_ALARM'],
   },
   platforms: ['android'],
   plugins: [
     'expo-dev-client',
     'expo-localization',
     'expo-secure-store',
+    [
+      'expo-notifications',
+      { icon: './assets/android-icon-monochrome.png', color: '#547FE4' },
+    ],
     ['expo-font', { android: { fonts } }],
   ],
   // EAS project @hagnovn/nezfocus — shared by the team and CI.

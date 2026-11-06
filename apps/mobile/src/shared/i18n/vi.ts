@@ -103,6 +103,21 @@ export const vi = {
       more: 'Học thêm',
       again: 'Học lại',
     },
+    alerts: {
+      channel: 'Nhắc học tập',
+      toBreak: 'Hết giờ tập trung — nghỉ ngắn {{minutes}} phút',
+      toLongBreak: 'Hết giờ tập trung — nghỉ dài {{minutes}} phút',
+      waiting: 'Hết giờ nghỉ, bấm để học tiếp',
+      exactAlarmOff: 'Báo chuyển pha có thể trễ vài phút',
+      exactAlarmAllow: 'Cho phép báo đúng giờ',
+      denied: 'Thông báo đang tắt · bạn sẽ không biết lúc hết giờ nghỉ',
+      enable: 'Bật thông báo',
+      askTitle: 'Báo khi hết giờ học',
+      askBody:
+        'NezFocus sẽ nhắc khi chuyển sang nghỉ và khi hết giờ nghỉ, kể cả lúc bạn khóa màn hình.',
+      askAllow: 'Cho phép thông báo',
+      askLater: 'Để sau',
+    },
     waitingLeft: 'Còn {{time}} để học tiếp',
     sheet: {
       chooseTitle: 'Chọn chu kỳ',

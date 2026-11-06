@@ -28,8 +28,12 @@ import {
 import { authRepository } from '../../data/auth';
 import { currentLanguage, setLanguage } from '../../shared/i18n';
 import { endingOf } from '../../domain/study/solo';
-import { SoloMiniPlayer } from '../../features/study/components/SoloMiniPlayer';
+import {
+  SoloMiniPlayer,
+  SoloNotificationOpener,
+} from '../../features/study/components/SoloMiniPlayer';
 import { useSolo, useSoloSync } from '../../features/study/hooks/useSolo';
+import { AskNotifications } from '../../features/study/screens/AskNotifications';
 import { SoloScreen } from '../../features/study/screens/SoloScreen';
 import { StudyHome } from '../../features/study/screens/StudyHome';
 import { TabBar } from '../../shared/ui/TabBar';
@@ -59,6 +63,7 @@ export type RootStackParamList = {
 type StudyParamList = {
   StudyHome: undefined; // S-STUDY-01
   Solo: undefined; // S-STUDY-02
+  AskNotifications: undefined; // S-ROOM-09 first-focus
 };
 
 type TabParamList = {
@@ -78,10 +83,18 @@ function StudyTab() {
     <StudyStack.Navigator screenOptions={{ headerShown: false }}>
       <StudyStack.Screen name="StudyHome">
         {({ navigation }) => (
-          <StudyHome onOpenSolo={() => navigation.navigate('Solo')} />
+          <StudyHome
+            onOpenSolo={() => navigation.navigate('Solo')}
+            onAskNotifications={() => navigation.navigate('AskNotifications')}
+          />
         )}
       </StudyStack.Screen>
       <StudyStack.Screen name="Solo" component={SoloScreen} />
+      <StudyStack.Screen name="AskNotifications">
+        {({ navigation }) => (
+          <AskNotifications onStarted={() => navigation.replace('Solo')} />
+        )}
+      </StudyStack.Screen>
     </StudyStack.Navigator>
   );
 }
@@ -199,16 +212,13 @@ function MainTabs() {
         const onSolo =
           route?.name === 'Study' &&
           getFocusedRouteNameFromRoute(route) === 'Solo';
+        const openSolo = () =>
+          props.navigation.navigate('Study', { screen: 'Solo' });
         return (
           <>
+            <SoloNotificationOpener onOpen={openSolo} />
             {/* SRS 3.1 bottom order: MiniPlayer, then TabBar. Hidden on the Solo screen itself (C-08). */}
-            {!onSolo && (
-              <SoloMiniPlayer
-                onOpen={() =>
-                  props.navigation.navigate('Study', { screen: 'Solo' })
-                }
-              />
-            )}
+            {!onSolo && <SoloMiniPlayer onOpen={openSolo} />}
             <TabBar {...props} tabs={tabs} />
           </>
         );

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { studyNotifications } from '../../../data/notifications';
 import { endingOf } from '../../../domain/study/solo';
 import { Placeholder } from '../../../app/navigation/Placeholder';
 import { CycleSheet } from '../components/CycleSheet';
@@ -7,7 +8,13 @@ import { cycleText } from '../format';
 import { useLastCycle, useSolo, useStartSolo } from '../hooks/useSolo';
 
 // ponytail: stand-in for S-STUDY-01 with only the Solo block; the real tab is P1-B3.4 (#87).
-export function StudyHome({ onOpenSolo }: { onOpenSolo: () => void }) {
+export function StudyHome({
+  onOpenSolo,
+  onAskNotifications,
+}: {
+  onOpenSolo: () => void;
+  onAskNotifications: () => void;
+}) {
   const { t } = useTranslation();
   const snap = useSolo();
   const { cycle, set } = useLastCycle();
@@ -15,8 +22,11 @@ export function StudyHome({ onOpenSolo }: { onOpenSolo: () => void }) {
   const [choosing, setChoosing] = useState(false);
   const live = snap && !endingOf(snap);
 
-  const begin = (c = cycle) => {
+  const begin = async (c = cycle) => {
     set(c);
+    // 04 › Tương tác: "Bắt đầu" → S-ROOM-09 first if notifications were never asked for.
+    const ask = (await studyNotifications.access()) === 'undetermined';
+    if (ask) return onAskNotifications();
     // 40903 (already running elsewhere) still lands on the Solo screen, showing that session.
     start.mutate(c, { onSettled: () => onOpenSolo() });
   };
@@ -33,7 +43,7 @@ export function StudyHome({ onOpenSolo }: { onOpenSolo: () => void }) {
                   label: t('study.cycle', { cycle: cycleText(cycle) }),
                   onPress: () => setChoosing(true),
                 },
-                { label: t('study.start'), onPress: () => begin() },
+                { label: t('study.start'), onPress: () => void begin() },
               ]
         }
       />
@@ -46,7 +56,7 @@ export function StudyHome({ onOpenSolo }: { onOpenSolo: () => void }) {
         onDismiss={() => setChoosing(false)}
         onSubmit={(c) => {
           setChoosing(false);
-          begin(c);
+          void begin(c);
         }}
       />
     </>

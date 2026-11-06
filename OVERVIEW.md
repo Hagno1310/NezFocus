@@ -247,6 +247,7 @@ Chạy ở root repo. Cài đặt lần đầu và xử lý sự cố: [`docs/ge
 | `pnpm format`                                | Prettier toàn repo                         |
 | `pnpm --filter backend test:e2e`             | E2E backend (cần `pnpm dev:infra`)         |
 | `pnpm --filter backend db:generate`          | Sinh migration từ schema                   |
+| `pnpm --filter backend db:seed`              | Tài khoản mẫu cho dev (WORKFLOW 4.4)       |
 | `pnpm --filter backend db:studio`            | Xem dữ liệu                                |
 | `pnpm --filter mobile build:dev`             | Build APK dev client trên EAS              |
 

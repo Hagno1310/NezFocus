@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file-if-exists=.env dist/db/migrate.js",
+    "db:seed": "tsc -p tsconfig.build.json && node --env-file-if-exists=.env dist/db/seed.js",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {

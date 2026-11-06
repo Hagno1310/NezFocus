@@ -121,6 +121,14 @@ export const healthRepository = pickRepository('health', {
 
 Fake và seed (P0-7) dùng đúng **bộ dữ liệu mẫu** ở [`design/screens/README.md`](design/screens/README.md) (An, Bình, Chi, Dũng; "Ôn thi Giải tích 2"…; giờ mẫu theo area), để màn hình so được với frame. Không đặt tên ngoài bộ đó. Chưa có file fixture dùng chung app ↔ backend; thêm khi hai bên cần cùng id.
 
+**Seed dev** (`pnpm --filter backend db:seed`, cần `pnpm dev:infra` và đã migrate): tạo 16 tài khoản mẫu đã hoàn tất (`an.nguyen@gmail.com`, `binh.tran@gmail.com`…, email = `<username>@gmail.com`), mật khẩu chung `NezFocus@2026` (trùng `FAKE_PASSWORD` của app). Chạy lại bao nhiêu lần cũng được: bản ghi đã có (trùng email / username) bị bỏ qua, không xóa dữ liệu ai tự tạo. Từ chối chạy khi `NODE_ENV=production`.
+
+Chủ module thêm phần seed của mình:
+
+1. Viết `src/modules/<context>/<name>.seed.ts` export `async function seed<Name>({ db, ids, now }: SeedContext)`; chỉ chèn bảng của module mình, dùng `onConflictDoNothing()` (hoặc kiểm tra tồn tại) để chạy lại không trùng. File seed chèn thẳng bằng Drizzle (như `db/migrate.ts`), không cần đi qua repository. Tìm user mẫu theo `username` (`SAMPLE_USERS` trong `users.seed.ts`), không giả định id.
+2. Thêm **một dòng** vào mảng `seeds` trong `apps/backend/src/db/seed.ts`, sau các module mình phụ thuộc (users đầu tiên). Không sửa file seed của người khác.
+3. Thêm một ca vào `apps/backend/test/seed.e2e-spec.ts` nếu phần đó có luật riêng.
+
 ## 5. Đường ngắn (mặc định): một phiên agent cho một issue cha
 
 Mỗi issue cha (nhãn `spec`) là một dòng task trong `task-breakdown.md`, gồm vài ticket con. Mặc định **một phiên agent làm trọn một issue cha**: các ticket con lần lượt, mỗi ticket con một commit, cuối cùng một PR. Ticket không có issue cha (vd P0-6) thì một phiên cho một ticket, cùng các bước dưới đây.

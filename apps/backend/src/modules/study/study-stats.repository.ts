@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DAILY_FOCUS_CAP_SECONDS } from '@nezfocus/shared';
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import { DB, type Db } from '../../db/db.module.js';
+import { DB, type Db, type Tx } from '../../db/db.module.js';
 import { userSettings } from '../users/users.schema.js';
 import {
   creditFocus,
@@ -9,8 +9,6 @@ import {
   type FocusInterval,
 } from './focused-time.js';
 import { dailyStudyStats } from './study.schema.js';
-
-type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 
 export type FocusCredit = {
   userId: bigint;
@@ -64,6 +62,7 @@ export class StudyStatsRepository {
 
       const solo = input.source === 'solo';
       for (const { localDate, seconds } of credits) {
+        if (seconds === 0) continue;
         await tx
           .insert(dailyStudyStats)
           .values({

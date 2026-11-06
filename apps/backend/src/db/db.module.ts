@@ -8,6 +8,7 @@ export const DB = Symbol('DB');
 export type Db = NodePgDatabase<typeof schema> & {
   $client: { end(): Promise<void> };
 };
+export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 
 @Global()
 @Module({

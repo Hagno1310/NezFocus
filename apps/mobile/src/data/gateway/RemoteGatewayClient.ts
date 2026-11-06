@@ -5,6 +5,7 @@ import {
   ServerFrame,
   SessionEndReason,
   parseDispatch,
+  type AppState,
   type ClientFrame,
   type Identify,
 } from '@nezfocus/shared';
@@ -12,6 +13,7 @@ import type { GatewayClient } from '../../domain/gateway/GatewayClient';
 import {
   emitGatewayEvent,
   gatewayStore,
+  type GatewayStatus,
 } from '../../domain/gateway/gatewayStore';
 import type { EndReason } from '../../domain/session/sessionStore';
 
@@ -44,7 +46,8 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
   let sessionId: string | null = null;
   let seq = 0;
   let attempt = 0;
-  let appState: 'foreground' | 'background' = 'foreground';
+  let appState: AppState['state'] = 'foreground';
+  let paused = false; // closed on purpose in the background
   let identified = false;
   let awaitingAck = false;
   let missedAcks = 0;
@@ -52,10 +55,11 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
   let reconnect: ReturnType<typeof setTimeout> | undefined;
   let backgroundClose: ReturnType<typeof setTimeout> | undefined;
 
-  const setStatus = (status: 'idle' | 'connecting' | 'connected' | 'paused') =>
+  const setStatus = (status: GatewayStatus) =>
     gatewayStore.setState({ status });
 
   const send = (frame: ClientFrame) => socket?.send(JSON.stringify(frame));
+  const sendHeartbeat = () => send({ op: GatewayOp.HEARTBEAT, d: seq || null });
   const forgetSession = () => {
     sessionId = null;
     seq = 0;
@@ -72,7 +76,7 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
     s.onclose = (e) => onClosed(e.code, e.reason);
   }
 
-  // Drops the socket without waiting for its close event.
+  // Handlers go first so a dropped socket's late close event cannot schedule a second reconnect.
   function detach(code: number) {
     clearTimeout(heartbeat);
     identified = false;
@@ -100,7 +104,7 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
       return scheduleReconnect();
     }
     awaitingAck = true;
-    send({ op: GatewayOp.HEARTBEAT, d: seq || null });
+    sendHeartbeat();
   }
 
   function startHeartbeat(interval: number) {
@@ -136,7 +140,7 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
     try {
       frame = ServerFrame.parse(JSON.parse(text));
     } catch {
-      return; // ponytail: ignore what this build cannot read; a newer backend may send more
+      return; // ponytail: unreadable frames are dropped silently; log them once a crash reporter lands
     }
     switch (frame.op) {
       case GatewayOp.HELLO:
@@ -146,7 +150,7 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
         awaitingAck = false;
         return;
       case GatewayOp.HEARTBEAT:
-        return send({ op: GatewayOp.HEARTBEAT, d: seq || null });
+        return sendHeartbeat();
       case GatewayOp.RECONNECT:
         detach(GatewayCloseCode.UNKNOWN_ERROR);
         return connect();
@@ -189,11 +193,15 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
         try {
           token = await deps.refreshToken();
         } catch {
-          if (running) scheduleReconnect(); // offline or 5xx: try again later
+          if (running && !paused) scheduleReconnect(); // offline or 5xx: try again later
           return;
         }
-        if (!running) return;
-        return token ? connect() : stop();
+        if (!running || paused) return;
+        if (!token) return stop();
+        // Only the first retry skips the backoff, so a token the backend keeps refusing cannot spin.
+        if (attempt > 0) return scheduleReconnect();
+        attempt++;
+        return connect();
       }
       case GatewayCloseCode.UNSUPPORTED_VERSION:
         stop();
@@ -213,6 +221,7 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
   function start() {
     if (running) return;
     running = true;
+    paused = false;
     connect();
   }
 
@@ -226,7 +235,21 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
     setStatus('idle');
   }
 
-  function setAppState(next: 'foreground' | 'background') {
+  // A dead network kills the socket without a close event; drop it now and retry as soon as it is back.
+  function setOnline(online: boolean) {
+    if (!running || paused) return;
+    if (!online) {
+      if (!socket) return;
+      detach(GatewayCloseCode.UNKNOWN_ERROR);
+      return scheduleReconnect();
+    }
+    if (!socket) {
+      attempt = 0;
+      connect();
+    }
+  }
+
+  function setAppState(next: AppState['state']) {
     if (next === appState) return;
     appState = next;
     gatewayStore.setState({ foreground: next === 'foreground' });
@@ -238,13 +261,15 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
       backgroundClose = setTimeout(() => {
         clearTimeout(reconnect);
         detach(NORMAL_CLOSURE);
+        paused = true;
         setStatus('paused');
       }, BACKGROUND_CLOSE_MS);
-    } else if (gatewayStore.getState().status === 'paused') {
+    } else if (paused) {
+      paused = false;
       attempt = 0;
       connect();
     }
   }
 
-  return { start, stop, setAppState };
+  return { start, stop, setAppState, setOnline };
 }

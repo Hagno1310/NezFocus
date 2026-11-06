@@ -50,5 +50,6 @@ export function createFakeGatewayClient(
     setAppState(state) {
       gatewayStore.setState({ foreground: state === 'foreground' });
     },
+    setOnline() {},
   };
 }

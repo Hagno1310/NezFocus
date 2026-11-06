@@ -21,7 +21,7 @@ import { GatewaySessions } from './gateway-sessions.js';
 
 // SRS 7.1.1: the Gateway shares the HTTP server of the single backend process.
 @Injectable()
-export class GatewayServer
+export class GatewayListener
   implements OnApplicationBootstrap, OnApplicationShutdown
 {
   private wss?: WebSocketServer;

@@ -12,10 +12,16 @@ import {
   type SessionSocket,
 } from './gateway-sessions.js';
 
+type Authenticated = {
+  ok: true;
+  userId: bigint;
+  authSessionId: bigint;
+  user: CurrentUser;
+};
+
 export type Authenticate = (token: string) => Promise<
-  | { ok: true; userId: bigint; authSessionId: bigint; user: CurrentUser }
   // SRS 11.2: no reason = expired / invalid token
-  | { ok: false; reason: SessionEndReason | null }
+  Authenticated | { ok: false; reason: SessionEndReason | null }
 >;
 
 export interface RawSocket {
@@ -36,6 +42,7 @@ export class GatewayConnection implements SessionSocket {
   private session: GatewaySession | null = null;
   private identifying = false;
   private heartbeatTimer?: ReturnType<typeof setTimeout>;
+  private identifyTimer?: ReturnType<typeof setTimeout>;
   private windowStart = 0;
   private framesInWindow = 0;
   private isClosed = false;
@@ -52,6 +59,10 @@ export class GatewayConnection implements SessionSocket {
       d: { heartbeat_interval: HEARTBEAT_INTERVAL_MS },
     });
     this.armHeartbeat();
+    // Heartbeats alone would keep an unauthenticated socket open forever.
+    this.identifyTimer = setTimeout(() => {
+      if (!this.session) this.close(GatewayCloseCode.NOT_AUTHENTICATED);
+    }, HEARTBEAT_DEADLINE_MS);
   }
 
   sendText(text: string) {
@@ -64,11 +75,11 @@ export class GatewayConnection implements SessionSocket {
     this.socket.close(code, reason);
   }
 
-  // Socket closed by either side.
   closed() {
     if (this.isClosed) return;
     this.isClosed = true;
     clearTimeout(this.heartbeatTimer);
+    clearTimeout(this.identifyTimer);
     if (this.session) this.sessions.detach(this.session, this);
   }
 
@@ -101,13 +112,15 @@ export class GatewayConnection implements SessionSocket {
         return this.close(GatewayCloseCode.ALREADY_AUTHENTICATED);
       this.identifying = true;
       try {
-        await (frame.op === GatewayOp.IDENTIFY
-          ? this.identify(frame.d.token)
-          : this.resume(
-              frame.d.token,
-              BigInt(frame.d.session_id),
-              frame.d.seq,
-            ));
+        const auth = await this.authenticate(frame.d.token);
+        if (this.isClosed) return;
+        if (!auth.ok)
+          return this.close(
+            GatewayCloseCode.AUTHENTICATION_FAILED,
+            auth.reason ?? '',
+          );
+        if (frame.op === GatewayOp.IDENTIFY) this.identify(auth);
+        else this.resume(auth, BigInt(frame.d.session_id), frame.d.seq);
       } finally {
         this.identifying = false;
       }
@@ -120,14 +133,7 @@ export class GatewayConnection implements SessionSocket {
     // PRESENCE_UPDATE (P1-B4 #13), VOICE_STATE_UPDATE (P3), FOCUS_HEARTBEAT, SUBSCRIBE (P2-B1 #18): not yet.
   }
 
-  private async identify(token: string) {
-    const auth = await this.authenticate(token);
-    if (this.isClosed) return;
-    if (!auth.ok)
-      return this.close(
-        GatewayCloseCode.AUTHENTICATION_FAILED,
-        auth.reason ?? '',
-      );
+  private identify(auth: Authenticated) {
     this.session = this.sessions.create(auth.userId, auth.authSessionId, this);
     this.sessions.dispatch(this.session, 'READY', {
       session_id: this.session.id.toString(),
@@ -135,14 +141,7 @@ export class GatewayConnection implements SessionSocket {
     });
   }
 
-  private async resume(token: string, sessionId: bigint, seq: number) {
-    const auth = await this.authenticate(token);
-    if (this.isClosed) return;
-    if (!auth.ok)
-      return this.close(
-        GatewayCloseCode.AUTHENTICATION_FAILED,
-        auth.reason ?? '',
-      );
+  private resume(auth: Authenticated, sessionId: bigint, seq: number) {
     const result = this.sessions.resume(
       sessionId,
       auth.authSessionId,
@@ -172,7 +171,7 @@ export class GatewayConnection implements SessionSocket {
     );
   }
 
-  // ponytail: fixed window per connection, not sliding; enough to stop a flooding client.
+  // ponytail: fixed window per connection, lets ~2× through at a window edge; sliding window (SRS 11.3) if that matters.
   private overRateLimit() {
     const now = Date.now();
     if (now - this.windowStart >= RATE_LIMIT_WINDOW_MS) {

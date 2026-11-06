@@ -294,6 +294,56 @@ describe('RemoteGatewayClient', () => {
     });
   });
 
+  describe('network (S-MOD-04, parent #5 "Xong khi")', () => {
+    it('drops the socket when the network goes, RESUMEs as soon as it is back', async () => {
+      const client = await connected();
+      for (let i = 0; i < 4; i++) {
+        last().drop(); // pile up backoff
+        await vi.advanceTimersByTimeAsync(30_000);
+      }
+      last().push({ op: 10, d: { heartbeat_interval: INTERVAL } });
+      await flush();
+      last().push({ op: 0, s: 2, t: 'RESUMED', d: {} });
+
+      client.setOnline(false);
+      expect(sockets.at(-1)!.closedWith).not.toBeNull();
+      expect(gatewayStore.getState().status).toBe('connecting');
+      const count = sockets.length;
+      client.setOnline(true);
+      expect(sockets).toHaveLength(count + 1);
+      last().push({ op: 10, d: { heartbeat_interval: INTERVAL } });
+      await flush();
+      expect(last().sent[0].op).toBe(6);
+    });
+  });
+
+  it('4004 without reason twice in a row backs off instead of spinning', async () => {
+    await connected();
+    last().drop(4004, '');
+    await flush();
+    expect(sockets).toHaveLength(2);
+    last().drop(4004, '');
+    await flush();
+    expect(sockets).toHaveLength(2);
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(sockets).toHaveLength(3);
+  });
+
+  it('stays closed when the app went to the background during a refresh', async () => {
+    let finish: (token: string) => void = () => {};
+    deps.refreshToken.mockReturnValueOnce(
+      new Promise((resolve) => (finish = resolve)),
+    );
+    const client = await connected();
+    client.setAppState('background');
+    last().drop(4004, '');
+    await vi.advanceTimersByTimeAsync(30_000);
+    finish('access-2');
+    await flush();
+    expect(sockets).toHaveLength(1);
+    expect(gatewayStore.getState().status).toBe('paused');
+  });
+
   it('stop() closes and forgets the session', async () => {
     const client = await connected();
     client.stop();

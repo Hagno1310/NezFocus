@@ -28,8 +28,11 @@ export function startGatewayLifecycle() {
   });
 
   // isConnected is undefined while unknown: treat as online so the banner waits for a real answer.
-  const setNetwork = ({ isConnected }: NetworkState) =>
-    gatewayStore.setState({ online: isConnected !== false });
+  const setNetwork = ({ isConnected }: NetworkState) => {
+    const online = isConnected !== false;
+    gatewayStore.setState({ online });
+    gatewayClient.setOnline(online);
+  };
   const network = addNetworkStateListener(setNetwork);
   getNetworkStateAsync().then(setNetwork, () => {});
 

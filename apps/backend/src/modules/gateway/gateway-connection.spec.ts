@@ -99,6 +99,14 @@ describe('GatewayConnection', () => {
       expect(sent.at(-1)).toEqual({ op: 11, d: null });
     });
 
+    it('4003 when IDENTIFY never comes, even with heartbeats', async () => {
+      const { conn, socket } = connect();
+      vi.advanceTimersByTime(HEARTBEAT_INTERVAL_MS);
+      await conn.receive(JSON.stringify({ op: 1, d: null }));
+      vi.advanceTimersByTime(HEARTBEAT_INTERVAL_MS);
+      expect(socket.closedWith?.code).toBe(GatewayCloseCode.NOT_AUTHENTICATED);
+    });
+
     it('4005 on a second IDENTIFY', async () => {
       const { conn, socket } = await ready();
       await conn.receive(identify());
@@ -223,6 +231,19 @@ describe('GatewayConnection', () => {
         }),
       );
       expect(second.sent.at(-1)).toEqual({ op: 9, d: false });
+    });
+
+    it('keeps the session after RESUME takes over a half-open socket', async () => {
+      const first = await ready(); // backend has not noticed the drop
+      const second = connect();
+      await second.conn.receive(resume(first.sessionId, 1));
+      expect(first.socket.closedWith?.code).toBe(
+        GatewayCloseCode.UNKNOWN_ERROR,
+      );
+      vi.advanceTimersByTime(61_000);
+      await second.conn.receive(JSON.stringify({ op: 1, d: 2 })); // keep it alive
+      await sessions.dispatchToUser(7n, 'USER_UPDATE', user);
+      expect(dispatches(second.sent).at(-1)?.t).toBe('USER_UPDATE');
     });
 
     it('4007 when seq is ahead of the session', async () => {

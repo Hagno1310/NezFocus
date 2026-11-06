@@ -10,9 +10,7 @@ export const Ready = z.object({
 });
 export type Ready = z.infer<typeof Ready>;
 
-// SRS 5.4 DISPATCH events: t → schema of d. To add an event, add one line here
-// (schema may live in the area's own contract file); backend EventPublisher and
-// app GatewayClient pick it up by type.
+// SRS 5.4 DISPATCH t → schema of d: an area adds its event with one line here, nowhere else.
 export const DispatchEvents = {
   READY: Ready,
   RESUMED: z.object({}),

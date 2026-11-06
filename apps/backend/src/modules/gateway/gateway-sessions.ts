@@ -12,7 +12,6 @@ export const HEARTBEAT_INTERVAL_MS = 41_250; // SRS 5.4 HELLO
 const BUFFER_EVENTS = 1000;
 const BUFFER_MS = 60_000;
 
-// What GatewaySessions needs from a live connection.
 export interface SessionSocket {
   sendText(text: string): void;
   close(code: number, reason?: string): void;
@@ -20,7 +19,7 @@ export interface SessionSocket {
 
 type Buffered = { s: number; at: number; text: string };
 
-type Session = {
+export type GatewaySession = {
   id: bigint;
   userId: bigint;
   authSessionId: bigint;
@@ -32,18 +31,17 @@ type Session = {
 };
 
 export type ResumeResult =
-  | { ok: true; session: Session }
+  | { ok: true; session: GatewaySession }
   | { ok: false; error: 'invalid_session' | 'invalid_seq' };
 
-// ponytail: in-memory, fine for the single backend process of the đồ án (SRS 7.1.1, REQ-MSG-07);
-// SRS 5.4 puts the buffer in Redis so RESUME survives a deploy: move it there before running 2+ processes.
+// ponytail: in memory (one process, SRS 7.1.1), RESUME does not survive a deploy; move to Redis (SRS 5.4) for 2+ processes.
 export class GatewaySessions {
-  private readonly sessions = new Map<bigint, Session>();
+  private readonly sessions = new Map<bigint, GatewaySession>();
 
   constructor(private readonly ids: { next(): bigint }) {}
 
   create(userId: bigint, authSessionId: bigint, socket: SessionSocket) {
-    const session: Session = {
+    const session: GatewaySession = {
       id: this.ids.next(),
       userId,
       authSessionId,
@@ -71,16 +69,18 @@ export class GatewaySessions {
     if (seq + 1 < oldest) return { ok: false, error: 'invalid_session' };
 
     clearTimeout(session.expiry);
-    if (session.socket && session.socket !== socket)
-      session.socket.close(GatewayCloseCode.UNKNOWN_ERROR, 'resumed elsewhere');
+    const previous = session.socket;
+    // Swap first: closing the old socket calls detach(), which must not start an expiry.
     session.socket = socket;
+    if (previous && previous !== socket)
+      previous.close(GatewayCloseCode.UNKNOWN_ERROR, 'resumed elsewhere');
     for (const event of session.buffer)
       if (event.s > seq) socket.sendText(event.text);
     return { ok: true, session };
   }
 
   // The socket went away: keep the session resumable for the buffer window.
-  detach(session: Session, socket: SessionSocket) {
+  detach(session: GatewaySession, socket: SessionSocket) {
     if (session.socket !== socket) return;
     session.socket = null;
     session.expiry = setTimeout(
@@ -90,7 +90,7 @@ export class GatewaySessions {
   }
 
   dispatch<T extends DispatchEventName>(
-    session: Session,
+    session: GatewaySession,
     t: T,
     d: DispatchPayload<T>,
   ) {
@@ -120,7 +120,7 @@ export class GatewaySessions {
     }
   }
 
-  setAppState(session: Session, state: AppState['state']) {
+  setAppState(session: GatewaySession, state: AppState['state']) {
     session.appState = state;
   }
 
@@ -136,7 +136,7 @@ export class GatewaySessions {
     return false;
   }
 
-  private prune(session: Session) {
+  private prune(session: GatewaySession) {
     const cutoff = Date.now() - BUFFER_MS;
     const buffer = session.buffer;
     let drop = Math.max(0, buffer.length - BUFFER_EVENTS);
@@ -144,5 +144,3 @@ export class GatewaySessions {
     if (drop) buffer.splice(0, drop);
   }
 }
-
-export type GatewaySession = Session;

@@ -4,7 +4,6 @@ import { GatewaySessions } from './gateway-sessions.js';
 
 // SRS 5.4 DISPATCH. Owner: gateway (B). Other modules inject this and never touch sockets.
 export abstract class EventPublisher {
-  // Every Gateway session of the user (all devices).
   abstract toUser<T extends DispatchEventName>(
     userId: bigint,
     t: T,

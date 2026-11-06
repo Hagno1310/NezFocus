@@ -30,16 +30,30 @@ export type SoloSnapshot = {
   stoppedHere: boolean;
 };
 
-// SRS 7.3.6 step 1: clock_offset = backend_time − local time when the answer arrived.
-export const snapshotOf = (
+// Offsets measured through the network wobble by a few hundred ms; re-measuring each answer
+// would make the clock jump back and forth by a second, so only a real change replaces it.
+const OFFSET_JITTER_MS = 1000;
+
+export type Timing = { received: number; sent?: number };
+
+// SRS 7.3.6 step 1: clock_offset = backend_time − the local time it stands for (mid round trip).
+export function snapshotOf(
   r: SoloSessionResponse,
-  receivedAt: number,
+  timing: Timing,
   stoppedHere = false,
-): SoloSnapshot => ({
-  session: r.solo_session,
-  offsetMs: Date.parse(r.backend_time) - receivedAt,
-  stoppedHere,
-});
+  prev: SoloSnapshot | null = null,
+): SoloSnapshot {
+  const local =
+    timing.sent === undefined
+      ? timing.received
+      : (timing.sent + timing.received) / 2;
+  const measured = Date.parse(r.backend_time) - local;
+  const offsetMs =
+    prev && Math.abs(measured - prev.offsetMs) < OFFSET_JITTER_MS
+      ? prev.offsetMs
+      : measured;
+  return { session: r.solo_session, offsetMs, stoppedHere };
+}
 
 export const backendNow = (s: SoloSnapshot, localNow: number) =>
   new Date(localNow + s.offsetMs);
@@ -196,15 +210,24 @@ export async function restoreSolo(
 ): Promise<SoloSnapshot | null> {
   // An ending is final; it stays until "Xong" even if the app refetches meanwhile.
   if (shown?.session.status === 'ended') return shown;
+  let sent = localNow();
   const current = await repo.current();
   if (current.solo_session) {
+    const received = localNow();
     await memory.remember(current.solo_session.id);
-    return snapshotOf(current as SoloSessionResponse, localNow());
+    return snapshotOf(
+      current as SoloSessionResponse,
+      { sent, received },
+      false,
+      shown,
+    );
   }
   const id = await memory.lastId();
   if (!id) return null;
   try {
-    return snapshotOf(await repo.get(id), localNow());
+    sent = localNow();
+    const r = await repo.get(id);
+    return snapshotOf(r, { sent, received: localNow() }, false, shown);
   } catch {
     await memory.forget();
     return null;
@@ -218,5 +241,10 @@ export function receiveSoloEvent(
 ): SoloSnapshot | null {
   const same = shown?.session.id === r.solo_session.id;
   if (r.solo_session.status === 'ended' && !same) return shown;
-  return snapshotOf(r, receivedAt, same && shown.stoppedHere);
+  return snapshotOf(
+    r,
+    { received: receivedAt },
+    same && shown.stoppedHere,
+    shown,
+  );
 }

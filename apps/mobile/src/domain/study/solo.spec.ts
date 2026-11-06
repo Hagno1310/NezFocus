@@ -9,7 +9,6 @@ import {
   timerOf,
   type SoloMemory,
   type SoloRepository,
-  type SoloSnapshot,
 } from './solo';
 
 // Scenario of spec 04: 50/10, round 1 started 21:29; at 21:47 there are 32:10 left.
@@ -360,12 +359,27 @@ describe('receiveSoloEvent (SOLO_SESSION_UPDATE)', () => {
   });
 });
 
-describe('snapshotOf', () => {
-  it('offset = backend_time − local receive time', () => {
-    const s: SoloSnapshot = snapshotOf(
-      { solo_session: session(), backend_time: iso(at(21, 47)) },
-      at(21, 47, 3).getTime(),
+describe('snapshotOf (SRS 7.3.6 clock_offset)', () => {
+  const r = { solo_session: session(), backend_time: iso(at(21, 47)) };
+  const t0 = at(21, 47).getTime();
+
+  it('without a send time: backend_time − receive time', () => {
+    expect(snapshotOf(r, { received: t0 + 3000 }).offsetMs).toBe(-3000);
+  });
+
+  it('with a send time: backend_time − the midpoint of the round trip', () => {
+    expect(snapshotOf(r, { sent: t0 - 200, received: t0 + 400 }).offsetMs).toBe(
+      -100,
     );
-    expect(s.offsetMs).toBe(-3000);
+  });
+
+  it('keeps the previous offset when a new one differs by under a second, so the clock never jumps', () => {
+    const prev = { ...snap(), offsetMs: -100 };
+    expect(snapshotOf(r, { received: t0 + 700 }, false, prev).offsetMs).toBe(
+      -100,
+    );
+    expect(snapshotOf(r, { received: t0 + 5000 }, false, prev).offsetMs).toBe(
+      -5000,
+    );
   });
 });

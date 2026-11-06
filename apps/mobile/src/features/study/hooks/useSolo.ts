@@ -1,5 +1,6 @@
 import type { CycleConfig, SoloAction } from '@nezfocus/shared';
 import {
+  onlineManager,
   useMutation,
   useQuery,
   useQueryClient,
@@ -22,6 +23,12 @@ import {
 import { useGatewayEvent } from '../../gateway/hooks/useGatewayEvent';
 
 const SOLO = ['solo'] as const;
+
+// The send time lets the clock offset use the middle of the round trip.
+const timed = async <R>(call: () => Promise<R>) => {
+  const sent = Date.now();
+  return { r: await call(), sent };
+};
 
 const read = (qc: QueryClient) =>
   qc.getQueryData<SoloSnapshot | null>(SOLO) ?? null;
@@ -67,9 +74,13 @@ export function useSoloSync() {
 export function useStartSolo() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (cycle: CycleConfig) => soloRepository.start(cycle),
-    onSuccess: async (r) => {
-      qc.setQueryData(SOLO, snapshotOf(r, Date.now()));
+    mutationFn: (cycle: CycleConfig) =>
+      timed(() => soloRepository.start(cycle)),
+    onSuccess: async ({ r, sent }) => {
+      qc.setQueryData(
+        SOLO,
+        snapshotOf(r, { sent, received: Date.now() }, false, read(qc)),
+      );
       await soloMemory.remember(r.solo_session.id);
     },
     // 40903: already running here or on another device; show that one.
@@ -83,11 +94,17 @@ export function useSoloAction() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, action }: { id: string; action: SoloAction }) =>
-      soloRepository.act(id, action),
+      timed(() => soloRepository.act(id, action)),
     onMutate: async ({ action }) => {
       await qc.cancelQueries({ queryKey: SOLO });
       const prev = read(qc);
+      // Online the answer comes back in a moment and is the truth; showing a local guess first made
+      // pause / resume jump by a second when the answer replaced it. Offline the guess is all we have.
       if (!prev) return;
+      // Our own stop's Gateway echo can beat the HTTP answer; it must not read as another device.
+      if (action.action === 'stop')
+        qc.setQueryData<SoloSnapshot>(SOLO, { ...prev, stoppedHere: true });
+      if (onlineManager.isOnline()) return;
       const now = new Date(Date.now() + prev.offsetMs);
       const local = applyLocally(prev.session, action, now);
       if (local)
@@ -97,9 +114,13 @@ export function useSoloAction() {
           stoppedHere: action.action === 'stop' || prev.stoppedHere,
         });
     },
-    onSuccess: async (r, { action }) => {
-      const stoppedHere = action.action === 'stop' || !!read(qc)?.stoppedHere;
-      qc.setQueryData(SOLO, snapshotOf(r, Date.now(), stoppedHere));
+    onSuccess: async ({ r, sent }, { action }) => {
+      const prev = read(qc);
+      const stoppedHere = action.action === 'stop' || !!prev?.stoppedHere;
+      qc.setQueryData(
+        SOLO,
+        snapshotOf(r, { sent, received: Date.now() }, stoppedHere, prev),
+      );
       if (action.action === 'stop') await soloMemory.forget();
     },
     onError: (e) => {
@@ -117,8 +138,9 @@ export function useCloseSolo() {
   };
 }
 
-// Re-renders every `ms`, on the second boundary so a countdown never skips a digit.
-export function useNow(ms = 1000) {
+// Re-renders every `ms`. Countdowns use 250: their digits turn on the backend's second, not the
+// phone's, so a 1 s tick could show a value up to a second stale (and freeze that on pause).
+export function useNow(ms = 250) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     let id: ReturnType<typeof setTimeout>;

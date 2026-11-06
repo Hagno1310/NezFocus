@@ -35,7 +35,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
   - [x] mốc **P0-2.3** [#41](https://github.com/Hagno1310/NezFocus/issues/41) Backend: đăng nhập mật khẩu, chống dò mật khẩu, refresh token (AUTH-02, AUTH-04) · người kia chờ: P0-5 (Hoàng)
 - [ ] **P0-6** [#53](https://github.com/Hagno1310/NezFocus/issues/53) Bộ tính quyền trong shared và PermissionService (ROLE-08)
   - Cần trước: P0-1
-- [ ] **P0-7** [#54](https://github.com/Hagno1310/NezFocus/issues/54) Seed dữ liệu dev · **Thùy chạy phiên**
+- [x] **P0-7** [#54](https://github.com/Hagno1310/NezFocus/issues/54) Seed dữ liệu dev · **Thùy chạy phiên**
   - Cần trước: P0-2
 - [ ] **P0-4** [#4](https://github.com/Hagno1310/NezFocus/issues/4) Màn hình đăng ký và đăng nhập
   - Cần trước: P0-2, P0-3.2 (Hoàng), P0-3b.2 (Hoàng)

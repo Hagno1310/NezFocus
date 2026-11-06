@@ -6,6 +6,7 @@ import { DbModule } from './db/db.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { GatewayModule } from './modules/gateway/gateway.module.js';
 import { HealthModule } from './modules/health/health.module.js';
+import { StudyModule } from './modules/study/study.module.js';
 import { RedisModule } from './redis/redis.module.js';
 
 @Module({
@@ -17,6 +18,7 @@ import { RedisModule } from './redis/redis.module.js';
     GatewayModule,
     HealthModule,
     AuthModule,
+    StudyModule,
   ],
 })
 export class AppModule {}

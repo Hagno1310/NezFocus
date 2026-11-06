@@ -85,7 +85,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 
 ### P1 · Hoàng
 
-- [ ] **P1-B1** [#80](https://github.com/Hagno1310/NezFocus/issues/80) Lõi tính phút học (STUDY-15)
+- [x] **P1-B1** [#80](https://github.com/Hagno1310/NezFocus/issues/80) Lõi tính phút học (STUDY-15)
   - Cần trước: P0-2.2 (Hiếu), P0-7 (Hiếu)
 - [ ] **P1-B2** [#11](https://github.com/Hagno1310/NezFocus/issues/11) Học một mình (Solo Session)
   - Cần trước: P0-3b, P0-5, P1-B1

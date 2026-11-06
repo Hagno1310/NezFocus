@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ConnectionBanner } from '../../features/gateway/components/ConnectionBanner';
 import { space } from '../../shared/theme';
 import { Button } from '../../shared/ui/Button';
@@ -16,8 +17,10 @@ export function Placeholder({
   actions?: Action[];
 }) {
   const { t } = useTranslation();
+  const { top } = useSafeAreaInsets();
   return (
-    <View style={styles.screen}>
+    // No header here: the banner (S-MOD-04) would otherwise sit under the status bar.
+    <View style={[styles.screen, { paddingTop: top }]}>
       <ConnectionBanner />
       <View style={styles.container}>
         <Text variant="title-2" accessibilityRole="header">

@@ -22,7 +22,6 @@ import {
   type SoloTimer,
 } from '../../../domain/study/solo';
 import { size, space, useTheme } from '../../../shared/theme';
-import { studyNotifications } from '../../../data/notifications';
 import { Button } from '../../../shared/ui/Button';
 import { Banner } from '../../../shared/ui/Feedback';
 import {
@@ -36,7 +35,10 @@ import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { Text } from '../../../shared/ui/Text';
 import { ConnectionBanner } from '../../gateway/components/ConnectionBanner';
 import { CycleSheet } from '../components/CycleSheet';
-import { useNotificationAccess } from '../hooks/useSoloAlerts';
+import {
+  openExactAlarmSettings,
+  useNotificationAccess,
+} from '../hooks/useSoloAlerts';
 import { cycleText, durationText, hhmm } from '../format';
 import {
   useCloseSolo,
@@ -176,7 +178,7 @@ function Running({ snap, timer }: { snap: SoloSnapshot; timer: SoloTimer }) {
               variant="text"
               size="S"
               label={t('study.alerts.exactAlarmAllow')}
-              onPress={() => void studyNotifications.openExactAlarmSettings()}
+              onPress={openExactAlarmSettings}
             />
           </View>
         )}

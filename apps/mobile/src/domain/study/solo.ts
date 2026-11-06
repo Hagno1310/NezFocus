@@ -1,4 +1,6 @@
 import {
+  breakAfter,
+  phaseMinutes,
   SOLO_WAIT_LIMIT_MS,
   toFocusedMinutes,
   type CurrentSoloSessionResponse,
@@ -21,6 +23,9 @@ export interface SoloMemory {
   lastId(): Promise<string | null>;
   remember(id: string): Promise<void>;
   forget(): Promise<void>;
+  // Set before sending "Dừng": after a kill, the restored ending is ours, not another device's.
+  stoppedHere(): Promise<string | null>;
+  markStoppedHere(id: string): Promise<void>;
 }
 
 // stoppedHere tells our own "Dừng" from a stop on another device (S-STUDY-EDGE stopped-other-device).
@@ -30,8 +35,7 @@ export type SoloSnapshot = {
   stoppedHere: boolean;
 };
 
-// Offsets measured through the network wobble by a few hundred ms; re-measuring each answer
-// would make the clock jump back and forth by a second, so only a real change replaces it.
+// Network delay wobbles each measured offset; only a change this big replaces it, so the clock never jumps.
 const OFFSET_JITTER_MS = 1000;
 
 export type Timing = { received: number; sent?: number };
@@ -66,25 +70,17 @@ export type SoloTimer = {
   remainingMs: number;
   totalMs: number; // the whole phase, or the 10-minute wait
   round: number;
-  // Focus: the break that follows ('break' when the cycle has no long break); a break: when it ends.
+  // Focus: the break that follows; a break: when it ends.
   next: { phase: BreakName | 'focus'; at: Date } | null;
   long: boolean; // C-06: a phase of 100+ minutes uses timer-long for the whole phase
   pending: CycleConfig | null;
   due: boolean; // ran out locally: the backend has moved on, ask it
 };
 
-const phaseMinutes = (c: CycleConfig, phase: FocusPhase) =>
-  phase === 'focus'
-    ? c.focus_min
-    : phase === 'long_break'
-      ? (c.long_break_min ?? c.short_break_min)
-      : c.short_break_min;
-
+// The pending config decides the next break, as in the backend machine; 'break' if no long breaks.
 export function nextBreak(s: SoloSession): BreakName {
-  // Same rule as the backend machine: the pending config decides the next break.
-  const every = (s.next_cycle_config ?? s.cycle_config).long_break_every;
-  if (!every) return 'break';
-  return (s.focus_phases_done + 1) % every === 0 ? 'long_break' : 'short_break';
+  const c = s.next_cycle_config ?? s.cycle_config;
+  return c.long_break_every ? breakAfter(c, s.focus_phases_done + 1) : 'break';
 }
 
 // `localNow`: the phone clock; the offset turns it into backend time.
@@ -227,15 +223,15 @@ export async function restoreSolo(
   try {
     sent = localNow();
     const r = await repo.get(id);
-    return snapshotOf(r, { sent, received: localNow() }, false, shown);
+    const ours = (await memory.stoppedHere()) === id;
+    return snapshotOf(r, { sent, received: localNow() }, ours, shown);
   } catch {
     await memory.forget();
     return null;
   }
 }
 
-// Answers and Gateway events can arrive late or out of order. An ending is one-way, and a session
-// closed with "Xong" (`closedId`) is gone for this screen, so neither can be undone by a stale copy.
+// Late or reordered answers never undo an ending, nor bring back a session closed with "Xong".
 export function acceptSnapshot(
   shown: SoloSnapshot | null,
   next: SoloSnapshot,

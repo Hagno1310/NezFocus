@@ -114,8 +114,8 @@ export function useStartSolo() {
   });
 }
 
-// Paused while offline and resent on reconnect (TanStack onlineManager); the backend replays an
-// action that already took effect as 200 (CR-28 #15), so a resend is safe.
+// Paused offline, resent on reconnect (onlineManager); a replay is a safe 200 (CR-28 #15).
+// ponytail: queued commands live in memory, so a kill while offline drops them; persist with op-sqlite.
 export function useSoloAction() {
   const qc = useQueryClient();
   return useMutation({
@@ -125,12 +125,13 @@ export function useSoloAction() {
     onMutate: async ({ action }) => {
       await qc.cancelQueries({ queryKey: SOLO });
       const prev = read(qc);
-      // Online the answer comes back in a moment and is the truth; showing a local guess first made
-      // pause / resume jump by a second when the answer replaced it. Offline the guess is all we have.
+      // Online, a local guess replaced by the answer made pause / resume jump a second; offline only.
       if (!prev) return;
       // Our own stop's Gateway echo can beat the HTTP answer; it must not read as another device.
-      if (action.action === 'stop')
+      if (action.action === 'stop') {
         qc.setQueryData<SoloSnapshot>(SOLO, { ...prev, stoppedHere: true });
+        await soloMemory.markStoppedHere(prev.session.id);
+      }
       if (onlineManager.isOnline()) return;
       const now = new Date(Date.now() + prev.offsetMs);
       const local = applyLocally(prev.session, action, now);
@@ -169,8 +170,7 @@ export function useCloseSolo() {
   };
 }
 
-// Re-renders every `ms`. Countdowns use 250: their digits turn on the backend's second, not the
-// phone's, so a 1 s tick could show a value up to a second stale (and freeze that on pause).
+// 250 ms: countdown digits turn on the backend's second, so a 1 s tick could lag by up to a second.
 export function useNow(ms = 250) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {

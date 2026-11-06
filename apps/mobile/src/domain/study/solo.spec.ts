@@ -258,7 +258,7 @@ describe('restoreSolo (STUDY-10 AC3)', () => {
     solo_session: s,
     backend_time: iso(now),
   });
-  const memory = (id: string | null = null) => {
+  const memory = (id: string | null = null, stopped: string | null = null) => {
     const m: SoloMemory & { id: string | null } = {
       id,
       lastId: async () => m.id,
@@ -267,6 +267,11 @@ describe('restoreSolo (STUDY-10 AC3)', () => {
       },
       forget: async () => {
         m.id = null;
+        stopped = null;
+      },
+      stoppedHere: async () => stopped,
+      markStoppedHere: async (next: string) => {
+        stopped = next;
       },
     };
     return m;
@@ -305,6 +310,17 @@ describe('restoreSolo (STUDY-10 AC3)', () => {
       now,
     );
     expect(endingOf(restored!)?.kind).toBe('expired');
+  });
+
+  it('our own stop that landed just before an app kill restores as our summary, not another device', async () => {
+    const stopped = session(ended());
+    const restored = await restoreSolo(
+      repo(null, stopped),
+      memory('42', '42'),
+      null,
+      now,
+    );
+    expect(endingOf(restored!)?.kind).toBe('summary');
   });
 
   it('a remembered session that is gone forgets it', async () => {

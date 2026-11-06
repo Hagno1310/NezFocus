@@ -6,6 +6,7 @@ import type {
   SoloStatus,
 } from '@nezfocus/shared';
 import { and, eq, isNull } from 'drizzle-orm';
+import { isUniqueViolation } from '../../common/db-errors.js';
 import { DB, type Db, type Tx } from '../../db/db.module.js';
 import type { SoloState } from './solo-machine.js';
 import { soloSessions, type SoloSessionRow } from './solo.schema.js';
@@ -76,13 +77,20 @@ export class SoloSessionRepository {
     return this.db.transaction(fn);
   }
 
-  async insert(record: SoloRecord) {
-    await this.db.insert(soloSessions).values({
-      id: record.id,
-      userId: record.userId,
-      startedAt: record.startedAt,
-      ...toColumns(record),
-    });
+  // false: the user already has an active Solo Session (uq_solo_active_per_user).
+  async insert(record: SoloRecord): Promise<boolean> {
+    try {
+      await this.db.insert(soloSessions).values({
+        id: record.id,
+        userId: record.userId,
+        startedAt: record.startedAt,
+        ...toColumns(record),
+      });
+      return true;
+    } catch (err) {
+      if (!isUniqueViolation(err, 'uq_solo_active_per_user')) throw err;
+      return false;
+    }
   }
 
   // Row lock so the BullMQ job and a user action never apply on top of each other.

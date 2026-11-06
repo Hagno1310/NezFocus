@@ -3,15 +3,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   ErrorCode,
   SOLO_WAIT_LIMIT_MS,
-  type CurrentSoloSessionResponse,
   type CycleConfig,
   type SoloAction,
-  type SoloSession,
-  type SoloSessionResponse,
 } from '@nezfocus/shared';
 import { AppError } from '../../common/app-error.js';
 import { Clock } from '../../common/clock.js';
-import { isUniqueViolation } from '../../common/db-errors.js';
 import { SnowflakeGenerator } from '../../common/snowflake.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
 import {
@@ -21,6 +17,7 @@ import {
   type SoloState,
   type SoloStep,
 } from './solo-machine.js';
+import { toSoloResponse } from './solo-session.dto.js';
 import {
   SoloSessionRepository,
   type SoloRecord,
@@ -32,38 +29,15 @@ export abstract class SoloScheduler {
   abstract schedule(sessionId: bigint, at: Date): Promise<void>;
 }
 
-const iso = (d: Date | null) => d?.toISOString() ?? null;
-
-export const toSoloSessionJson = ({
-  id,
-  state: s,
-  ...r
-}: SoloRecord): SoloSession => ({
-  id: id.toString(),
-  status: s.status,
-  phase: s.phase,
-  cycle_config: s.config,
-  next_cycle_config: s.nextConfig,
-  focus_phases_done: s.focusPhasesDone,
-  phase_ends_at: iso(s.phaseEndsAt),
-  paused_remaining_ms: s.pausedRemainingMs,
-  waiting_since: iso(s.waitingSince),
-  started_at: r.startedAt.toISOString(),
-  ended_at: iso(s.endedAt),
-  end_reason: s.endReason,
-  focused_seconds: r.focusedSeconds,
-  days: Object.entries(r.creditedDays)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([local_date, focused_seconds]) => ({ local_date, focused_seconds })),
-  hit_daily_cap: r.hitDailyCap,
-});
-
 const deadline = (s: SoloState) =>
   s.status === 'running'
     ? s.phaseEndsAt
     : s.status === 'waiting'
       ? new Date(s.waitingSince!.getTime() + SOLO_WAIT_LIMIT_MS)
       : null;
+
+// A session as of `now`; the controller turns it into JSON.
+export type SoloView = { record: SoloRecord; now: Date };
 
 // REQ-STUDY-10: the backend owns the Solo Session clock; the app only displays it.
 @Injectable()
@@ -79,11 +53,11 @@ export class SoloSessionService {
     private readonly scheduler: SoloScheduler,
   ) {}
 
-  async start(
-    userId: bigint,
-    config: CycleConfig,
-  ): Promise<SoloSessionResponse> {
+  async start(userId: bigint, config: CycleConfig): Promise<SoloView> {
     // ponytail: AC2 (already a Room Session Participant → 40903) needs Participations, P3-B3 (#28).
+    // A session whose wait ran out but whose job was lost must not block the start: advance it first.
+    const active = await this.sessions.findActiveId(userId);
+    if (active !== undefined) await this.change(active, userId, advance);
     const now = this.clock.now();
     const record: SoloRecord = {
       id: this.ids.next(),
@@ -94,31 +68,25 @@ export class SoloSessionService {
       hitDailyCap: false,
       state: startSolo(config, now),
     };
-    try {
-      await this.sessions.insert(record);
-    } catch (err) {
-      if (isUniqueViolation(err, 'uq_solo_active_per_user'))
-        throw new AppError(
-          ErrorCode.FocusSessionAlreadyActive,
-          'A Solo Session is already running',
-        );
-      throw err;
-    }
-    return this.announce(record, now);
+    if (!(await this.sessions.insert(record)))
+      throw new AppError(
+        ErrorCode.FocusSessionAlreadyActive,
+        'A Solo Session is already running',
+      );
+    await this.announce(record, now);
+    return { record, now };
   }
 
-  async current(userId: bigint): Promise<CurrentSoloSessionResponse> {
+  async current(
+    userId: bigint,
+  ): Promise<{ record: SoloRecord | null; now: Date }> {
     const id = await this.sessions.findActiveId(userId);
-    if (id === undefined)
-      return {
-        solo_session: null,
-        backend_time: this.clock.now().toISOString(),
-      };
-    const res = await this.change(id, userId, advance);
+    if (id === undefined) return { record: null, now: this.clock.now() };
+    const view = await this.change(id, userId, advance);
     // Just ended (wait ran out): the app reads it by id to show ended-expired.
-    return res.solo_session.status === 'ended'
-      ? { ...res, solo_session: null }
-      : res;
+    return view.record.state.status === 'ended'
+      ? { ...view, record: null }
+      : view;
   }
 
   get(userId: bigint, id: bigint) {
@@ -138,7 +106,7 @@ export class SoloSessionService {
     id: bigint,
     userId: bigint | null,
     step: (s: SoloState, now: Date) => SoloStep,
-  ): Promise<SoloSessionResponse> {
+  ): Promise<SoloView> {
     const now = this.clock.now();
     const { record, changed } = await this.sessions.transaction(async (tx) => {
       const before = await this.sessions.lock(tx, id);
@@ -170,24 +138,17 @@ export class SoloSessionService {
       await this.sessions.save(tx, record);
       return { record, changed: true };
     });
-    return changed
-      ? this.announce(record, now)
-      : {
-          solo_session: toSoloSessionJson(record),
-          backend_time: now.toISOString(),
-        };
+    if (changed) await this.announce(record, now);
+    return { record, now };
   }
 
   // SRS 7.3.6 step 3: every device of the user reschedules its notifications from this.
-  private async announce(
-    record: SoloRecord,
-    now: Date,
-  ): Promise<SoloSessionResponse> {
-    const response = {
-      solo_session: toSoloSessionJson(record),
-      backend_time: now.toISOString(),
-    };
-    await this.events.toUser(record.userId, 'SOLO_SESSION_UPDATE', response);
+  private async announce(record: SoloRecord, now: Date) {
+    await this.events.toUser(
+      record.userId,
+      'SOLO_SESSION_UPDATE',
+      toSoloResponse({ record, now }),
+    );
     const at = deadline(record.state);
     if (at)
       await this.scheduler.schedule(record.id, at).catch((err: unknown) =>
@@ -196,6 +157,5 @@ export class SoloSessionService {
           `could not schedule Solo Session ${record.id}: ${String(err)}`,
         ),
       );
-    return response;
   }
 }

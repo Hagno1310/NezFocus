@@ -34,7 +34,7 @@ export function useSoloAlertSchedule(snap: SoloSnapshot | null) {
               { minutes: a.minutes },
             ),
     }));
-    void studyNotifications.replace(items).catch(() => undefined);
+    void studyNotifications.replace(items);
   }, [snap, t, returns]);
 }
 
@@ -58,6 +58,19 @@ export function useNotificationAccess() {
   }, []);
   return state;
 }
+
+// S-ROOM-09 first-focus: whether to explain before starting, and the user's answer.
+export const notificationPrompt = {
+  needed: async () => (await studyNotifications.access()) === 'undetermined',
+  answer: (allow: boolean) =>
+    (allow
+      ? studyNotifications.request().then(() => undefined)
+      : studyNotifications.markAsked()
+    ).catch(() => undefined),
+};
+
+export const openExactAlarmSettings = () =>
+  void studyNotifications.openExactAlarmSettings();
 
 // STUDY-10 AC1: tapping a Solo notification opens S-STUDY-02 (cold start included).
 export function useOpenSoloFromNotification(open: () => void) {

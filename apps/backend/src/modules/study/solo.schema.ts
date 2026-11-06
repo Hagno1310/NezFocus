@@ -17,7 +17,7 @@ import { users } from '../users/users.schema.js';
 
 const tz = () => timestamp({ withTimezone: true });
 
-// SRS 8.2 `solo_sessions` (REQ-STUDY-10), plus credited_days / hit_daily_cap for the summary (CR-29).
+// SRS 8.2 `solo_sessions` (REQ-STUDY-10), plus credited_days / hit_daily_cap for the summary (CR-28 #14).
 export const soloSessions = pgTable(
   'solo_sessions',
   {
@@ -30,7 +30,7 @@ export const soloSessions = pgTable(
     longBreakMin: smallint(),
     longBreakEvery: smallint(),
     nextCycleConfig: jsonb().$type<CycleConfig>(),
-    status: varchar({ length: 8 }).notNull().default('running'), // running | paused | waiting | ended
+    status: varchar({ length: 8 }).notNull().default('running'),
     phase: varchar({ length: 12 }).notNull().default('focus'),
     focusPhasesDone: smallint().notNull().default(0),
     phaseStartedAt: tz().notNull().defaultNow(),

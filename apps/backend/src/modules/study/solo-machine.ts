@@ -1,5 +1,7 @@
 import {
+  breakAfter,
   ErrorCode,
+  phaseMinutes,
   SOLO_WAIT_LIMIT_MS,
   type CycleConfig,
   type FocusPhase,
@@ -34,12 +36,7 @@ const after = (t: Date, ms: number) => new Date(t.getTime() + ms);
 function enter(s: SoloState, phase: FocusPhase, at: Date): SoloState {
   // STUDY-11 AC6: a pending config takes over at the next phase.
   const config = s.nextConfig ?? s.config;
-  const minutes =
-    phase === 'focus'
-      ? config.focus_min
-      : phase === 'long_break'
-        ? config.long_break_min!
-        : config.short_break_min;
+  const minutes = phaseMinutes(config, phase);
   return {
     ...s,
     config,
@@ -55,8 +52,7 @@ function enter(s: SoloState, phase: FocusPhase, at: Date): SoloState {
 
 function enterBreak(s: SoloState, at: Date) {
   const done = s.focusPhasesDone + 1;
-  const every = (s.nextConfig ?? s.config).long_break_every;
-  const phase = every && done % every === 0 ? 'long_break' : 'short_break';
+  const phase = breakAfter(s.nextConfig ?? s.config, done);
   return enter({ ...s, focusPhasesDone: done }, phase, at);
 }
 

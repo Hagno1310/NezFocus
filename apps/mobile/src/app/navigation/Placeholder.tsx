@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { ConnectionBanner } from '../../features/gateway/components/ConnectionBanner';
 import { space } from '../../shared/theme';
 import { Button } from '../../shared/ui/Button';
 import { Text } from '../../shared/ui/Text';
@@ -16,26 +17,30 @@ export function Placeholder({
 }) {
   const { t } = useTranslation();
   return (
-    <View style={styles.container}>
-      <Text variant="title-2" accessibilityRole="header">
-        {title}
-      </Text>
-      <Text variant="body-sm" color="text-secondary">
-        {t('placeholder.note')}
-      </Text>
-      {actions.map((a) => (
-        <Button
-          key={a.label}
-          variant="secondary"
-          label={a.label}
-          onPress={a.onPress}
-        />
-      ))}
+    <View style={styles.screen}>
+      <ConnectionBanner />
+      <View style={styles.container}>
+        <Text variant="title-2" accessibilityRole="header">
+          {title}
+        </Text>
+        <Text variant="body-sm" color="text-secondary">
+          {t('placeholder.note')}
+        </Text>
+        {actions.map((a) => (
+          <Button
+            key={a.label}
+            variant="secondary"
+            label={a.label}
+            onPress={a.onPress}
+          />
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
   container: {
     flex: 1,
     alignItems: 'center',

@@ -172,7 +172,8 @@ export function createApiClient(deps: ApiClientDeps) {
     return result.data as T;
   }
 
-  return { request };
+  // The Gateway refreshes through here when IDENTIFY gets 4004 without a reason.
+  return { request, refresh };
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>;

@@ -11,8 +11,11 @@ import { createApiClient } from './client';
 export { ApiError, type ApiClient, type RequestOptions } from './client';
 
 // ponytail: hand-written fetch client. Switch to openapi-fetch (SRS 7.2) once the backend publishes OpenAPI.
+export const apiBaseUrl =
+  process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
+
 export const api = createApiClient({
-  baseUrl: process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1',
+  baseUrl: apiBaseUrl,
   fetch: (...args) => fetch(...args),
   tokens: secureTokenStore,
   clientHeaders: () => ({

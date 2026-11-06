@@ -7,11 +7,13 @@ import {
 } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { setNavigationState } from '../domain/session/sessionStore';
 import { fontFamily, useTheme, type Theme } from '../shared/theme';
 import { ToastHost } from '../shared/ui/Toast';
+import { startGatewayLifecycle } from './gatewayLifecycle';
 import { linking } from './navigation/linking';
 import { RootNavigator } from './navigation/RootNavigator';
 
@@ -45,6 +47,7 @@ function navigationTheme({ scheme, colors }: Theme): NavigationTheme {
 
 export default function App() {
   const theme = useTheme();
+  useEffect(startGatewayLifecycle, []);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

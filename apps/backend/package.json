@@ -32,6 +32,7 @@
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "ws": "^8.22.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -42,6 +43,7 @@
     "@types/node": "^24.0.0",
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.0.0",
+    "@types/ws": "^8.18.2",
     "@vitest/coverage-v8": "^4.1.2",
     "drizzle-kit": "^0.31.11",
     "source-map-support": "^0.5.21",

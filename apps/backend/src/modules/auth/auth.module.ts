@@ -26,5 +26,7 @@ import { TokenService } from './token.service.js';
     { provide: AuthMailer, useClass: LogAuthMailer },
     { provide: APP_GUARD, useClass: AuthGuard },
   ],
+  // The Gateway checks IDENTIFY / RESUME tokens the same way (P0-5.2).
+  exports: [TokenService, SessionRepository],
 })
 export class AuthModule {}

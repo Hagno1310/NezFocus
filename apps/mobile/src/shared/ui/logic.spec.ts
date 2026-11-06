@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  arcDash,
+  clockText,
   dialogLayout,
   nextCode,
   passwordRuleStates,
@@ -68,5 +70,22 @@ describe('dialogLayout (C-09 › Nút của Dialog)', () => {
 
   it('a single button stacks full width', () => {
     expect(dialogLayout(['Đã hiểu'])).toBe('column');
+  });
+});
+
+describe('arcDash', () => {
+  it('draws one solid span from `from` to `to`', () => {
+    expect(arcDash(100, 30, 100)).toEqual([0, 30, 70, 100]);
+  });
+  it('draws nothing for an empty span', () => {
+    expect(arcDash(100, 40, 40)).toEqual([0, 100]);
+  });
+});
+
+describe('clockText', () => {
+  it('is mm:ss, rounding a part second up', () => {
+    expect(clockText(32 * 60_000 + 9_400)).toBe('32:10');
+    expect(clockText(0)).toBe('00:00');
+    expect(clockText(120 * 60_000)).toBe('120:00');
   });
 });

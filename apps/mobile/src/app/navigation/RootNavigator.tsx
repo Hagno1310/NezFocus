@@ -4,7 +4,11 @@ import {
   type NativeStackNavigationProp,
   type NativeStackScreenProps,
 } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import {
+  getFocusedRouteNameFromRoute,
+  useNavigation,
+  type NavigatorScreenParams,
+} from '@react-navigation/native';
 import {
   Bell,
   CircleUser,
@@ -21,7 +25,13 @@ import {
   signIn,
   signOut,
 } from '../../domain/session/sessionStore';
+import { authRepository } from '../../data/auth';
 import { currentLanguage, setLanguage } from '../../shared/i18n';
+import { endingOf } from '../../domain/study/solo';
+import { SoloMiniPlayer } from '../../features/study/components/SoloMiniPlayer';
+import { useSolo, useSoloSync } from '../../features/study/hooks/useSolo';
+import { SoloScreen } from '../../features/study/screens/SoloScreen';
+import { StudyHome } from '../../features/study/screens/StudyHome';
 import { TabBar } from '../../shared/ui/TabBar';
 import { HomeDrawers } from './HomeDrawers';
 import { Placeholder } from './Placeholder';
@@ -46,9 +56,14 @@ export type RootStackParamList = {
   ChannelLink: { serverId: string; channelId: string; messageId?: string };
 };
 
+type StudyParamList = {
+  StudyHome: undefined; // S-STUDY-01
+  Solo: undefined; // S-STUDY-02
+};
+
 type TabParamList = {
   Home: undefined;
-  Study: undefined;
+  Study: NavigatorScreenParams<StudyParamList> | undefined;
   Tasks: undefined;
   Inbox: undefined;
   Me: undefined;
@@ -56,6 +71,20 @@ type TabParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
+const StudyStack = createNativeStackNavigator<StudyParamList>();
+
+function StudyTab() {
+  return (
+    <StudyStack.Navigator screenOptions={{ headerShown: false }}>
+      <StudyStack.Screen name="StudyHome">
+        {({ navigation }) => (
+          <StudyHome onOpenSolo={() => navigation.navigate('Solo')} />
+        )}
+      </StudyStack.Screen>
+      <StudyStack.Screen name="Solo" component={SoloScreen} />
+    </StudyStack.Navigator>
+  );
+}
 
 const sampleUser = { id: '1', email: 'an.nguyen@gmail.com' };
 
@@ -82,6 +111,19 @@ function useDevActions() {
       onPress: toggleLanguage,
     },
     upgrade: { label: t('screens.updateRequired'), onPress: requireUpgrade },
+    // ponytail: real tokens for trying features against the backend until S-AUTH-04 (mảng A) lands.
+    seedSignIn: {
+      label: 'Đăng nhập an.nguyen (seed)',
+      onPress: () =>
+        void authRepository
+          .login(sampleUser.email, 'NezFocus@2026')
+          .then((s) =>
+            signIn(
+              { id: s.user.id, email: sampleUser.email },
+              { completed: true },
+            ),
+          ),
+    },
   };
 }
 
@@ -115,6 +157,7 @@ function WelcomePlaceholder({
           onPress: () => navigation.navigate(screen),
         })),
         dev.signIn,
+        ...(__DEV__ ? [dev.seedSignIn] : []),
         dev.incomplete,
         dev.language,
         dev.upgrade,
@@ -130,9 +173,16 @@ function MainTabs() {
   const gallery = useGalleryAction();
   // ponytail: sample badges for comparing with the C-03 board; real counts arrive in P2 (NOTIF-01).
   const [sampleBadges, setSampleBadges] = useState(false);
+  useSoloSync();
+  const solo = useSolo();
+  // C-03 / SRS 3.1: dot on Học while the user is in a Focus Session.
+  const studying = !!solo && !endingOf(solo);
   const tabs = {
     Home: { icon: House, badge: sampleBadges ? 3 : undefined },
-    Study: { icon: Timer, badge: sampleBadges ? ('dot' as const) : undefined },
+    Study: {
+      icon: Timer,
+      badge: studying || sampleBadges ? ('dot' as const) : undefined,
+    },
     Tasks: { icon: ListChecks, badge: sampleBadges ? 12 : undefined },
     Inbox: { icon: Bell, badge: sampleBadges ? 120 : undefined },
     Me: { icon: CircleUser },
@@ -144,16 +194,36 @@ function MainTabs() {
     // CR-15: Back at the root of any other tab returns to Home, keeping that tab's state.
     <Tab.Navigator
       backBehavior="firstRoute"
-      tabBar={(props) => <TabBar {...props} tabs={tabs} />}
+      tabBar={(props) => {
+        const route = props.state.routes[props.state.index];
+        const onSolo =
+          route?.name === 'Study' &&
+          getFocusedRouteNameFromRoute(route) === 'Solo';
+        return (
+          <>
+            {/* SRS 3.1 bottom order: MiniPlayer, then TabBar. Hidden on the Solo screen itself (C-08). */}
+            {!onSolo && (
+              <SoloMiniPlayer
+                onOpen={() =>
+                  props.navigation.navigate('Study', { screen: 'Solo' })
+                }
+              />
+            )}
+            <TabBar {...props} tabs={tabs} />
+          </>
+        );
+      }}
     >
       <Tab.Screen
         name="Home"
         component={HomeDrawers}
         options={{ title: t('tabs.home'), headerShown: false }}
       />
-      <Tab.Screen name="Study" options={{ title: t('tabs.study') }}>
-        {() => <Placeholder title={t('tabs.study')} />}
-      </Tab.Screen>
+      <Tab.Screen
+        name="Study"
+        component={StudyTab}
+        options={{ title: t('tabs.study'), headerShown: false }}
+      />
       <Tab.Screen name="Tasks" options={{ title: t('tabs.tasks') }}>
         {() => <Placeholder title={t('tabs.tasks')} />}
       </Tab.Screen>

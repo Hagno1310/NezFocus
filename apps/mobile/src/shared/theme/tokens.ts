@@ -183,6 +183,13 @@ export const size = {
   avatarStackOverlap: -6,
   // DESIGN.md › Mascot: empty state 96–120; board EmptyState draws 112.
   mascotEmpty: 112,
+  // DESIGN.md › Mascot: sleepy / happy 68 inside the break ring (board C-06); 120 on the session summary.
+  mascotRing: 68,
+  mascotSummary: 120,
+  // C-17 RoomControl discs; C-08 MiniPlayer height.
+  control: 56,
+  controlMain: 64,
+  miniPlayer: 64,
   // Board Tab item › Tab icon wrap (24): badge and dot positions.
   tabBadge: { left: 14, top: -4 },
   tabDot: { left: 19, top: -1 },

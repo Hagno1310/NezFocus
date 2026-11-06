@@ -11,10 +11,12 @@ export function ScreenHeader({
   title,
   onBack,
   action,
+  transparent = false,
 }: {
   title: string;
   onBack?: () => void;
   action?: ReactNode;
+  transparent?: boolean; // over a full-bleed phase background (S-STUDY-02)
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -23,7 +25,7 @@ export function ScreenHeader({
       style={[
         styles.bar,
         {
-          backgroundColor: colors.bg,
+          backgroundColor: transparent ? 'transparent' : colors.bg,
           paddingLeft: onBack ? space[1] : space[3],
         },
       ]}

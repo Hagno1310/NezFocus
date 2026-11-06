@@ -1,7 +1,6 @@
 import { DAILY_FOCUS_CAP_SECONDS } from '@nezfocus/shared';
 
-// Backend-clock instants of focus time only (no break, pause or waiting). `phaseEndsAt` is
-// the scheduled end of the phase, when there is one.
+// Caller contract: backend-clock focus time only, disjoint and not credited before; pass phaseEndsAt for AC3/AC4.
 export type FocusInterval = {
   start: Date;
   end: Date;
@@ -20,8 +19,7 @@ function localDate(t: number, timezone: string) {
   return f.format(t);
 }
 
-// First instant after `t` that falls on a later local date. Binary search, so DST shifts
-// and zones without a 00:00 need no special case.
+// Binary search for the next local date, so DST and zones without a 00:00 need no special case.
 function nextLocalDayStart(t: number, timezone: string) {
   const today = localDate(t, timezone);
   let lo = t;

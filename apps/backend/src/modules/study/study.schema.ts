@@ -1,3 +1,4 @@
+import { DAILY_FOCUS_CAP_SECONDS } from '@nezfocus/shared';
 import { sql } from 'drizzle-orm';
 import {
   bigint,
@@ -24,7 +25,10 @@ export const dailyStudyStats = pgTable(
   },
   (t) => [
     primaryKey({ columns: [t.userId, t.localDate] }),
-    check('daily_study_stats_cap', sql`${t.focusedSeconds} <= 57600`),
+    check(
+      'daily_study_stats_cap',
+      sql`${t.focusedSeconds} <= ${sql.raw(String(DAILY_FOCUS_CAP_SECONDS))}`,
+    ),
   ],
 );
 

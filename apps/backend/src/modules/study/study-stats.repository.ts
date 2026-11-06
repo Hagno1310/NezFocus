@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { DAILY_FOCUS_CAP_SECONDS } from '@nezfocus/shared';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
 import { userSettings } from '../users/users.schema.js';
@@ -75,9 +76,11 @@ export class StudyStatsRepository {
           .onConflictDoUpdate({
             target: [dailyStudyStats.userId, dailyStudyStats.localDate],
             set: {
-              // SRS 8.2 v1.3: LEAST keeps the CHECK even if a caller skipped the cap.
-              focusedSeconds: sql`LEAST(${dailyStudyStats.focusedSeconds} + ${seconds}, 57600)`,
-              soloSeconds: sql`${dailyStudyStats.soloSeconds} + ${solo ? seconds : 0}`,
+              // REQ-STUDY-15 (4): LEAST keeps the CHECK even if a caller skipped the cap; solo takes the same clipped delta.
+              focusedSeconds: sql`LEAST(${dailyStudyStats.focusedSeconds} + ${seconds}, ${DAILY_FOCUS_CAP_SECONDS})`,
+              soloSeconds: solo
+                ? sql`${dailyStudyStats.soloSeconds} + LEAST(${seconds}, ${DAILY_FOCUS_CAP_SECONDS} - ${dailyStudyStats.focusedSeconds})`
+                : dailyStudyStats.soloSeconds,
             },
           });
       }

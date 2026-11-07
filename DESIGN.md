@@ -407,7 +407,7 @@ Chỉ các component đã thực sự dựng trong bản xem trước (`Des/nezf
 | Lỗi nhẹ: offline, tìm không ra | confused | 96 |
 | **Pha Nghỉ** của Study Room / Solo Session, giữa vòng nhịp | sleepy (Nghỉ ngắn), happy (Nghỉ dài) | 64–72 |
 
-**Không bao giờ:** trong pha Tập trung; chat, Việc cần làm, cài đặt; mini-player, notification; dialog nghiêm trọng (ban, xóa tài khoản, mất dữ liệu); **khi streak bị gãy** (mascot buồn tạo cảm giác tội lỗi). Mascot biến mất ngay khi pha Tập trung bắt đầu.
+**Không bao giờ:** trong pha Tập trung; khi Học một mình đang tạm dừng (kể cả trong pha Nghỉ); chat, Việc cần làm, cài đặt; mini-player, notification; dialog nghiêm trọng (ban, xóa tài khoản, mất dữ liệu); **khi streak bị gãy** (mascot buồn tạo cảm giác tội lỗi). Mascot biến mất ngay khi pha Tập trung bắt đầu.
 
 **Logo** (thêm 01/11/2026, CR-26): chữ **N** trên ngực áo, tai nghe và balo của Runtime — `MASCOT_BRIEF.md` đã gọi đó là logo NezFocus, nên app và bản web dùng chung một dấu hiệu. Hình học lấy đúng từ `nez-mascot` (`runtime.rml` › `ChestLogo`: hai mảnh đối xứng xoay 180° chạm nhau ở tâm); không vẽ lại, không kéo méo, không xoay, không đặt trên nền màu pha, không thêm bóng hay gradient.
 - **Icon app** (`icon.png` 1024): ô vuông tràn viền nền `brand-primary`, chữ N trắng chiếm 62% (launcher tự bo).
@@ -543,3 +543,4 @@ Thêm 01/11/2026 (SRS v1.10, CR-27, Mục 4.11; chế độ cập nhật của `
 | 02/11/2026 | Bỏ màn chặn dưới 1024: trang trong khung giữ bố cục 1024 và cuộn ngang; trang đăng nhập co theo cửa sổ | Duyệt W4 (`ui-feature-spec-vi`): màn chặn khóa ngoài người phóng to trình duyệt (1366 phóng 150% = 910px) và việc gấp trên điện thoại; với 1–5 admin, không khóa ai ngoài quan trọng hơn bố cục ở màn hẹp. Co giãn xuống 768 / điện thoại để v1.x |
 | 02/11/2026 | Người dùng mới và người hoạt động tách thành hai biểu đồ nhỏ; người dùng mới thành cột đặc `primary` (bỏ đường đứt `text-secondary`) | W3 Q2 (`ui-feature-spec-vi`): 0–3 người mới / ngày so với ~130 người hoạt động — chung một thang thì đường người mới nằm sát đáy; hai trục là lỗi kinh điển |
 | 06/11/2026 | Nhãn nút (`button-primary`, `button-secondary`, `button-danger`) đậm 600, cỡ 16 ở mọi cỡ nút; `button-secondary` cao 44 như master (S 40 vẫn dùng trên hàng danh sách) | Dựng component P0-3b (#3): board `C-01 · Button` vẽ mọi biến thể và cả ba cỡ 48 / 44 / 40 bằng 16/600, token cũ ghi 400 (và 14 cho nút phụ) nên code theo token sẽ lệch board. Sửa token theo board, không đổi frame |
+| 07/11/2026 | Học một mình tạm dừng trong pha Nghỉ: không mascot, giữ nền và nét vòng của pha | Thử trên máy thật: mascot đẩy dòng "Đồng hồ đứng yên, không tính phút" đè lên vòng 280; mascot "được nghỉ" cũng không hợp lúc đồng hồ đứng yên. Frame `S-STUDY-02 · paused` chỉ vẽ pha Tập trung |

@@ -126,9 +126,9 @@ function Running({ snap, timer }: { snap: SoloSnapshot; timer: SoloTimer }) {
     !online && t('study.line.offline'),
   ].filter((l): l is string => !!l);
 
-  // DESIGN.md › Mascot: none in focus and none while waiting (sleeping contradicts "Học tiếp").
+  // DESIGN.md › Mascot: only while a break runs; none in focus, paused, or waiting (sleeping contradicts "Học tiếp").
   const mascot =
-    phase !== 'focus' && status !== 'waiting' ? (
+    phase !== 'focus' && status === 'running' ? (
       <Mascot
         mood={phase === 'long_break' ? 'happy' : 'sleepy'}
         size={size.mascotRing}

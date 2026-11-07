@@ -170,7 +170,7 @@ Nền tràn viền theo pha như Study Room (DESIGN.md › Colors, chốt 16/10/
 | `focus` | Như bố cục | |
 | `short-break` | Nền `phase-short-room`, vòng nét gạch, Runtime sleepy giữa vòng; "06:40" | "Hết nghỉ lúc 21:54" — Solo không tự quay lại Tập trung; hết nghỉ sang `waiting` |
 | `long-break` | Nền `phase-long-room`, vòng đôi, Runtime happy; "21:15" · "Hết nghỉ lúc 22:08" | Dòng chu kỳ "Chu kỳ 50/10 · nghỉ dài 30 · Sửa" (chỉ có nghỉ dài khi chu kỳ bật nó) |
-| `paused` | `FocusTimer · paused`; nút chính "Tiếp tục" | "Đã tạm dừng" |
+| `paused` | `FocusTimer · paused`; nút chính "Tiếp tục". Tạm dừng trong Nghỉ ngắn / Nghỉ dài: giữ nền và nét vòng của pha (`short-break` / `long-break`), **không mascot** ở mọi pha (chốt 07/11/2026; frame chỉ vẽ pha Tập trung) | "Đã tạm dừng" · "Đồng hồ đứng yên, không tính phút" |
 | `waiting` | `FocusTimer · waiting` (đếm ngược 10:00 tới lúc hết hạn); `Button · primary · L` "Học tiếp" dưới vòng; ẩn "Bỏ qua pha"; **không mascot** (Runtime đang ngủ ngược với lời mời học tiếp) | "Hết giờ nghỉ" · "Bấm Học tiếp để bắt đầu vòng mới" (STUDY-10) |
 | `ended-summary` | Màn hình tổng kết: Runtime happy 120, số phút `stat`, dòng streak | "Bạn đã tập trung {1} giờ {15} phút" · "Chuỗi {6} ngày liên tiếp" (icon `flame`) · nút "Học thêm" (`secondary`) · "Xong" (`primary`) |
 | `ended-expired` | Hết 10 phút chờ không bấm: như `ended-summary` nhưng có dòng giải thích, không mascot happy (neutral) | "Phiên học kết thúc lúc 21:45 vì chưa học tiếp" (mốc đã qua, sớm hơn giờ status bar 21:47) |

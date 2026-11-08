@@ -1,5 +1,6 @@
 import {
   canActOnMember,
+  canTimeOutMember,
   canGrantPermissions,
   canManageRole,
   computeBasePermissions,
@@ -16,7 +17,7 @@ import { permissionNames } from './permissions.js';
 const compute = (c: PermissionCase) =>
   c.channel
     ? computeChannelPermissions(c.server, c.member, c.channel, c.now)
-    : computeBasePermissions(c.server, c.member);
+    : computeBasePermissions(c.server, c.member, c.now);
 
 const decide = (c: HierarchyCase) => {
   switch (c.check) {
@@ -26,6 +27,8 @@ const decide = (c: HierarchyCase) => {
       return canActOnMember(c.server, c.actor, c.target);
     case 'grant':
       return canGrantPermissions(c.server, c.actor, c.permissions);
+    case 'timeout':
+      return canTimeOutMember(c.server, c.actor, c.target);
   }
 };
 

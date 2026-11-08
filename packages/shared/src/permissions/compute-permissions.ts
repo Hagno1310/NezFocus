@@ -18,14 +18,19 @@ const memberRoles = (server: PermissionServer, member: PermissionMember) =>
     (r) => r.id !== server.id && member.roleIds.includes(r.id),
   );
 
+const isTimedOut = (member: PermissionMember, now: Date) =>
+  !!member.timeoutUntil && member.timeoutUntil.getTime() > now.getTime();
+
 export function computeBasePermissions(
   server: PermissionServer,
   member: PermissionMember,
+  now: Date = new Date(),
 ): bigint {
   if (isOwner(server, member)) return ALL_PERMISSIONS;
   let perms = server.roles.find((r) => r.id === server.id)?.permissions ?? 0n;
   for (const r of memberRoles(server, member)) perms |= r.permissions;
   if (perms & P.ADMINISTRATOR) return ALL_PERMISSIONS;
+  if (isTimedOut(member, now)) perms &= P.VIEW_CHANNEL; // CR-28 #17
   return perms;
 }
 
@@ -38,7 +43,7 @@ export function computeChannelPermissions(
   channel: PermissionChannel,
   now: Date = new Date(),
 ): bigint {
-  let perms = computeBasePermissions(server, member);
+  let perms = computeBasePermissions(server, member, now);
   if (perms === ALL_PERMISSIONS) return ALL_PERMISSIONS; // Owner / Administrator
 
   const overwrites: readonly PermissionOverwriteInput[] =
@@ -82,10 +87,8 @@ export function computeChannelPermissions(
     );
   }
 
-  // 5) timeout (REQ-ROLE-05)
-  if (member.timeoutUntil && member.timeoutUntil.getTime() > now.getTime()) {
-    perms &= P.VIEW_CHANNEL;
-  }
+  // 5) timeout again: overwrite allows in steps 1–3 may have added bits back
+  if (isTimedOut(member, now)) perms &= P.VIEW_CHANNEL;
   return perms;
 }
 
@@ -115,6 +118,18 @@ export function canActOnMember(
   if (isOwner(server, actor)) return true;
   return (
     highestRolePosition(server, target) < highestRolePosition(server, actor)
+  );
+}
+
+// CR-28 #18: an ADMINISTRATOR keeps every permission while timed out, so they can't be.
+export function canTimeOutMember(
+  server: PermissionServer,
+  actor: PermissionMember,
+  target: PermissionMember,
+) {
+  return (
+    canActOnMember(server, actor, target) &&
+    computeBasePermissions(server, target) !== ALL_PERMISSIONS
   );
 }
 

@@ -32,6 +32,7 @@ interface HierarchyBase {
 type HierarchyCheck =
   | { check: 'role'; role: PermissionRole }
   | { check: 'member'; target: PermissionMember }
+  | { check: 'timeout'; target: PermissionMember }
   | { check: 'grant'; permissions: bigint };
 
 export type HierarchyCase = HierarchyBase & HierarchyCheck;
@@ -242,6 +243,21 @@ export const PERMISSION_MATRIX: readonly PermissionCase[] = [
     server: world({ everyone: DEFAULTS | P.ADMINISTRATOR }),
     member: dung,
     expected: ALL_PERMISSIONS,
+  }),
+  c({
+    name: 'CR-28 #17: Dũng bị tạm khóa chỉ còn VIEW_CHANNEL ở cấp server (không tạo lời mời, không tạo việc)',
+    member: timedOut(dung),
+    expected: P.VIEW_CHANNEL,
+  }),
+  c({
+    name: 'CR-28 #17: Trưởng nhóm (Bình) bị tạm khóa mất cả quyền quản lý ở cấp server',
+    member: timedOut(binh),
+    expected: P.VIEW_CHANNEL,
+  }),
+  c({
+    name: 'Tạm khóa đã hết → quyền cấp server bình thường',
+    member: timedOut(chi, minutesFromNow(-1)),
+    expected: DEFAULTS | P.MANAGE_STUDY_ROOMS,
   }),
   c({
     name: '@everyone không có bit nào, member không role → không có quyền',
@@ -550,7 +566,7 @@ export const PERMISSION_MATRIX: readonly PermissionCase[] = [
     expected: P.VIEW_CHANNEL,
   }),
   c({
-    name: 'Administrator bị tạm khóa vẫn có mọi quyền (trả về trước bước timeout)',
+    name: 'Administrator có hạn tạm khóa (dữ liệu cũ) vẫn có mọi quyền, nên không tạm khóa được họ (CR-28 #18)',
     member: timedOut(tuan),
     channel: text(),
     expected: ALL_PERMISSIONS,
@@ -709,6 +725,35 @@ export const HIERARCHY_MATRIX: readonly HierarchyCase[] = [
     check: 'member',
     target: binh,
     expected: true,
+  }),
+  h({
+    name: 'Trưởng nhóm (Bình) tạm khóa được Chi (Điều phối)',
+    actor: binh,
+    check: 'timeout',
+    target: chi,
+    expected: true,
+  }),
+  h({
+    name: 'CR-28 #18: Owner không tạm khóa được Quản trị (ADMINISTRATOR)',
+    actor: an,
+    check: 'timeout',
+    target: tuan,
+    expected: false,
+  }),
+  h({
+    name: 'CR-28 #18: role thấp mang ADMINISTRATOR cũng không bị tạm khóa',
+    server: world({ dieuPhoi: P.ADMINISTRATOR }),
+    actor: binh,
+    check: 'timeout',
+    target: chi,
+    expected: false,
+  }),
+  h({
+    name: 'Không tạm khóa được người có role ngang mình',
+    actor: binh,
+    check: 'timeout',
+    target: { userId: ID.dung, roleIds: [ID.truongNhom] },
+    expected: false,
   }),
   h({
     name: 'ROLE-01 AC2: Trưởng nhóm không có BAN_MEMBERS thì không cấp được BAN_MEMBERS',

@@ -16,6 +16,7 @@ import { ApiError } from '../api/client';
 // template. With EXPO_PUBLIC_FAKE=gateway too, READY lists the samples.
 export const FAKE_FULL_NAME = 'Đủ 100 server'; // shows create-error 40011
 export const FAKE_NETWORK_NAME = 'Mất kết nối'; // shows create-error, network sentence
+export const FAKE_FORBIDDEN_NAME = 'Hết quyền'; // S-SET-01: saving it plays 40302
 
 const fail = (status: number, code: number) =>
   new ApiError(status, { code, message: `fake ${code}` });
@@ -151,6 +152,30 @@ export function createFakeServerRepository(
       const server = servers.get(serverId);
       if (!server) throw fail(404, ErrorCode.NotFound);
       return server;
+    },
+    async updateServer(serverId, body) {
+      await wait();
+      const server = servers.get(serverId);
+      if (!server) throw fail(404, ErrorCode.NotFound);
+      if (body.name === FAKE_NETWORK_NAME)
+        throw new TypeError('Network request failed');
+      if (body.name === FAKE_FORBIDDEN_NAME)
+        throw fail(403, ErrorCode.Forbidden);
+      if (body.name !== undefined && !ServerName.safeParse(body.name).success)
+        throw fail(400, ErrorCode.ValidationError);
+      const welcome = body.system_channel_id;
+      if (
+        welcome &&
+        !server.channels.some((c) => c.id === welcome && c.type === 'text')
+      )
+        throw fail(400, ErrorCode.ValidationError);
+      const next = {
+        ...server,
+        ...(body.name !== undefined && { name: body.name.trim() }),
+        ...(welcome !== undefined && { system_channel_id: welcome }),
+      };
+      servers.set(serverId, next);
+      return toSummary(next);
     },
     async createServer(body) {
       await wait();

@@ -19,12 +19,11 @@ export const openChannel = (open: OpenChannel) =>
 export const selectServer = (serverId: string) =>
   homeStore.setState({ selectedServerId: serverId });
 
-export const setChannels = (
-  serverId: string,
-  channels: ServerResponse['channels'],
-) =>
+// GET /servers/:id: what the drawer lists and what decides the rows shown by permission.
+export const setServerDetail = ({ id, channels, roles }: ServerResponse) =>
   homeStore.setState((s) => ({
-    channels: { ...s.channels, [serverId]: channels },
+    channels: { ...s.channels, [id]: channels },
+    roles: { ...s.roles, [id]: roles },
   }));
 
 export const setCollapsed = (serverId: string, categoryIds: string[]) =>

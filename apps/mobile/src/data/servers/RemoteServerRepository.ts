@@ -1,4 +1,4 @@
-import { ServerResponse, ServerRoutes } from '@nezfocus/shared';
+import { ServerResponse, ServerRoutes, ServerSummary } from '@nezfocus/shared';
 import type { ServerRepository } from '../../domain/servers/ServerRepository';
 import { api } from '../api';
 
@@ -10,5 +10,12 @@ export const remoteServerRepository: ServerRepository = {
   getServer: async (id) =>
     ServerResponse.parse(
       await api.request(ServerRoutes.byId.replace(':id', id)),
+    ),
+  updateServer: async (id, body) =>
+    ServerSummary.parse(
+      await api.request(ServerRoutes.byId.replace(':id', id), {
+        method: 'PATCH',
+        body,
+      }),
     ),
 };

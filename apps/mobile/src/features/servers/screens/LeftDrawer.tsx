@@ -1,6 +1,6 @@
 import type { ChannelResponse, ServerSummary } from '@nezfocus/shared';
 import { ChevronDown, ChevronRight, UserPlus } from 'lucide-react-native';
-import { Fragment, useMemo } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,6 +22,7 @@ import {
 import { Icon } from '../../../shared/ui/Icon';
 import { Text } from '../../../shared/ui/Text';
 import { ChannelRow } from '../components/ChannelRow';
+import { ServerMenu, type ServerMenuActions } from '../components/ServerMenu';
 import { ServerRail } from '../components/ServerRail';
 
 export type LeftDrawerActions = {
@@ -30,7 +31,10 @@ export type LeftDrawerActions = {
   onDirectMessages: () => void; // S-DM-01
   onAdd: () => void; // S-HOME-06
   onInvite: () => void; // S-HOME-07
-  onServerMenu: () => void; // S-HOME-09
+  // S-HOME-09 rows (the menu itself opens here, from the server name)
+  menu: Omit<ServerMenuActions, 'settings'> & {
+    settings: (serverId: string) => void; // S-SET-01
+  };
 };
 
 const SKELETON_ROWS = 8; // S-HOME-02 `loading`
@@ -123,6 +127,7 @@ function ChannelPanel({
   actions: LeftDrawerActions;
 }) {
   const { colors } = useTheme();
+  const [menuOpen, setMenuOpen] = useState(false);
   const channels = useStore(homeStore, (s) => s.channels[server.id]);
   const collapsed = useStore(homeStore, (s) => s.collapsed[server.id]);
   const open = useStore(homeStore, (s) => s.open);
@@ -143,7 +148,7 @@ function ChannelPanel({
         <ServerHead
           server={server}
           onInvite={actions.onInvite}
-          onServerMenu={actions.onServerMenu}
+          onServerMenu={() => setMenuOpen(true)}
         />
         {sections
           ? sections.map(({ category, collapsed: isCollapsed, rows }) => (
@@ -175,6 +180,15 @@ function ChannelPanel({
               </View>
             ))}
       </ScrollView>
+      <ServerMenu
+        serverId={server.id}
+        visible={menuOpen}
+        onDismiss={() => setMenuOpen(false)}
+        actions={{
+          ...actions.menu,
+          settings: () => actions.menu.settings(server.id),
+        }}
+      />
     </View>
   );
 }

@@ -1,6 +1,7 @@
 import type {
   ChannelResponse,
   DispatchEvent,
+  RoleResponse,
   ServerSummary,
 } from '@nezfocus/shared';
 import { firstTextChannel } from './createServer';
@@ -14,6 +15,7 @@ export type HomeState = {
   servers: ServerSummary[] | null; // null until READY
   selectedServerId: string | null; // the server whose channels the drawer lists
   channels: Record<string, ChannelResponse[]>; // server id → channels the caller may view
+  roles: Record<string, RoleResponse[]>; // server id → roles (rows shown by permission)
   open: OpenChannel | null; // the channel on screen
   collapsed: Record<string, string[]>; // server id → collapsed category ids (per device)
 };
@@ -22,6 +24,7 @@ export const emptyHome: HomeState = {
   servers: null,
   selectedServerId: null,
   channels: {},
+  roles: {},
   open: null,
   collapsed: {},
 };
@@ -99,6 +102,7 @@ function apply(s: HomeState, e: DispatchEvent): HomeState {
         ...s,
         servers,
         channels: {},
+        roles: {},
         selectedServerId: has(s.selectedServerId)
           ? s.selectedServerId
           : (servers[0]?.id ?? null),
@@ -106,11 +110,12 @@ function apply(s: HomeState, e: DispatchEvent): HomeState {
       };
     }
     case 'SERVER_CREATE': {
-      const { channels, roles: _roles, ...server } = e.d;
+      const { channels, roles, ...server } = e.d;
       return {
         ...s,
         servers: upsert(s.servers ?? [], server),
         channels: { ...s.channels, [server.id]: channels },
+        roles: { ...s.roles, [server.id]: roles },
       };
     }
     case 'SERVER_UPDATE':

@@ -53,6 +53,8 @@ import { StyleSheet, View } from 'react-native';
 import { space } from '../../shared/theme';
 import { homeStore } from '../../domain/servers/homeStore';
 import { NoServerHome } from '../../features/servers/screens/LeftDrawer';
+import { ServerOverviewScreen } from '../../features/servers/screens/ServerOverviewScreen';
+import { ServerSettingsScreen } from '../../features/servers/screens/ServerSettingsScreen';
 import { HomeDrawers } from './HomeDrawers';
 import { Placeholder } from './Placeholder';
 // Metro folds __DEV__ before collecting dependencies, so release bundles leave the gallery out.
@@ -86,9 +88,11 @@ type HomeParamList = {
   HomeRoot: undefined; // drawers around the open channel (S-HOME-01/02/03)
   CreateServer: undefined; // S-HOME-06
   JoinByCode: undefined; // ponytail: placeholder for S-HOME-06 join-by-code until P2-A1 (#14)
-  // ponytail: where S-HOME-02 leads before those screens exist — voice room P3-B1 (#26),
-  // DMs P2-B3 (#20), invite P2-A1 (#14), server menu P1-A2.3 (#60).
+  // ponytail: where S-HOME-02 / S-HOME-09 / S-SET-01 lead before those screens exist —
+  // voice room P3-B1 (#26), DMs P2-B3 (#20), invite P2-A1 (#14), and the rest per row.
   HomePlaceholder: { title: string };
+  ServerSettings: { serverId: string }; // S-SET-01
+  ServerOverview: { serverId: string }; // S-SET-01 overview
 };
 
 type TabParamList = {
@@ -129,7 +133,16 @@ function HomeTab() {
                 onOpenVoice: (channel) => placeholder(channel.name)(),
                 onDirectMessages: dm,
                 onInvite: placeholder(t('screens.invite')),
-                onServerMenu: placeholder(t('screens.serverMenu')),
+                menu: {
+                  invite: placeholder(t('screens.invite')),
+                  // ponytail: S-SET-09 (create channel) comes with P1-A2.4 (#61).
+                  createChannel: placeholder(t('servers.menu.createChannel')),
+                  settings: (serverId) =>
+                    navigation.navigate('ServerSettings', { serverId }),
+                  // ponytail: report (P3-A5 #25), leave / owner-leave (P3-A4 #24).
+                  report: placeholder(t('servers.menu.report')),
+                  leave: placeholder(t('servers.menu.leave')),
+                },
               }}
             />
           );
@@ -141,6 +154,30 @@ function HomeTab() {
             onClose={navigation.goBack}
             onJoinByCode={() => navigation.navigate('JoinByCode')}
             onCreated={() => navigation.popTo('HomeRoot')}
+          />
+        )}
+      </HomeStack.Screen>
+      <HomeStack.Screen name="ServerSettings">
+        {({ navigation, route }) => (
+          <ServerSettingsScreen
+            serverId={route.params.serverId}
+            onBack={navigation.goBack}
+            onOverview={() =>
+              navigation.navigate('ServerOverview', {
+                serverId: route.params.serverId,
+              })
+            }
+            onRow={(title) => navigation.navigate('HomePlaceholder', { title })}
+            onLostAccess={() => navigation.popTo('HomeRoot')}
+          />
+        )}
+      </HomeStack.Screen>
+      <HomeStack.Screen name="ServerOverview">
+        {({ navigation, route }) => (
+          <ServerOverviewScreen
+            serverId={route.params.serverId}
+            onSaved={navigation.goBack}
+            onLostAccess={() => navigation.popTo('HomeRoot')}
           />
         )}
       </HomeStack.Screen>

@@ -1,8 +1,10 @@
 import type { ServerSummary } from '@nezfocus/shared';
+import { Hash } from 'lucide-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { ChannelRow } from '../../features/servers/components/ChannelRow';
 import { ServerRail } from '../../features/servers/components/ServerRail';
+import { RadioRow } from '../../shared/ui/RadioRow';
 import { Caption, Section, Stack } from './kit';
 
 // Board C-05 · ChannelRow and the C-26 part of board `C-10 · … · Chat` (02 › Dữ liệu mẫu).
@@ -87,11 +89,37 @@ function Rail() {
   );
 }
 
+function Radios() {
+  const [picked, setPicked] = useState<string | null>('chao-mung');
+  return (
+    <View>
+      <RadioRow
+        label="Không gửi"
+        description="Không tạo tin khi có người vào"
+        selected={picked === null}
+        onPress={() => setPicked(null)}
+      />
+      {['chao-mung', 'thong-bao', 'tai-lieu'].map((name) => (
+        <RadioRow
+          key={name}
+          label={name}
+          typeIcon={Hash}
+          selected={picked === name}
+          onPress={() => setPicked(name)}
+        />
+      ))}
+    </View>
+  );
+}
+
 export function ServerSections() {
   return (
     <>
       <Section title="C-05 · ChannelRow">
         <Rows />
+      </Section>
+      <Section title="C-34 · RadioRow">
+        <Radios />
       </Section>
       <Section title="C-26 · ServerRail">
         <Stack>

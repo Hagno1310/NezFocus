@@ -141,6 +141,7 @@ describe('reduceHome (Gateway events)', () => {
     expect(state.servers?.map((s) => s.id)).toEqual(['100', '200']);
     expect(state.selectedServerId).toBe('100');
     expect(state.channels).toEqual({});
+    expect(state.roles).toEqual({});
   });
 
   it('READY without the open server closes it; no server at all → no-server', () => {
@@ -174,6 +175,7 @@ describe('reduceHome (Gateway events)', () => {
     ]);
     expect(state.servers?.[1]).not.toHaveProperty('channels');
     expect(state.channels['300']).toEqual(created.channels);
+    expect(state.roles['300']).toEqual([]);
     ({ state } = reduceHome(
       state,
       event({

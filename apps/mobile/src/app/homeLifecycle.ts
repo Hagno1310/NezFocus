@@ -9,7 +9,7 @@ import {
   homeStore,
   openChannel,
   resetHome,
-  setChannels,
+  setServerDetail,
   setCollapsed,
 } from '../domain/servers/homeStore';
 import { sessionStore } from '../domain/session/sessionStore';
@@ -34,7 +34,7 @@ export function startHomeLifecycle() {
     fetching.add(serverId);
     serverRepository
       .getServer(serverId)
-      .then((server) => setChannels(serverId, server.channels))
+      .then(setServerDetail)
       // Offline: the list keeps loading; the next READY (reconnect) asks again.
       .catch(() => {})
       .finally(() => fetching.delete(serverId));

@@ -203,7 +203,7 @@ function useDevActions() {
       label: t('screens.updateRequired'),
       onPress: () => requireUpgrade(),
     },
-    // ponytail: real tokens for trying features against the backend until S-AUTH-04 (mảng A) lands.
+    // Dev: one tap signs in as the seed user (pnpm --filter backend db:seed) with real tokens.
     seedSignIn: {
       label: 'Đăng nhập an.nguyen (seed)',
       onPress: () =>
@@ -267,7 +267,7 @@ function MainTabs() {
   const { t } = useTranslation();
   const dev = useDevActions();
   const gallery = useGalleryAction();
-  // ponytail: sample badges for comparing with the C-03 board; real counts arrive in P2 (NOTIF-01).
+  // ponytail: sample badges for comparing with the C-03 board; real counts come with P2-A4.4 (#106).
   const [sampleBadges, setSampleBadges] = useState(false);
   useSoloSync();
   const solo = useSolo();

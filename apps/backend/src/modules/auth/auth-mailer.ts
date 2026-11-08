@@ -12,7 +12,7 @@ export abstract class AuthMailer {
   ): Promise<void>;
 }
 
-// ponytail: dev prints the code to the backend log; swap for a real mail provider before the pilot.
+// ponytail: dev prints the code to the backend log; real mail (SMTP, queue) comes with P1-A6 (#196).
 // Never prints codes in production: whoever reads the logs could sign in as anyone.
 @Injectable()
 export class LogAuthMailer extends AuthMailer {

@@ -179,7 +179,7 @@ export class GatewayConnection implements SessionSocket {
     );
   }
 
-  // ponytail: fixed window per connection, lets ~2× through at a window edge; sliding window (SRS 11.3) if that matters.
+  // ponytail: khi a client abuses the window edge (~2× through): sliding window (SRS 11.3).
   private overRateLimit() {
     const now = Date.now();
     if (now - this.windowStart >= RATE_LIMIT_WINDOW_MS) {

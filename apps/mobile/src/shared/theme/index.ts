@@ -6,7 +6,7 @@ import { darkColors, lightColors, type Colors } from './tokens';
 export * from './tokens';
 export type { Scheme, ThemePreference };
 
-// ponytail: not persisted yet; Cá nhân › Giao diện (P1-A5) saves it to user_settings.
+// ponytail: not persisted yet; Cá nhân › Giao diện, P1-A5.4 (#79), saves it to user_settings.
 export const useThemePreference = create<{
   preference: ThemePreference;
   setPreference: (p: ThemePreference) => void;

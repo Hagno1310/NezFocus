@@ -12,7 +12,8 @@ export const soloRepository: SoloRepository = {
     api.request(SoloRoutes.byId(id), { method: 'PATCH', body: action }),
 };
 
-// ponytail: SecureStore as the only key-value store installed; move to op-sqlite / MMKV when one lands.
+// ponytail: khi op-sqlite lands (P2-A3.3 #101): move these keys there. SecureStore is the only
+// key-value store installed now.
 const KEY = 'solo.last-id';
 const STOPPED_KEY = 'solo.stopped-here';
 

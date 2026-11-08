@@ -8,7 +8,8 @@ import { pickRepository } from '../fake';
 import { AN, createFakeGatewayClient } from './FakeGatewayClient';
 import { createGatewayClient, type GatewaySocket } from './RemoteGatewayClient';
 
-// ponytail: the Gateway shares the API host (SRS 7.1.1, one process); add EXPO_PUBLIC_GATEWAY_URL if they split.
+// ponytail: khi the Gateway moves off the API host: add EXPO_PUBLIC_GATEWAY_URL. Same host now
+// (SRS 7.1.1, one process).
 const gatewayUrl =
   apiBaseUrl.replace(/^http/, 'ws').replace(/\/api\/v1\/?$/, '') +
   GatewayRoutes.connect;

@@ -33,7 +33,7 @@ export const en: Strings = {
       TOO_SHORT: 'At least 8 characters',
       MISSING_UPPERCASE: 'Uppercase (A–Z)',
       MISSING_LOWERCASE: 'Lowercase (a–z)',
-      MISSING_DIGIT: 'Digit (0–9)',
+      MISSING_DIGIT: 'Number (0–9)',
       MISSING_SPECIAL: 'Special character (!@#…)',
       met: 'met',
       unmet: 'not met',

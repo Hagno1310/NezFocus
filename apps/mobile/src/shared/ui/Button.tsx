@@ -37,6 +37,8 @@ export type ButtonProps = Omit<PressableProps, 'children' | 'style'> & {
   loading?: boolean;
   fullWidth?: boolean;
   style?: StyleProp<ViewStyle>;
+  // Cap on the label's text scale, for buttons pinned to the bottom (spec 01 large-text: ×1.3).
+  labelMaxScale?: number;
 };
 
 export function Button({
@@ -48,6 +50,7 @@ export function Button({
   disabled = false,
   fullWidth = false,
   style,
+  labelMaxScale,
   ...rest
 }: ButtonProps) {
   const { colors } = useTheme();
@@ -119,6 +122,7 @@ export function Button({
               weight="600"
               color={fg}
               numberOfLines={2}
+              maxFontSizeMultiplier={labelMaxScale}
               style={styles.label}
             >
               {label}

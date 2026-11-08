@@ -3,13 +3,14 @@ import type { EndReason } from '../session/sessionStore';
 
 // Spec 01: what each auth error means on screen. Errors are ApiError (data/api) or a fetch
 // failure; only the API body fields are read so domain/ stays free of data/.
-type ApiErrorLike = {
+export type ApiErrorLike = {
   code: number;
   attempts_left?: number;
   retry_after?: number | null;
+  errors?: Record<string, { code: string }[]>;
 };
 
-const asApiError = (err: unknown): ApiErrorLike | null =>
+export const asApiError = (err: unknown): ApiErrorLike | null =>
   typeof err === 'object' &&
   err !== null &&
   typeof (err as ApiErrorLike).code === 'number'
@@ -38,10 +39,11 @@ export function sendCodeErrorState(err: unknown): SendCodeErrorState {
   if (!e) return { kind: 'network' };
   if (e.code === ErrorCode.ValidationError) return { kind: 'invalid-email' };
   if (e.code === ErrorCode.RateLimited) {
-    const seconds = e.retry_after ?? 0;
-    return seconds > EMAIL_CODE_RESEND_SECONDS
-      ? { kind: 'rate-limited' }
-      : { kind: 'wait', seconds };
+    // No Retry-After: assume the daily limit rather than pretend a code was sent.
+    const seconds = e.retry_after;
+    return seconds && seconds <= EMAIL_CODE_RESEND_SECONDS
+      ? { kind: 'wait', seconds }
+      : { kind: 'rate-limited' };
   }
   return { kind: 'other' };
 }
@@ -84,8 +86,9 @@ export function loginErrorState(err: unknown, now: number): LoginErrorState {
   return { kind: 'other' };
 }
 
+// Whole seconds left, rounded down: a fresh 60 s wait reads "0:59" (spec 01: đếm ngược ≤ 0:59).
 export const secondsLeft = (until: number, now: number) =>
-  Math.max(0, Math.ceil((until - now) / 1000));
+  Math.max(0, Math.floor((until - now) / 1000));
 
 export const countdownText = (seconds: number) =>
   `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;

@@ -40,6 +40,12 @@ describe('sendCodeErrorState', () => {
     ).toEqual({ kind: 'rate-limited' });
   });
 
+  it('40029 without Retry-After is treated as the daily limit', () => {
+    expect(sendCodeErrorState(apiError(ErrorCode.RateLimited))).toEqual({
+      kind: 'rate-limited',
+    });
+  });
+
   it('40029 within the minute only restarts the countdown', () => {
     expect(
       sendCodeErrorState(apiError(ErrorCode.RateLimited, { retry_after: 41 })),
@@ -86,7 +92,8 @@ describe('codeErrorState (S-AUTH-03, AUTH-13)', () => {
 describe('resend countdown', () => {
   it('counts whole seconds down to 0 and prints m:ss', () => {
     expect(secondsLeft(NOW + 41_000, NOW)).toBe(41);
-    expect(secondsLeft(NOW + 40_100, NOW)).toBe(41);
+    expect(secondsLeft(NOW + 40_900, NOW)).toBe(40);
+    expect(secondsLeft(NOW + 60_000 - 5, NOW)).toBe(59);
     expect(secondsLeft(NOW - 5, NOW)).toBe(0);
     expect(countdownText(41)).toBe('0:41');
     expect(countdownText(59)).toBe('0:59');

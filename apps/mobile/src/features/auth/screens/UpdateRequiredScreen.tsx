@@ -5,12 +5,11 @@ import { Linking, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from 'zustand';
 import { sessionStore } from '../../../domain/session/sessionStore';
-import { space, useTheme } from '../../../shared/theme';
+import { size, space, useTheme } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import { Text } from '../../../shared/ui/Text';
 
 const PACKAGE = Constants.expoConfig?.android?.package ?? 'app.nezfocus';
-const ANCHOR_ICON = 56; // spec 01 › Bố cục dọc: icon neo 56, primary
 
 const openStore = () =>
   Linking.openURL(`market://details?id=${PACKAGE}`).catch(() =>
@@ -38,7 +37,7 @@ export function UpdateRequiredScreen() {
       ]}
     >
       <View style={styles.block}>
-        <CircleArrowUp size={ANCHOR_ICON} color={colors.primary} />
+        <CircleArrowUp size={size.anchorIcon} color={colors.primary} />
         <Text
           variant="title-1"
           accessibilityRole="header"

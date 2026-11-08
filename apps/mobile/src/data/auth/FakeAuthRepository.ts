@@ -58,6 +58,7 @@ export function createFakeAuthRepository(
   const codes = new Map<string, { attemptsLeft: number }>();
   const sends = new Map<string, { last: number; today: number }>();
   let wrongPasswords = 0;
+  let lockedUntil = 0;
   let current: CurrentUser | null = null;
 
   return {
@@ -100,12 +101,16 @@ export function createFakeAuthRepository(
     },
     async login(email, password) {
       await wait();
-      if (wrongPasswords >= MAX_WRONG_PASSWORDS)
+      if (now() < lockedUntil)
         throw fail(429, ErrorCode.RateLimited, {
-          retry_after: LOGIN_WAIT_SECONDS,
+          retry_after: Math.ceil((lockedUntil - now()) / 1000),
         });
       if (norm(email) !== AN_EMAIL || password !== FAKE_PASSWORD) {
         wrongPasswords += 1;
+        if (wrongPasswords >= MAX_WRONG_PASSWORDS) {
+          wrongPasswords = 0;
+          lockedUntil = now() + LOGIN_WAIT_SECONDS * 1000;
+        }
         throw fail(401, ErrorCode.InvalidCredentials);
       }
       wrongPasswords = 0;

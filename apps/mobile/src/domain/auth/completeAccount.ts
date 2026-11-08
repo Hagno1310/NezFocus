@@ -1,4 +1,6 @@
+import { asApiError } from './authFlow';
 import {
+  DISPLAY_NAME_MAX,
   checkPassword,
   checkUsername,
   ErrorCode,
@@ -34,8 +36,6 @@ const ORDER: CompleteAccountField[] = [
   'terms',
 ];
 
-export const DISPLAY_NAME_MAX = 32;
-
 const fold = (s: string) => s.normalize('NFC').toLowerCase();
 
 export function completeAccountErrors(
@@ -68,15 +68,11 @@ export function completeAccountErrors(
 export const firstError = (errors: CompleteAccountErrors) =>
   ORDER.find((f) => errors[f]);
 
-type ApiErrorLike = {
-  code: number;
-  errors?: Record<string, { code: string }[]>;
-};
-
 // 40901 / 40001 from POST /auth/complete-account as field errors; null = not about a field.
 export function serverErrors(err: unknown): CompleteAccountErrors | null {
-  if (typeof err !== 'object' || err === null || !('code' in err)) return null;
-  const { code, errors = {} } = err as ApiErrorLike;
+  const api = asApiError(err);
+  if (!api) return null;
+  const { code, errors = {} } = api;
   if (code === ErrorCode.Conflict)
     return errors.username ? { username: 'taken-on-submit' } : null;
   if (code !== ErrorCode.ValidationError) return null;

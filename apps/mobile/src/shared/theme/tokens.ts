@@ -186,6 +186,10 @@ export const size = {
   // DESIGN.md › Mascot: sleepy / happy 68 inside the break ring (board C-06); 120 on the session summary.
   mascotRing: 68,
   mascotSummary: 120,
+  // DESIGN.md › Mascot: Welcome / onboarding 160–200; spec 01 S-AUTH-01 sits it inside the 280 ring.
+  mascotWelcome: 160,
+  // Spec 01 › Bố cục dọc: the anchor icon of a screen without inputs (S-AUTH-00).
+  anchorIcon: 56,
   // C-17 RoomControl discs; C-08 MiniPlayer height.
   control: 56,
   controlMain: 64,

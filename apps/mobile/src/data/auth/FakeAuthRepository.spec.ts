@@ -77,7 +77,8 @@ describe('FakeAuthRepository', () => {
   });
 
   it('AUTH-02 AC3: the sixth try after five wrong passwords is 40029 for 10 minutes', async () => {
-    const repo = createFakeAuthRepository(0, () => 0);
+    let now = 0;
+    const repo = createFakeAuthRepository(0, () => now);
     for (let i = 0; i < 5; i++)
       await expect(
         repo.login('an.nguyen@gmail.com', 'x'),
@@ -85,6 +86,10 @@ describe('FakeAuthRepository', () => {
     await expect(
       repo.login('an.nguyen@gmail.com', FAKE_PASSWORD),
     ).rejects.toMatchObject({ code: ErrorCode.RateLimited, retry_after: 600 });
+    now += 600_000;
+    await expect(
+      repo.login('an.nguyen@gmail.com', FAKE_PASSWORD),
+    ).resolves.toBeTruthy();
   });
 
   it('a username taken while the form was open is 40901 on username', async () => {

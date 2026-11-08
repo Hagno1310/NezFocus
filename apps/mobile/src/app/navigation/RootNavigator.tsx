@@ -172,12 +172,12 @@ function Welcome({
   const devActions = __DEV__ && (
     <View style={styles.dev}>
       {[
-        ...gallery,
         dev.signIn,
         dev.seedSignIn,
         dev.incomplete,
         dev.language,
         dev.upgrade,
+        ...gallery,
       ].map((a) => (
         <Button
           key={a.label}

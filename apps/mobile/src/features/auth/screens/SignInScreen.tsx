@@ -11,10 +11,8 @@ import { useTranslation } from 'react-i18next';
 import { Keyboard, StyleSheet, View, type TextInput } from 'react-native';
 import { useStore } from 'zustand';
 import type { RootStackParamList } from '../../../app/navigation/RootNavigator';
-import { authRepository } from '../../../data/auth';
 import {
   checkEmail,
-  loginErrorState,
   secondsLeft,
   signInModeAfterEnd,
   type SignInMode,
@@ -29,14 +27,14 @@ import { Banner, SystemBanner } from '../../../shared/ui/Feedback';
 import { FormMessage } from '../../../shared/ui/FormMessage';
 import { Text } from '../../../shared/ui/Text';
 import { TextField } from '../../../shared/ui/TextField';
-import { finishSignIn, sendCode, useAuthFlow } from '../authFlowStore';
+import { useAuthFlow } from '../authFlowStore';
 import { AuthScreen, InlineLink, OrDivider } from '../components/AuthScreen';
 import {
   showErrorToast,
-  useNow,
-  useOnline,
-  useSubmit,
-} from '../hooks/useAuthForm';
+  useEmailCodeStep,
+  useLogIn,
+} from '../hooks/useAuthActions';
+import { useNow, useOnline } from '../hooks/useAuthForm';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
 
@@ -110,28 +108,23 @@ export function SignInScreen({ navigation, route }: Props) {
     );
   };
 
-  const validEmail = () => {
-    const checked = checkEmail(email);
-    if ('error' in checked) {
-      setEmailError(checked.error);
-      Keyboard.dismiss();
-      return null;
-    }
-    return checked.email;
-  };
-
-  const login = useSubmit(async () => {
-    const valid = validEmail();
-    if (!valid) return;
-    if (!password) {
-      passwordInput.current?.focus();
-      return;
-    }
-    try {
-      const session = await authRepository.login(valid, password);
-      finishSignIn(session.user, 'password');
-    } catch (err) {
-      const state = loginErrorState(err, Date.now());
+  const loginMutation = useLogIn();
+  const login = {
+    pending: loginMutation.pending,
+    run: async () => {
+      const checked = checkEmail(email);
+      if ('error' in checked) {
+        setEmailError(checked.error);
+        Keyboard.dismiss();
+        return;
+      }
+      if (!password) {
+        passwordInput.current?.focus();
+        return;
+      }
+      const result = await loginMutation.run(checked.email, password);
+      if (!result || result.ok) return;
+      const state = result.error;
       if (state.kind === 'wrong-password') {
         setWrongPassword(true);
         setPassword('');
@@ -139,24 +132,21 @@ export function SignInScreen({ navigation, route }: Props) {
         setLoginLimit({ email, until: state.until });
       else if (state.kind === 'invalid-email') setEmailError('invalid');
       else showErrorToast(state.kind);
-    }
-  });
+    },
+  };
 
-  const sendOtp = useSubmit(async () => {
-    const valid = validEmail();
-    if (!valid) return;
-    const result = await sendCode(valid);
-    if (result.ok || result.error.kind === 'wait') {
-      navigation.navigate('EnterCode', { email: valid, from: 'signIn' });
-      return;
-    }
-    const { kind } = result.error;
-    if (kind === 'invalid-email') setEmailError('invalid');
-    else if (kind === 'rate-limited') setOtpLimitedEmail(email);
-    else showErrorToast(kind);
+  const otpStep = useEmailCodeStep({
+    sent: (valid) =>
+      navigation.navigate('EnterCode', { email: valid, from: 'signIn' }),
+    fieldError: setEmailError,
+    rateLimited: () => setOtpLimitedEmail(email),
   });
+  const sendOtp = {
+    pending: otpStep.pending,
+    run: () => otpStep.start(email),
+  };
 
-  const busy = login.pending || sendOtp.pending;
+  const busy = loginMutation.pending || otpStep.pending;
   const passwordMode = mode === 'password';
 
   const message = !online

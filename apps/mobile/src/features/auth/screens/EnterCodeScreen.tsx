@@ -4,9 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Keyboard, StyleSheet, View } from 'react-native';
 import type { RootStackParamList } from '../../../app/navigation/RootNavigator';
-import { authRepository } from '../../../data/auth';
 import {
-  codeErrorState,
   countdownText,
   secondsLeft,
   type CodeErrorState,
@@ -17,24 +15,18 @@ import { CodeInput } from '../../../shared/ui/CodeInput';
 import { SystemBanner } from '../../../shared/ui/Feedback';
 import { FormMessage } from '../../../shared/ui/FormMessage';
 import { Text } from '../../../shared/ui/Text';
-import {
-  finishSignIn,
-  sendCode,
-  showResentToast,
-  useAuthFlow,
-} from '../authFlowStore';
+import { useAuthFlow } from '../authFlowStore';
 import { AuthScreen, InlineLink } from '../components/AuthScreen';
+import { breakableEmail } from '../format';
 import {
   showErrorToast,
-  useNow,
-  useOnline,
-  useSubmit,
-} from '../hooks/useAuthForm';
+  showResentToast,
+  useSendCode,
+  useVerifyCode,
+} from '../hooks/useAuthActions';
+import { useNow, useOnline } from '../hooks/useAuthForm';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EnterCode'>;
-
-// C-02 › Ngắt dòng: a long email breaks only after "@" or "." (zero-width spaces there).
-const breakable = (email: string) => email.replace(/([@.])/g, '$1​');
 
 // S-AUTH-03: one screen for sign-up and OTP sign-in. Nothing is stored locally: a killed app
 // reopens on S-AUTH-01 (AUTH-13).
@@ -52,36 +44,39 @@ export function EnterCodeScreen({ navigation, route }: Props) {
   // rate-limited: 10 codes today; the code already sent can still be entered (AUTH-13 AC6).
   const [resendBlocked, setResendBlocked] = useState(false);
 
-  const verify = useSubmit(async (value: string) => {
-    try {
-      const session = await authRepository.verifyEmailCode(email, value);
-      finishSignIn(session.user, 'otp', {
-        fromCreateAccount: from === 'create',
-      });
-    } catch (err) {
-      const state = codeErrorState(err);
-      if (state.kind === 'other') {
+  const verifier = useVerifyCode(email, from);
+  const verify = {
+    pending: verifier.pending,
+    run: async (value: string) => {
+      const result = await verifier.run(value);
+      if (!result || result.ok) return;
+      if (result.error.kind === 'other') {
         showErrorToast('other');
         setCode('');
         return;
       }
-      if (state.kind === 'network') Keyboard.dismiss();
-      setError(state);
-    }
-  });
+      if (result.error.kind === 'network') Keyboard.dismiss();
+      setError(result.error);
+    },
+  };
 
-  const resend = useSubmit(async () => {
-    const result = await sendCode(email, { force: true });
-    if (result.ok) {
-      setCode('');
-      setError(null);
-      showResentToast(email);
-      return;
-    }
-    const { kind } = result.error;
-    if (kind === 'rate-limited') setResendBlocked(true);
-    else if (kind === 'network' || kind === 'other') showErrorToast(kind);
-  });
+  const sender = useSendCode();
+  const resend = {
+    pending: sender.pending,
+    run: async () => {
+      const result = await sender.run(email, true);
+      if (!result) return;
+      if (result.ok) {
+        setCode('');
+        setError(null);
+        showResentToast(email);
+        return;
+      }
+      const { kind } = result.error;
+      if (kind === 'rate-limited') setResendBlocked(true);
+      else if (kind === 'network' || kind === 'other') showErrorToast(kind);
+    },
+  };
 
   // too-many-attempts / code-expired: the code is gone, only a new one helps.
   const needsNewCode =
@@ -124,7 +119,7 @@ export function EnterCodeScreen({ navigation, route }: Props) {
     >
       <View>
         <Text color="text-secondary">{t('auth.enterCode.sentTo')}</Text>
-        <Text weight="600">{breakable(email)}</Text>
+        <Text weight="600">{breakableEmail(email)}</Text>
         <InlineLink
           center={false}
           link={t('auth.enterCode.changeEmail')}

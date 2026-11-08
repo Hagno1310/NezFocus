@@ -3,12 +3,14 @@ import {
   normalizeUsername,
   suggestUsername,
   TERMS_VERSION,
+  USERNAME_MAX,
 } from '@nezfocus/shared';
 import { CircleCheck, LoaderCircle } from 'lucide-react-native';
 import { useMemo, useRef, useState, type ComponentRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Linking,
   ScrollView,
   StyleSheet,
@@ -17,11 +19,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from 'zustand';
-import { authRepository } from '../../../data/auth';
 import {
   completeAccountErrors,
   firstError,
-  serverErrors,
   type CompleteAccountErrors,
   type CompleteAccountField,
 } from '../../../domain/auth/completeAccount';
@@ -31,11 +31,7 @@ import {
   zoneLabel,
   zoneOffsetMinutes,
 } from '../../../domain/auth/timeZones';
-import {
-  sessionStore,
-  signIn,
-  signOut,
-} from '../../../domain/session/sessionStore';
+import { sessionStore } from '../../../domain/session/sessionStore';
 import { currentLanguage, setLanguage } from '../../../shared/i18n';
 import {
   fontScale as textScale,
@@ -55,9 +51,17 @@ import { Text } from '../../../shared/ui/Text';
 import { TextField } from '../../../shared/ui/TextField';
 import { useToastAnchor } from '../../../shared/ui/Toast';
 import { InlineLink } from '../components/AuthScreen';
+import { BottomFade } from '../components/BottomFade';
 import { TimeZoneSheet } from '../components/TimeZoneSheet';
-import { showErrorToast, useOnline, useSubmit } from '../hooks/useAuthForm';
-import { useUsernameCheck } from '../hooks/useUsernameCheck';
+import { breakableEmail } from '../format';
+import {
+  showErrorToast,
+  useFinishAccount,
+  useLogOut,
+  useUsernameStatus,
+} from '../hooks/useAuthActions';
+import { useOnline } from '../hooks/useAuthForm';
+import { useAuthFlow } from '../authFlowStore';
 import { PRIVACY_URL, TERMS_URL } from '../legal';
 import { availableTimeZones, deviceTimeZone } from '../timeZoneList';
 
@@ -72,11 +76,17 @@ export function CompleteAccountScreen() {
   const { fontScale } = useWindowDimensions();
   const large = fontScale >= textScale.large;
   const online = useOnline();
-  const email = useStore(sessionStore, (s) => s.user?.email ?? '');
+  const user = useStore(sessionStore, (s) => s.user);
+  const email = user?.email ?? '';
+  const suggested = useAuthFlow((s) => s.suggestedUsername);
   const lang = i18n.language === 'en' ? 'en' : 'vi';
 
   const [displayName, setDisplayName] = useState('');
-  const [username, setUsername] = useState(() => suggestUsername(email) ?? '');
+  // AUTH-01: the backend's suggestion from the OTP sign-in; after an app restart, the same
+  // rule (shared suggestUsername) worked out from the email.
+  const [username, setUsername] = useState(
+    () => suggested ?? suggestUsername(email) ?? '',
+  );
   const [password, setPassword] = useState('');
   const [timeZone, setTimeZone] = useState<string | null>(null); // null = the phone's
   const [ageConfirmed, setAgeConfirmed] = useState(false);
@@ -85,7 +95,7 @@ export function CompleteAccountScreen() {
   const [submitted, setSubmitted] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const usernameStatus = useUsernameCheck(username);
+  const usernameStatus = useUsernameStatus(username);
   // GMT offsets are read once, when the screen opens.
   const [openedAt] = useState(() => new Date());
 
@@ -123,24 +133,22 @@ export function CompleteAccountScreen() {
     setSaveFailed(false);
   };
 
-  const submit = useSubmit(async () => {
-    const form = {
-      displayName,
-      username,
-      password,
-      ageConfirmed,
-      termsAccepted,
-    };
-    const found = completeAccountErrors(form, email);
-    setSubmitted(true);
-    setSaveFailed(false);
-    if (firstError(found)) {
-      setErrors(found);
-      scrollTo(firstError(found));
-      return;
-    }
-    try {
-      const user = await authRepository.completeAccount({
+  const finish = useFinishAccount(user ?? { id: '', email });
+  const submit = {
+    pending: finish.pending,
+    run: async () => {
+      const found = completeAccountErrors(
+        { displayName, username, password, ageConfirmed, termsAccepted },
+        email,
+      );
+      setSubmitted(true);
+      setSaveFailed(false);
+      if (firstError(found)) {
+        setErrors(found);
+        scrollTo(firstError(found));
+        return;
+      }
+      const result = await finish.run({
         display_name: displayName.trim(),
         username: normalizeUsername(username),
         password,
@@ -150,26 +158,18 @@ export function CompleteAccountScreen() {
         terms_accepted: true,
         terms_version: TERMS_VERSION,
       });
-      signIn({ id: user.id, email: user.email }, { completed: true });
-    } catch (err) {
-      const fields = serverErrors(err);
-      if (fields) {
+      if (!result || result.ok) return;
+      if ('fields' in result) {
         // username-taken-on-submit: only that field changes, the rest (password too) stays.
-        setErrors(fields);
-        scrollTo(firstError(fields));
-      } else if (typeof err === 'object' && err !== null && 'code' in err) {
-        setSaveFailed(true);
-      } else showErrorToast('network');
-    }
-  });
+        setErrors(result.fields);
+        scrollTo(firstError(result.fields));
+      } else if (result.error === 'other') setSaveFailed(true);
+      else showErrorToast('network');
+    },
+  };
+  const { run: logOut, pending: loggingOut } = useLogOut();
 
-  const logOut = useSubmit(async () => {
-    // No confirmation: nothing to lose yet. The account stays incomplete for next time.
-    await authRepository.logout().catch(() => {});
-    signOut();
-  });
-
-  const busy = submit.pending;
+  const busy = finish.pending;
   const usernameError =
     errors.username ?? (usernameStatus === 'taken' ? 'taken' : undefined);
   const usernameErrorText =
@@ -217,181 +217,189 @@ export function CompleteAccountScreen() {
   );
 
   return (
-    <View style={[styles.screen, { backgroundColor: colors.bg }]}>
+    // The pinned button rides just above the keyboard (C-02).
+    <KeyboardAvoidingView
+      behavior="padding"
+      style={[styles.screen, { backgroundColor: colors.bg }]}
+    >
       <View style={{ paddingTop: top }}>
         {!online && <SystemBanner kind="offline" />}
       </View>
-      <ScrollView
-        ref={scroll}
-        style={styles.flex}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.content}
-      >
-        <View style={styles.intro}>
-          <Text variant="title-1" accessibilityRole="header">
-            {t('auth.complete.title')}
-          </Text>
-          <Text color="text-secondary">
-            {t('auth.complete.confirmed', {
-              email: email.replace(/@/, '@​'),
-            })}
-          </Text>
-        </View>
-
-        <View {...at('displayName')}>
-          <TextField
-            label={t('auth.complete.displayName')}
-            placeholder={t('auth.complete.displayNamePlaceholder')}
-            helper={t('auth.complete.displayNameHelp')}
-            value={displayName}
-            onChangeText={(v) => {
-              setDisplayName(v);
-              clear('displayName');
-            }}
-            error={
-              errors.displayName &&
-              t(
-                errors.displayName === 'empty'
-                  ? 'auth.complete.displayNameEmpty'
-                  : 'auth.complete.displayNameTooLong',
-              )
-            }
-            readonly={busy}
-            autoComplete="name"
-            returnKeyType="next"
-          />
-        </View>
-
-        <View style={styles.field} {...at('username')}>
-          <TextField
-            label={t('auth.complete.username')}
-            value={username}
-            onChangeText={(v) => {
-              setUsername(v.toLowerCase()); // DEC-03: capitals turn lowercase as typed
-              clear('username');
-            }}
-            error={usernameErrorText}
-            readonly={busy}
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="username-new"
-            maxLength={32}
-            trailing={
-              usernameStatus === 'checking' ? (
-                <ActivityIndicator
-                  size="small"
-                  color={colors['text-tertiary']}
-                />
-              ) : usernameStatus === 'available' && !usernameError ? (
-                <Icon as={CircleCheck} size="md" color="success" />
-              ) : null
-            }
-          />
-          {!usernameError && (
-            <FormMessage variant="field" tone="info" {...usernameNote} />
-          )}
-        </View>
-
-        <View style={styles.field} {...at('password')}>
-          <TextField
-            label={t('auth.complete.password')}
-            value={password}
-            onChangeText={(v) => {
-              setPassword(v);
-              clear('password');
-            }}
-            password
-            error={passwordError}
-            readonly={busy}
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="new-password"
-            textContentType="newPassword"
-          />
-          <PasswordRules
-            issues={checkPassword(password).filter(
-              (i) => i !== 'SAME_AS_PERSONAL_INFO',
-            )}
-            submitted={submitted && errors.password === 'rules'}
-          />
-        </View>
-
-        <View>
-          <SettingsRow
-            label={t('auth.complete.timeZone')}
-            value={zoneLabel(zone, openedAt, lang)}
-            description={
-              timeZone && timeZone !== DEVICE_ZONE
-                ? t('auth.complete.otherThanDevice', {
-                    gmt: gmtLabel(zoneOffsetMinutes(DEVICE_ZONE, openedAt)),
-                  })
-                : undefined
-            }
-            onPress={() => setSheetOpen(true)}
-            disabled={busy}
-          />
-          <View style={[styles.languageRow, large && styles.languageStacked]}>
-            <Text>{t('auth.complete.language')}</Text>
-            <View style={!large && styles.flex}>{languageControl}</View>
-          </View>
-          <Text variant="label" color="text-tertiary">
-            {t('auth.complete.timeZoneNote')}
-          </Text>
-        </View>
-
-        <View {...at('age')}>
-          <Checkbox
-            checked={ageConfirmed}
-            onChange={(v) => {
-              setAgeConfirmed(v);
-              clear('age');
-            }}
-            label={t('auth.complete.age')}
-            error={errors.age && t('auth.complete.required')}
-            disabled={busy}
-          />
-        </View>
-        <View {...at('terms')}>
-          <Checkbox
-            checked={termsAccepted}
-            onChange={(v) => {
-              setTermsAccepted(v);
-              clear('terms');
-            }}
-            label={t('auth.complete.termsLabel')}
-            error={errors.terms && t('auth.complete.required')}
-            disabled={busy}
-          >
-            <Text>
-              {t('auth.complete.termsBefore')}
-              <Text
-                weight="600"
-                color="primary"
-                accessibilityRole="link"
-                onPress={() => void Linking.openURL(TERMS_URL)}
-              >
-                {t('auth.complete.terms')}
-              </Text>
-              {t('auth.complete.termsAnd')}
-              <Text
-                weight="600"
-                color="primary"
-                accessibilityRole="link"
-                onPress={() => void Linking.openURL(PRIVACY_URL)}
-              >
-                {t('auth.complete.privacy')}
-              </Text>
+      <View style={styles.flex}>
+        <ScrollView
+          persistentScrollbar
+          ref={scroll}
+          style={styles.flex}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.content}
+        >
+          <View style={styles.intro}>
+            <Text variant="title-1" accessibilityRole="header">
+              {t('auth.complete.title')}
             </Text>
-          </Checkbox>
-        </View>
+            <Text color="text-secondary">
+              {t('auth.complete.confirmed', {
+                email: breakableEmail(email),
+              })}
+            </Text>
+          </View>
 
-        <InlineLink
-          center={false}
-          link={t('auth.complete.signOut')}
-          disabled={busy || logOut.pending}
-          onPress={() => void logOut.run()}
-        />
-      </ScrollView>
+          <View {...at('displayName')}>
+            <TextField
+              label={t('auth.complete.displayName')}
+              placeholder={t('auth.complete.displayNamePlaceholder')}
+              helper={t('auth.complete.displayNameHelp')}
+              value={displayName}
+              onChangeText={(v) => {
+                setDisplayName(v);
+                clear('displayName');
+              }}
+              error={
+                errors.displayName &&
+                t(
+                  errors.displayName === 'empty'
+                    ? 'auth.complete.displayNameEmpty'
+                    : 'auth.complete.displayNameTooLong',
+                )
+              }
+              readonly={busy}
+              autoComplete="name"
+              returnKeyType="next"
+            />
+          </View>
+
+          <View style={styles.field} {...at('username')}>
+            <TextField
+              label={t('auth.complete.username')}
+              value={username}
+              onChangeText={(v) => {
+                setUsername(v.toLowerCase()); // DEC-03: capitals turn lowercase as typed
+                clear('username');
+              }}
+              error={usernameErrorText}
+              readonly={busy}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="username-new"
+              maxLength={USERNAME_MAX}
+              trailing={
+                usernameStatus === 'checking' ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={colors['text-tertiary']}
+                  />
+                ) : usernameStatus === 'available' && !usernameError ? (
+                  <Icon as={CircleCheck} size="md" color="success" />
+                ) : null
+              }
+            />
+            {!usernameError && (
+              <FormMessage variant="field" tone="info" {...usernameNote} />
+            )}
+          </View>
+
+          <View style={styles.field} {...at('password')}>
+            <TextField
+              label={t('auth.complete.password')}
+              value={password}
+              onChangeText={(v) => {
+                setPassword(v);
+                clear('password');
+              }}
+              password
+              error={passwordError}
+              readonly={busy}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="new-password"
+              textContentType="newPassword"
+            />
+            <PasswordRules
+              issues={checkPassword(password).filter(
+                (i) => i !== 'SAME_AS_PERSONAL_INFO',
+              )}
+              submitted={submitted && errors.password === 'rules'}
+            />
+          </View>
+
+          <View>
+            <SettingsRow
+              label={t('auth.complete.timeZone')}
+              value={zoneLabel(zone, openedAt, lang)}
+              description={
+                timeZone && timeZone !== DEVICE_ZONE
+                  ? t('auth.complete.otherThanDevice', {
+                      gmt: gmtLabel(zoneOffsetMinutes(DEVICE_ZONE, openedAt)),
+                    })
+                  : undefined
+              }
+              onPress={() => setSheetOpen(true)}
+              disabled={busy}
+            />
+            <View style={[styles.languageRow, large && styles.languageStacked]}>
+              <Text>{t('auth.complete.language')}</Text>
+              <View style={!large && styles.flex}>{languageControl}</View>
+            </View>
+            <Text variant="label" color="text-tertiary">
+              {t('auth.complete.timeZoneNote')}
+            </Text>
+          </View>
+
+          <View {...at('age')}>
+            <Checkbox
+              checked={ageConfirmed}
+              onChange={(v) => {
+                setAgeConfirmed(v);
+                clear('age');
+              }}
+              label={t('auth.complete.age')}
+              error={errors.age && t('auth.complete.required')}
+              disabled={busy}
+            />
+          </View>
+          <View {...at('terms')}>
+            <Checkbox
+              checked={termsAccepted}
+              onChange={(v) => {
+                setTermsAccepted(v);
+                clear('terms');
+              }}
+              label={t('auth.complete.termsLabel')}
+              error={errors.terms && t('auth.complete.required')}
+              disabled={busy}
+            >
+              <Text>
+                {t('auth.complete.termsBefore')}
+                <Text
+                  weight="600"
+                  color="primary"
+                  accessibilityRole="link"
+                  onPress={() => void Linking.openURL(TERMS_URL)}
+                >
+                  {t('auth.complete.terms')}
+                </Text>
+                {t('auth.complete.termsAnd')}
+                <Text
+                  weight="600"
+                  color="primary"
+                  accessibilityRole="link"
+                  onPress={() => void Linking.openURL(PRIVACY_URL)}
+                >
+                  {t('auth.complete.privacy')}
+                </Text>
+              </Text>
+            </Checkbox>
+          </View>
+
+          <InlineLink
+            center={false}
+            link={t('auth.complete.signOut')}
+            disabled={busy || loggingOut}
+            onPress={() => void logOut()}
+          />
+        </ScrollView>
+        <BottomFade />
+      </View>
 
       <View
         onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}
@@ -409,6 +417,7 @@ export function CompleteAccountScreen() {
           size="L"
           fullWidth
           label={t('auth.complete.submit')}
+          labelMaxScale={textScale.narrowLabel}
           loading={busy}
           disabled={!online}
           onPress={() => void submit.run()}
@@ -423,7 +432,7 @@ export function CompleteAccountScreen() {
         onChange={setTimeZone}
         onDismiss={() => setSheetOpen(false)}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

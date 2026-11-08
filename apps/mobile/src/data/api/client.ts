@@ -24,7 +24,7 @@ export interface ApiClientDeps {
   clientHeaders: () => Record<string, string>;
   onSessionEnded: (reason: EndReason) => void;
   onAccountIncomplete: () => void;
-  onUpgradeRequired: () => void;
+  onUpgradeRequired: (minVersion: string | undefined) => void;
 }
 
 export type RequestOptions = {
@@ -42,6 +42,7 @@ export class ApiError extends Error {
   readonly attempts_left: number | undefined;
   readonly reason: string | undefined;
   readonly request_id: string | undefined;
+  readonly min_version: string | undefined;
 
   constructor(
     readonly status: number,
@@ -55,6 +56,7 @@ export class ApiError extends Error {
     this.attempts_left = body.attempts_left;
     this.reason = body.reason;
     this.request_id = body.request_id;
+    this.min_version = body.min_version;
   }
 }
 
@@ -143,7 +145,8 @@ export function createApiClient(deps: ApiClientDeps) {
 
   function notify(error: ApiError) {
     if (error.code === ErrorCode.AccountIncomplete) deps.onAccountIncomplete();
-    if (error.code === ErrorCode.UpgradeRequired) deps.onUpgradeRequired();
+    if (error.code === ErrorCode.UpgradeRequired)
+      deps.onUpgradeRequired(error.min_version);
   }
 
   async function request<T>(

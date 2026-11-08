@@ -20,6 +20,7 @@ import { useState, type ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from 'zustand';
 import {
+  endSession,
   requireUpgrade,
   sessionStore,
   signIn,
@@ -39,6 +40,8 @@ import { StudyHome } from '../../features/study/screens/StudyHome';
 import { TabBar } from '../../shared/ui/TabBar';
 import type { SignInMode } from '../../domain/auth/authFlow';
 import { CompleteAccountScreen } from '../../features/auth/screens/CompleteAccountScreen';
+import { SignInScreen } from '../../features/auth/screens/SignInScreen';
+import { UpdateRequiredScreen } from '../../features/auth/screens/UpdateRequiredScreen';
 import { CreateAccountScreen } from '../../features/auth/screens/CreateAccountScreen';
 import { EnterCodeScreen } from '../../features/auth/screens/EnterCodeScreen';
 import { WelcomeScreen } from '../../features/auth/screens/WelcomeScreen';
@@ -218,6 +221,15 @@ function MainTabs() {
   const badgeToggle = __DEV__
     ? [{ label: 'Badge mẫu', onPress: () => setSampleBadges((b) => !b) }]
     : [];
+  // Dev: the Fake cannot end a session, so these stand in for 40100 / 40103 / Gateway 4004.
+  const endedActions = __DEV__
+    ? (['password_reset', 'revoked', 'reuse_detected', 'expired'] as const).map(
+        (reason) => ({
+          label: `Phiên kết thúc: ${reason}`,
+          onPress: () => endSession(reason),
+        }),
+      )
+    : [];
   return (
     // CR-15: Back at the root of any other tab returns to Home, keeping that tab's state.
     <Tab.Navigator
@@ -259,7 +271,13 @@ function MainTabs() {
         {() => (
           <Placeholder
             title={t('tabs.me')}
-            actions={[dev.language, dev.signOut, ...gallery, ...badgeToggle]}
+            actions={[
+              dev.language,
+              dev.signOut,
+              ...gallery,
+              ...badgeToggle,
+              ...endedActions,
+            ]}
           />
         )}
       </Tab.Screen>
@@ -273,20 +291,23 @@ export function RootNavigator() {
   // Spec 01 › Phiên đăng nhập kết thúc: an ended session lands on S-AUTH-04, not Welcome.
   const sessionEnded = useStore(sessionStore, (s) => s.ended !== null);
   const upgradeRequired = useStore(sessionStore, (s) => s.upgradeRequired);
-  const dev = useDevActions();
 
   const signInScreen = (
-    <Stack.Screen name="SignIn" options={{ title: t('screens.signIn') }}>
-      {() => <Placeholder title={t('screens.signIn')} actions={[dev.signIn]} />}
-    </Stack.Screen>
+    <Stack.Screen
+      name="SignIn"
+      component={SignInScreen}
+      options={{ headerShown: false }}
+    />
   );
 
   if (upgradeRequired)
     return (
       <Stack.Navigator>
-        <Stack.Screen name="UpdateRequired" options={{ headerShown: false }}>
-          {() => <Placeholder title={t('screens.updateRequired')} />}
-        </Stack.Screen>
+        <Stack.Screen
+          name="UpdateRequired"
+          component={UpdateRequiredScreen}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     );
 

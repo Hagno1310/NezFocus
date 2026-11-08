@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   endSession,
   markAccountIncomplete,
+  takeNavigationToRestore,
   requireUpgrade,
   sessionStore,
   setNavigationState,
@@ -58,6 +59,24 @@ describe('sessionStore', () => {
     expect(sessionStore.getState().ended).toBeNull();
   });
 
+  it('AUTH-04 AC5: signing in again as the same user returns to the screen being viewed, once', () => {
+    signIn(an, { completed: true });
+    const screen = { index: 0, routes: [{ name: 'Main' }] };
+    setNavigationState(screen);
+    endSession('expired');
+    signIn(an, { completed: true });
+    expect(takeNavigationToRestore()).toEqual(screen);
+    expect(takeNavigationToRestore()).toBeUndefined();
+  });
+
+  it('another account, or a sign-out in between, starts from Home', () => {
+    signIn(an, { completed: true });
+    setNavigationState({ index: 0, routes: [{ name: 'Main' }] });
+    endSession('expired');
+    signIn({ id: '2', email: 'binh.tran@gmail.com' }, { completed: true });
+    expect(takeNavigationToRestore()).toBeUndefined();
+  });
+
   it('40309 moves a signed-in user to Complete account; ignored when signed out', () => {
     markAccountIncomplete();
     expect(sessionStore.getState().status).toBe('signed-out');
@@ -66,8 +85,11 @@ describe('sessionStore', () => {
     expect(sessionStore.getState().status).toBe('incomplete');
   });
 
-  it('42601 raises the update-required flag', () => {
-    requireUpgrade();
-    expect(sessionStore.getState().upgradeRequired).toBe(true);
+  it('42601 raises the update-required flag with the minimum version', () => {
+    requireUpgrade('1.2.0');
+    expect(sessionStore.getState()).toMatchObject({
+      upgradeRequired: true,
+      minVersion: '1.2.0',
+    });
   });
 });

@@ -230,6 +230,8 @@ export const en: Strings = {
     update: {
       title: 'Update NezFocus',
       body: 'The version you’re using ({{current}}) is out of date. Update to {{min}} to keep studying with everyone.',
+      bodyNoMin:
+        'The version you’re using ({{current}}) is out of date. Update to keep studying with everyone.',
       midSignup: 'Your account is kept · finish setting it up after the update',
       action: 'Update',
     },

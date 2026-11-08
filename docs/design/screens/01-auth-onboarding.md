@@ -61,6 +61,8 @@ Vào tài khoản **đã có** từ "Tạo tài khoản" (S-AUTH-02 → S-AUTH-0
 ```
 Không mascot, không back, không đóng được (bắt buộc). Không áp dụng mọi state chuẩn trừ `default`; offline thì màn hình này không xuất hiện (cần backend trả mã).
 
+(08/11/2026, CR-28 #19) Số "1.2.0" lấy từ field `min_version` của `42601`, số "1.1.0" là phiên bản app đang chạy. Backend không gửi `min_version` thì câu thành "Phiên bản bạn đang dùng (1.1.0) đã cũ. Cập nhật để tiếp tục học cùng mọi người." (giao diện không đổi). "Cập nhật" mở trang của app trên Google Play.
+
 ### Checklist duyệt
 - [ ] 1 state; cả hai theme.
 
@@ -438,7 +440,7 @@ Không áp dụng: `loading` (dữ liệu có từ lúc vào tài khoản), `emp
 - Username điền sẵn = phần trước @ của email, chuẩn hóa theo DEC-03 (chữ thường, bỏ ký tự ngoài `a-z 0-9 _ .`, cắt 32 ký tự), rồi kiểm tra ngay; ngắn hơn 2 ký tự thì để trống. Gõ username: chữ hoa tự đổi thành chữ thường; ký tự không hợp lệ vẫn gõ được, báo lỗi khi bấm nút. Ngừng gõ 0,5 giây → `GET /auth/username-available`; kết quả chỉ là gợi ý (bị lấy lúc gửi → `username-taken-on-submit`).
 - Chạm hàng Múi giờ → `timezone-picker`. Múi giờ chọn ở đây **không tính** vào giới hạn đổi 1 lần / 24 giờ (CR-16 #8, STUDY-03).
 - Chạm English / Tiếng Việt → cả màn đổi ngôn ngữ ngay; lựa chọn lưu vào tài khoản khi bấm "Vào NezFocus".
-- Chạm "Điều khoản sử dụng" / "Chính sách quyền riêng tư" → trang trong trình duyệt trong app; không làm tick ô.
+- Chạm "Điều khoản sử dụng" / "Chính sách quyền riêng tư" → trang trong trình duyệt trong app; không làm tick ô. (08/11/2026, P0-4.2) Tới khi có trang thật, app tạm mở URL tạm bằng trình duyệt ngoài (trình duyệt trong app cần build lại dev client).
 - "Đăng xuất" → không hỏi lại (chưa có dữ liệu gì để mất) → S-AUTH-01; tài khoản vẫn "chưa hoàn tất", lần đăng nhập sau quay lại đây; lời mời đang chờ vẫn giữ.
 - Back hệ thống → đưa app ra nền (gốc, không có màn trước — tài khoản đã tạo; CR-15).
 - App bị đóng giữa chừng: lần mở sau vào thẳng đây (phiên còn), chữ đã gõ không giữ (trừ lời mời đang chờ).

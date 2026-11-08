@@ -2,9 +2,11 @@ import '../shared/i18n';
 import { studyNotifications } from '../data/notifications';
 import { i18n } from '../shared/i18n';
 import {
+  createNavigationContainerRef,
   DarkTheme,
   DefaultTheme,
   NavigationContainer,
+  type NavigationState,
   type Theme as NavigationTheme,
 } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -18,15 +20,38 @@ import {
   persistSession,
   restoreSession,
 } from '../domain/session/sessionPersistence';
-import { setNavigationState } from '../domain/session/sessionStore';
+import {
+  sessionStore,
+  setNavigationState,
+  takeNavigationToRestore,
+} from '../domain/session/sessionStore';
 import { loadLastMethod } from '../features/auth/authFlowStore';
 import { fontFamily, useTheme, type Theme } from '../shared/theme';
 import { ToastHost } from '../shared/ui/Toast';
 import { startGatewayLifecycle } from './gatewayLifecycle';
 import { linking } from './navigation/linking';
-import { RootNavigator } from './navigation/RootNavigator';
+import {
+  RootNavigator,
+  type RootStackParamList,
+} from './navigation/RootNavigator';
 
 const queryClient = new QueryClient();
+const navigationRef = createNavigationContainerRef<RootStackParamList>();
+
+// AUTH-04 AC5: back on the screen being viewed when the session ended. Waits a frame for the
+// navigator to swap in the signed-in screens; skips a state whose routes no longer exist.
+function watchNavigationRestore() {
+  return sessionStore.subscribe((s, prev) => {
+    if (s.status !== 'signed-in' || prev.status === 'signed-in') return;
+    const state = takeNavigationToRestore() as NavigationState | undefined;
+    if (!state) return;
+    requestAnimationFrame(() => {
+      const names = navigationRef.getRootState()?.routeNames ?? [];
+      if (state.routes.every((r) => names.includes(r.name)))
+        navigationRef.resetRoot(state);
+    });
+  });
+}
 
 function navigationTheme({ scheme, colors }: Theme): NavigationTheme {
   const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
@@ -72,6 +97,7 @@ export default function App() {
     void sessionRestored.then(() => setReady(true));
   }, []);
   useEffect(startGatewayLifecycle, []);
+  useEffect(watchNavigationRestore, []);
   // REQ-STUDY-10 / SRS 7.3.5: the "Nhắc học tập" channel exists from launch.
   useEffect(() => {
     void studyNotifications
@@ -83,6 +109,7 @@ export default function App() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <NavigationContainer
+            ref={navigationRef}
             linking={linking}
             theme={navigationTheme(theme)}
             onStateChange={setNavigationState}

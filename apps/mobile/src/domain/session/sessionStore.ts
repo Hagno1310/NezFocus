@@ -19,7 +19,9 @@ type SessionState = {
     navigationState: unknown;
   } | null;
   upgradeRequired: boolean; // NFR-MOB-12, 42601 from any request
+  minVersion: string | null; // from the 42601 body, when the backend sends it
   navigationState: unknown; // latest root state, kept so endSession can snapshot it
+  restoreNavigation: unknown; // set by signIn when the same user comes back (AUTH-04 AC5)
 };
 
 // Vanilla Zustand so data/ (ApiClient) can update it without React; screens use `useStore`.
@@ -28,18 +30,32 @@ export const sessionStore = createStore<SessionState>(() => ({
   user: null,
   ended: null,
   upgradeRequired: false,
+  minVersion: null,
   navigationState: undefined,
+  restoreNavigation: undefined,
 }));
 
 export const signIn = (
   user: SessionUser,
   { completed }: { completed: boolean },
-) =>
+) => {
+  const { ended } = sessionStore.getState();
   sessionStore.setState({
     status: completed ? 'signed-in' : 'incomplete',
     user,
     ended: null,
+    restoreNavigation:
+      ended?.user?.id === user.id ? ended.navigationState : undefined,
   });
+};
+
+// The navigator reads this once after it switches to the signed-in screens.
+export const takeNavigationToRestore = () => {
+  const state = sessionStore.getState().restoreNavigation;
+  if (state !== undefined)
+    sessionStore.setState({ restoreNavigation: undefined });
+  return state;
+};
 
 export const markAccountIncomplete = () => {
   if (sessionStore.getState().status === 'signed-in')
@@ -59,8 +75,11 @@ export const endSession = (reason: EndReason) => {
 export const signOut = () =>
   sessionStore.setState({ status: 'signed-out', user: null, ended: null });
 
-export const requireUpgrade = () =>
-  sessionStore.setState({ upgradeRequired: true });
+export const requireUpgrade = (minVersion?: string) =>
+  sessionStore.setState({
+    upgradeRequired: true,
+    minVersion: minVersion ?? null,
+  });
 
 export const setNavigationState = (navigationState: unknown) =>
   sessionStore.setState({ navigationState });

@@ -221,6 +221,8 @@ export const vi = {
     update: {
       title: 'Cần cập nhật NezFocus',
       body: 'Phiên bản bạn đang dùng ({{current}}) đã cũ. Cập nhật lên {{min}} để tiếp tục học cùng mọi người.',
+      bodyNoMin:
+        'Phiên bản bạn đang dùng ({{current}}) đã cũ. Cập nhật để tiếp tục học cùng mọi người.',
       midSignup:
         'Tài khoản của bạn vẫn được giữ · cập nhật xong bạn hoàn tất tiếp',
       action: 'Cập nhật',

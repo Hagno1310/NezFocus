@@ -88,8 +88,8 @@ describe('gateway contract', () => {
       expect(event).toEqual({ t: 'USER_UPDATE', s: 3, d: user });
     });
 
-    it('parses the minimal READY', () => {
-      const d = { session_id: '42', user };
+    it('parses READY of a user with no server yet', () => {
+      const d = { session_id: '42', user, servers: [] };
       expect(DispatchEvents.READY.parse(d)).toEqual(d);
     });
 

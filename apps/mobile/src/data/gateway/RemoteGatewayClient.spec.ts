@@ -69,7 +69,12 @@ async function connected(client = createGatewayClient(deps)) {
   client.start();
   last().push({ op: 10, d: { heartbeat_interval: INTERVAL } });
   await flush();
-  last().push({ op: 0, s: 1, t: 'READY', d: { session_id: '42', user } });
+  last().push({
+    op: 0,
+    s: 1,
+    t: 'READY',
+    d: { session_id: '42', user, servers: [] },
+  });
   return client;
 }
 
@@ -97,7 +102,12 @@ describe('RemoteGatewayClient', () => {
         device: { platform: 'android', app_version: '0.1.0', device_id: 'd1' },
       },
     });
-    last().push({ op: 0, s: 1, t: 'READY', d: { session_id: '42', user } });
+    last().push({
+      op: 0,
+      s: 1,
+      t: 'READY',
+      d: { session_id: '42', user, servers: [] },
+    });
     expect(gatewayStore.getState().status).toBe('connected');
   });
 

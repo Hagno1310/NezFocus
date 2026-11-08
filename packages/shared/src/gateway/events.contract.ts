@@ -1,13 +1,19 @@
 import { z } from 'zod';
 import { CurrentUser } from '../auth/auth.contract.js';
+import {
+  ChannelDeleted,
+  ChannelResponse,
+} from '../servers/channel.contract.js';
+import { ServerResponse, ServerSummary } from '../servers/server.contract.js';
 import { SnowflakeId } from '../snowflake.js';
 import { SoloSessionResponse } from '../study/solo.contract.js';
 import type { DispatchFrame } from './gateway.contract.js';
 
-// P0 READY: the rest of SRS 5.4 (servers, DMs, read states, relationships) is added by the area that owns it.
+// SRS 5.4 READY. DMs, read states and relationships are added by the area that owns them.
 export const Ready = z.object({
   session_id: SnowflakeId,
   user: CurrentUser,
+  servers: z.array(ServerSummary), // REQ-SRV-01: oldest joined first (S-HOME-02 rail order)
 });
 export type Ready = z.infer<typeof Ready>;
 
@@ -17,6 +23,11 @@ export const DispatchEvents = {
   RESUMED: z.object({}),
   USER_UPDATE: CurrentUser,
   SOLO_SESSION_UPDATE: SoloSessionResponse, // REQ-STUDY-10: every change, to every session of the user
+  SERVER_CREATE: ServerResponse, // REQ-SRV-01: to every session of the creator
+  SERVER_UPDATE: ServerSummary, // to the members
+  CHANNEL_CREATE: ChannelResponse, // REQ-SRV-02: only to members who can view it
+  CHANNEL_UPDATE: ChannelResponse,
+  CHANNEL_DELETE: ChannelDeleted,
 } satisfies Record<string, z.ZodType>;
 
 export type DispatchEventName = keyof typeof DispatchEvents;

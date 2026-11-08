@@ -8,3 +8,5 @@ export * from './gateway/events.contract.js';
 export * from './study/focused-time.js';
 export * from './study/solo.contract.js';
 export * from './study/solo-rules.js';
+export * from './permissions/permissions.js';
+export * from './permissions/compute-permissions.js';

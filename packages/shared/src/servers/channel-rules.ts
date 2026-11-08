@@ -8,7 +8,20 @@ import type {
 // move or delete before it writes; the app checks the same before it calls the API
 // (`drop-blocked`, `category-delete-blocked`), so the two never disagree.
 
-type Named = Pick<ChannelResponse, 'id' | 'type' | 'name' | 'parent_id'>;
+export type NamedChannel = Pick<
+  ChannelResponse,
+  'id' | 'type' | 'name' | 'parent_id'
+>;
+type Named = NamedChannel;
+
+// Channels and categories, never DMs: what a duplicate or a drawer row can be.
+export type ServerChannelKind = 'text' | 'voice';
+
+// Category names show in capitals in the drawer and in every sentence about them.
+export const categoryTitle = (name: string) => name.toLocaleUpperCase('vi');
+
+export const byPosition = (a: ChannelResponse, b: ChannelResponse) =>
+  a.position - b.position || a.id.localeCompare(b.id);
 
 // The channel already holding the name, as the field `name` sentences need it
 // (REQ-SRV-02 v1.9; spec 08 › S-SET-06 "Không trùng tên"). `category`: the name of the
@@ -17,7 +30,7 @@ export type DuplicateName =
   | { kind: 'category'; name: string }
   | {
       kind: 'channel';
-      type: 'text' | 'voice';
+      type: ServerChannelKind;
       name: string;
       category: string | null;
     };
@@ -37,6 +50,18 @@ export function describeDuplicate(
   };
 }
 
+// The field `name` sentences of REQ-SRV-02 v1.9 as the backend sends them (Vietnamese
+// only, like NO_LETTER_OR_DIGIT_MESSAGE; the app shows its own i18n sentence when it can).
+// Spec 08 › S-SET-06 "Không trùng tên": a text channel is "kênh #tên", a voice one "phòng Tên".
+export function duplicateNameMessage(d: DuplicateName): string {
+  if (d.kind === 'category')
+    return `Server đã có danh mục ${categoryTitle(d.name)}`;
+  const what = d.type === 'text' ? `kênh #${d.name}` : `phòng ${d.name}`;
+  return d.category === null
+    ? `Trên cùng danh sách đã có ${what}`
+    : `${categoryTitle(d.category)} đã có ${what}`;
+}
+
 export type ChannelRuleError =
   | { ok: false; reason: 'unknown-channel'; id: string }
   | { ok: false; reason: 'not-a-category' }
@@ -45,7 +70,7 @@ export type ChannelRuleError =
 // The first of `changed` that clashes once the server looks like `next`.
 export function findClash(
   next: readonly ChannelResponse[],
-  changed: readonly ChannelResponse[],
+  changed: readonly Parameters<typeof findDuplicateChannel>[1][],
 ): ChannelRuleError | null {
   for (const channel of changed) {
     const existing = findDuplicateChannel(next, channel);
@@ -63,9 +88,6 @@ export function findClash(
 // taken out of every category it stops (copying the overwrites lands with P1-A3.4 #67).
 const synced = (c: ChannelResponse, parentId: string | null) =>
   parentId === null && c.parent_id !== null ? false : c.permissions_synced;
-
-const byPosition = (a: ChannelResponse, b: ChannelResponse) =>
-  a.position - b.position || a.id.localeCompare(b.id);
 
 // REQ-SRV-02 AC1 (v1.8: positions carry parent_id). Returns only the channels that change.
 export function applyPositions(

@@ -1,5 +1,14 @@
-import type { ChannelResponse } from '@nezfocus/shared';
-import { duplicateNameMessage, ruleError } from './channel-rules.js';
+import {
+  describeDuplicate,
+  duplicateNameMessage as sentence,
+  type ChannelResponse,
+} from '@nezfocus/shared';
+import { ruleError } from './channel-rules.js';
+
+const duplicateNameMessage = (
+  channels: readonly ChannelResponse[],
+  existing: ChannelResponse,
+) => sentence(describeDuplicate(channels, existing));
 
 const ch = (
   id: string,

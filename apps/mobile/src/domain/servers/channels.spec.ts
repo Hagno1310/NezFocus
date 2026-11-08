@@ -4,6 +4,7 @@ import {
   checkChannelName,
   createChannel,
   dropTarget,
+  moveChannel,
   namePreview,
   planDrop,
   renameChannel,
@@ -326,5 +327,70 @@ describe('reorder (S-HOME-02 `reordering`, `drop-blocked`; SRV-02 AC1)', () => {
         category: 'PHÒNG HỌC',
       },
     });
+  });
+});
+
+describe('moveChannel (SRV-02 AC1: save on drop)', () => {
+  const target = { parentId: null, index: 0 };
+
+  it('moves the rows first, then saves the patch', async () => {
+    const applied: string[][] = [];
+    const sent: unknown[] = [];
+    const r = await moveChannel(
+      { setChannelPositions: async (_s, body) => void sent.push(body) },
+      '100',
+      server,
+      '13',
+      target,
+      (changed) => applied.push(changed.map((c) => `${c.id}:${c.parent_id}`)),
+    );
+    expect(r).toEqual({ ok: true });
+    expect(applied).toEqual([['13:null']]);
+    expect(sent).toEqual([[{ id: '13', position: 0, parent_id: null }]]);
+  });
+
+  it('`drop-blocked` moves nothing and calls nothing', async () => {
+    const r = await moveChannel(
+      { setChannelPositions: () => Promise.reject(new Error('no call')) },
+      '100',
+      server,
+      '13',
+      { parentId: '20', index: 0 },
+      () => {
+        throw new Error('no move');
+      },
+    );
+    expect(r).toMatchObject({ ok: false, error: 'duplicate' });
+  });
+
+  it('a failed save puts back only the moved rows; retry moves them again', async () => {
+    const applied: ChannelResponse[][] = [];
+    let fail = true;
+    const r = await moveChannel(
+      {
+        setChannelPositions: async () => {
+          if (fail) throw new TypeError('Network request failed');
+        },
+      },
+      '100',
+      server,
+      '13',
+      target,
+      (changed) => applied.push([...changed]),
+    );
+    expect(r).toMatchObject({ ok: false, error: 'failed' });
+    expect(applied[1]).toEqual([server[3]]);
+    fail = false;
+    expect(await (r as { retry: () => Promise<unknown> }).retry()).toEqual({
+      ok: true,
+    });
+    expect(applied[2]).toEqual([
+      {
+        ...server[3]!,
+        position: 0,
+        parent_id: null,
+        permissions_synced: false,
+      },
+    ]);
   });
 });

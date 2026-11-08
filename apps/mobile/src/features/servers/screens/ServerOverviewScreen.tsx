@@ -1,22 +1,12 @@
-import {
-  Permission,
-  SERVER_NAME_MAX,
-  hasPermission,
-  type UpdateServerRequest,
-} from '@nezfocus/shared';
+import { Permission, SERVER_NAME_MAX, hasPermission } from '@nezfocus/shared';
 import { usePreventRemove, useNavigation } from '@react-navigation/native';
 import { Hash } from 'lucide-react-native';
 import { useEffect, useEffectEvent, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useStore } from 'zustand';
-import { serverRepository } from '../../../data/servers';
 import { channelSections } from '../../../domain/servers/drawer';
-import {
-  applyGatewayEvent,
-  homeStore,
-} from '../../../domain/servers/homeStore';
-import { saveServer } from '../../../domain/servers/updateServer';
+import { homeStore } from '../../../domain/servers/homeStore';
 import { space, useTheme } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import { BottomSheet, Dialog } from '../../../shared/ui/Overlay';
@@ -26,6 +16,7 @@ import { SettingsRow } from '../../../shared/ui/SettingsRow';
 import { TextField } from '../../../shared/ui/TextField';
 import { showToast } from '../../../shared/ui/Toast';
 import { ServerIcon } from '../components/ServerIcon';
+import { useSaveServer } from '../hooks/useSaveServer';
 import { useServerAccess } from '../hooks/useServerAccess';
 
 // S-SET-01 `overview`, `overview-editing`, `overview-name-error`, `welcome-picker`,
@@ -76,12 +67,7 @@ export function ServerOverviewScreen({
     [channels],
   );
 
-  const save = async (body: UpdateServerRequest) => {
-    const result = await saveServer(serverRepository, serverId, body);
-    if (result.ok)
-      applyGatewayEvent({ t: 'SERVER_UPDATE', d: result.server, s: 0 });
-    return result;
-  };
+  const save = useSaveServer(serverId);
 
   const saveName = async () => {
     setSaving(true);

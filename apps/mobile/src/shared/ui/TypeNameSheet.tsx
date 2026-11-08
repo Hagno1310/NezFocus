@@ -2,6 +2,7 @@ import { Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
+import { useOnOpen } from '../hooks/useOnOpen';
 import { space } from '../theme';
 import { typedNameMatches } from './logic';
 import { BottomSheet } from './Overlay';
@@ -35,12 +36,7 @@ export function TypeNameSheet({
 }) {
   const { t } = useTranslation();
   const [typed, setTyped] = useState('');
-  // Each opening starts empty.
-  const [shown, setShown] = useState(visible);
-  if (visible !== shown) {
-    setShown(visible);
-    if (visible) setTyped('');
-  }
+  useOnOpen(visible, () => setTyped('')); // each opening starts empty
   return (
     <BottomSheet
       visible={visible}

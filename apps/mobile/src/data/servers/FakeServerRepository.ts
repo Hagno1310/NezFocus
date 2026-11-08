@@ -7,6 +7,7 @@ import {
   ServerName,
   applyPositions,
   describeDuplicate,
+  duplicateNameMessage,
   findDuplicateChannel,
   normalizeTextChannelName,
   planCategoryDelete,
@@ -37,15 +38,16 @@ const invalid = (field: string, code: string, message = `fake ${code}`) =>
     errors: { [field]: [{ code, message }] },
   });
 
-// The backend's sentence is Vietnamese only; the app shows its own when it can.
+// The backend's sentence (Vietnamese only; the app shows its own when it can).
 const duplicate = (
   channels: readonly ChannelResponse[],
   existing: ChannelResponse,
-) => {
-  const d = describeDuplicate(channels, existing);
-  const where = d.kind === 'category' ? 'Server' : (d.category ?? 'Trên cùng');
-  return invalid('name', 'DUPLICATE_NAME', `${where} đã có ${d.name}`);
-};
+) =>
+  invalid(
+    'name',
+    'DUPLICATE_NAME',
+    duplicateNameMessage(describeDuplicate(channels, existing)),
+  );
 
 type Plan = [ChannelResponse['type'], string, Plan[]?];
 

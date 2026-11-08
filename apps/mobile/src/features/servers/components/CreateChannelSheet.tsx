@@ -1,6 +1,7 @@
 import {
   CHANNEL_NAME_MAX,
   MAX_CHANNELS_PER_SERVER,
+  categoryTitle,
   type ChannelResponse,
   type ChannelType,
 } from '@nezfocus/shared';
@@ -9,18 +10,13 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useStore } from 'zustand';
-import { serverRepository } from '../../../data/servers';
-import { gatewayStore } from '../../../domain/gateway/gatewayStore';
 import {
-  createChannel,
   namePreview,
   type ChannelActionError,
 } from '../../../domain/servers/channels';
 import { channelSections } from '../../../domain/servers/drawer';
-import {
-  applyGatewayEvent,
-  homeStore,
-} from '../../../domain/servers/homeStore';
+import { homeStore } from '../../../domain/servers/homeStore';
+import { useOnOpen } from '../../../shared/hooks/useOnOpen';
 import { size, space, useTheme } from '../../../shared/theme';
 import { FormMessage } from '../../../shared/ui/FormMessage';
 import { Icon } from '../../../shared/ui/Icon';
@@ -30,6 +26,7 @@ import { SettingsRow } from '../../../shared/ui/SettingsRow';
 import { Text } from '../../../shared/ui/Text';
 import { TextField } from '../../../shared/ui/TextField';
 import { showToast } from '../../../shared/ui/Toast';
+import { useChannelActions } from '../hooks/useChannelActions';
 import { useChannelText } from '../hooks/useChannelText';
 
 const TYPES = [
@@ -42,8 +39,6 @@ const TYPES = [
     hint: 'typeCategoryHint',
   },
 ] as const;
-
-const upper = (name: string) => name.toLocaleUpperCase('vi');
 
 // `category-picker`: one row of the list that replaces the form in the same sheet.
 function PickRow({
@@ -100,6 +95,7 @@ export function CreateChannelSheet({
 }) {
   const { t } = useTranslation();
   const text = useChannelText();
+  const actions = useChannelActions(serverId);
   const channels = useStore(homeStore, (s) => s.channels[serverId]);
   const server = useStore(homeStore, (s) =>
     s.servers?.find((x) => x.id === serverId),
@@ -121,47 +117,38 @@ export function CreateChannelSheet({
   const [submitting, setSubmitting] = useState(false);
 
   // Each opening starts over: the category from `plus`, else the first one in the drawer.
-  const [shown, setShown] = useState(false);
-  if (visible !== shown) {
-    setShown(visible);
-    if (visible) {
-      setType('text');
-      setName('');
-      setParentId(
-        categoryId !== undefined ? categoryId : (categories[0]?.id ?? null),
-      );
-      // v1.9 CR-22: "Bật phòng học" on in a Study Server, off elsewhere.
-      setStudyRoom(server?.template === 'study_server');
-      setPicking(false);
-      setError(null);
-    }
-  }
+  useOnOpen(visible, () => {
+    setType('text');
+    setName('');
+    setParentId(
+      categoryId !== undefined ? categoryId : (categories[0]?.id ?? null),
+    );
+    // v1.9 CR-22: "Bật phòng học" on in a Study Server, off elsewhere.
+    setStudyRoom(server?.template === 'study_server');
+    setPicking(false);
+    setError(null);
+  });
 
   const limit = (channels?.length ?? 0) >= MAX_CHANNELS_PER_SERVER;
   const category = categories.find((c) => c.id === parentId);
   const preview = namePreview(type, name);
-  const nameError = text.nameError(error);
+  const nameError = text.nameError(error, type);
 
   const submit = async () => {
-    if (!gatewayStore.getState().online) return setError({ kind: 'network' });
     setSubmitting(true);
-    const result = await createChannel(
-      serverRepository,
-      serverId,
-      channels ?? [],
-      { type, name, parentId, studyRoom },
-    );
+    const result = await actions.create({ type, name, parentId, studyRoom });
     setSubmitting(false);
     if (!result.ok) return setError(result.error);
     const channel = result.channel;
-    applyGatewayEvent({ t: 'CHANNEL_CREATE', d: channel, s: 0 });
     onDismiss();
-    showToast({
-      message:
-        channel.type === 'text'
-          ? t('servers.channels.createdText', { name: channel.name })
-          : t('servers.channels.created', { name: channel.name }),
-    });
+    // `created`: a new category only shows up in the drawer (spec 08 › S-SET-09).
+    if (channel.type !== 'category')
+      showToast({
+        message:
+          channel.type === 'text'
+            ? t('servers.channels.createdText', { name: channel.name })
+            : t('servers.channels.created', { name: channel.name }),
+      });
     onCreated(channel);
   };
 
@@ -195,7 +182,7 @@ export function CreateChannelSheet({
         {categories.map((c) => (
           <PickRow
             key={c.id}
-            label={upper(c.name)}
+            label={categoryTitle(c.name)}
             selected={c.id === parentId}
             onPress={() => {
               setParentId(c.id);
@@ -272,7 +259,9 @@ export function CreateChannelSheet({
           <SettingsRow
             label={t('servers.channels.category')}
             value={
-              category ? upper(category.name) : t('servers.channels.noCategory')
+              category
+                ? categoryTitle(category.name)
+                : t('servers.channels.noCategory')
             }
             onPress={() => setPicking(true)}
           />

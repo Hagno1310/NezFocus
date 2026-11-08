@@ -2,6 +2,7 @@ import {
   CHANNEL_NAME_MAX,
   ErrorCode,
   applyPositions,
+  byPosition,
   describeDuplicate,
   findDuplicateChannel,
   normalizeTextChannelName,
@@ -165,10 +166,11 @@ export type ReorderEntry =
   | { kind: 'header'; category: ChannelResponse }
   | { kind: 'channel'; channel: ChannelResponse };
 
-// The drawer while one channel is dragged: headers and rows in order, minus that channel.
+// The drawer while one channel is dragged: headers and rows in order, minus that channel
+// (null keeps every row).
 export function reorderEntries(
   sections: readonly ChannelSection[],
-  draggedId: string,
+  draggedId: string | null,
 ): ReorderEntry[] {
   return sections.flatMap(({ category, rows }) => [
     ...(category ? [{ kind: 'header' as const, category }] : []),
@@ -197,13 +199,10 @@ export function dropTarget(
   return { parentId, index };
 }
 
-const byPosition = (a: ChannelResponse, b: ChannelResponse) =>
-  a.position - b.position || a.id.localeCompare(b.id);
-
 export type DropPlan =
   | {
       ok: true;
-      patch: UpdateChannelPositionsRequest | [];
+      patch: UpdateChannelPositionsRequest; // empty: dropped where it was
       changed: ChannelResponse[];
     }
   | { ok: false; duplicate: DuplicateName };
@@ -231,13 +230,45 @@ export function planDrop(
       return was.position !== p.position || was.parent_id !== p.parent_id;
     });
   if (!patch.length) return { ok: true, patch: [], changed: [] };
-  const result = applyPositions(
-    channels,
-    patch as UpdateChannelPositionsRequest,
-  );
+  const result = applyPositions(channels, patch);
   if (result.ok) return { ok: true, patch, changed: result.changed };
   // Only a duplicate can fail here: the ids and the parent come from the list itself.
   if (result.reason === 'duplicate')
     return { ok: false, duplicate: result.duplicate };
   return { ok: true, patch: [], changed: [] };
+}
+
+export type MoveResult =
+  | { ok: true }
+  | { ok: false; error: 'duplicate'; duplicate: DuplicateName } // `drop-blocked`
+  | { ok: false; error: 'failed'; retry: () => Promise<MoveResult> };
+
+// SRV-02 AC1 on drop: the rows move at once (`apply`), then the save; a failed save puts
+// back only the rows it moved, so Gateway updates that came meanwhile stay.
+export async function moveChannel(
+  repo: Pick<ServerRepository, 'setChannelPositions'>,
+  serverId: string,
+  channels: readonly ChannelResponse[],
+  channelId: string,
+  target: DropTarget,
+  apply: (changed: readonly ChannelResponse[]) => void,
+): Promise<MoveResult> {
+  const plan = planDrop(channels, channelId, target);
+  if (!plan.ok)
+    return { ok: false, error: 'duplicate', duplicate: plan.duplicate };
+  if (!plan.patch.length) return { ok: true };
+  const previous = plan.changed.flatMap(
+    (c) => channels.find((x) => x.id === c.id) ?? [],
+  );
+  const save = async (): Promise<MoveResult> => {
+    apply(plan.changed);
+    try {
+      await repo.setChannelPositions(serverId, plan.patch);
+      return { ok: true };
+    } catch {
+      apply(previous);
+      return { ok: false, error: 'failed', retry: save };
+    }
+  };
+  return save();
 }

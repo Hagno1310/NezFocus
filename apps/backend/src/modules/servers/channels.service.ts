@@ -5,7 +5,7 @@ import {
   NO_LETTER_OR_DIGIT_MESSAGE,
   Permission,
   applyPositions,
-  findDuplicateChannel,
+  findClash,
   planCategoryDelete,
   type ChannelRuleError,
   normalizeTextChannelName,
@@ -19,7 +19,7 @@ import { Clock } from '../../common/clock.js';
 import { SnowflakeGenerator } from '../../common/snowflake.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
 import { PermissionService } from '../permissions/permission.service.js';
-import { duplicateNameMessage, ruleError } from './channel-rules.js';
+import { ruleError } from './channel-rules.js';
 import { ChannelsRepository, type ChannelMove } from './channels.repository.js';
 import { toChannelResponse, toServerSummary } from './servers.dto.js';
 import { ServersRepository } from './servers.repository.js';
@@ -101,13 +101,8 @@ export class ChannelsService {
         'The parent must be a category of this server',
       );
     const candidate = { type: body.type, name: body.name, parent_id: parentId };
-    const existing = findDuplicateChannel(current, candidate);
-    if (existing)
-      throw invalid(
-        'name',
-        'DUPLICATE_NAME',
-        duplicateNameMessage(current, existing),
-      );
+    const clash = findClash(current, [candidate]);
+    if (clash) throw rejected(clash);
 
     // REQ-SRV-02 AC6, v1.9 CR-22: "Bật phòng học" follows the server's template when unsent.
     const focusControl =
@@ -152,16 +147,8 @@ export class ChannelsService {
     if (!name)
       throw invalid('name', 'NO_LETTER_OR_DIGIT', NO_LETTER_OR_DIGIT_MESSAGE);
     const current = await this.live(row.serverId!);
-    const existing = findDuplicateChannel(current, {
-      ...toChannelResponse(row),
-      name,
-    });
-    if (existing)
-      throw invalid(
-        'name',
-        'DUPLICATE_NAME',
-        duplicateNameMessage(current, existing),
-      );
+    const clash = findClash(current, [{ ...toChannelResponse(row), name }]);
+    if (clash) throw rejected(clash);
     const channel = toChannelResponse(await this.repo.rename(row.id, name));
     await this.events.toServer(row.serverId!, 'CHANNEL_UPDATE', channel);
     return channel;

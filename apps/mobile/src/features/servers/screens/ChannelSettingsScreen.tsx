@@ -20,6 +20,12 @@ import { Text } from '../../../shared/ui/Text';
 import { channelIcon } from '../components/ChannelRow';
 import { useChannelAccess } from '../hooks/useChannelAccess';
 
+const TICKETS: Record<Exclude<ChannelSettingsRow, 'overview'>, string> = {
+  permissions: 'P1-A3.6 (#69)',
+  studyRoom: 'P3-B2 (#27)',
+  taskBoard: 'P4-A1 (#32)',
+};
+
 const ICONS = {
   overview: Info,
   permissions: Shield,
@@ -44,7 +50,7 @@ export function ChannelSettingsScreen({
   channelId: string;
   onBack: () => void;
   onOverview: () => void;
-  onRow: (title: string) => void;
+  onRow: (title: string, ticket: string) => void;
   onClose: () => void; // back to the drawer
 }) {
   const { t } = useTranslation();
@@ -113,7 +119,9 @@ export function ChannelSettingsScreen({
                 : undefined
             }
             onPress={() =>
-              row === 'overview' ? onOverview() : onRow(label(row))
+              row === 'overview'
+                ? onOverview()
+                : onRow(label(row), TICKETS[row])
             }
           />
         ))}

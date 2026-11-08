@@ -25,6 +25,17 @@ import { showToast } from '../../../shared/ui/Toast';
 import { ServerIcon } from '../components/ServerIcon';
 import { useServerAccess } from '../hooks/useServerAccess';
 
+// Where each placeholder row gets its real screen.
+const TICKETS: Record<Exclude<Row, 'overview'>, string> = {
+  roles: 'P1-A3.5 (#68)',
+  members: 'P2-A2 (#15)',
+  invites: 'P3-A3 (#23)',
+  bans: 'P3-A3 (#23)',
+  reports: 'P3-A5 (#25)',
+  transfer: 'P3-A4 (#24)',
+  delete: 'P3-A4 (#24)',
+};
+
 const ICONS = {
   overview: Info,
   roles: Shield,
@@ -48,7 +59,7 @@ export function ServerSettingsScreen({
   serverId: string;
   onBack: () => void;
   onOverview: () => void;
-  onRow: (title: string) => void;
+  onRow: (title: string, ticket: string) => void;
   onLostAccess: () => void; // back to the drawer
 }) {
   const { t } = useTranslation();
@@ -109,7 +120,9 @@ export function ServerSettingsScreen({
             label={label(row)}
             value={value(row)}
             onPress={() =>
-              row === 'overview' ? onOverview() : onRow(label(row))
+              row === 'overview'
+                ? onOverview()
+                : onRow(label(row), TICKETS[row])
             }
           />
         ))}
@@ -126,14 +139,14 @@ export function ServerSettingsScreen({
             <SettingsRow
               icon={Crown}
               label={label('transfer')}
-              onPress={() => onRow(label('transfer'))}
+              onPress={() => onRow(label('transfer'), TICKETS.transfer)}
             />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={label('delete')}
               accessibilityState={{ disabled: offline }}
               disabled={offline}
-              onPress={() => onRow(label('delete'))}
+              onPress={() => onRow(label('delete'), TICKETS.delete)}
               style={[styles.danger, offline && { opacity: disabledOpacity }]}
             >
               <Icon as={Trash2} size="lg" color="danger" />

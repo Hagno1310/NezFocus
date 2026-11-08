@@ -2,28 +2,30 @@ import type { ChannelResponse, ServerSummary } from '@nezfocus/shared';
 import { ChevronDown, ChevronRight, Plus, UserPlus } from 'lucide-react-native';
 import { Fragment, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from 'zustand';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
 import {
   dropTarget,
-  planDrop,
   reorderEntries,
+  type MoveResult,
   type ReorderEntry,
 } from '../../../domain/servers/channels';
 import { channelSections } from '../../../domain/servers/drawer';
 import { channelMenuRows } from '../../../domain/servers/serverAccess';
-import { serverRepository } from '../../../data/servers';
 import {
-  applyChannels,
   homeStore,
   openChannel,
   selectServer,
-  setChannels,
   toggleCategory,
 } from '../../../domain/servers/homeStore';
 import { Permission, hasPermission } from '@nezfocus/shared';
+import Animated, {
+  useAnimatedRef,
+  useScrollOffset,
+  useSharedValue,
+} from 'react-native-reanimated';
 import {
   radius,
   size,
@@ -47,6 +49,7 @@ import {
 import { CategoryMenu, ChannelMenu } from '../components/ChannelMenus';
 import { CreateChannelSheet } from '../components/CreateChannelSheet';
 import { ReorderList } from '../components/ReorderList';
+import { useChannelActions } from '../hooks/useChannelActions';
 import { useChannelText } from '../hooks/useChannelText';
 import { useServerAccess } from '../hooks/useServerAccess';
 import { ChannelRow } from '../components/ChannelRow';
@@ -195,7 +198,11 @@ function ChannelPanel({
   const { t } = useTranslation();
   const { colors } = useTheme();
   const text = useChannelText();
+  const channelActions = useChannelActions(server.id);
   const access = useServerAccess(server.id);
+  const scrollRef = useAnimatedRef<Animated.ScrollView>();
+  const scrollOffset = useScrollOffset(scrollRef);
+  const viewport = useSharedValue(0);
   const perms = access?.perms ?? 0n;
   const manage = hasPermission(perms, Permission.MANAGE_CHANNELS);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -224,46 +231,23 @@ function ChannelPanel({
   );
 
   // SRV-02 AC1: saved on drop; a clash is `drop-blocked` (no API call), a failed save puts
-  // the row back.
+  // the row back with "Chưa lưu được thay đổi · Thử lại".
   const move = async (channelId: string, insertAt: number) => {
-    if (!channels || !sections) return;
+    if (!sections) return;
     const target = dropTarget(reorderEntries(sections, channelId), insertAt);
-    const plan = planDrop(channels, channelId, target);
-    if (!plan.ok) return showToast({ message: text.duplicate(plan.duplicate) });
-    if (!plan.patch.length) return;
-    const before = channels;
-    applyChannels(plan.changed);
-    try {
-      await serverRepository.setChannelPositions(server.id, plan.patch);
-    } catch {
-      setChannels(server.id, before);
-      showToast({
-        message: t('servers.settings.saveFailed'),
-        action: {
-          label: t('servers.settings.retry'),
-          onPress: () => void retry(plan.patch),
-        },
-      });
-    }
+    report(await channelActions.move(channelId, target));
   };
-  const retry = async (
-    patch: Parameters<typeof serverRepository.setChannelPositions>[1],
-  ) => {
-    try {
-      await serverRepository.setChannelPositions(server.id, patch);
-      const now = homeStore.getState().channels[server.id] ?? [];
-      const byId = new Map(patch.map((p) => [p.id, p]));
-      applyChannels(
-        now.flatMap((c) => {
-          const p = byId.get(c.id);
-          return p
-            ? [{ ...c, position: p.position, parent_id: p.parent_id }]
-            : [];
-        }),
-      );
-    } catch {
-      showToast({ message: t('servers.settings.saveFailed') });
-    }
+  const report = (result: MoveResult) => {
+    if (result.ok) return;
+    if (result.error === 'duplicate')
+      return showToast({ message: text.duplicate(result.duplicate) });
+    showToast({
+      message: t('servers.settings.saveFailed'),
+      action: {
+        label: t('servers.settings.retry'),
+        onPress: () => void result.retry().then(report),
+      },
+    });
   };
 
   const created = (channel: ChannelResponse) => {
@@ -286,7 +270,9 @@ function ChannelPanel({
   return (
     <View style={[styles.panel, { backgroundColor: colors['surface-1'] }]}>
       {offline && <SystemBanner kind="offline" />}
-      <ScrollView
+      <Animated.ScrollView
+        ref={scrollRef}
+        onLayout={(e) => viewport.set(e.nativeEvent.layout.height)}
         contentContainerStyle={styles.list}
         scrollEnabled={!reordering}
       >
@@ -299,6 +285,7 @@ function ChannelPanel({
           <ReorderList
             sections={sections}
             draggedId={reordering}
+            scroll={{ ref: scrollRef, offset: scrollOffset, viewport }}
             renderEntry={renderEntry}
             onDrop={(insertAt) => {
               const id = reordering;
@@ -356,7 +343,7 @@ function ChannelPanel({
             </View>
           ))
         )}
-      </ScrollView>
+      </Animated.ScrollView>
       <ServerMenu
         serverId={server.id}
         visible={menuOpen}

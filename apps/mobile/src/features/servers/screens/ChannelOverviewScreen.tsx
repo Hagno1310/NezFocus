@@ -5,19 +5,11 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useStore } from 'zustand';
-import { serverRepository } from '../../../data/servers';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
 import {
-  deleteChannel,
   namePreview,
-  renameChannel,
   type ChannelActionError,
 } from '../../../domain/servers/channels';
-import {
-  applyGatewayEvent,
-  homeStore,
-  markOwnDelete,
-} from '../../../domain/servers/homeStore';
 import { disabledOpacity, size, space, useTheme } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import { SystemBanner } from '../../../shared/ui/Feedback';
@@ -30,6 +22,7 @@ import { TextField } from '../../../shared/ui/TextField';
 import { showToast } from '../../../shared/ui/Toast';
 import { TypeNameSheet } from '../../../shared/ui/TypeNameSheet';
 import { useChannelAccess } from '../hooks/useChannelAccess';
+import { useChannelActions } from '../hooks/useChannelActions';
 import { useChannelText } from '../hooks/useChannelText';
 
 // S-SET-06 `overview`, `editing`, `name-error`, `discard-confirm`, `delete-confirm`,
@@ -52,7 +45,7 @@ export function ChannelOverviewScreen({
   const text = useChannelText();
   const navigation = useNavigation();
   const offline = useStore(gatewayStore, (s) => s.banner === 'offline');
-  const channels = useStore(homeStore, (s) => s.channels[serverId]);
+  const actions = useChannelActions(serverId);
   // Leaving on purpose (saved, deleted, lost access) skips "Bỏ thay đổi?".
   const leavingOnPurpose = useRef(false);
   const close = () => {
@@ -60,14 +53,16 @@ export function ChannelOverviewScreen({
     onClose();
   };
   const access = useChannelAccess(serverId, channelId, 'overview', close);
-  const [name, setName] = useState(access?.channel.name ?? '');
+  // The field starts from the saved name, also when the list loads after this screen.
+  const [name, setName] = useState<string | null>(null);
   const [error, setError] = useState<ChannelActionError | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
   const [leaving, setLeaving] = useState<null | (() => void)>(null);
-  const dirty = !!access && name !== access.channel.name;
+  if (name === null && access) setName(access.channel.name);
+  const dirty = !!access && name !== null && name !== access.channel.name;
 
   usePreventRemove(dirty && !saving, ({ data }) =>
     leavingOnPurpose.current
@@ -75,21 +70,15 @@ export function ChannelOverviewScreen({
       : setLeaving(() => () => navigation.dispatch(data.action)),
   );
 
-  if (!access) return null;
+  if (!access || name === null) return null;
   const { channel, isWelcome, lostAccess } = access;
   const label = channel.type === 'text' ? `#${channel.name}` : channel.name;
 
   const save = async () => {
     setSaving(true);
-    const result = await renameChannel(
-      serverRepository,
-      channels ?? [],
-      channel,
-      name,
-    );
+    const result = await actions.rename(channel, name);
     setSaving(false);
     if (result.ok) {
-      applyGatewayEvent({ t: 'CHANNEL_UPDATE', d: result.channel, s: 0 });
       showToast({ message: t('servers.channels.renamed') });
       leavingOnPurpose.current = true;
       return onSaved();
@@ -107,8 +96,7 @@ export function ChannelOverviewScreen({
   const remove = async () => {
     setDeleting(true);
     setDeleteFailed(false);
-    markOwnDelete(channel.id);
-    const result = await deleteChannel(serverRepository, channel.id);
+    const result = await actions.remove(channel);
     setDeleting(false);
     if (!result.ok) {
       if (result.error.kind === 'forbidden') {
@@ -117,17 +105,8 @@ export function ChannelOverviewScreen({
       }
       return setDeleteFailed(true);
     }
+    // Gone from the list: useChannelAccess closes this screen and S-SET-06.
     setConfirming(false);
-    // SRV-01 v1.9: the server stops sending welcome messages.
-    const server = homeStore.getState().servers?.find((s) => s.id === serverId);
-    if (isWelcome && server)
-      applyGatewayEvent({
-        t: 'SERVER_UPDATE',
-        d: { ...server, system_channel_id: null },
-        s: 0,
-      });
-    // Removing it from the list closes this screen and S-SET-06 (useChannelAccess).
-    applyGatewayEvent({ t: 'CHANNEL_DELETE', d: channel, s: 0 });
     showToast({ message: t('servers.channels.deleted', { name: label }) });
   };
 
@@ -163,7 +142,7 @@ export function ChannelOverviewScreen({
             }}
             counterMax={CHANNEL_NAME_MAX}
             readonly={offline}
-            error={text.nameError(error)}
+            error={text.nameError(error, channel.type)}
             multiline
             submitBehavior="blurAndSubmit"
             returnKeyType="done"

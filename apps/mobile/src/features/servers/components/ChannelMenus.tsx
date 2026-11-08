@@ -1,4 +1,4 @@
-import type { ChannelResponse } from '@nezfocus/shared';
+import { categoryTitle, type ChannelResponse } from '@nezfocus/shared';
 import {
   ArrowUpDown,
   Folder,
@@ -11,8 +11,6 @@ import { useTranslation } from 'react-i18next';
 import type { ChannelMenuRow } from '../../../domain/servers/serverAccess';
 import { ActionSheet, type ActionItem } from '../../../shared/ui/Overlay';
 import { channelIcon } from './ChannelRow';
-
-const upper = (name: string) => name.toLocaleUpperCase('vi');
 
 // 08 S-HOME-02 `channel-menu`: the channel, then "Cài đặt kênh" · "Sắp xếp kênh" as allowed.
 export function ChannelMenu({
@@ -49,12 +47,11 @@ export function ChannelMenu({
           },
         ]
       : [];
+  // Spec 08 › channel-menu: "Phòng học" under a Study Room; nothing for other channels.
   const kind =
-    channel.type === 'text'
-      ? t('servers.channels.kindText')
-      : channel.focus_control === 'off'
-        ? t('servers.channels.kindVoice')
-        : t('servers.channels.kindStudy');
+    channel.type === 'voice' && channel.focus_control !== 'off'
+      ? t('servers.channels.kindStudy')
+      : undefined;
   return (
     <ActionSheet
       visible={visible}
@@ -109,7 +106,7 @@ export function CategoryMenu({
     <ActionSheet
       visible={visible}
       icon={Folder}
-      title={upper(category.name)}
+      title={categoryTitle(category.name)}
       subtitle={t('servers.channels.categoryKind', { count })}
       groups={[
         {

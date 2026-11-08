@@ -56,22 +56,22 @@ export function applyGatewayEvent(event: DispatchEvent): string | undefined {
 export const addServer = (server: ServerResponse) =>
   applyGatewayEvent({ t: 'SERVER_CREATE', d: server, s: 0 });
 
-// An optimistic move, and putting the list back when the save fails (S-HOME-02 `reordering`).
-export const setChannels = (serverId: string, channels: ChannelResponse[]) =>
-  homeStore.setState((s) => ({
-    channels: { ...s.channels, [serverId]: channels },
-  }));
-
 // What a request just answered, before (or instead of) its CHANNEL_* event.
-export const applyChannels = (changed: readonly ChannelResponse[]) => {
-  for (const channel of changed)
-    applyGatewayEvent({ t: 'CHANNEL_UPDATE', d: channel, s: 0 });
-};
+export const upsertChannel = (channel: ChannelResponse) =>
+  applyGatewayEvent({ t: 'CHANNEL_UPDATE', d: channel, s: 0 });
+
+export const applyChannels = (changed: readonly ChannelResponse[]) =>
+  changed.forEach(upsertChannel);
+
+export const removeChannel = (channel: ChannelResponse) =>
+  applyGatewayEvent({ t: 'CHANNEL_DELETE', d: channel, s: 0 });
 
 // A channel this phone deleted: its screens close without the "Kênh này đã bị xóa" toast
 // (that one is for someone else deleting it, spec 08 › Edge case).
 const ownDeletes = new Set<string>();
 export const markOwnDelete = (channelId: string) => ownDeletes.add(channelId);
+export const unmarkOwnDelete = (channelId: string) =>
+  ownDeletes.delete(channelId);
 export const isOwnDelete = (channelId: string) => ownDeletes.has(channelId);
 
 export const resetHome = () => homeStore.setState(emptyHome, true);

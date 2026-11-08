@@ -92,7 +92,7 @@ type HomeParamList = {
   JoinByCode: undefined; // ponytail: placeholder for S-HOME-06 join-by-code until P2-A1 (#14)
   // ponytail: where S-HOME-02 / S-HOME-09 / S-SET-01 lead before those screens exist —
   // voice room P3-B1 (#26), DMs P2-B3 (#20), invite P2-A1 (#14), and the rest per row.
-  HomePlaceholder: { title: string };
+  HomePlaceholder: { title: string; ticket?: string };
   ServerSettings: { serverId: string }; // S-SET-01
   ServerOverview: { serverId: string }; // S-SET-01 overview
   ChannelSettings: { serverId: string; channelId: string }; // S-SET-06
@@ -121,9 +121,9 @@ function HomeTab() {
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
       <HomeStack.Screen name="HomeRoot">
         {({ navigation }) => {
-          const placeholder = (title: string) => () =>
-            navigation.navigate('HomePlaceholder', { title });
-          const dm = placeholder(t('screens.directMessages'));
+          const placeholder = (title: string, ticket?: string) => () =>
+            navigation.navigate('HomePlaceholder', { title, ticket });
+          const dm = placeholder(t('screens.directMessages'), 'P2-B3 (#20)');
           return noServer ? (
             <NoServerHome
               onCreate={() => navigation.navigate('CreateServer')}
@@ -134,16 +134,17 @@ function HomeTab() {
             <HomeDrawers
               actions={{
                 onAdd: () => navigation.navigate('CreateServer'),
-                onOpenVoice: (channel) => placeholder(channel.name)(),
+                onOpenVoice: (channel) =>
+                  placeholder(channel.name, 'P3-B1 (#26)')(),
                 onDirectMessages: dm,
-                onInvite: placeholder(t('screens.invite')),
+                onInvite: placeholder(t('screens.invite'), 'P2-A1 (#14)'),
                 menu: {
-                  invite: placeholder(t('screens.invite')),
+                  invite: placeholder(t('screens.invite'), 'P2-A1 (#14)'),
                   settings: (serverId) =>
                     navigation.navigate('ServerSettings', { serverId }),
                   // ponytail: report (P3-A5 #25), leave / owner-leave (P3-A4 #24).
-                  report: placeholder(t('servers.menu.report')),
-                  leave: placeholder(t('servers.menu.leave')),
+                  report: placeholder(t('servers.menu.report'), 'P3-A5 (#25)'),
+                  leave: placeholder(t('servers.menu.leave'), 'P3-A4 (#24)'),
                 },
                 onChannelSettings: (channel) =>
                   navigation.navigate('ChannelSettings', {
@@ -153,6 +154,7 @@ function HomeTab() {
                 // ponytail: `category-overwrites` comes with P1-A3.6 (#69).
                 onCategoryPermissions: placeholder(
                   t('servers.channels.categoryPermissions'),
+                  'P1-A3.6 (#69)',
                 ),
               }}
             />
@@ -178,7 +180,9 @@ function HomeTab() {
                 serverId: route.params.serverId,
               })
             }
-            onRow={(title) => navigation.navigate('HomePlaceholder', { title })}
+            onRow={(title, ticket) =>
+              navigation.navigate('HomePlaceholder', { title, ticket })
+            }
             onLostAccess={() => navigation.popTo('HomeRoot')}
           />
         )}
@@ -200,7 +204,9 @@ function HomeTab() {
             onOverview={() =>
               navigation.navigate('ChannelOverview', route.params)
             }
-            onRow={(title) => navigation.navigate('HomePlaceholder', { title })}
+            onRow={(title, ticket) =>
+              navigation.navigate('HomePlaceholder', { title, ticket })
+            }
             onClose={() => navigation.popTo('HomeRoot')}
           />
         )}
@@ -221,7 +227,12 @@ function HomeTab() {
           title: route.params.title,
         })}
       >
-        {({ route }) => <Placeholder title={route.params.title} />}
+        {({ route }) => (
+          <Placeholder
+            title={route.params.title}
+            ticket={route.params.ticket}
+          />
+        )}
       </HomeStack.Screen>
       <HomeStack.Screen
         name="JoinByCode"

@@ -1,9 +1,17 @@
 import { randomInt } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { SnowflakeGenerator } from '../src/common/snowflake.js';
 import { DB, type Db } from '../src/db/db.module.js';
 import { runSeeds } from '../src/db/seed.js';
+import { SAMPLE_SERVERS } from '../src/modules/servers/servers.seed.js';
+import {
+  channels,
+  roles,
+  serverMemberRoles,
+  serverMembers,
+  servers,
+} from '../src/modules/servers/servers.schema.js';
 import { DEV_PASSWORD, SAMPLE_USERS } from '../src/modules/users/users.seed.js';
 import { users, userSettings } from '../src/modules/users/users.schema.js';
 import {
@@ -89,5 +97,54 @@ describe('db:seed (e2e)', () => {
       display_name: 'An',
       account_completed: true,
     });
+  });
+
+  it('adds the sample servers once; An owns "Ôn thi Giải tích 2", a Study Server welcoming in #chao-mung', async () => {
+    await seed();
+    await seed();
+
+    const [an] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.username, 'an.nguyen'));
+    const owned = await db
+      .select()
+      .from(servers)
+      .where(
+        and(
+          eq(servers.ownerId, an!.id),
+          inArray(
+            servers.name,
+            SAMPLE_SERVERS.map((s) => s.name),
+          ),
+        ),
+      );
+    expect(owned.map((s) => s.name).sort()).toEqual(
+      SAMPLE_SERVERS.map((s) => s.name).sort(),
+    );
+
+    const study = owned.find((s) => s.name === 'Ôn thi Giải tích 2')!;
+    expect(study.template).toBe('study_server');
+    const [welcome] = await db
+      .select({ name: channels.name })
+      .from(channels)
+      .where(eq(channels.id, study.systemChannelId!));
+    expect(welcome!.name).toBe('chao-mung');
+    const members = await db
+      .select({ userId: serverMembers.userId })
+      .from(serverMembers)
+      .where(eq(serverMembers.serverId, study.id));
+    expect(members).toHaveLength(SAMPLE_USERS.length);
+    const [lead] = await db
+      .select({ name: roles.name })
+      .from(serverMemberRoles)
+      .innerJoin(roles, eq(roles.id, serverMemberRoles.roleId))
+      .where(
+        and(
+          eq(serverMemberRoles.serverId, study.id),
+          eq(serverMemberRoles.userId, an!.id),
+        ),
+      );
+    expect(lead!.name).toBe('Trưởng nhóm');
   });
 });

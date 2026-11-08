@@ -1,5 +1,5 @@
 {
-  "version": "2.21",
+  "version": "2.22",
   "children": [
     {
       "type": "frame",
@@ -150449,7 +150449,7 @@
                   "fill": "$text-secondary",
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
-                  "content": "Có sẵn kênh thông báo, tài liệu, hỏi đáp, việc nhóm và 2 phòng học 25/5.",
+                  "content": "Có sẵn kênh chào mừng, thông báo, tài liệu, hỏi đáp, việc nhóm và 2 phòng học 25/5.",
                   "lineHeight": 1.45,
                   "fontFamily": "$font-text",
                   "fontSize": "$type-body-sm",

@@ -15,6 +15,7 @@ import { WebSocketServer } from 'ws';
 import { toCurrentUser } from '../auth/auth.service.js';
 import { SessionRepository } from '../auth/session.repository.js';
 import { TokenService } from '../auth/token.service.js';
+import { ServersService } from '../servers/servers.service.js';
 import { UsersRepository } from '../users/users.repository.js';
 import { GatewayConnection, type Authenticate } from './gateway-connection.js';
 import { GatewaySessions } from './gateway-sessions.js';
@@ -32,6 +33,7 @@ export class GatewayListener
     private readonly tokens: TokenService,
     private readonly authSessions: SessionRepository,
     private readonly users: UsersRepository,
+    private readonly servers: ServersService,
   ) {}
 
   onApplicationBootstrap() {
@@ -49,6 +51,7 @@ export class GatewayListener
         },
         this.sessions,
         this.authenticate,
+        (userId) => this.servers.summariesFor(userId),
       );
       ws.on('message', (data, isBinary) => {
         // A binary frame is not JSON text: receive('') closes with 4002.

@@ -2,6 +2,7 @@ import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { SnowflakeGenerator } from '../common/snowflake.js';
+import { seedServers } from '../modules/servers/servers.seed.js';
 import { seedUsers } from '../modules/users/users.seed.js';
 import type { Db } from './db.module.js';
 import * as schema from './schema.js';
@@ -9,7 +10,7 @@ import * as schema from './schema.js';
 export type SeedContext = { db: Db; ids: SnowflakeGenerator; now: Date };
 
 // WORKFLOW 4.4: each module owner adds one line here, in dependency order (users first).
-const seeds: ((ctx: SeedContext) => Promise<void>)[] = [seedUsers];
+const seeds: ((ctx: SeedContext) => Promise<void>)[] = [seedUsers, seedServers];
 
 export function assertNotProduction(nodeEnv: string | undefined) {
   if (nodeEnv === 'production')

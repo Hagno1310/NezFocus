@@ -19,6 +19,7 @@ export const vi = {
     leftDrawer: 'Server và kênh',
     rightDrawer: 'Thành viên · Việc · Ghim',
     invite: 'Lời mời',
+    joinByCode: 'Nhập mã mời',
   },
   ui: {
     back: 'Quay lại',
@@ -274,6 +275,35 @@ export const vi = {
       other: 'Có lỗi xảy ra · thử lại sau ít phút',
     },
   },
+  // 02 › S-HOME-06, chép nguyên văn cột "Chữ / hành động riêng".
+  servers: {
+    create: {
+      title: 'Thêm server',
+      section: 'Tạo server mới',
+      studyTitle: 'Study Server',
+      studyChip: 'Gợi ý',
+      studyBody:
+        'Có sẵn kênh chào mừng, thông báo, tài liệu, hỏi đáp, việc nhóm và 2 phòng học 25/5.',
+      generalTitle: 'Server thường',
+      generalBody: 'Một kênh chat và một phòng thoại.',
+      joinSection: 'Đã có lời mời?',
+      join: 'Nhập mã mời',
+      continue: 'Tiếp tục',
+      nameTitle_study_server: 'Tạo Study Server',
+      nameTitle_general: 'Tạo server thường',
+      addPhoto: 'Thêm ảnh',
+      optional: 'Tùy chọn',
+      nameLabel: 'Tên server',
+      namePlaceholder_study_server: 'VD: Ôn thi Giải tích 2',
+      namePlaceholder_general: 'VD: CLB Guitar PTIT',
+      submit: 'Tạo server',
+      nameError: 'Tên server cần 2–100 ký tự',
+      maxServers:
+        'Bạn đã ở 100 server, mức tối đa. Rời bớt một server để tạo server mới.',
+      network: 'Không tạo được server. Kiểm tra kết nối rồi thử lại.',
+      offline: 'Cần kết nối mạng để tạo hoặc tham gia server',
+    },
+  },
   placeholder: {
     note: 'Màn tạm — thay bằng màn thật ở ticket sau',
     openLeft: 'Mở drawer trái',
@@ -282,6 +312,7 @@ export const vi = {
     fakeIncomplete: 'Giả lập chưa hoàn tất',
     signOut: 'Đăng xuất',
     switchLanguage: 'English',
+    createServer: 'Tạo hoặc tham gia server',
   },
 };
 

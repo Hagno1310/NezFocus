@@ -4,6 +4,7 @@ import {
   type NativeStackNavigationProp,
   type NativeStackScreenProps,
 } from '@react-navigation/native-stack';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import {
   getFocusedRouteNameFromRoute,
   useNavigation,
@@ -37,6 +38,8 @@ import { useSolo, useSoloSync } from '../../features/study/hooks/useSolo';
 import { AskNotifications } from '../../features/study/screens/AskNotifications';
 import { SoloScreen } from '../../features/study/screens/SoloScreen';
 import { StudyHome } from '../../features/study/screens/StudyHome';
+import { CreateServerScreen } from '../../features/servers/screens/CreateServerScreen';
+import { useKeyboardVisible } from '../../shared/hooks/useKeyboardVisible';
 import { TabBar } from '../../shared/ui/TabBar';
 import type { SignInMode } from '../../domain/auth/authFlow';
 import { CompleteAccountScreen } from '../../features/auth/screens/CompleteAccountScreen';
@@ -77,8 +80,14 @@ type StudyParamList = {
   AskNotifications: undefined; // S-ROOM-09 first-focus
 };
 
+type HomeParamList = {
+  HomeRoot: undefined; // drawers around the open channel (S-HOME-01/02/03)
+  CreateServer: undefined; // S-HOME-06
+  JoinByCode: undefined; // ponytail: placeholder for S-HOME-06 join-by-code until P2-A1 (#14)
+};
+
 type TabParamList = {
-  Home: undefined;
+  Home: NavigatorScreenParams<HomeParamList> | undefined;
   Study: NavigatorScreenParams<StudyParamList> | undefined;
   Tasks: undefined;
   Inbox: undefined;
@@ -88,6 +97,62 @@ type TabParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 const StudyStack = createNativeStackNavigator<StudyParamList>();
+const HomeStack = createNativeStackNavigator<HomeParamList>();
+
+// CR-15: S-HOME-06 and other Home screens stack above the drawers; Back pops them first.
+function HomeTab() {
+  const { t } = useTranslation();
+  return (
+    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+      <HomeStack.Screen name="HomeRoot">
+        {({ navigation }) => (
+          <HomeDrawers
+            onCreateServer={() => navigation.navigate('CreateServer')}
+          />
+        )}
+      </HomeStack.Screen>
+      <HomeStack.Screen name="CreateServer">
+        {({ navigation }) => (
+          <CreateServerScreen
+            onClose={navigation.goBack}
+            onJoinByCode={() => navigation.navigate('JoinByCode')}
+            onCreated={() => navigation.popTo('HomeRoot')}
+          />
+        )}
+      </HomeStack.Screen>
+      <HomeStack.Screen
+        name="JoinByCode"
+        options={{ headerShown: true, title: t('screens.joinByCode') }}
+      >
+        {() => <Placeholder title={t('screens.joinByCode')} />}
+      </HomeStack.Screen>
+    </HomeStack.Navigator>
+  );
+}
+
+// SRS 3.1 bottom order: MiniPlayer, then TabBar; both step aside for the keyboard (NFR-MOB-14).
+function MainTabBar({
+  tabs,
+  ...props
+}: BottomTabBarProps & { tabs: Parameters<typeof TabBar>[0]['tabs'] }) {
+  const keyboard = useKeyboardVisible();
+  const route = props.state.routes[props.state.index];
+  const onSolo =
+    route?.name === 'Study' && getFocusedRouteNameFromRoute(route) === 'Solo';
+  const openSolo = () => props.navigation.navigate('Study', { screen: 'Solo' });
+  return (
+    <>
+      <SoloNotificationOpener onOpen={openSolo} />
+      {!keyboard && (
+        <>
+          {/* Hidden on the Solo screen itself (C-08). */}
+          {!onSolo && <SoloMiniPlayer onOpen={openSolo} />}
+          <TabBar {...props} tabs={tabs} />
+        </>
+      )}
+    </>
+  );
+}
 
 function StudyTab() {
   return (
@@ -234,26 +299,11 @@ function MainTabs() {
     // CR-15: Back at the root of any other tab returns to Home, keeping that tab's state.
     <Tab.Navigator
       backBehavior="firstRoute"
-      tabBar={(props) => {
-        const route = props.state.routes[props.state.index];
-        const onSolo =
-          route?.name === 'Study' &&
-          getFocusedRouteNameFromRoute(route) === 'Solo';
-        const openSolo = () =>
-          props.navigation.navigate('Study', { screen: 'Solo' });
-        return (
-          <>
-            <SoloNotificationOpener onOpen={openSolo} />
-            {/* SRS 3.1 bottom order: MiniPlayer, then TabBar. Hidden on the Solo screen itself (C-08). */}
-            {!onSolo && <SoloMiniPlayer onOpen={openSolo} />}
-            <TabBar {...props} tabs={tabs} />
-          </>
-        );
-      }}
+      tabBar={(props) => <MainTabBar {...props} tabs={tabs} />}
     >
       <Tab.Screen
         name="Home"
-        component={HomeDrawers}
+        component={HomeTab}
         options={{ title: t('tabs.home'), headerShown: false }}
       />
       <Tab.Screen

@@ -3,6 +3,7 @@ import {
   GatewayCloseCode,
   GatewayOp,
   type CurrentUser,
+  type ServerSummary,
   type SessionEndReason,
 } from '@nezfocus/shared';
 import {
@@ -23,6 +24,9 @@ export type Authenticate = (token: string) => Promise<
   // SRS 11.2: no reason = expired / invalid token
   Authenticated | { ok: false; reason: SessionEndReason | null }
 >;
+
+// READY's server list (REQ-SRV-01), read when IDENTIFY succeeds.
+export type LoadServers = (userId: bigint) => Promise<ServerSummary[]>;
 
 export interface RawSocket {
   send(text: string): void;
@@ -51,6 +55,7 @@ export class GatewayConnection implements SessionSocket {
     private readonly socket: RawSocket,
     private readonly sessions: GatewaySessions,
     private readonly authenticate: Authenticate,
+    private readonly loadServers: LoadServers = async () => [],
   ) {}
 
   open() {
@@ -119,7 +124,7 @@ export class GatewayConnection implements SessionSocket {
             GatewayCloseCode.AUTHENTICATION_FAILED,
             auth.reason ?? '',
           );
-        if (frame.op === GatewayOp.IDENTIFY) this.identify(auth);
+        if (frame.op === GatewayOp.IDENTIFY) await this.identify(auth);
         else this.resume(auth, BigInt(frame.d.session_id), frame.d.seq);
       } finally {
         this.identifying = false;
@@ -133,12 +138,14 @@ export class GatewayConnection implements SessionSocket {
     // PRESENCE_UPDATE (P1-B4 #13), VOICE_STATE_UPDATE (P3), FOCUS_HEARTBEAT, SUBSCRIBE (P2-B1 #18): not yet.
   }
 
-  private identify(auth: Authenticated) {
+  private async identify(auth: Authenticated) {
+    const servers = await this.loadServers(auth.userId);
+    if (this.isClosed) return;
     this.session = this.sessions.create(auth.userId, auth.authSessionId, this);
     this.sessions.dispatch(this.session, 'READY', {
       session_id: this.session.id.toString(),
       user: auth.user,
-      servers: [], // ponytail: the user's servers arrive with P1-A1.2 (#56)
+      servers,
     });
   }
 

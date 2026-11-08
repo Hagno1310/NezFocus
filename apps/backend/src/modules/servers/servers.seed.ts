@@ -37,6 +37,8 @@ export const SAMPLE_SERVERS: {
 ];
 
 // A server An already owns under the same name is left alone, so reruns add nothing.
+// ponytail: STUDY-05 "Server ưu tiên" on by default for Study Server members needs
+// user_server_settings (REQ-STUDY-09); not seeded yet.
 export async function seedServers({ db, ids }: SeedContext) {
   const people = await db
     .select({ id: users.id, username: users.username })

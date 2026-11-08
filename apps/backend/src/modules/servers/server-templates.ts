@@ -87,13 +87,13 @@ export type ServerRows = {
 // Every row a new server starts with; the repository writes them in one transaction.
 export function buildServer(
   template: ServerTemplate,
-  o: { name: string; ownerId: bigint; now: Date; nextId: () => bigint },
+  opts: { name: string; ownerId: bigint; now: Date; nextId: () => bigint },
 ): ServerRows {
-  const serverId = o.nextId();
+  const serverId = opts.nextId();
   const plan = TEMPLATES[template];
   const rows: ServerRows['channels'] = [];
   const add = (p: Plan, position: number, parentId: bigint | null) => {
-    const id = o.nextId();
+    const id = opts.nextId();
     rows.push({
       id,
       serverId,
@@ -102,7 +102,7 @@ export function buildServer(
       name: p.name,
       position,
       focusControl: p.focusControl ?? 'off',
-      createdAt: o.now,
+      createdAt: opts.now,
     });
     p.children?.forEach((child, i) => add(child, i, id));
   };
@@ -114,25 +114,25 @@ export function buildServer(
     name: '@everyone',
     permissions: DEFAULT_EVERYONE_PERMISSIONS,
     position: 0,
-    createdAt: o.now,
+    createdAt: opts.now,
   };
   const ownerRole = plan.ownerRole && {
     ...plan.ownerRole,
-    id: o.nextId(),
+    id: opts.nextId(),
     serverId,
     position: 1,
-    createdAt: o.now,
+    createdAt: opts.now,
   };
 
   return {
     server: {
       id: serverId,
-      name: o.name,
-      ownerId: o.ownerId,
+      name: opts.name,
+      ownerId: opts.ownerId,
       template,
       systemChannelId:
         rows.find((c) => c.type === ChannelTypeCode.text)?.id ?? null,
-      createdAt: o.now,
+      createdAt: opts.now,
     },
     roles: ownerRole ? [everyone, ownerRole] : [everyone],
     channels: rows,

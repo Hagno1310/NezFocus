@@ -298,7 +298,7 @@ describe('Channels (e2e)', () => {
       code: ErrorCode.ValidationError,
       errors: {
         name: [
-          { code: 'DUPLICATE_NAME', message: 'PHÒNG HỌC đã có kênh Phòng Ôn' },
+          { code: 'DUPLICATE_NAME', message: 'PHÒNG HỌC đã có phòng Phòng Ôn' },
         ],
       },
     });

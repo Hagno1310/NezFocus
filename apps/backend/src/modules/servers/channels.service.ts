@@ -4,7 +4,10 @@ import {
   MAX_CHANNELS_PER_SERVER,
   NO_LETTER_OR_DIGIT_MESSAGE,
   Permission,
+  applyPositions,
   findDuplicateChannel,
+  planCategoryDelete,
+  type ChannelRuleError,
   normalizeTextChannelName,
   type ChannelResponse,
   type CreateChannelRequest,
@@ -16,12 +19,7 @@ import { Clock } from '../../common/clock.js';
 import { SnowflakeGenerator } from '../../common/snowflake.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
 import { PermissionService } from '../permissions/permission.service.js';
-import {
-  applyPositions,
-  duplicateNameMessage,
-  planCategoryDelete,
-  type RuleError,
-} from './channel-rules.js';
+import { duplicateNameMessage, ruleError } from './channel-rules.js';
 import { ChannelsRepository, type ChannelMove } from './channels.repository.js';
 import { toChannelResponse, toServerSummary } from './servers.dto.js';
 import { ServersRepository } from './servers.repository.js';
@@ -31,7 +29,10 @@ const invalid = (field: string, code: string, message: string) =>
   new AppError(ErrorCode.ValidationError, message, {
     [field]: [{ code, message }],
   });
-const rejected = (e: RuleError) => invalid(e.field, e.code, e.message);
+const rejected = (e: ChannelRuleError) => {
+  const { field, code, message } = ruleError(e);
+  return invalid(field, code, message);
+};
 const notFound = (what: string) => new AppError(ErrorCode.NotFound, what);
 
 const toMove = (c: ChannelResponse): ChannelMove => ({

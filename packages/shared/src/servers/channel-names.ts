@@ -1,9 +1,9 @@
+import type { ChannelType } from './channel.contract.js';
+
 // REQ-SRV-02 (v1.9, CR-17) name rules, shared so the app's "Sẽ lưu là # …" and duplicate
 // warning never disagree with the backend's 40001 on field `name`.
 
 export const CHANNEL_NAME_MAX = 100;
-
-export type ChannelKind = 'category' | 'text' | 'voice';
 
 // Lowercase; whitespace → "-"; keep letters (accented Vietnamese too), digits, "-" and "_";
 // merge "-" runs and trim them at both ends. "" means the name is unusable (AC9).
@@ -18,14 +18,14 @@ export const normalizeTextChannelName = (raw: string) =>
 
 // What two names are compared on: case-insensitive, accent-sensitive ("bàn" ≠ "bạn");
 // text channels on their saved name.
-export const channelNameKey = (type: ChannelKind, name: string) =>
+export const channelNameKey = (type: ChannelType, name: string) =>
   type === 'text'
     ? normalizeTextChannelName(name)
     : name.normalize('NFC').trim().toLowerCase();
 
 interface NamedChannel {
   id?: string;
-  type: ChannelKind;
+  type: ChannelType;
   name: string;
   parent_id: string | null;
 }

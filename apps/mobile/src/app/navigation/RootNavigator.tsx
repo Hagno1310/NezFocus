@@ -53,6 +53,8 @@ import { StyleSheet, View } from 'react-native';
 import { space } from '../../shared/theme';
 import { homeStore } from '../../domain/servers/homeStore';
 import { NoServerHome } from '../../features/servers/screens/LeftDrawer';
+import { ChannelOverviewScreen } from '../../features/servers/screens/ChannelOverviewScreen';
+import { ChannelSettingsScreen } from '../../features/servers/screens/ChannelSettingsScreen';
 import { ServerOverviewScreen } from '../../features/servers/screens/ServerOverviewScreen';
 import { ServerSettingsScreen } from '../../features/servers/screens/ServerSettingsScreen';
 import { HomeDrawers } from './HomeDrawers';
@@ -93,6 +95,8 @@ type HomeParamList = {
   HomePlaceholder: { title: string };
   ServerSettings: { serverId: string }; // S-SET-01
   ServerOverview: { serverId: string }; // S-SET-01 overview
+  ChannelSettings: { serverId: string; channelId: string }; // S-SET-06
+  ChannelOverview: { serverId: string; channelId: string }; // S-SET-06 overview
 };
 
 type TabParamList = {
@@ -135,14 +139,21 @@ function HomeTab() {
                 onInvite: placeholder(t('screens.invite')),
                 menu: {
                   invite: placeholder(t('screens.invite')),
-                  // ponytail: S-SET-09 (create channel) comes with P1-A2.4 (#61).
-                  createChannel: placeholder(t('servers.menu.createChannel')),
                   settings: (serverId) =>
                     navigation.navigate('ServerSettings', { serverId }),
                   // ponytail: report (P3-A5 #25), leave / owner-leave (P3-A4 #24).
                   report: placeholder(t('servers.menu.report')),
                   leave: placeholder(t('servers.menu.leave')),
                 },
+                onChannelSettings: (channel) =>
+                  navigation.navigate('ChannelSettings', {
+                    serverId: channel.server_id,
+                    channelId: channel.id,
+                  }),
+                // ponytail: `category-overwrites` comes with P1-A3.6 (#69).
+                onCategoryPermissions: placeholder(
+                  t('servers.channels.categoryPermissions'),
+                ),
               }}
             />
           );
@@ -178,6 +189,28 @@ function HomeTab() {
             serverId={route.params.serverId}
             onSaved={navigation.goBack}
             onLostAccess={() => navigation.popTo('HomeRoot')}
+          />
+        )}
+      </HomeStack.Screen>
+      <HomeStack.Screen name="ChannelSettings">
+        {({ navigation, route }) => (
+          <ChannelSettingsScreen
+            {...route.params}
+            onBack={navigation.goBack}
+            onOverview={() =>
+              navigation.navigate('ChannelOverview', route.params)
+            }
+            onRow={(title) => navigation.navigate('HomePlaceholder', { title })}
+            onClose={() => navigation.popTo('HomeRoot')}
+          />
+        )}
+      </HomeStack.Screen>
+      <HomeStack.Screen name="ChannelOverview">
+        {({ navigation, route }) => (
+          <ChannelOverviewScreen
+            {...route.params}
+            onSaved={navigation.goBack}
+            onClose={() => navigation.popTo('HomeRoot')}
           />
         )}
       </HomeStack.Screen>

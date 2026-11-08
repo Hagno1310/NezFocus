@@ -7,6 +7,8 @@ import {
 } from '@nezfocus/shared';
 import { describe, expect, it } from 'vitest';
 import {
+  channelMenuRows,
+  channelSettingsRows,
   myServerPermissions,
   serverMenuRows,
   serverSettingsRows,
@@ -87,5 +89,40 @@ describe('S-HOME-09 / S-SET-01: rows shown by permission (Q17: no disabled rows)
       'leave',
     ]);
     expect(serverSettingsRows(mod, false)).toEqual(['members', 'reports']);
+  });
+});
+
+describe('S-HOME-02 `channel-menu` / S-SET-06: rows by permission', () => {
+  const all = permissionBits(
+    'MANAGE_CHANNELS',
+    'MANAGE_ROLES',
+    'MANAGE_STUDY_ROOMS',
+  );
+  const chi = permissionBits('MANAGE_STUDY_ROOMS'); // Điều phối phòng học
+
+  it('MANAGE_CHANNELS: Cài đặt kênh · Sắp xếp kênh on any channel', () => {
+    expect(channelMenuRows(all, 'text')).toEqual(['settings', 'reorder']);
+    expect(channelMenuRows(all, 'voice')).toEqual(['settings', 'reorder']);
+  });
+
+  it('only MANAGE_STUDY_ROOMS: Cài đặt kênh on voice only; nothing on text', () => {
+    expect(channelMenuRows(chi, 'voice')).toEqual(['settings']);
+    expect(channelMenuRows(chi, 'text')).toEqual([]);
+    expect(channelMenuRows(0n, 'voice')).toEqual([]);
+  });
+
+  it('S-SET-06 `text` / `voice`; `voice · study-rooms-only` keeps Phòng học', () => {
+    expect(channelSettingsRows(all, 'text')).toEqual([
+      'overview',
+      'permissions',
+      'taskBoard',
+    ]);
+    expect(channelSettingsRows(all, 'voice')).toEqual([
+      'overview',
+      'permissions',
+      'studyRoom',
+    ]);
+    expect(channelSettingsRows(chi, 'voice')).toEqual(['studyRoom']);
+    expect(channelSettingsRows(chi, 'text')).toEqual([]);
   });
 });

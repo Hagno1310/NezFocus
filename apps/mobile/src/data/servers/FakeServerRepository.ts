@@ -1,7 +1,15 @@
 import {
+  CreateChannelRequest,
   DEFAULT_EVERYONE_PERMISSIONS,
   ErrorCode,
+  FreeChannelName,
+  MAX_CHANNELS_PER_SERVER,
   ServerName,
+  applyPositions,
+  describeDuplicate,
+  findDuplicateChannel,
+  normalizeTextChannelName,
+  planCategoryDelete,
   toPermissionBitmap,
   type ChannelResponse,
   type ServerResponse,
@@ -20,6 +28,24 @@ export const FAKE_FORBIDDEN_NAME = 'Hết quyền'; // S-SET-01: saving it plays
 
 const fail = (status: number, code: number) =>
   new ApiError(status, { code, message: `fake ${code}` });
+
+// 40001 with one field error, as the backend sends it (SRS 5.2).
+const invalid = (field: string, code: string, message = `fake ${code}`) =>
+  new ApiError(400, {
+    code: ErrorCode.ValidationError,
+    message,
+    errors: { [field]: [{ code, message }] },
+  });
+
+// The backend's sentence is Vietnamese only; the app shows its own when it can.
+const duplicate = (
+  channels: readonly ChannelResponse[],
+  existing: ChannelResponse,
+) => {
+  const d = describeDuplicate(channels, existing);
+  const where = d.kind === 'category' ? 'Server' : (d.category ?? 'Trên cùng');
+  return invalid('name', 'DUPLICATE_NAME', `${where} đã có ${d.name}`);
+};
 
 type Plan = [ChannelResponse['type'], string, Plan[]?];
 
@@ -145,8 +171,121 @@ export function createFakeServerRepository(
     SAMPLES.map((s) => [s.id, buildServer(s, id)] as const),
   );
 
+  const serverOf = (channelId: string) =>
+    [...servers.values()].find((s) =>
+      s.channels.some((c) => c.id === channelId),
+    );
+  const setChannels = (server: ServerResponse, channels: ChannelResponse[]) =>
+    servers.set(server.id, { ...server, channels });
+  // The names that play an error path, as on the server screens.
+  const playErrors = (name: string) => {
+    if (name === FAKE_NETWORK_NAME)
+      throw new TypeError('Network request failed');
+    if (name === FAKE_FORBIDDEN_NAME) throw fail(403, ErrorCode.Forbidden);
+  };
+
   return {
     summaries: () => [...servers.values()].map(toSummary),
+    async createChannel(serverId, raw) {
+      await wait();
+      const server = servers.get(serverId);
+      if (!server) throw fail(404, ErrorCode.NotFound);
+      playErrors(raw.name);
+      const parsed = CreateChannelRequest.safeParse(raw);
+      if (!parsed.success) throw invalid('name', 'INVALID');
+      const body = parsed.data;
+      const parent_id = body.type === 'category' ? null : body.parent_id;
+      const existing = findDuplicateChannel(server.channels, {
+        type: body.type,
+        name: body.name,
+        parent_id,
+      });
+      if (existing) throw duplicate(server.channels, existing);
+      if (server.channels.length >= MAX_CHANNELS_PER_SERVER)
+        throw invalid('_', 'MAX_CHANNELS');
+      const siblings = server.channels.filter((c) =>
+        body.type === 'category'
+          ? c.type === 'category'
+          : c.type !== 'category' && c.parent_id === parent_id,
+      );
+      const channel: ChannelResponse = {
+        id: id(),
+        server_id: serverId,
+        type: body.type,
+        name: body.name,
+        parent_id,
+        position: Math.max(-1, ...siblings.map((c) => c.position)) + 1,
+        focus_control:
+          body.type === 'voice'
+            ? (body.focus_control ??
+              (server.template === 'study_server' ? 'everyone' : 'off'))
+            : 'off',
+        permissions_synced: body.type === 'category' || parent_id !== null,
+      };
+      setChannels(server, [...server.channels, channel]);
+      return channel;
+    },
+    async updateChannel(channelId, body) {
+      await wait();
+      const server = serverOf(channelId);
+      const channel = server?.channels.find((c) => c.id === channelId);
+      if (!server || !channel) throw fail(404, ErrorCode.NotFound);
+      playErrors(body.name);
+      const free = FreeChannelName.safeParse(body.name);
+      if (!free.success) throw invalid('name', 'INVALID');
+      const name =
+        channel.type === 'text'
+          ? normalizeTextChannelName(free.data)
+          : free.data;
+      if (!name) throw invalid('name', 'NO_LETTER_OR_DIGIT');
+      const existing = findDuplicateChannel(server.channels, {
+        ...channel,
+        name,
+      });
+      if (existing) throw duplicate(server.channels, existing);
+      const next = { ...channel, name };
+      setChannels(
+        server,
+        server.channels.map((c) => (c.id === channelId ? next : c)),
+      );
+      return next;
+    },
+    async deleteChannel(channelId) {
+      await wait();
+      const server = serverOf(channelId);
+      const channel = server?.channels.find((c) => c.id === channelId);
+      if (!server || !channel) throw fail(404, ErrorCode.NotFound);
+      let channels = server.channels;
+      if (channel.type === 'category') {
+        const plan = planCategoryDelete(channels, channel);
+        if (!plan.ok) throw invalid('name', 'DUPLICATE_NAME');
+        const moved = new Map(plan.moved.map((c) => [c.id, c]));
+        channels = channels.map((c) => moved.get(c.id) ?? c);
+      }
+      setChannels(
+        server,
+        channels.filter((c) => c.id !== channelId),
+      );
+      servers.set(server.id, {
+        ...servers.get(server.id)!,
+        system_channel_id:
+          server.system_channel_id === channelId
+            ? null
+            : server.system_channel_id,
+      });
+    },
+    async setChannelPositions(serverId, body) {
+      await wait();
+      const server = servers.get(serverId);
+      if (!server) throw fail(404, ErrorCode.NotFound);
+      const plan = applyPositions(server.channels, body);
+      if (!plan.ok) throw invalid('name', 'DUPLICATE_NAME');
+      const moved = new Map(plan.changed.map((c) => [c.id, c]));
+      setChannels(
+        server,
+        server.channels.map((c) => moved.get(c.id) ?? c),
+      );
+    },
     async getServer(serverId) {
       await wait();
       const server = servers.get(serverId);

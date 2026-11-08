@@ -37,7 +37,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
   - Cần trước: P0-1
 - [x] **P0-7** [#54](https://github.com/Hagno1310/NezFocus/issues/54) Seed dữ liệu dev · **Thùy chạy phiên**
   - Cần trước: P0-2
-- [ ] **P0-4** [#4](https://github.com/Hagno1310/NezFocus/issues/4) Màn hình đăng ký và đăng nhập
+- [x] **P0-4** [#4](https://github.com/Hagno1310/NezFocus/issues/4) Màn hình đăng ký và đăng nhập
   - Cần trước: P0-2, P0-3.2 (Hoàng), P0-3b.2 (Hoàng)
 
 ### P0 · Hoàng

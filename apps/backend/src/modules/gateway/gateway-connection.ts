@@ -138,6 +138,7 @@ export class GatewayConnection implements SessionSocket {
     this.sessions.dispatch(this.session, 'READY', {
       session_id: this.session.id.toString(),
       user: auth.user,
+      servers: [], // ponytail: the user's servers arrive with P1-A1.2 (#56)
     });
   }
 

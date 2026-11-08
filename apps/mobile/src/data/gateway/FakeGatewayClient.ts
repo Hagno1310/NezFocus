@@ -39,7 +39,7 @@ export function createFakeGatewayClient(
     start() {
       seq = 0;
       gatewayStore.setState({ status: 'connected' });
-      emit({ t: 'READY', d: { session_id: '100', user: AN } });
+      emit({ t: 'READY', d: { session_id: '100', user: AN, servers: [] } });
       timers = scenario.map((step) => setTimeout(() => emit(step), step.after));
     },
     stop() {

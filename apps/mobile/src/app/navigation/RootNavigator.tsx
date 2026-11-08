@@ -20,6 +20,7 @@ import { useState, type ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from 'zustand';
 import {
+  endSession,
   requireUpgrade,
   sessionStore,
   signIn,
@@ -37,6 +38,16 @@ import { AskNotifications } from '../../features/study/screens/AskNotifications'
 import { SoloScreen } from '../../features/study/screens/SoloScreen';
 import { StudyHome } from '../../features/study/screens/StudyHome';
 import { TabBar } from '../../shared/ui/TabBar';
+import type { SignInMode } from '../../domain/auth/authFlow';
+import { CompleteAccountScreen } from '../../features/auth/screens/CompleteAccountScreen';
+import { SignInScreen } from '../../features/auth/screens/SignInScreen';
+import { UpdateRequiredScreen } from '../../features/auth/screens/UpdateRequiredScreen';
+import { CreateAccountScreen } from '../../features/auth/screens/CreateAccountScreen';
+import { EnterCodeScreen } from '../../features/auth/screens/EnterCodeScreen';
+import { WelcomeScreen } from '../../features/auth/screens/WelcomeScreen';
+import { Button } from '../../shared/ui/Button';
+import { StyleSheet, View } from 'react-native';
+import { space } from '../../shared/theme';
 import { HomeDrawers } from './HomeDrawers';
 import { Placeholder } from './Placeholder';
 // Metro folds __DEV__ before collecting dependencies, so release bundles leave the gallery out.
@@ -48,8 +59,8 @@ export type RootStackParamList = {
   // Auth stack (spec 01): no TabBar.
   Welcome: undefined; // S-AUTH-01
   CreateAccount: undefined; // S-AUTH-02
-  EnterCode: undefined; // S-AUTH-03
-  SignIn: undefined; // S-AUTH-04
+  EnterCode: { email: string; from: 'create' | 'signIn' }; // S-AUTH-03
+  SignIn: { mode?: SignInMode; email?: string } | undefined; // S-AUTH-04
   ForgotPassword: undefined; // S-AUTH-05
   CompleteAccount: undefined; // S-ONB-01
   Main: undefined;
@@ -123,7 +134,10 @@ function useDevActions() {
       label: t('placeholder.switchLanguage'),
       onPress: toggleLanguage,
     },
-    upgrade: { label: t('screens.updateRequired'), onPress: requireUpgrade },
+    upgrade: {
+      label: t('screens.updateRequired'),
+      onPress: () => requireUpgrade(),
+    },
     // ponytail: real tokens for trying features against the backend until S-AUTH-04 (mảng A) lands.
     seedSignIn: {
       label: 'Đăng nhập an.nguyen (seed)',
@@ -149,33 +163,37 @@ function useGalleryAction() {
     : [];
 }
 
-function WelcomePlaceholder({
+function Welcome({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, 'Welcome'>) {
-  const { t } = useTranslation();
   const dev = useDevActions();
   const gallery = useGalleryAction();
-  const links = [
-    ['CreateAccount', t('screens.createAccount')],
-    ['EnterCode', t('screens.enterCode')],
-    ['SignIn', t('screens.signIn')],
-    ['ForgotPassword', t('screens.forgotPassword')],
-  ] as const;
-  return (
-    <Placeholder
-      title={t('screens.welcome')}
-      actions={[
-        ...links.map(([screen, label]) => ({
-          label,
-          onPress: () => navigation.navigate(screen),
-        })),
+  // Dev builds only: shortcuts for trying other areas without going through sign-up.
+  const devActions = __DEV__ && (
+    <View style={styles.dev}>
+      {[
         dev.signIn,
-        ...(__DEV__ ? [dev.seedSignIn] : []),
+        dev.seedSignIn,
         dev.incomplete,
         dev.language,
         dev.upgrade,
         ...gallery,
-      ]}
+      ].map((a) => (
+        <Button
+          key={a.label}
+          variant="text"
+          size="S"
+          label={a.label}
+          onPress={a.onPress}
+        />
+      ))}
+    </View>
+  );
+  return (
+    <WelcomeScreen
+      onCreateAccount={() => navigation.navigate('CreateAccount')}
+      onSignIn={() => navigation.navigate('SignIn')}
+      devActions={devActions}
     />
   );
 }
@@ -202,6 +220,15 @@ function MainTabs() {
   };
   const badgeToggle = __DEV__
     ? [{ label: 'Badge mẫu', onPress: () => setSampleBadges((b) => !b) }]
+    : [];
+  // Dev: the Fake cannot end a session, so these stand in for 40100 / 40103 / Gateway 4004.
+  const endedActions = __DEV__
+    ? (['password_reset', 'revoked', 'reuse_detected', 'expired'] as const).map(
+        (reason) => ({
+          label: `Phiên kết thúc: ${reason}`,
+          onPress: () => endSession(reason),
+        }),
+      )
     : [];
   return (
     // CR-15: Back at the root of any other tab returns to Home, keeping that tab's state.
@@ -244,7 +271,13 @@ function MainTabs() {
         {() => (
           <Placeholder
             title={t('tabs.me')}
-            actions={[dev.language, dev.signOut, ...gallery, ...badgeToggle]}
+            actions={[
+              dev.language,
+              dev.signOut,
+              ...gallery,
+              ...badgeToggle,
+              ...endedActions,
+            ]}
           />
         )}
       </Tab.Screen>
@@ -258,20 +291,23 @@ export function RootNavigator() {
   // Spec 01 › Phiên đăng nhập kết thúc: an ended session lands on S-AUTH-04, not Welcome.
   const sessionEnded = useStore(sessionStore, (s) => s.ended !== null);
   const upgradeRequired = useStore(sessionStore, (s) => s.upgradeRequired);
-  const dev = useDevActions();
 
   const signInScreen = (
-    <Stack.Screen name="SignIn" options={{ title: t('screens.signIn') }}>
-      {() => <Placeholder title={t('screens.signIn')} actions={[dev.signIn]} />}
-    </Stack.Screen>
+    <Stack.Screen
+      name="SignIn"
+      component={SignInScreen}
+      options={{ headerShown: false }}
+    />
   );
 
   if (upgradeRequired)
     return (
       <Stack.Navigator>
-        <Stack.Screen name="UpdateRequired" options={{ headerShown: false }}>
-          {() => <Placeholder title={t('screens.updateRequired')} />}
-        </Stack.Screen>
+        <Stack.Screen
+          name="UpdateRequired"
+          component={UpdateRequiredScreen}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     );
 
@@ -282,21 +318,19 @@ export function RootNavigator() {
           {sessionEnded && signInScreen}
           <Stack.Screen
             name="Welcome"
-            component={WelcomePlaceholder}
+            component={Welcome}
             options={{ headerShown: false }}
           />
           <Stack.Screen
             name="CreateAccount"
-            options={{ title: t('screens.createAccount') }}
-          >
-            {() => <Placeholder title={t('screens.createAccount')} />}
-          </Stack.Screen>
+            component={CreateAccountScreen}
+            options={{ headerShown: false }}
+          />
           <Stack.Screen
             name="EnterCode"
-            options={{ title: t('screens.enterCode') }}
-          >
-            {() => <Placeholder title={t('screens.enterCode')} />}
-          </Stack.Screen>
+            component={EnterCodeScreen}
+            options={{ headerShown: false }}
+          />
           {!sessionEnded && signInScreen}
           <Stack.Screen
             name="ForgotPassword"
@@ -307,14 +341,11 @@ export function RootNavigator() {
         </Stack.Group>
       )}
       {status === 'incomplete' && (
-        <Stack.Screen name="CompleteAccount" options={{ headerShown: false }}>
-          {() => (
-            <Placeholder
-              title={t('screens.completeAccount')}
-              actions={[dev.signIn, dev.language, dev.signOut]}
-            />
-          )}
-        </Stack.Screen>
+        <Stack.Screen
+          name="CompleteAccount"
+          component={CompleteAccountScreen}
+          options={{ headerShown: false }}
+        />
       )}
       {status === 'signed-in' && (
         <Stack.Screen
@@ -342,3 +373,7 @@ export function RootNavigator() {
     </Stack.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  dev: { flexDirection: 'row', flexWrap: 'wrap', gap: space[1] },
+});

@@ -61,6 +61,8 @@ Vào tài khoản **đã có** từ "Tạo tài khoản" (S-AUTH-02 → S-AUTH-0
 ```
 Không mascot, không back, không đóng được (bắt buộc). Không áp dụng mọi state chuẩn trừ `default`; offline thì màn hình này không xuất hiện (cần backend trả mã).
 
+(08/11/2026, CR-28 #19) Số "1.2.0" lấy từ field `min_version` của `42601`, số "1.1.0" là phiên bản app đang chạy. Backend không gửi `min_version` thì câu thành "Phiên bản bạn đang dùng (1.1.0) đã cũ. Cập nhật để tiếp tục học cùng mọi người." (giao diện không đổi). "Cập nhật" mở trang của app trên Google Play.
+
 ### Checklist duyệt
 - [ ] 1 state; cả hai theme.
 
@@ -282,7 +284,7 @@ Lỗi ô email, `submitting`, giới hạn gửi mã (`40029`), `offline`: như 
 | `keyboard-open` | Đang nhập mật khẩu; nút "Đăng nhập" nằm ngay dưới form, không bị đẩy xuống sát bàn phím | |
 | `wrong-password` | Khối lỗi chung (`40102`), ô mật khẩu được xóa trống; cùng câu cho sai mật khẩu, email không tồn tại và tài khoản chưa đặt mật khẩu (chưa Hoàn tất) | "Email hoặc mật khẩu không đúng. Thử lại, hoặc đăng nhập bằng OTP." |
 | `captcha` · **v1.x** | (02/11/2026: MVP không CAPTCHA — REQ-AUTH-02; frame giữ, tên thêm " · v1.x") Khối xác minh trên nút (`40105`) | "Bạn đã nhập sai nhiều lần. Hoàn tất xác minh để thử tiếp." |
-| `rate-limited` | Nút "Đăng nhập" `disabled` + dòng lý do (`40029`, theo `Retry-After`); "Đăng nhập bằng OTP" vẫn bấm được. MVP (02/11/2026): cũng là trạng thái sau lần sai thứ 5 trong 10 phút (chờ 10 phút; sửa email thì bật lại) | "Bạn đã thử quá nhiều lần. Thử lại sau 15 phút, hoặc đăng nhập bằng OTP." |
+| `rate-limited` | Nút "Đăng nhập" `disabled` + dòng lý do (`40029`, theo `Retry-After`); "Đăng nhập bằng OTP" vẫn bấm được. MVP (02/11/2026): cũng là trạng thái sau lần sai thứ 5 trong 10 phút (chờ 10 phút; sửa email thì bật lại) | "Bạn đã thử quá nhiều lần. Thử lại sau 10 phút, hoặc đăng nhập bằng OTP." (số phút làm tròn lên từ `Retry-After`; sửa 08/11/2026: trước ghi 15 phút, lệch luật chờ 10 phút) |
 | `suspended` 🆕 (v1.10, CR-27 — MVP) | `Dialog`, không mascot (`40308`); một nút rộng hết dialog. Thân: câu thời hạn; "Lý do: {lý do}" (`body` 600); lời nhắn của admin nếu có, đoạn riêng `text-secondary` (≤ 200 ký tự, không cắt). Không bao giờ nêu người báo cáo, bằng chứng hay tên admin (REQ-SAFE-02 AC5). Frame: góc nhìn **Khánh**, thế giới W1 (19/10/2026 22:00, sau khi admin khóa 7 ngày lúc 21:46 ở việc #57) | "Tài khoản đang bị khóa" · "Tài khoản của bạn bị khóa đến 26/10/2026." (vĩnh viễn: "Tài khoản của bạn bị khóa vĩnh viễn.") · "Lý do: Gian lận học tập" · "Bán đề thi trong nhóm học là vi phạm quy tắc. Lần sau tài khoản sẽ bị khóa lâu hơn." · "Đã hiểu" |
 | `pending-deletion` | Vào đúng tài khoản đang chờ xóa (AUTH-10 AC4; cả khi vào bằng OTP — dialog trên S-AUTH-03): `Dialog`, không mascot; **hai nút xếp dọc, rộng hết dialog** (C-09) | "Tài khoản đang chờ xóa" · "Tài khoản sẽ bị xóa vĩnh viễn vào 01/11/2026 (còn 14 ngày). Khôi phục để dùng tiếp; server, tin nhắn và chuỗi ngày học vẫn còn nguyên." · "Khôi phục tài khoản" (`primary`) / "Để sau" (`secondary`) |
 | `submitting` | Nút `loading`; nút đổi chế độ `disabled` | |
@@ -438,7 +440,7 @@ Không áp dụng: `loading` (dữ liệu có từ lúc vào tài khoản), `emp
 - Username điền sẵn = phần trước @ của email, chuẩn hóa theo DEC-03 (chữ thường, bỏ ký tự ngoài `a-z 0-9 _ .`, cắt 32 ký tự), rồi kiểm tra ngay; ngắn hơn 2 ký tự thì để trống. Gõ username: chữ hoa tự đổi thành chữ thường; ký tự không hợp lệ vẫn gõ được, báo lỗi khi bấm nút. Ngừng gõ 0,5 giây → `GET /auth/username-available`; kết quả chỉ là gợi ý (bị lấy lúc gửi → `username-taken-on-submit`).
 - Chạm hàng Múi giờ → `timezone-picker`. Múi giờ chọn ở đây **không tính** vào giới hạn đổi 1 lần / 24 giờ (CR-16 #8, STUDY-03).
 - Chạm English / Tiếng Việt → cả màn đổi ngôn ngữ ngay; lựa chọn lưu vào tài khoản khi bấm "Vào NezFocus".
-- Chạm "Điều khoản sử dụng" / "Chính sách quyền riêng tư" → trang trong trình duyệt trong app; không làm tick ô.
+- Chạm "Điều khoản sử dụng" / "Chính sách quyền riêng tư" → trang trong trình duyệt trong app; không làm tick ô. (08/11/2026, P0-4.2) Tới khi có trang thật, app tạm mở URL tạm bằng trình duyệt ngoài (trình duyệt trong app cần build lại dev client).
 - "Đăng xuất" → không hỏi lại (chưa có dữ liệu gì để mất) → S-AUTH-01; tài khoản vẫn "chưa hoàn tất", lần đăng nhập sau quay lại đây; lời mời đang chờ vẫn giữ.
 - Back hệ thống → đưa app ra nền (gốc, không có màn trước — tài khoản đã tạo; CR-15).
 - App bị đóng giữa chừng: lần mở sau vào thẳng đây (phiên còn), chữ đã gõ không giữ (trừ lời mời đang chờ).

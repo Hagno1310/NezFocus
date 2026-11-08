@@ -189,14 +189,19 @@ describe('ApiClient', () => {
     expect(onAccountIncomplete).toHaveBeenCalled();
   });
 
-  it('NFR-MOB-12: 42601 opens Update required', async () => {
+  it('NFR-MOB-12: 42601 opens Update required with the minimum version', async () => {
     const { client, onUpgradeRequired } = setup({
-      route: () => json(426, { code: ErrorCode.UpgradeRequired, message: 'x' }),
+      route: () =>
+        json(426, {
+          code: ErrorCode.UpgradeRequired,
+          message: 'x',
+          min_version: '1.2.0',
+        }),
     });
     await expect(
       client.request('/auth/login', { method: 'POST', auth: false }),
     ).rejects.toBeInstanceOf(ApiError);
-    expect(onUpgradeRequired).toHaveBeenCalled();
+    expect(onUpgradeRequired).toHaveBeenCalledWith('1.2.0');
   });
 
   it('42601 from the refresh call also opens Update required', async () => {

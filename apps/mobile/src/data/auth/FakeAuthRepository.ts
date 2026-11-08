@@ -1,12 +1,22 @@
-import { ErrorCode, type CurrentUser } from '@nezfocus/shared';
+import {
+  EMAIL_CODE_RESEND_SECONDS,
+  ErrorCode,
+  type CurrentUser,
+} from '@nezfocus/shared';
 import type { AuthRepository } from '../../domain/auth/AuthRepository';
 import { ApiError } from '../api/client';
 
-// EXPO_PUBLIC_FAKE=auth (WORKFLOW 4.2): An + usernames from screens/README.md, email from spec 01.
+// EXPO_PUBLIC_FAKE=auth (WORKFLOW 4.2): An + usernames from screens/README.md, codes from spec 01.
 const AN_EMAIL = 'an.nguyen@gmail.com'; // completed account; any other email = new, incomplete
-export const FAKE_CODE = '123456'; // any other code → 40003, attempts_left counts down
+export const FAKE_CODE = '482913'; // spec 01 › Dữ liệu mẫu; any other code → 40003
+export const FAKE_EXPIRED_CODE = '000015'; // shows code-expired (40002)
 export const FAKE_PASSWORD = 'NezFocus@2026'; // An's only password; anything else → 40102
-const TAKEN = new Set(['an.nguyen', 'binh.tran', 'chi.le', 'dung.pham']);
+const TAKEN = new Set(['an', 'an.nguyen', 'binh.tran', 'chi.le', 'dung.pham']);
+const MAX_WRONG_CODES = 5;
+const MAX_SENDS_PER_DAY = 10;
+const MAX_WRONG_PASSWORDS = 5;
+const LOGIN_WAIT_SECONDS = 600;
+const DAY_SECONDS = 24 * 60 * 60;
 
 const fail = (status: number, code: number, extra = {}) =>
   new ApiError(status, { code, message: `fake ${code}`, ...extra });
@@ -38,36 +48,72 @@ const session = (user: CurrentUser) => ({
   user,
 });
 
-export function createFakeAuthRepository(delayMs = 300): AuthRepository {
+const norm = (email: string) => email.trim().toLowerCase();
+
+export function createFakeAuthRepository(
+  delayMs = 300,
+  now: () => number = Date.now,
+): AuthRepository {
   const wait = () => new Promise((r) => setTimeout(r, delayMs));
-  let attemptsLeft = 5;
+  const codes = new Map<string, { attemptsLeft: number }>();
+  const sends = new Map<string, { last: number; today: number }>();
+  let wrongPasswords = 0;
+  let lockedUntil = 0;
   let current: CurrentUser | null = null;
 
   return {
-    async sendEmailCode() {
+    async sendEmailCode(raw) {
       await wait();
-      attemptsLeft = 5;
-      return { expires_in: 900, resend_in: 60 };
+      const email = norm(raw);
+      const sent = sends.get(email) ?? { last: -Infinity, today: 0 };
+      const sinceLast = (now() - sent.last) / 1000;
+      if (sinceLast < EMAIL_CODE_RESEND_SECONDS)
+        throw fail(429, ErrorCode.RateLimited, {
+          retry_after: Math.ceil(EMAIL_CODE_RESEND_SECONDS - sinceLast),
+        });
+      if (sent.today >= MAX_SENDS_PER_DAY)
+        throw fail(429, ErrorCode.RateLimited, { retry_after: DAY_SECONDS });
+      sends.set(email, { last: now(), today: sent.today + 1 });
+      codes.set(email, { attemptsLeft: MAX_WRONG_CODES });
+      return { expires_in: 900, resend_in: EMAIL_CODE_RESEND_SECONDS };
     },
-    async verifyEmailCode(email, code) {
+    async verifyEmailCode(raw, code) {
       await wait();
+      const email = norm(raw);
+      const entry = codes.get(email) ?? { attemptsLeft: MAX_WRONG_CODES };
+      if (entry.attemptsLeft <= 0 || code === FAKE_EXPIRED_CODE)
+        throw fail(400, ErrorCode.TokenLinkInvalid);
       if (code !== FAKE_CODE) {
-        attemptsLeft -= 1;
+        entry.attemptsLeft -= 1;
+        codes.set(email, entry);
         throw fail(400, ErrorCode.VerificationCodeInvalid, {
-          attempts_left: attemptsLeft,
+          attempts_left: entry.attemptsLeft,
         });
       }
-      current = userFor(email.trim().toLowerCase());
-      const local = current.email.split('@')[0];
+      codes.delete(email);
+      current = userFor(email);
       return {
         ...session(current),
-        suggested_username: current.account_completed ? null : local,
+        suggested_username: current.account_completed
+          ? null
+          : email.split('@')[0]!,
       };
     },
     async login(email, password) {
       await wait();
-      if (email.trim().toLowerCase() !== AN_EMAIL || password !== FAKE_PASSWORD)
+      if (now() < lockedUntil)
+        throw fail(429, ErrorCode.RateLimited, {
+          retry_after: Math.ceil((lockedUntil - now()) / 1000),
+        });
+      if (norm(email) !== AN_EMAIL || password !== FAKE_PASSWORD) {
+        wrongPasswords += 1;
+        if (wrongPasswords >= MAX_WRONG_PASSWORDS) {
+          wrongPasswords = 0;
+          lockedUntil = now() + LOGIN_WAIT_SECONDS * 1000;
+        }
         throw fail(401, ErrorCode.InvalidCredentials);
+      }
+      wrongPasswords = 0;
       current = userFor(AN_EMAIL);
       return session(current);
     },
@@ -77,7 +123,10 @@ export function createFakeAuthRepository(delayMs = 300): AuthRepository {
     },
     async completeAccount(body) {
       await wait();
-      if (TAKEN.has(body.username)) throw fail(409, ErrorCode.Conflict);
+      if (TAKEN.has(body.username))
+        throw fail(409, ErrorCode.Conflict, {
+          errors: { username: [{ code: 'TAKEN', message: 'taken' }] },
+        });
       if (!current) throw fail(401, ErrorCode.TokenInvalid); // needs a session, like the real API
       current = {
         ...current,

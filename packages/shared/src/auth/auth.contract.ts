@@ -27,6 +27,9 @@ export const AuthRoutes = {
 // Bump when the Terms / Privacy Policy text changes; the app sends the version it showed.
 export const TERMS_VERSION = '2026-11-05';
 
+// REQ-AUTH-06: display names are 1–32 characters.
+export const DISPLAY_NAME_MAX = 32;
+
 export const EMAIL_CODE_TTL_SECONDS = 15 * 60;
 export const EMAIL_CODE_RESEND_SECONDS = 60;
 
@@ -142,7 +145,7 @@ const isTimeZone = (tz: string) => {
 
 // POST /auth/complete-account → CurrentUser
 export const CompleteAccountRequest = z.object({
-  display_name: z.string().trim().min(1).max(32),
+  display_name: z.string().trim().min(1).max(DISPLAY_NAME_MAX),
   username: Username,
   password: Password,
   timezone: z.string().max(64).refine(isTimeZone, 'invalid IANA time zone'),

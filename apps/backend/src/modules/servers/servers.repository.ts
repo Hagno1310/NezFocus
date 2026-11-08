@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, count, eq, sql } from 'drizzle-orm';
+import { and, asc, count, eq, isNull, sql } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
 import { users } from '../users/users.schema.js';
 import type { ServerRows } from './server-templates.js';
@@ -112,7 +112,7 @@ export class ServersRepository {
       this.db
         .select()
         .from(channels)
-        .where(eq(channels.serverId, serverId))
+        .where(and(eq(channels.serverId, serverId), isNull(channels.deletedAt)))
         .orderBy(asc(channels.position), asc(channels.id)),
       this.db
         .select()
@@ -123,12 +123,21 @@ export class ServersRepository {
     return { ...server, channels: channelRows, roles: roleRows };
   }
 
+  // Live channels only: a soft-deleted channel is gone for every caller.
   async findChannel(channelId: bigint): Promise<ChannelRow | undefined> {
     const [row] = await this.db
       .select()
       .from(channels)
-      .where(eq(channels.id, channelId));
+      .where(and(eq(channels.id, channelId), isNull(channels.deletedAt)));
     return row;
+  }
+
+  async memberIds(serverId: bigint): Promise<bigint[]> {
+    const rows = await this.db
+      .select({ userId: serverMembers.userId })
+      .from(serverMembers)
+      .where(eq(serverMembers.serverId, serverId));
+    return rows.map((r) => r.userId);
   }
 
   async update(

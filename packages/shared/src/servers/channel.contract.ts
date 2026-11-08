@@ -38,6 +38,13 @@ export type ChannelListResponse = z.infer<typeof ChannelListResponse>;
 // Voice channels and categories: free text, 1–100 characters.
 export const FreeChannelName = z.string().trim().min(1).max(CHANNEL_NAME_MAX);
 
+// REQ-SRV-02: at most 500 channels (categories included) per server → 40001 code MAX_CHANNELS.
+export const MAX_CHANNELS_PER_SERVER = 500;
+
+// REQ-SRV-02 AC9, also sent back when a rename normalizes to nothing.
+export const NO_LETTER_OR_DIGIT_MESSAGE =
+  'Tên kênh cần ít nhất một chữ cái hoặc chữ số';
+
 // Text channels are saved normalized (REQ-SRV-02); "???" → 40001 code NO_LETTER_OR_DIGIT.
 export const TextChannelName = z
   .string()
@@ -46,7 +53,7 @@ export const TextChannelName = z
     if (!name)
       ctx.addIssue({
         code: 'custom',
-        message: 'NO_LETTER_OR_DIGIT',
+        message: NO_LETTER_OR_DIGIT_MESSAGE,
         params: { code: 'NO_LETTER_OR_DIGIT' },
       });
   })

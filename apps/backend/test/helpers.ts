@@ -68,6 +68,10 @@ export const http = (app: INestApplication) => {
       request(server)
         .patch(`/api/v1${path}`)
         .set('X-Client-Platform', 'android'),
+    delete: (path: string) =>
+      request(server)
+        .delete(`/api/v1${path}`)
+        .set('X-Client-Platform', 'android'),
   };
 };
 

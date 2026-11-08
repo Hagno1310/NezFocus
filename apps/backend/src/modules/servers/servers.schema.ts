@@ -50,6 +50,8 @@ export const channels = pgTable(
     focusControl: varchar({ length: 10 }).notNull().default('off'), // everyone | managers | off
     permissionsSynced: boolean().notNull().default(true),
     createdAt: tz().notNull().defaultNow(),
+    // REQ-SRV-02: deleting is a soft-delete; every read of live channels filters on it.
+    deletedAt: tz(),
   },
   (t) => [
     check(

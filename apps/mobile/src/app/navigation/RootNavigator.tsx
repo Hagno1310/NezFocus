@@ -83,7 +83,7 @@ type StudyParamList = {
 type HomeParamList = {
   HomeRoot: undefined; // drawers around the open channel (S-HOME-01/02/03)
   CreateServer: undefined; // S-HOME-06
-  JoinByCode: undefined; // S-HOME-06 join-by-code (P2-A1 #14)
+  JoinByCode: undefined; // ponytail: placeholder for S-HOME-06 join-by-code until P2-A1 (#14)
 };
 
 type TabParamList = {

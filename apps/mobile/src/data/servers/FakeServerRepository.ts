@@ -1,6 +1,8 @@
 import {
+  DEFAULT_EVERYONE_PERMISSIONS,
   ErrorCode,
   ServerName,
+  toPermissionBitmap,
   type ChannelResponse,
   type ServerResponse,
 } from '@nezfocus/shared';
@@ -68,11 +70,10 @@ export function createFakeServerRepository(
           channel('voice', 'Phòng thoại chung', category.id, 1),
         ],
         roles: [
-          // SRS 8.5.3 @everyone (DEFAULT_EVERYONE_PERMISSIONS)
           {
             id: serverId,
             name: '@everyone',
-            permissions: '69442369',
+            permissions: toPermissionBitmap(DEFAULT_EVERYONE_PERMISSIONS),
             position: 0,
           },
         ],

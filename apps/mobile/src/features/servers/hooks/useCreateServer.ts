@@ -21,8 +21,7 @@ export function useCreateServer(onCreated: () => void) {
     const result = await mutation.run(template, name);
     if (!result) return;
     if (!result.ok) return setError(result.error);
-    const { server, channelId } = result;
-    const channel = server.channels.find((c) => c.id === channelId);
+    const { server, channel } = result;
     if (channel)
       openChannel({
         serverId: server.id,
@@ -30,6 +29,7 @@ export function useCreateServer(onCreated: () => void) {
         channelId: channel.id,
         channelName: channel.name,
       });
+    // ponytail: S-HOME-07 (invite sheet, opened on arrival per the spec) comes with P2-A1 (#14).
     onCreated();
   };
   return {

@@ -1,4 +1,4 @@
-import type { ServerTemplate } from '@nezfocus/shared';
+import { SERVER_NAME_MAX, type ServerTemplate } from '@nezfocus/shared';
 import { usePreventRemove } from '@react-navigation/native';
 import {
   Camera,
@@ -65,12 +65,14 @@ export function CreateServerScreen({
   }, [created, onCreated]);
 
   // Back at name-server returns to choose-template and keeps the name (S-HOME-06 › Tương tác).
+  // While creating, Back waits: the request may still land and open the new server.
   const back = () => {
+    if (create.pending) return;
     if (step === 'choose') return onClose();
     create.clearError();
     setStep('choose');
   };
-  usePreventRemove(step === 'name' && !created, back);
+  usePreventRemove((step === 'name' || create.pending) && !created, back);
 
   const submit = () => void create.submit(template, name);
   const failure = create.error && create.error !== 'name' && (
@@ -171,7 +173,7 @@ export function CreateServerScreen({
                 create.error === 'name' ? t('servers.create.nameError') : null
               }
               readonly={create.pending}
-              maxLength={100}
+              maxLength={SERVER_NAME_MAX}
               autoFocus
               returnKeyType="done"
               onSubmitEditing={online ? submit : undefined}

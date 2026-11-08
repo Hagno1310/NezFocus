@@ -12,16 +12,13 @@ import type { ServerRepository } from './ServerRepository';
 export type CreateServerError = 'name' | 'max-servers' | 'network' | 'other';
 
 export type CreateServerResult =
-  | { ok: true; server: ServerResponse; channelId: string | null }
+  | { ok: true; server: ServerResponse; channel: ChannelResponse | null }
   | { ok: false; error: CreateServerError };
-
-export const checkServerName = (raw: string) =>
-  ServerName.safeParse(raw).success;
 
 // Uncategorized channels sit on top (v1.8), then each category in order (S-HOME-02).
 export function firstTextChannel(
   channels: readonly ChannelResponse[],
-): string | null {
+): ChannelResponse | null {
   const byPosition = (a: ChannelResponse, b: ChannelResponse) =>
     a.position - b.position;
   const groups = [
@@ -35,7 +32,7 @@ export function firstTextChannel(
     const text = channels
       .filter((c) => c.type === 'text' && c.parent_id === group)
       .sort(byPosition)[0];
-    if (text) return text.id;
+    if (text) return text;
   }
   return null;
 }
@@ -44,7 +41,8 @@ const errorOf = (err: unknown): CreateServerError => {
   const e = asApiError(err);
   if (!e) return 'network';
   if (e.code === ErrorCode.MaxServersReached) return 'max-servers';
-  if (e.code === ErrorCode.ValidationError) return 'name';
+  // Only `name` can be wrong in what the app sends; anything else is a bug on one side.
+  if (e.code === ErrorCode.ValidationError && e.errors?.name) return 'name';
   return 'other';
 };
 
@@ -58,7 +56,7 @@ export async function createServer(
   if (!name.success) return { ok: false, error: 'name' };
   try {
     const server = await repo.createServer({ name: name.data, template });
-    return { ok: true, server, channelId: firstTextChannel(server.channels) };
+    return { ok: true, server, channel: firstTextChannel(server.channels) };
   } catch (err) {
     return { ok: false, error: errorOf(err) };
   }

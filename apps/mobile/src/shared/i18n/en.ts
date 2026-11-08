@@ -21,6 +21,8 @@ export const en: Strings = {
     rightDrawer: 'Members · Tasks · Pins',
     invite: 'Invite',
     joinByCode: 'Enter an invite code',
+    directMessages: 'Direct messages',
+    serverMenu: 'Server menu',
   },
   ui: {
     back: 'Back',
@@ -283,6 +285,19 @@ export const en: Strings = {
     },
   },
   servers: {
+    drawer: {
+      subtitleStudy: 'Study Server · {{count}} members',
+      subtitle: '{{count}} members',
+      invite: 'Invite',
+      dm: 'Direct messages',
+      add: 'Create or join a server',
+      noServerTitle: 'No servers yet',
+      noServerBody:
+        'Create a Study Server to study with friends, or enter an invite code a friend sent you.',
+      createStudy: 'Create a Study Server',
+      join: 'Enter an invite code',
+      channelRemoved: '#{{name}} is no longer available',
+    },
     create: {
       title: 'Add a server',
       section: 'Create a new server',

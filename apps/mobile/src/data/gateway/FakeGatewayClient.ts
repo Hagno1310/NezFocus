@@ -1,5 +1,6 @@
 import type {
   CurrentUser,
+  ServerSummary,
   DispatchEvent,
   DispatchEventName,
   DispatchPayload,
@@ -28,6 +29,7 @@ export const AN: CurrentUser = {
 // EXPO_PUBLIC_FAKE=gateway (WORKFLOW 4.2): always connected, plays `scenario` after READY.
 export function createFakeGatewayClient(
   scenario: ScenarioStep[],
+  servers: () => ServerSummary[] = () => [],
 ): GatewayClient {
   let timers: ReturnType<typeof setTimeout>[] = [];
   let seq = 0;
@@ -39,7 +41,10 @@ export function createFakeGatewayClient(
     start() {
       seq = 0;
       gatewayStore.setState({ status: 'connected' });
-      emit({ t: 'READY', d: { session_id: '100', user: AN, servers: [] } });
+      emit({
+        t: 'READY',
+        d: { session_id: '100', user: AN, servers: servers() },
+      });
       timers = scenario.map((step) => setTimeout(() => emit(step), step.after));
     },
     stop() {

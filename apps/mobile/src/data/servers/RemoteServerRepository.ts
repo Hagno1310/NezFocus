@@ -7,4 +7,8 @@ export const remoteServerRepository: ServerRepository = {
     ServerResponse.parse(
       await api.request(ServerRoutes.create, { method: 'POST', body }),
     ),
+  getServer: async (id) =>
+    ServerResponse.parse(
+      await api.request(ServerRoutes.byId.replace(':id', id)),
+    ),
 };

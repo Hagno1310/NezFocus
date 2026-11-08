@@ -13,12 +13,19 @@ import type {
 } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
 import { useStore } from 'zustand';
-import { homeStore } from '../../domain/servers/homeStore';
+import { homeStore, openChannel } from '../../domain/servers/homeStore';
+import {
+  LeftDrawer,
+  type LeftDrawerActions,
+} from '../../features/servers/screens/LeftDrawer';
+import { useTheme } from '../../shared/theme';
 import { drawerGesture, type DrawerSide } from './drawerGesture';
 import { Placeholder } from './Placeholder';
 
 type LeftParamList = { RightDrawerHost: undefined };
 type RightParamList = { Channel: undefined };
+
+const PEEK = 56;
 
 const Left = createDrawerNavigator<LeftParamList>();
 const Right = createDrawerNavigator<RightParamList>();
@@ -50,15 +57,18 @@ function ChannelPlaceholder() {
   const leftDrawer = navigation.getParent<DrawerNavigationProp<ParamListBase>>(
     'LeftDrawer' as never,
   );
-  const open = useStore(homeStore, (s) => s.open);
+  const title = useStore(homeStore, (s) => {
+    const server = s.servers?.find((x) => x.id === s.open?.serverId);
+    const channel = s.channels[s.open?.serverId ?? '']?.find(
+      (c) => c.id === s.open?.channelId,
+    );
+    return server && channel ? `# ${channel.name} · ${server.name}` : null;
+  });
   // SRS 3.1: ≡ and 👥 buttons always exist as the non-gesture way to open the drawers.
+  // ponytail: S-HOME-01 (channel screen) replaces this with P2-A3 (#16).
   return (
     <Placeholder
-      title={
-        open
-          ? `# ${open.channelName} · ${open.serverName}`
-          : t('screens.channel')
-      }
+      title={title ?? t('screens.channel')}
       actions={[
         {
           label: t('placeholder.openLeft'),
@@ -73,38 +83,45 @@ function ChannelPlaceholder() {
   );
 }
 
-// ponytail: stand-in for S-HOME-02 (P1-A2.2 #59); "＋" is the only way in to S-HOME-06 for now.
-function LeftDrawerPlaceholder({
+// S-HOME-02 in the drawer: opening a text channel closes the drawer onto it.
+function LeftDrawerContent({
   navigation,
-  onCreateServer,
-}: DrawerContentComponentProps & { onCreateServer: () => void }) {
-  const { t } = useTranslation();
-  // Opening a channel (e.g. the new server's #general) closes the drawer onto it.
+  actions,
+}: DrawerContentComponentProps & {
+  actions: Omit<LeftDrawerActions, 'onOpenChannel'>;
+}) {
   useEffect(
-    () => homeStore.subscribe(() => navigation.closeDrawer()),
+    () =>
+      homeStore.subscribe((s, prev) => {
+        if (s.open !== prev.open) navigation.closeDrawer();
+      }),
     [navigation],
   );
   return (
-    <Placeholder
-      title={t('screens.leftDrawer')}
-      actions={[
-        {
-          label: `＋ ${t('placeholder.createServer')}`,
-          onPress: onCreateServer,
-        },
-      ]}
+    <LeftDrawer
+      actions={{
+        ...actions,
+        onOpenChannel: (c) =>
+          openChannel({ serverId: c.server_id, channelId: c.id }),
+      }}
     />
   );
 }
 
 // Home tab: left drawer (server rail + channels) wraps right drawer (members / tasks / pins).
 export function HomeDrawers({
-  onCreateServer,
+  actions,
 }: {
-  onCreateServer: () => void;
+  actions: Omit<LeftDrawerActions, 'onOpenChannel'>;
 }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const { width } = useWindowDimensions();
+  // Spec 02 › Drawer: 334 on a 390 frame (304 on 360): the channel shows a 56 strip.
+  const drawerStyle = {
+    width: width - PEEK,
+    backgroundColor: 'transparent',
+  };
   const [open, setOpen] = useState<DrawerOpenState>({
     leftOpen: false,
     rightOpen: false,
@@ -113,19 +130,27 @@ export function HomeDrawers({
   return (
     <Left.Navigator
       id="LeftDrawer"
-      screenOptions={drawerOptions('left', open, width)}
+      screenOptions={{
+        ...drawerOptions('left', open, width),
+        drawerStyle,
+        overlayColor: colors.scrim,
+      }}
       screenListeners={{
         state: (e) => setOpen((o) => ({ ...o, leftOpen: openFrom(e) })),
       }}
       drawerContent={(props) => (
-        <LeftDrawerPlaceholder {...props} onCreateServer={onCreateServer} />
+        <LeftDrawerContent {...props} actions={actions} />
       )}
     >
       <Left.Screen name="RightDrawerHost">
         {() => (
           <Right.Navigator
             id="RightDrawer"
-            screenOptions={drawerOptions('right', open, width)}
+            screenOptions={{
+              ...drawerOptions('right', open, width),
+              drawerStyle: { width: width - PEEK },
+              overlayColor: colors.scrim,
+            }}
             screenListeners={{
               state: (e) => setOpen((o) => ({ ...o, rightOpen: openFrom(e) })),
             }}

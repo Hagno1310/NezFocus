@@ -20,6 +20,8 @@ export const vi = {
     rightDrawer: 'Thành viên · Việc · Ghim',
     invite: 'Lời mời',
     joinByCode: 'Nhập mã mời',
+    directMessages: 'Tin nhắn trực tiếp',
+    serverMenu: 'Menu server',
   },
   ui: {
     back: 'Quay lại',
@@ -277,6 +279,19 @@ export const vi = {
   },
   // 02 › S-HOME-06, chép nguyên văn cột "Chữ / hành động riêng".
   servers: {
+    drawer: {
+      subtitleStudy: 'Study Server · {{count}} thành viên',
+      subtitle: '{{count}} thành viên',
+      invite: 'Mời bạn',
+      dm: 'Tin nhắn trực tiếp',
+      add: 'Tạo hoặc tham gia server',
+      noServerTitle: 'Chưa có server nào',
+      noServerBody:
+        'Tạo Study Server để học cùng bạn bè, hoặc nhập mã mời bạn bè gửi.',
+      createStudy: 'Tạo Study Server',
+      join: 'Nhập mã mời',
+      channelRemoved: '#{{name}} không còn khả dụng',
+    },
     create: {
       title: 'Thêm server',
       section: 'Tạo server mới',

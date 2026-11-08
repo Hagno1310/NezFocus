@@ -51,6 +51,8 @@ import { WelcomeScreen } from '../../features/auth/screens/WelcomeScreen';
 import { Button } from '../../shared/ui/Button';
 import { StyleSheet, View } from 'react-native';
 import { space } from '../../shared/theme';
+import { homeStore } from '../../domain/servers/homeStore';
+import { NoServerHome } from '../../features/servers/screens/LeftDrawer';
 import { HomeDrawers } from './HomeDrawers';
 import { Placeholder } from './Placeholder';
 // Metro folds __DEV__ before collecting dependencies, so release bundles leave the gallery out.
@@ -84,6 +86,9 @@ type HomeParamList = {
   HomeRoot: undefined; // drawers around the open channel (S-HOME-01/02/03)
   CreateServer: undefined; // S-HOME-06
   JoinByCode: undefined; // ponytail: placeholder for S-HOME-06 join-by-code until P2-A1 (#14)
+  // ponytail: where S-HOME-02 leads before those screens exist — voice room P3-B1 (#26),
+  // DMs P2-B3 (#20), invite P2-A1 (#14), server menu P1-A2.3 (#60).
+  HomePlaceholder: { title: string };
 };
 
 type TabParamList = {
@@ -102,14 +107,33 @@ const HomeStack = createNativeStackNavigator<HomeParamList>();
 // CR-15: S-HOME-06 and other Home screens stack above the drawers; Back pops them first.
 function HomeTab() {
   const { t } = useTranslation();
+  // S-HOME-02 `no-server`: READY listed none; the drawer becomes the Home root.
+  const noServer = useStore(homeStore, (s) => s.servers?.length === 0);
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
       <HomeStack.Screen name="HomeRoot">
-        {({ navigation }) => (
-          <HomeDrawers
-            onCreateServer={() => navigation.navigate('CreateServer')}
-          />
-        )}
+        {({ navigation }) => {
+          const placeholder = (title: string) => () =>
+            navigation.navigate('HomePlaceholder', { title });
+          const dm = placeholder(t('screens.directMessages'));
+          return noServer ? (
+            <NoServerHome
+              onCreate={() => navigation.navigate('CreateServer')}
+              onJoinByCode={() => navigation.navigate('JoinByCode')}
+              onDirectMessages={dm}
+            />
+          ) : (
+            <HomeDrawers
+              actions={{
+                onAdd: () => navigation.navigate('CreateServer'),
+                onOpenVoice: (channel) => placeholder(channel.name)(),
+                onDirectMessages: dm,
+                onInvite: placeholder(t('screens.invite')),
+                onServerMenu: placeholder(t('screens.serverMenu')),
+              }}
+            />
+          );
+        }}
       </HomeStack.Screen>
       <HomeStack.Screen name="CreateServer">
         {({ navigation }) => (
@@ -119,6 +143,15 @@ function HomeTab() {
             onCreated={() => navigation.popTo('HomeRoot')}
           />
         )}
+      </HomeStack.Screen>
+      <HomeStack.Screen
+        name="HomePlaceholder"
+        options={({ route }) => ({
+          headerShown: true,
+          title: route.params.title,
+        })}
+      >
+        {({ route }) => <Placeholder title={route.params.title} />}
       </HomeStack.Screen>
       <HomeStack.Screen
         name="JoinByCode"

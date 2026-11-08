@@ -17,6 +17,7 @@ import { SearchField, TextField } from '../../shared/ui/TextField';
 import { FocusSections } from './galleryFocus';
 import { FormSections } from './galleryForms';
 import { PeopleSections } from './galleryPeople';
+import { ServerSections } from './galleryServers';
 import { Caption, Row, Section, Stack } from './kit';
 
 // Dev-only board mirror (P0-3b): one section per C-NN board, sample data from docs/design/screens/README.md.
@@ -208,6 +209,7 @@ export function UiGallery() {
       </Section>
       <FormSections />
       <PeopleSections />
+      <ServerSections />
       <FocusSections />
     </ScrollView>
   );

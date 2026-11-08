@@ -9,10 +9,17 @@ import {
 } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { authPrefs } from '../data/auth/authPrefs';
+import { secureTokenStore } from '../data/auth/secureTokenStore';
+import {
+  persistSession,
+  restoreSession,
+} from '../domain/session/sessionPersistence';
 import { setNavigationState } from '../domain/session/sessionStore';
+import { loadLastMethod } from '../features/auth/authFlowStore';
 import { fontFamily, useTheme, type Theme } from '../shared/theme';
 import { ToastHost } from '../shared/ui/Toast';
 import { startGatewayLifecycle } from './gatewayLifecycle';
@@ -47,8 +54,23 @@ function navigationTheme({ scheme, colors }: Theme): NavigationTheme {
   };
 }
 
+// Read before the first render so a signed-in user never sees Welcome flash by.
+const sessionRestored = Promise.all([
+  restoreSession({
+    saved: authPrefs.savedSession,
+    hasTokens: async () => !!(await secureTokenStore.get()),
+  }),
+  loadLastMethod(),
+]).then(() =>
+  persistSession((s) => void authPrefs.saveSession(s).catch(() => {})),
+);
+
 export default function App() {
   const theme = useTheme();
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    void sessionRestored.then(() => setReady(true));
+  }, []);
   useEffect(startGatewayLifecycle, []);
   // REQ-STUDY-10 / SRS 7.3.5: the "Nhắc học tập" channel exists from launch.
   useEffect(() => {
@@ -65,7 +87,7 @@ export default function App() {
             theme={navigationTheme(theme)}
             onStateChange={setNavigationState}
           >
-            <RootNavigator />
+            {ready && <RootNavigator />}
           </NavigationContainer>
           <ToastHost />
           <StatusBar style={theme.scheme === 'dark' ? 'light' : 'dark'} />

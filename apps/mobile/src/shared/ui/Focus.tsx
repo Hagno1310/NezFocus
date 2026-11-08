@@ -79,7 +79,7 @@ export function PhaseBadge({
 }
 
 // Board C-06 (FocusTimer/focus, /short, /long): ring 280, band = 7% of the radius.
-const RING = 280;
+export const RING = 280;
 const MID = RING / 2;
 const BAND = MID * 0.07;
 // Short break: 30 dashes of 6.6° every 12°, each one coloured whole as the break goes on.
@@ -92,7 +92,7 @@ const DOUBLE = [MID, 126].map((outer) => ({
 }));
 
 // `from`/`to`: the coloured share of the turn, clockwise from 12 o'clock.
-function Ring({
+export function Ring({
   phase,
   from,
   to,

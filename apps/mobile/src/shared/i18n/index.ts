@@ -12,7 +12,7 @@ void i18n.use(initReactI18next).init({
   interpolation: { escapeValue: false }, // React already escapes
 });
 
-// ponytail: language is not persisted yet; S-ONB-01 / settings save it to user_settings.locale.
+// ponytail: language is not persisted yet; S-ME-04, P1-A5.4 (#79), saves it to user_settings.locale.
 export const setLanguage = (lng: Language) => i18n.changeLanguage(lng);
 export const currentLanguage = () => i18n.language as Language;
 

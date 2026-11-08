@@ -8,7 +8,7 @@ import { Text } from '../../shared/ui/Text';
 
 type Action = { label: string; onPress: () => void };
 
-// ponytail: stand-in screen; each screen ticket replaces its placeholder.
+// Stand-in screen. Every route that uses it names the ticket that replaces it.
 export function Placeholder({
   title,
   actions = [],

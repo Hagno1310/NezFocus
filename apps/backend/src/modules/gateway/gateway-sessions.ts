@@ -34,7 +34,8 @@ export type ResumeResult =
   | { ok: true; session: GatewaySession }
   | { ok: false; error: 'invalid_session' | 'invalid_seq' };
 
-// ponytail: in memory (one process, SRS 7.1.1), RESUME does not survive a deploy; move to Redis (SRS 5.4) for 2+ processes.
+// ponytail: khi running 2+ processes: move sessions to Redis (SRS 5.4). In memory now (one
+// process, SRS 7.1.1), so RESUME does not survive a deploy.
 export class GatewaySessions {
   private readonly sessions = new Map<bigint, GatewaySession>();
 

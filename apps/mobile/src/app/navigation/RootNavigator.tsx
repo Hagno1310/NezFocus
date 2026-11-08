@@ -267,7 +267,7 @@ function MainTabs() {
   const { t } = useTranslation();
   const dev = useDevActions();
   const gallery = useGalleryAction();
-  // ponytail: sample badges for comparing with the C-03 board; real counts arrive in P2 (NOTIF-01).
+  // ponytail: sample badges for comparing with the C-03 board; real counts come with P2-A4.4 (#106).
   const [sampleBadges, setSampleBadges] = useState(false);
   useSoloSync();
   const solo = useSolo();

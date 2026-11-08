@@ -7,7 +7,7 @@ const KEY = 'device.id';
 
 let id: string | undefined;
 
-// ponytail: no `name` yet; add a device model name (expo-device) when S-ME-03 lists sessions.
+// ponytail: no `name` yet; a device model name (expo-device) comes with S-ME-03, P1-A4.5 (#74).
 export async function getDeviceInfo(): Promise<DeviceInfo> {
   id ??= (await SecureStore.getItemAsync(KEY)) ?? undefined;
   if (!id) {

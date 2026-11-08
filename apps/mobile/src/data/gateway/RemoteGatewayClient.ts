@@ -140,7 +140,7 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
     try {
       frame = ServerFrame.parse(JSON.parse(text));
     } catch {
-      return; // ponytail: unreadable frames are dropped silently; log them once a crash reporter lands
+      return; // ponytail: unreadable frames are dropped silently; log them with Sentry, P4-B2.1 (#191)
     }
     switch (frame.op) {
       case GatewayOp.HELLO:
@@ -257,7 +257,7 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
     if (!running) return;
     clearTimeout(backgroundClose);
     if (next === 'background') {
-      // ponytail: always closes; keep it open in voice / Room Session once P3 adds the foreground service.
+      // ponytail: always closes; voice / Room Session keep it open with P3-B1.5 (#141).
       backgroundClose = setTimeout(() => {
         clearTimeout(reconnect);
         detach(NORMAL_CLOSURE);

@@ -268,9 +268,13 @@ describe('Sign up with an email code (e2e)', () => {
         expect(res.body.code).toBe(40029);
         expect(Number(res.headers['retry-after'])).toBeGreaterThan(0);
       }
-      expect(withoutRequestId(limited[0].body)).toEqual(
-        withoutRequestId(limited[1].body),
-      );
+      // Each email counts down from its own first send, so retry_after may differ by a
+      // second on a slow run; everything else must not tell the two emails apart.
+      const same = (body: Record<string, unknown>) => {
+        const { retry_after: _, ...rest } = withoutRequestId(body);
+        return rest;
+      };
+      expect(same(limited[0].body)).toEqual(same(limited[1].body));
     });
 
     it('cancels the old code when the device switches email (AC5)', async () => {

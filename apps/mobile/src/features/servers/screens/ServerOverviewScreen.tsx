@@ -30,7 +30,7 @@ import { useServerAccess } from '../hooks/useServerAccess';
 
 // S-SET-01 `overview`, `overview-editing`, `overview-name-error`, `welcome-picker`,
 // `welcome-off`. The name saves with "Lưu"; the kênh tin chào mừng saves on tap.
-// ponytail: the server picture (96, "Đổi ảnh server") is not needed in P1.
+// ponytail: the server picture (96, "Đổi ảnh server") lands with P1-A4.7 (#211).
 export function ServerOverviewScreen({
   serverId,
   onSaved,

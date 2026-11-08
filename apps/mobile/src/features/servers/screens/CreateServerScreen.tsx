@@ -147,7 +147,7 @@ export function CreateServerScreen({
           </>
         ) : (
           <>
-            {/* ponytail: server icons (POST /attachments server_icon) are not needed in P1; no picker yet. */}
+            {/* ponytail: server icons (POST /attachments server_icon) land with P1-A4.7 (#211); no picker yet. */}
             <View style={styles.pickerWrap}>
               <View
                 style={[styles.picker, { borderColor: colors['border-input'] }]}

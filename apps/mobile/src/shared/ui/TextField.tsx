@@ -1,5 +1,5 @@
 import { Eye, EyeOff, Search, X } from 'lucide-react-native';
-import { useState, type ComponentRef, type Ref } from 'react';
+import { useState, type ComponentRef, type ReactNode, type Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Pressable,
@@ -29,6 +29,7 @@ export type TextFieldProps = BaseProps & {
   disabled?: boolean;
   readonly?: boolean;
   password?: boolean;
+  trailing?: ReactNode; // status icon at the end of the field (S-ONB-01 username ✓)
 };
 
 // C-02: the label sits above the field, never floating inside (floating labels clip Vietnamese marks).
@@ -41,6 +42,7 @@ export function TextField({
   disabled = false,
   readonly = false,
   password = false,
+  trailing,
   multiline,
   value,
   onFocus,
@@ -133,6 +135,7 @@ export function TextField({
             },
           ]}
         />
+        {trailing}
         {password && (
           <IconButton
             icon={revealed ? EyeOff : Eye}

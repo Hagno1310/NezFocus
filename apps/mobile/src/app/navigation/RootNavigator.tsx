@@ -38,6 +38,7 @@ import { SoloScreen } from '../../features/study/screens/SoloScreen';
 import { StudyHome } from '../../features/study/screens/StudyHome';
 import { TabBar } from '../../shared/ui/TabBar';
 import type { SignInMode } from '../../domain/auth/authFlow';
+import { CompleteAccountScreen } from '../../features/auth/screens/CompleteAccountScreen';
 import { CreateAccountScreen } from '../../features/auth/screens/CreateAccountScreen';
 import { EnterCodeScreen } from '../../features/auth/screens/EnterCodeScreen';
 import { WelcomeScreen } from '../../features/auth/screens/WelcomeScreen';
@@ -319,14 +320,11 @@ export function RootNavigator() {
         </Stack.Group>
       )}
       {status === 'incomplete' && (
-        <Stack.Screen name="CompleteAccount" options={{ headerShown: false }}>
-          {() => (
-            <Placeholder
-              title={t('screens.completeAccount')}
-              actions={[dev.signIn, dev.language, dev.signOut]}
-            />
-          )}
-        </Stack.Screen>
+        <Stack.Screen
+          name="CompleteAccount"
+          component={CompleteAccountScreen}
+          options={{ headerShown: false }}
+        />
       )}
       {status === 'signed-in' && (
         <Stack.Screen

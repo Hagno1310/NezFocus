@@ -21,7 +21,7 @@ Một ticket **sẵn sàng** khi mọi issue chặn nó đã đóng và chưa ai
 ## Quy ước của dự án
 
 - **Nhãn mảng**: `mang-a`, `mang-b` (xem `docs/task-breakdown.md` mục 2). **Nhãn giai đoạn**: `p0` … `p4`. **Nhãn khác**: `hop-dong` (ticket chỉ chứa hợp đồng trong `packages/shared`), `de-xuat-hoan`, `spec` (issue chứa spec do `/to-spec` tạo).
-- **Body ticket** có đủ: REQ-ID; mã màn hình + danh sách trạng thái phải làm + tên frame trong `Des/nezfocus.pen`; Acceptance Criteria dạng checkbox (chép từ SRS, kể cả case âm); chỗ chạm với mảng kia và cách gỡ chờ (Fake / bản tạm).
+- **Body ticket** có đủ: REQ-ID; mã màn hình + danh sách trạng thái phải làm + tên frame trong `Des/nezfocus.pen`; Acceptance Criteria dạng checkbox (chép từ SRS, kể cả case âm); chỗ chạm với mảng kia và cách gỡ chờ (Fake / bản tạm). Mọi việc hoãn trong body ("Ngoài phạm vi", "Chưa làm ở ticket này", placeholder) ghi đích là `P?-? (#số)` của một ticket **có ghi việc đó**, hoặc v1.x / Backlog kèm REQ / CR; không ghi chỉ giai đoạn ("P3", "ticket sau"). Luật đầy đủ: `docs/WORKFLOW.md` mục 5 › Việc hoãn phải có chủ.
 - **Branch**: `<loại>/<số issue>-<mo-ta-ngan>`, ví dụ `feat/12-dang-ky-tai-khoan`. Integration branch của `/implement-spec`: `feat/<số issue spec>-<mo-ta>`.
 - **Commit**: Conventional Commits, footer `Refs #<số>`. **PR**: body có `Closes #<số>` cho từng ticket.
 

@@ -138,12 +138,12 @@ Issue cha ghi sẵn ở mục **Bắt đầu**: thứ tự ticket con, ticket h�
 | Bước | Ai             | Việc                                                                                                                                                                                                                                                                  |
 | ---- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1    | 👤             | Chọn issue cha có ticket con đầu tiên đã sẵn sàng, mở phiên agent mới, gõ `/implement #<số issue cha>`                                                                                                                                                                |
-| 2    | 🤖             | Gán issue cho người đang làm, tạo branch `<loại>/<số issue cha>-<mo-ta>` từ `main` mới nhất; với từng ticket con theo thứ tự: đọc ticket và mục Nguồn, chụp frame qua pen.dev nếu có màn hình (mục 7), đối chiếu với code hiện tại và SRS (lệch thì sửa ticket trước) |
+| 2    | 🤖             | Gán issue cho người đang làm, tạo branch `<loại>/<số issue cha>-<mo-ta>` từ `main` mới nhất; với từng ticket con theo thứ tự: đọc ticket và mục Nguồn, chụp frame qua pen.dev nếu có màn hình (mục 7), đối chiếu với code hiện tại và SRS (lệch thì sửa ticket trước); kiểm **việc hoãn** đẩy tới và đi từ ticket (dưới bảng) |
 | 3    | 🤖 → 👤        | Chỗ chưa rõ thì hỏi (`/grilling`); người trả lời; agent ghi câu trả lời vào tài liệu (mục 8)                                                                                                                                                                          |
 | 4    | 🤖             | `/tdd` từng AC của ticket con; màn hình dựng từ `shared/ui`, dùng Fake nếu phần người kia chưa xong (mục 4); chạy lint, typecheck, test; **commit**; tích AC trên ticket con; sang ticket con kế tiếp                                                                 |
 | 5    | 🤖 ⏸ 👤        | **Ticket hợp đồng:** agent dừng để người push và mở PR riêng cho hợp đồng (người kia review sớm); agent làm tiếp trên branch nối từ branch hợp đồng, không chờ merge. **Ticket con đang chờ người kia mà không có Fake:** agent bỏ qua, báo lại, làm ticket kế tiếp   |
 | 6    | 🤖             | Hết ticket con: cập nhật branch từ `main` (chưa push nên được rebase), chạy lại lint / typecheck / test (thêm e2e nếu chạm DB), `/code-review` so với `main` rồi sửa; **bàn giao qua ticket** (dưới bảng)                                                             |
-| 7    | 🤖 → 👤        | Báo cáo AC đạt / chưa của từng ticket con, các issue đã bổ sung lúc bàn giao, và **liệt kê việc người cần làm**                                                                                                                                                       |
+| 7    | 🤖 → 👤        | Báo cáo AC đạt / chưa của từng ticket con, bảng **Hoãn lại** (việc · đích · đã ghi vào đích chưa), các issue đã bổ sung lúc bàn giao, và **liệt kê việc người cần làm**                                                                                                                                                       |
 | 8    | 👤             | Làm các bước 👤 của từng ticket con: thử trên điện thoại (web quản trị: trình duyệt) so frame ở từng trạng thái; build lại dev client nếu có thư viện native. Lệch thì bảo agent sửa                                                                                  |
 | 9    | 👤             | Push, bảo agent mở **một PR** (`/pr`, `Closes` từng ticket con, AC đạt / chưa, ảnh cạnh frame); 🤖 tick dòng của issue cha (và ô "mốc" của nó) trong `tien-do.md`, commit vào PR này                                                                                  |
 | 10   | 👤 (người kia) | Review từng commit, CI xanh → Squash and merge; các ticket con tự đóng                                                                                                                                                                                                |
@@ -152,6 +152,27 @@ Issue cha ghi sẵn ở mục **Bắt đầu**: thứ tự ticket con, ticket h�
   1. Liệt kê issue đang chờ các ticket con vừa làm: `gh api repos/Hagno1310/NezFocus/issues/<số>/dependencies/blocking`.
   2. Với từng issue, xét xem lúc làm đã chốt điều gì nó cần biết mà ticket chưa ghi: quyết định mới (CR), chỗ lệch khỏi ticket, bản tạm / Fake cần thay, tên file / hàm dùng lại được, header / field bắt buộc, biến môi trường mới. Có thì thêm **một dòng vào mục Nguồn** của issue đó (sửa cả bản nháp trong `.scratch/tickets/` nếu còn), trỏ tới file hoặc mục SRS. Không có gì mới thì bỏ qua issue đó.
   3. Chỉ trỏ và tóm tắt, không chép lại SRS. Không sửa AC của ticket người khác: AC đổi thì theo mục 8 và báo người đó.
+- **Việc hoãn phải có chủ** (thêm 09/11/2026, sau đợt rà thấy ảnh server, mục phòng của tab Học… bị hoãn mà không ticket nào nhận). Mọi chỗ để việc lại cho sau phải ghi đúng một trong ba đích. Chỗ để lại gồm: mục "Ngoài phạm vi", dòng "Chưa làm ở ticket này", placeholder, Fake / bản tạm, `// ponytail:`, AC chưa đạt.
+  1. **Một ticket đang mở**, ghi `P?-? (#số)`, và **ticket đó có ghi việc ấy**: trong AC, trong bảng Màn hình và trạng thái, hoặc ở một dòng mục Nguồn. Chỉ ghi giai đoạn ("P3", "ticket sau", "chưa cần ở P1") là **chưa có chủ**.
+  2. **v1.x / Backlog**, kèm căn cứ trong SRS (REQ hoặc CR).
+  3. **Ngưỡng khi cần**: chỉ dùng cho giới hạn kỹ thuật, không dùng cho tính năng. Viết `// ponytail: khi <điều kiện>: <việc>`, ví dụ "khi chạy từ 2 process: chuyển resume buffer sang Redis".
+
+  Agent kiểm ở bốn lúc:
+  - **Nhận ticket (bước 2):**
+    - Tìm việc người khác đã đẩy sang ticket này:
+      - trong issue: `gh issue list --state all --limit 500 --json number,body --jq '.[] | select(.body | contains("(#<số>)")) | .number'`, rồi đọc câu có `(#<số>)`;
+      - trong code: `git grep -n "#<số>"`.
+    - Với mỗi việc tìm được: làm luôn trong ticket này, hoặc chuyển tiếp sang một đích mới và sửa cả hai bên.
+    - Kiểm cả mục hoãn của chính ticket: đích có tồn tại, đang mở, và có ghi việc đó không. Nếu thiếu, thêm việc vào ticket đích. Nếu đó là AC của người kia thì báo người đó (mục 8).
+  - **Lúc làm:** mỗi lần hoãn thêm một việc, chọn đích ngay và ghi vào ticket đích cùng lúc. Không có ticket nào hợp thì hỏi người: thêm vào ticket nào, tạo ticket mới (mục 3), hay đưa sang v1.x bằng CR (mục 8). Không để lại "sau này".
+  - **Báo cáo (bước 7):** có bảng **Hoãn lại**, mỗi hàng ghi: việc · đích · đã ghi vào đích chưa.
+  - **Cuối mỗi giai đoạn**, trước khi đóng milestone, một phiên agent rà toàn bộ:
+    - mọi `ponytail` có `#số` của issue đang mở, hoặc có "khi …";
+    - mọi mục hoãn trong ticket đang mở trỏ tới ticket thật sự có ghi việc đó;
+    - mọi trạng thái trong spec có ticket nhận, hoặc đã ghi v1.x;
+    - mọi REQ / NFR của MVP có ticket nhận.
+
+    Kết quả ghi vào một issue "Rà lỗ hổng cuối P<n>". Lượt rà đầu tiên: issue tổng hợp ngày 09/11/2026.
 - **Issue cha lớn** (từ 5 ticket con): mục Bắt đầu gợi ý chỗ chia 2 phiên. Phiên dài thì agent kém chú ý tới phần đầu, nên khi context đã nặng: `/handoff`, mở phiên mới, gõ lại `/implement #<số issue cha>` (agent bỏ qua ticket con đã xong).
 - **Cần làm gấp một phần** (vd người kia đang chờ đúng một ticket con): mở riêng ticket con đó, `/implement #<số ticket con>`, một PR riêng.
 

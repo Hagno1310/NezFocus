@@ -20,6 +20,7 @@ export const en: Strings = {
     leftDrawer: 'Servers and channels',
     rightDrawer: 'Members · Tasks · Pins',
     invite: 'Invite',
+    joinByCode: 'Enter an invite code',
   },
   ui: {
     back: 'Back',
@@ -281,6 +282,35 @@ export const en: Strings = {
       other: 'Something went wrong · try again in a few minutes',
     },
   },
+  servers: {
+    create: {
+      title: 'Add a server',
+      section: 'Create a new server',
+      studyTitle: 'Study Server',
+      studyChip: 'Suggested',
+      studyBody:
+        'Comes with welcome, announcements, materials, Q&A and group tasks channels, plus 2 study rooms at 25/5.',
+      generalTitle: 'Regular server',
+      generalBody: 'One chat channel and one voice room.',
+      joinSection: 'Have an invite?',
+      join: 'Enter an invite code',
+      continue: 'Continue',
+      nameTitle_study_server: 'Create a Study Server',
+      nameTitle_general: 'Create a regular server',
+      addPhoto: 'Add photo',
+      optional: 'Optional',
+      nameLabel: 'Server name',
+      namePlaceholder_study_server: 'E.g. Calculus 2 exam prep',
+      namePlaceholder_general: 'E.g. PTIT Guitar Club',
+      submit: 'Create server',
+      nameError: 'Server names need 2–100 characters',
+      maxServers:
+        "You're in 100 servers, the maximum. Leave one to create a new server.",
+      network:
+        "Couldn't create the server. Check your connection and try again.",
+      offline: 'You need a connection to create or join a server',
+    },
+  },
   placeholder: {
     note: 'Placeholder — replaced by the real screen in a later ticket',
     openLeft: 'Open left drawer',
@@ -289,5 +319,6 @@ export const en: Strings = {
     fakeIncomplete: 'Pretend account incomplete',
     signOut: 'Sign out',
     switchLanguage: 'Tiếng Việt',
+    createServer: 'Create or join a server',
   },
 };

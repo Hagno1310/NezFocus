@@ -1,16 +1,19 @@
 import {
   createDrawerNavigator,
   getDrawerStatusFromState,
+  type DrawerContentComponentProps,
   type DrawerNavigationProp,
 } from '@react-navigation/drawer';
 import { useNavigation, type ParamListBase } from '@react-navigation/native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useWindowDimensions } from 'react-native';
 import type {
   LegacyPanGesture,
   PanGesture,
 } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
+import { useStore } from 'zustand';
+import { homeStore } from '../../domain/servers/homeStore';
 import { drawerGesture, type DrawerSide } from './drawerGesture';
 import { Placeholder } from './Placeholder';
 
@@ -47,10 +50,15 @@ function ChannelPlaceholder() {
   const leftDrawer = navigation.getParent<DrawerNavigationProp<ParamListBase>>(
     'LeftDrawer' as never,
   );
+  const open = useStore(homeStore, (s) => s.open);
   // SRS 3.1: ≡ and 👥 buttons always exist as the non-gesture way to open the drawers.
   return (
     <Placeholder
-      title={t('screens.channel')}
+      title={
+        open
+          ? `# ${open.channelName} · ${open.serverName}`
+          : t('screens.channel')
+      }
       actions={[
         {
           label: t('placeholder.openLeft'),
@@ -65,8 +73,36 @@ function ChannelPlaceholder() {
   );
 }
 
+// ponytail: stand-in for S-HOME-02 (P1-A2.2 #59); "＋" is the only way in to S-HOME-06 for now.
+function LeftDrawerPlaceholder({
+  navigation,
+  onCreateServer,
+}: DrawerContentComponentProps & { onCreateServer: () => void }) {
+  const { t } = useTranslation();
+  // Opening a channel (e.g. the new server's #general) closes the drawer onto it.
+  useEffect(
+    () => homeStore.subscribe(() => navigation.closeDrawer()),
+    [navigation],
+  );
+  return (
+    <Placeholder
+      title={t('screens.leftDrawer')}
+      actions={[
+        {
+          label: `＋ ${t('placeholder.createServer')}`,
+          onPress: onCreateServer,
+        },
+      ]}
+    />
+  );
+}
+
 // Home tab: left drawer (server rail + channels) wraps right drawer (members / tasks / pins).
-export function HomeDrawers() {
+export function HomeDrawers({
+  onCreateServer,
+}: {
+  onCreateServer: () => void;
+}) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const [open, setOpen] = useState<DrawerOpenState>({
@@ -81,7 +117,9 @@ export function HomeDrawers() {
       screenListeners={{
         state: (e) => setOpen((o) => ({ ...o, leftOpen: openFrom(e) })),
       }}
-      drawerContent={() => <Placeholder title={t('screens.leftDrawer')} />}
+      drawerContent={(props) => (
+        <LeftDrawerPlaceholder {...props} onCreateServer={onCreateServer} />
+      )}
     >
       <Left.Screen name="RightDrawerHost">
         {() => (

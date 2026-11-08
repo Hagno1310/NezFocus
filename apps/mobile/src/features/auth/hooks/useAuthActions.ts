@@ -1,7 +1,7 @@
 import type { CompleteAccountRequest } from '@nezfocus/shared';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { LogIn, Mail } from 'lucide-react-native';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Keyboard } from 'react-native';
 import { authRepository } from '../../../data/auth';
 import { checkEmail, type SignInMode } from '../../../domain/auth/authFlow';
@@ -14,31 +14,9 @@ import {
 } from '../../../domain/auth/signIn';
 import { signIn, signOut } from '../../../domain/session/sessionStore';
 import { i18n } from '../../../shared/i18n';
+import { useGuardedMutation } from '../../../shared/hooks/useGuardedMutation';
 import { showToast } from '../../../shared/ui/Toast';
 import { rememberMethod, useAuthFlow } from '../authFlowStore';
-
-// A mutation whose `run` ignores taps while one is in flight. The ref blocks a second tap
-// that lands before React re-renders the button as loading (spec 01 › Chỉ ghi luật).
-function useGuardedMutation<A extends unknown[], R>(
-  fn: (...args: A) => Promise<R>,
-) {
-  const mutation = useMutation({ mutationFn: (args: A) => fn(...args) });
-  const running = useRef(false);
-  const { mutateAsync } = mutation;
-  const run = useCallback(
-    async (...args: A): Promise<R | undefined> => {
-      if (running.current) return undefined;
-      running.current = true;
-      try {
-        return await mutateAsync(args);
-      } finally {
-        running.current = false;
-      }
-    },
-    [mutateAsync],
-  );
-  return { run, pending: mutation.isPending };
-}
 
 // SRS 3.4 generic toasts, for errors a screen has no sentence of its own for.
 export const showErrorToast = (kind: 'network' | 'other') =>

@@ -468,10 +468,10 @@ Không áp dụng: `empty`, `loading`, `forbidden` (không có `ATTACH_FILES` th
 | State | Khác gì so với default | Chữ / hành động riêng |
 |---|---|---|
 | `choose-template` | Như bố cục; Study Server chọn sẵn | "Tiếp tục" → `name-server`. Mô tả thẻ: "Có sẵn kênh chào mừng, thông báo, tài liệu, hỏi đáp, việc nhóm và 2 phòng học 25/5." |
-| `name-server` | `ScreenHeader` "Tạo Study Server"; ô ảnh tròn 96 "Thêm ảnh" (tùy chọn, photo picker); `TextField` "Tên server" placeholder "VD: Ôn thi Giải tích 2"; nút "Tạo server" | Kiểm tra khi bấm: "Tên server cần 2–100 ký tự" (40001) |
+| `name-server` | `ScreenHeader` "Tạo Study Server"; ô ảnh tròn 96 "Thêm ảnh" (tùy chọn, photo picker); `TextField` "Tên server" placeholder "VD: Ôn thi Giải tích 2"; nút "Tạo server". (08/11/2026, P1-A1.3) Chọn "Server thường": header "Tạo server thường", placeholder "VD: CLB Guitar PTIT"; frame giữ bản Study Server | Kiểm tra khi bấm: "Tên server cần 2–100 ký tự" (40001) |
 | `creating` | Nút "Tạo server" `loading`; ô nhập khóa | |
 | `create-error` | `FormMessage` trên nút | 40011: "Bạn đã ở 100 server, mức tối đa. Rời bớt một server để tạo server mới." · mạng: "Không tạo được server. Kiểm tra kết nối rồi thử lại." |
-| `created` | Không có màn chúc mừng riêng: vào thẳng S-HOME-01 `#chao-mung` của server mới (`empty`; v1.9, CR-17 #2 — kênh text đầu tiên xem được), S-HOME-07 mở sẵn | Tiêu đề sheet S-HOME-07: "Mời bạn vào Ôn thi Giải tích 2" |
+| `created` | Không có màn chúc mừng riêng: vào thẳng S-HOME-01 `#chao-mung` của server mới (`empty`; v1.9, CR-17 #2 — kênh text đầu tiên xem được; server thường: `#general`), S-HOME-07 mở sẵn | Tiêu đề sheet S-HOME-07: "Mời bạn vào Ôn thi Giải tích 2" |
 | `join-by-code` | `ScreenHeader` "Nhập mã mời"; `TextField` "Mã hoặc link mời" (JetBrains Mono khi có chữ) + nút "Dán" bên trong ô; gợi ý dưới ô; nút "Tiếp tục" | Gợi ý: "VD: k7Qm2xPa hoặc https://nezfocus.app/invite/k7Qm2xPa". Dán link → app tự tách mã |
 | `join-error` | Lỗi dưới ô, giữ user ở màn này | Sai định dạng: "Mã mời gồm 8–10 chữ và số, hoặc dán cả link". 40041: "Lời mời không tồn tại hoặc đã hết hạn. Xin bạn bè gửi lời mời mới." 40306: "Bạn không thể tham gia server này". 40029: "Bạn thử quá nhiều mã. Thử lại sau 1 phút." |
 | `keyboard-open` | `OS/Keyboard · text` ở `name-server` (phím "Xong") và `join-by-code` (phím "Tiếp"); nút chính nằm ngay trên bàn phím (C-02). Hai frame: `keyboard-open · name`, `keyboard-open · code` | |

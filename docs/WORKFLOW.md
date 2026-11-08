@@ -172,7 +172,7 @@ Issue cha ghi sẵn ở mục **Bắt đầu**: thứ tự ticket con, ticket h�
     - mọi trạng thái trong spec có ticket nhận, hoặc đã ghi v1.x;
     - mọi REQ / NFR của MVP có ticket nhận.
 
-    Kết quả ghi vào một issue "Rà lỗ hổng cuối P<n>". Lượt rà đầu tiên: issue tổng hợp ngày 09/11/2026.
+    Kết quả ghi vào một issue "Rà lỗ hổng cuối P<n>". Lượt rà đầu tiên: #215 (09/11/2026).
 - **Issue cha lớn** (từ 5 ticket con): mục Bắt đầu gợi ý chỗ chia 2 phiên. Phiên dài thì agent kém chú ý tới phần đầu, nên khi context đã nặng: `/handoff`, mở phiên mới, gõ lại `/implement #<số issue cha>` (agent bỏ qua ticket con đã xong).
 - **Cần làm gấp một phần** (vd người kia đang chờ đúng một ticket con): mở riêng ticket con đó, `/implement #<số ticket con>`, một PR riêng.
 

@@ -3,6 +3,7 @@ import {
   GatewayOp,
   type CurrentUser,
   type ServerFrame,
+  type ServerSummary,
 } from '@nezfocus/shared';
 import { GatewayConnection, type Authenticate } from './gateway-connection.js';
 import { HEARTBEAT_INTERVAL_MS, GatewaySessions } from './gateway-sessions.js';
@@ -14,6 +15,17 @@ const user: CurrentUser = {
   display_name: 'An Nguyễn',
   account_completed: true,
   created_at: '2026-11-05T08:00:00.000Z',
+};
+
+const server: ServerSummary = {
+  id: '100',
+  name: 'Ôn thi Giải tích 2',
+  icon_url: null,
+  owner_id: '7',
+  template: 'study_server',
+  system_channel_id: '101',
+  member_count: 16,
+  created_at: '2026-10-01T08:00:00.000Z',
 };
 
 const tokens: Record<string, Awaited<ReturnType<Authenticate>>> = {
@@ -81,6 +93,21 @@ describe('GatewayConnection', () => {
     const { sent, sessionId } = await ready();
     expect(sent[1]).toMatchObject({ op: 0, s: 1, t: 'READY', d: { user } });
     expect(sessionId).toMatch(/^\d+$/);
+  });
+
+  it("READY lists the user's servers (REQ-SRV-01)", async () => {
+    const asked: bigint[] = [];
+    const sent: ServerFrame[] = [];
+    const conn = new GatewayConnection(
+      { send: (text) => sent.push(JSON.parse(text)), close: () => {} },
+      sessions,
+      authenticate,
+      async (userId) => (asked.push(userId), [server]),
+    );
+    conn.open();
+    await conn.receive(identify());
+    expect(sent[1]).toMatchObject({ t: 'READY', d: { servers: [server] } });
+    expect(asked).toEqual([7n]);
   });
 
   describe('closes', () => {

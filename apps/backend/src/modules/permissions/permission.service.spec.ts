@@ -1,7 +1,6 @@
 import { ErrorCode, Permission } from '@nezfocus/shared';
 import { AppError } from '../../common/app-error.js';
 import {
-  AllowAllPermissionService,
   PermissionService,
   type PermissionScope,
 } from './permission.service.js';
@@ -34,12 +33,5 @@ describe('PermissionService (REQ-ROLE-08)', () => {
       .catch((e: unknown) => e);
     expect(error).toBeInstanceOf(AppError);
     expect((error as AppError).code).toBe(ErrorCode.Forbidden);
-  });
-
-  it('the dev stand-in allows everything until P1-A3 (#8)', async () => {
-    const service = new AllowAllPermissionService();
-    await expect(
-      service.can(1n, { serverId: 7n }, Permission.ADMINISTRATOR),
-    ).resolves.toBe(true);
   });
 });

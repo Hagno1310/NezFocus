@@ -41,7 +41,8 @@ const positions = (serverId: string) =>
 const byId = (channelId: string) =>
   ChannelRoutes.byId.replace(':id', channelId);
 
-// The real check lands in P1-A3.2 (#65); until then a test says what is refused.
+// These tests are about channel rules, so each says what is refused; permissions.e2e-spec.ts
+// runs the real checks.
 class SwitchablePermissions extends PermissionService {
   deny: (userId: bigint, scope: PermissionScope, bit: bigint) => boolean = () =>
     false;

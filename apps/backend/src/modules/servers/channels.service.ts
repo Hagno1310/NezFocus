@@ -18,6 +18,7 @@ import { AppError } from '../../common/app-error.js';
 import { Clock } from '../../common/clock.js';
 import { SnowflakeGenerator } from '../../common/snowflake.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
+import { PermissionCache } from '../permissions/permission-cache.js';
 import { PermissionService } from '../permissions/permission.service.js';
 import { ruleError } from './channel-rules.js';
 import { ChannelsRepository, type ChannelMove } from './channels.repository.js';
@@ -54,6 +55,7 @@ export class ChannelsService {
     private readonly clock: Clock,
     private readonly events: EventPublisher,
     private readonly permissions: PermissionService,
+    private readonly permissionCache: PermissionCache,
   ) {}
 
   async list(userId: bigint, serverId: bigint): Promise<ChannelResponse[]> {
@@ -175,6 +177,8 @@ export class ChannelsService {
       await locked.move(plan.changed.map(toMove));
       return plan.changed;
     });
+    // A synced channel follows its new category's overwrites.
+    await this.permissionCache.invalidateServer(serverId);
     for (const channel of changed)
       await this.events.toServer(serverId, 'CHANNEL_UPDATE', channel);
   }
@@ -202,6 +206,7 @@ export class ChannelsService {
         return { moved, welcomeCleared };
       },
     );
+    await this.permissionCache.invalidateServer(serverId); // its children left the category
     await this.events.toServer(serverId, 'CHANNEL_DELETE', {
       id: row.id.toString(),
       server_id: serverId.toString(),

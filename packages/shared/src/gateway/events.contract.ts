@@ -11,6 +11,7 @@ import {
 import { ServerResponse, ServerSummary } from '../servers/server.contract.js';
 import { SnowflakeId } from '../snowflake.js';
 import { SoloSessionResponse } from '../study/solo.contract.js';
+import { StreakState } from '../study/stats.contract.js';
 import type { DispatchFrame } from './gateway.contract.js';
 
 // SRS 5.4 READY. DMs, read states and relationships are added by the area that owns them.
@@ -27,6 +28,7 @@ export const DispatchEvents = {
   RESUMED: z.object({}),
   USER_UPDATE: CurrentUser,
   SOLO_SESSION_UPDATE: SoloSessionResponse, // REQ-STUDY-10: every change, to every session of the user
+  STREAK_UPDATE: StreakState, // REQ-STUDY-03: when the streak or today's minutes change, to every session of the user
   SERVER_CREATE: ServerResponse, // REQ-SRV-01: to every session of the creator
   SERVER_UPDATE: ServerSummary, // to the members
   SERVER_ROLE_CREATE: ServerRoleEvent, // REQ-ROLE-01: to the members

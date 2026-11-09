@@ -1,9 +1,5 @@
-// REQ-ROLE-01 order rules that only need the server's roles. The backend checks a reorder
-// before it writes; the app checks the same drop before it calls the API (S-SET-02
-// `reorder`: the row goes back, no request), so the two never disagree.
-//
-// `actorHighest`: the position of the actor's highest role (0 with no role); null for the
-// Owner, who is above every role. @everyone is the role whose id is the server id.
+// REQ-ROLE-01 order rules, shared so the app's S-SET-02 drop check and the backend agree.
+// `actorHighest` comes from highestRole; @everyone is the role whose id is the server id.
 
 type Placed = { id: string; position: number };
 

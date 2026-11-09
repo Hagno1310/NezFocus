@@ -8,8 +8,8 @@ const GENERATION_SECONDS = 24 * 60 * 60;
 
 const generationKey = (serverId: bigint) => `perm:gen:${serverId}`;
 
-// Computed permissions per server, user and scope. Whoever changes a role, an overwrite, a
-// membership or a channel's place calls invalidateServer: the next check recomputes (AC3).
+// Per server, user and scope. Call invalidateServer after any change to a role, overwrite,
+// member's roles, timeout or channel's category (joining needs none: non-members aren't cached).
 @Injectable()
 export class PermissionCache {
   constructor(private readonly store: KeyValueStore) {}

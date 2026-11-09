@@ -11,7 +11,12 @@ import {
 import type { FullServer, ServerWithCount } from './servers.repository.js';
 import type { ChannelRow, RoleRow } from './servers.schema.js';
 
-const CHANNEL_TYPES: readonly ChannelType[] = ['category', 'text', 'voice'];
+// SRS 8.2 channels.type 0–2.
+export const CHANNEL_TYPES: readonly ChannelType[] = [
+  'category',
+  'text',
+  'voice',
+];
 
 export const toServerSummary = (s: ServerWithCount): ServerSummary => ({
   id: s.id.toString(),

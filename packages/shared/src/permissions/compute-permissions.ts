@@ -99,6 +99,13 @@ const highestRolePosition = (
   member: PermissionMember,
 ) => Math.max(0, ...memberRoles(server, member).map((r) => r.position));
 
+// What role-rules takes as `actorHighest`: null for the Owner, who is above every role.
+export const highestRole = (
+  server: PermissionServer,
+  member: PermissionMember,
+): number | null =>
+  isOwner(server, member) ? null : highestRolePosition(server, member);
+
 export function canManageRole(
   server: PermissionServer,
   actor: PermissionMember,

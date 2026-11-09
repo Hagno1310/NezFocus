@@ -9,7 +9,11 @@ import {
   type PermissionServer,
 } from '@nezfocus/shared';
 import { Clock } from '../../common/clock.js';
-import type { OverwriteRow } from '../servers/servers.schema.js';
+import { CHANNEL_TYPES } from '../servers/servers.dto.js';
+import {
+  OverwriteTargetCode,
+  type OverwriteRow,
+} from '../servers/servers.schema.js';
 import { PermissionCache } from './permission-cache.js';
 import {
   PermissionService,
@@ -21,11 +25,9 @@ import {
   type ServerFacts,
 } from './permissions.repository.js';
 
-const CHANNEL_TYPES = ['category', 'text', 'voice'] as const;
-
 const toOverwrite = (o: OverwriteRow): PermissionOverwriteInput => ({
   targetId: o.targetId.toString(),
-  type: o.targetType === 0 ? 'role' : 'member',
+  type: o.targetType === OverwriteTargetCode.role ? 'role' : 'member',
   allow: o.allow,
   deny: o.deny,
 });
@@ -51,7 +53,7 @@ export class DbPermissionService extends PermissionService {
     let serverId: bigint;
     if ('channelId' in scope) {
       channel = await this.repo.channel(scope.channelId);
-      // ponytail: DM channels have no server; their checks come with the DM area.
+      // ponytail: DM channels have no server; their rule comes with P2-B3.2 (#115).
       if (!channel?.serverId || channel.deletedAt) return 0n;
       serverId = channel.serverId;
     } else serverId = scope.serverId;
@@ -88,13 +90,15 @@ export class DbPermissionService extends PermissionService {
       ? [channel.id, channel.parentId]
       : [channel.id];
     const rows = await this.repo.overwrites(ids);
-    const of = (id: bigint) =>
+    const overwritesOf = (id: bigint) =>
       rows.filter((o) => o.channelId === id).map(toOverwrite);
     const input: PermissionChannel = {
-      type: CHANNEL_TYPES[channel.type] ?? 'text',
-      overwrites: of(channel.id),
+      type: CHANNEL_TYPES[channel.type]!,
+      overwrites: overwritesOf(channel.id),
       permissionsSynced: channel.permissionsSynced,
-      parent: channel.parentId ? { overwrites: of(channel.parentId) } : null,
+      parent: channel.parentId
+        ? { overwrites: overwritesOf(channel.parentId) }
+        : null,
     };
     return computeChannelPermissions(
       this.toServer(serverId, facts),

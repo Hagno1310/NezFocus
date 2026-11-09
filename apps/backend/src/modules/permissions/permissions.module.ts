@@ -13,11 +13,6 @@ import { PermissionsRepository } from './permissions.repository.js';
     DbPermissionService,
     { provide: PermissionService, useExisting: DbPermissionService },
   ],
-  exports: [
-    PermissionService,
-    PermissionCache,
-    DbPermissionService,
-    PermissionsRepository, // the hierarchy checks read the same facts
-  ],
+  exports: [PermissionService, PermissionCache],
 })
 export class PermissionsModule {}

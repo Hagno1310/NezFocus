@@ -135,10 +135,12 @@ async function seedSampleRoles(
     .select()
     .from(roles)
     .where(eq(roles.serverId, server.id));
+  // Seeded once: a rerun leaves the roles (and any reorder made since) alone.
+  if (existing.some((r) => r.name === 'Quản trị')) return;
   for (const sample of SAMPLE_ROLES) {
     let role = existing.find((r) => r.name === sample.name);
     if (role)
-      await db
+      await db // the template's Trưởng nhóm, from 1 to its place in the sample
         .update(roles)
         .set({ position: sample.position })
         .where(eq(roles.id, role.id));

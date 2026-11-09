@@ -272,7 +272,7 @@ describe('PermissionService on Postgres (e2e)', () => {
         .send({ type: 'text', name: 'mot', parent_id: null })
         .expect(201);
 
-      // ponytail: PATCH /roles invalidates by itself with P1-A3.3 (#66); here the test does it.
+      // A change straight in the DB, then what every role / overwrite write does after it.
       await db
         .update(roles)
         .set({ permissions: 0n })

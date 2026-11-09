@@ -13,6 +13,7 @@ import {
 } from './servers.schema.js';
 
 export type RolePlace = { id: bigint; position: number };
+export type Caller = { ownerId: bigint; roleIds: bigint[] };
 export type RoleWithCount = RoleRow & { memberCount: number };
 
 // The writes of one server's roles while its row is locked (`RolesRepository.locked`).
@@ -20,6 +21,7 @@ export class LockedRoles {
   constructor(
     private readonly tx: Tx,
     readonly rows: RoleRow[],
+    readonly caller: Caller, // read under the lock, like the rows
   ) {}
 
   async move(places: RolePlace[]) {
@@ -100,18 +102,34 @@ export class RolesRepository {
 
   // Every role write of a server runs here, one after the other (two creates at the 250
   // limit, two renames to one name). Throwing inside `work` rolls everything back.
-  locked<T>(serverId: bigint, work: (r: LockedRoles) => Promise<T>) {
+  locked<T>(
+    serverId: bigint,
+    userId: bigint,
+    work: (r: LockedRoles) => Promise<T>,
+  ) {
     return this.db.transaction(async (tx) => {
-      await tx
-        .select({ id: servers.id })
+      const [server] = await tx
+        .select({ ownerId: servers.ownerId })
         .from(servers)
         .where(eq(servers.id, serverId))
         .for('update');
-      const rows = await tx
-        .select()
-        .from(roles)
-        .where(eq(roles.serverId, serverId));
-      return work(new LockedRoles(tx, rows));
+      const [rows, mine] = await Promise.all([
+        tx.select().from(roles).where(eq(roles.serverId, serverId)),
+        tx
+          .select({ roleId: serverMemberRoles.roleId })
+          .from(serverMemberRoles)
+          .where(
+            and(
+              eq(serverMemberRoles.serverId, serverId),
+              eq(serverMemberRoles.userId, userId),
+            ),
+          ),
+      ]);
+      const caller = {
+        ownerId: server!.ownerId,
+        roleIds: mine.map((r) => r.roleId),
+      };
+      return work(new LockedRoles(tx, rows, caller));
     });
   }
 }

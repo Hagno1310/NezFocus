@@ -7,6 +7,7 @@ import {
   canManageRole,
   duplicateRoleMessage,
   findDuplicateRole,
+  highestRole,
   keepHiddenPermissions,
   newRolePlace,
   parsePermissionBitmap,
@@ -15,6 +16,7 @@ import {
   type PermissionMember,
   type PermissionServer,
   type RoleListResponse,
+  type RoleReorderError,
   type RoleResponse,
   type UpdateRolePositionsRequest,
   type UpdateRoleRequest,
@@ -25,12 +27,9 @@ import { SnowflakeGenerator } from '../../common/snowflake.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
 import { PermissionCache } from '../permissions/permission-cache.js';
 import { PermissionService } from '../permissions/permission.service.js';
-import {
-  PermissionsRepository,
-  type ServerFacts,
-} from '../permissions/permissions.repository.js';
 import { RolesRepository, type LockedRoles } from './roles.repository.js';
 import { toRoleResponse } from './servers.dto.js';
+import { ServersRepository } from './servers.repository.js';
 import type { RoleRow } from './servers.schema.js';
 
 const invalid = (field: string, code: string, message: string) =>
@@ -44,16 +43,44 @@ const outranked = () =>
     'The role is level with or above your highest role',
   );
 
-// The caller as SRS 8.5.2 sees them, against the roles read under the lock.
-type Actor = { server: PermissionServer; member: PermissionMember };
+const REORDER_ERRORS: Record<
+  Exclude<RoleReorderError, 'hierarchy'>,
+  [string, string]
+> = {
+  everyone: ['EVERYONE', '@everyone always stays last'],
+  unknown_role: ['UNKNOWN_ROLE', 'Unknown role in this server'],
+};
 
-// REQ-ROLE-01/02: create, rename, re-permission, delete and reorder roles under the
-// hierarchy (8.5.2): below one's highest role, only bits one holds; only the Owner is exempt.
+const toPlace = (r: RoleRow) => ({ id: r.id.toString(), position: r.position });
+const fromPlace = (p: { id: string; position: number }) => ({
+  id: BigInt(p.id),
+  position: p.position,
+});
+
+// The caller as SRS 8.5.2 sees them, from what the lock read.
+function actorOf(serverId: bigint, userId: bigint, locked: LockedRoles) {
+  const server: PermissionServer = {
+    id: serverId.toString(),
+    ownerId: locked.caller.ownerId.toString(),
+    roles: locked.rows.map((r) => ({
+      id: r.id.toString(),
+      permissions: r.permissions,
+      position: r.position,
+    })),
+  };
+  const member: PermissionMember = {
+    userId: userId.toString(),
+    roleIds: locked.caller.roleIds.map(String),
+  };
+  return { server, member, highest: highestRole(server, member) };
+}
+
+// REQ-ROLE-01/02 under the 8.5.2 hierarchy: below one's highest role, only bits one holds.
 @Injectable()
 export class RolesService {
   constructor(
     private readonly repo: RolesRepository,
-    private readonly facts: PermissionsRepository,
+    private readonly servers: ServersRepository,
     private readonly permissions: PermissionService,
     private readonly cache: PermissionCache,
     private readonly events: EventPublisher,
@@ -62,7 +89,7 @@ export class RolesService {
   ) {}
 
   async list(userId: bigint, serverId: bigint): Promise<RoleListResponse> {
-    await this.memberFacts(serverId, userId);
+    await this.memberOf(serverId, userId);
     return (await this.repo.list(serverId)).map((r) => ({
       ...toRoleResponse(r),
       member_count: r.memberCount,
@@ -74,9 +101,10 @@ export class RolesService {
     serverId: bigint,
     body: CreateRoleRequest,
   ): Promise<RoleResponse> {
-    const facts = await this.managerFacts(serverId, userId);
+    await this.managerOf(serverId, userId);
     const { role, shifted } = await this.repo.locked(
       serverId,
+      userId,
       async (locked) => {
         if (locked.rows.length >= MAX_ROLES_PER_SERVER)
           throw invalid(
@@ -88,7 +116,7 @@ export class RolesService {
         const place = newRolePlace(
           serverId.toString(),
           locked.rows.map(toPlace),
-          this.highest(this.actor(serverId, facts, locked.rows)),
+          actorOf(serverId, userId, locked).highest,
         );
         const moves = place.shifted.map(fromPlace);
         await locked.move(moves);
@@ -102,6 +130,7 @@ export class RolesService {
         return { role, shifted: await locked.byIds(moves.map((m) => m.id)) };
       },
     );
+    await this.cache.invalidateServer(serverId);
     const response = toRoleResponse(role);
     await this.events.toServer(serverId, 'SERVER_ROLE_CREATE', {
       server_id: serverId.toString(),
@@ -117,48 +146,42 @@ export class RolesService {
     roleId: bigint,
     body: UpdateRoleRequest,
   ): Promise<RoleResponse> {
-    const facts = await this.managerFacts(serverId, userId);
-    const { role, permissionsChanged } = await this.repo.locked(
-      serverId,
-      async (locked) => {
-        const role = this.manageable(serverId, facts, locked, roleId);
-        const set: Parameters<LockedRoles['update']>[1] = {};
-        if (body.name !== undefined) {
-          if (role.id === serverId)
-            throw invalid('name', 'EVERYONE', '@everyone keeps its name');
-          this.checkName(locked, body.name, role.id);
-          set.name = body.name;
-        }
-        if (body.is_mentionable !== undefined)
-          set.isMentionable = body.is_mentionable;
-        if (body.permissions !== undefined) {
-          // ROLE-02 v1.7: the bits without a screen keep their value.
-          const next = keepHiddenPermissions(
-            role.permissions,
-            parsePermissionBitmap(body.permissions),
-          );
-          // Only the bits that change count: a bit the editor lacks may stay as it is.
-          const actor = this.actor(serverId, facts, locked.rows);
-          if (
-            !canGrantPermissions(
-              actor.server,
-              actor.member,
-              next ^ role.permissions,
-            )
+    await this.managerOf(serverId, userId);
+    const role = await this.repo.locked(serverId, userId, async (locked) => {
+      const actor = actorOf(serverId, userId, locked);
+      const role = this.manageable(actor, locked, roleId);
+      const set: Parameters<LockedRoles['update']>[1] = {};
+      if (body.name !== undefined) {
+        if (role.id === serverId)
+          throw invalid('name', 'EVERYONE', '@everyone keeps its name');
+        this.checkName(locked, body.name, role.id);
+        set.name = body.name;
+      }
+      if (body.is_mentionable !== undefined)
+        set.isMentionable = body.is_mentionable;
+      if (body.permissions !== undefined) {
+        // ROLE-02 v1.7: the bits without a screen keep their value.
+        const next = keepHiddenPermissions(
+          role.permissions,
+          parsePermissionBitmap(body.permissions),
+        );
+        // Only changed bits count: a bit the editor lacks may stay (S-SET-02 `permission-locked`).
+        if (
+          !canGrantPermissions(
+            actor.server,
+            actor.member,
+            next ^ role.permissions,
           )
-            throw new AppError(
-              ErrorCode.Forbidden,
-              'You can only grant permissions you have',
-            );
-          set.permissions = next;
-        }
-        return {
-          role: await locked.update(role.id, set),
-          permissionsChanged: set.permissions !== undefined,
-        };
-      },
-    );
-    if (permissionsChanged) await this.cache.invalidateServer(serverId);
+        )
+          throw new AppError(
+            ErrorCode.Forbidden,
+            'You can only grant permissions you have',
+          );
+        set.permissions = next;
+      }
+      return locked.update(role.id, set);
+    });
+    await this.cache.invalidateServer(serverId);
     const response = toRoleResponse(role);
     await this.events.toServer(serverId, 'SERVER_ROLE_UPDATE', {
       server_id: serverId.toString(),
@@ -168,11 +191,12 @@ export class RolesService {
   }
 
   async remove(userId: bigint, serverId: bigint, roleId: bigint) {
-    const facts = await this.managerFacts(serverId, userId);
-    await this.repo.locked(serverId, async (locked) => {
+    await this.managerOf(serverId, userId);
+    await this.repo.locked(serverId, userId, async (locked) => {
       if (roleId === serverId)
         throw invalid('role_id', 'EVERYONE', '@everyone cannot be deleted');
-      await locked.remove(this.manageable(serverId, facts, locked, roleId));
+      const actor = actorOf(serverId, userId, locked);
+      await locked.remove(this.manageable(actor, locked, roleId));
     });
     // ponytail: channels whose overwrites lost the role send CHANNEL_UPDATE with P1-A3.4 (#67).
     await this.cache.invalidateServer(serverId);
@@ -187,98 +211,55 @@ export class RolesService {
     serverId: bigint,
     body: UpdateRolePositionsRequest,
   ): Promise<void> {
-    const facts = await this.managerFacts(serverId, userId);
-    const moved = await this.repo.locked(serverId, async (locked) => {
+    await this.managerOf(serverId, userId);
+    const moved = await this.repo.locked(serverId, userId, async (locked) => {
       const plan = planRoleReorder(
         serverId.toString(),
         locked.rows.map(toPlace),
         body,
-        this.highest(this.actor(serverId, facts, locked.rows)),
+        actorOf(serverId, userId, locked).highest,
       );
       if (!plan.ok) {
         if (plan.error === 'hierarchy') throw outranked();
-        throw invalid(
-          'id',
-          plan.error === 'everyone' ? 'EVERYONE' : 'UNKNOWN_ROLE',
-          plan.error === 'everyone'
-            ? '@everyone always stays last'
-            : 'Unknown role in this server',
-        );
+        const [code, message] = REORDER_ERRORS[plan.error];
+        throw invalid('id', code, message);
       }
       const moves = plan.changed.map(fromPlace);
       await locked.move(moves);
       return locked.byIds(moves.map((m) => m.id));
     });
+    await this.cache.invalidateServer(serverId);
     await this.announce(serverId, moved);
   }
 
   // 40401 for a server that does not exist and for one the caller is not in.
-  private async memberFacts(serverId: bigint, userId: bigint) {
-    const facts = await this.facts.server(serverId, userId);
-    if (!facts?.member) throw notFound('Unknown server');
-    return facts;
+  private async memberOf(serverId: bigint, userId: bigint) {
+    if (!(await this.servers.isMember(serverId, userId)))
+      throw notFound('Unknown server');
   }
 
-  private async managerFacts(serverId: bigint, userId: bigint) {
-    const facts = await this.memberFacts(serverId, userId);
+  private async managerOf(serverId: bigint, userId: bigint) {
+    await this.memberOf(serverId, userId);
     await this.permissions.require(
       userId,
       { serverId },
       Permission.MANAGE_ROLES,
     );
-    return { ...facts, userId };
-  }
-
-  private actor(
-    serverId: bigint,
-    facts: ServerFacts & { userId: bigint },
-    rows: RoleRow[],
-  ): Actor {
-    return {
-      server: {
-        id: serverId.toString(),
-        ownerId: facts.ownerId.toString(),
-        roles: rows.map((r) => ({
-          id: r.id.toString(),
-          permissions: r.permissions,
-          position: r.position,
-        })),
-      },
-      member: {
-        userId: facts.userId.toString(),
-        roleIds: facts.member!.roleIds.map(String),
-      },
-    };
-  }
-
-  // null for the Owner (above every role); 0 for someone with no role.
-  private highest({ server, member }: Actor): number | null {
-    if (server.ownerId === member.userId) return null;
-    return Math.max(
-      0,
-      ...server.roles
-        .filter((r) => r.id !== server.id && member.roleIds.includes(r.id))
-        .map((r) => r.position),
-    );
   }
 
   private manageable(
-    serverId: bigint,
-    facts: ServerFacts & { userId: bigint },
+    actor: ReturnType<typeof actorOf>,
     locked: LockedRoles,
     roleId: bigint,
   ): RoleRow {
     const role = locked.rows.find((r) => r.id === roleId);
     if (!role) throw notFound('Unknown role');
-    const { server, member } = this.actor(serverId, facts, locked.rows);
-    if (
-      !canManageRole(server, member, {
-        id: role.id.toString(),
-        permissions: role.permissions,
-        position: role.position,
-      })
-    )
-      throw outranked();
+    const target = {
+      id: role.id.toString(),
+      permissions: role.permissions,
+      position: role.position,
+    };
+    if (!canManageRole(actor.server, actor.member, target)) throw outranked();
     return role;
   }
 
@@ -300,9 +281,3 @@ export class RolesService {
       });
   }
 }
-
-const toPlace = (r: RoleRow) => ({ id: r.id.toString(), position: r.position });
-const fromPlace = (p: { id: string; position: number }) => ({
-  id: BigInt(p.id),
-  position: p.position,
-});

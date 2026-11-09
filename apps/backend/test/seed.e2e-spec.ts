@@ -146,5 +146,33 @@ describe('db:seed (e2e)', () => {
         ),
       );
     expect(lead!.name).toBe('Trưởng nhóm');
+
+    // Spec 08 › Quy ước chung: the sample roles, highest first, and who holds them.
+    const held = await db
+      .select({
+        role: roles.name,
+        position: roles.position,
+        user: users.username,
+      })
+      .from(roles)
+      .leftJoin(serverMemberRoles, eq(serverMemberRoles.roleId, roles.id))
+      .leftJoin(users, eq(users.id, serverMemberRoles.userId))
+      .where(eq(roles.serverId, study.id));
+    const holders = (role: string) =>
+      held
+        .filter((h) => h.role === role)
+        .map((h) => h.user)
+        .sort();
+    expect(holders('Quản trị')).toEqual(['tuan.hoang']);
+    expect(holders('Trưởng nhóm')).toEqual(['an.nguyen', 'binh.tran']);
+    expect(holders('Điều phối phòng học')).toEqual(['chi.le']);
+    expect(
+      [...new Set(held.map((h) => `${h.position} ${h.role}`))].sort(),
+    ).toEqual([
+      '0 @everyone',
+      '1 Điều phối phòng học',
+      '2 Trưởng nhóm',
+      '3 Quản trị',
+    ]);
   });
 });

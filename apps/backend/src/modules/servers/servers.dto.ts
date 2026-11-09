@@ -41,7 +41,7 @@ export const toRoleResponse = (r: RoleRow): RoleResponse => ({
   name: r.name,
   permissions: toPermissionBitmap(r.permissions),
   position: r.position,
-  is_mentionable: false, // ponytail: the column lands with P1-A3.3 (#66)
+  is_mentionable: r.isMentionable,
 });
 
 export const toServerResponse = (s: FullServer): ServerResponse => ({

@@ -101,6 +101,9 @@ export const roles = pgTable(
       .notNull()
       .default(sql`0`), // 8.5.1 bitmap; drizzle-kit cannot write a 0n default
     position: integer().notNull().default(0), // higher = more senior; @everyone = 0
+    color: integer().notNull().default(0), // v1.7: kept for v1.x, the app never shows it
+    isHoisted: boolean().notNull().default(false), // v1.7: same
+    isMentionable: boolean().notNull().default(false),
     createdAt: tz().notNull().defaultNow(),
   },
   (t) => [

@@ -1,5 +1,5 @@
 {
-  "id": "a8135a52-8cca-4140-aa0f-561a61768b8c",
+  "id": "6384b52b-b098-4870-8399-398837f5677c",
   "prevId": "2428230a-a1e7-4fca-a2f7-9b1f75f8c981",
   "version": "7",
   "dialect": "postgresql",
@@ -895,6 +895,27 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
+        },
+        "color": {
+          "name": "color",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "is_hoisted": {
+          "name": "is_hoisted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_mentionable": {
+          "name": "is_mentionable",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "created_at": {
           "name": "created_at",

@@ -9,7 +9,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
 import { create } from 'zustand';
-import { soloMemory, soloRepository } from '../../../data/study';
+import { cycleMemory, soloMemory, soloRepository } from '../../../data/study';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
 import { sessionStore } from '../../../domain/session/sessionStore';
 import {
@@ -185,11 +185,15 @@ export function useNow(ms = 250) {
   return now;
 }
 
-// ponytail: the last cycle lives in memory until S-STUDY-01 (P1-B3.4, #87) stores it on the device.
+// S-STUDY-01: the last cycle chosen, kept on the device; 50/10 the first time.
 export const useLastCycle = create<{
   cycle: CycleConfig;
   set: (cycle: CycleConfig) => void;
 }>((set) => ({
-  cycle: { focus_min: 25, short_break_min: 5 },
-  set: (cycle) => set({ cycle }),
+  cycle: { focus_min: 50, short_break_min: 10 },
+  set: (cycle) => {
+    set({ cycle });
+    void cycleMemory.save(cycle);
+  },
 }));
+void cycleMemory.load().then((c) => c && useLastCycle.setState({ cycle: c }));

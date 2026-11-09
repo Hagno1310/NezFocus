@@ -36,6 +36,7 @@ export function CycleSheet({
   loading,
   onSubmit,
   onDismiss,
+  onKeep,
 }: {
   visible: boolean;
   mode: 'start' | 'edit';
@@ -43,6 +44,8 @@ export function CycleSheet({
   loading?: boolean;
   onSubmit: (cycle: CycleConfig) => void;
   onDismiss: () => void;
+  // S-STUDY-01 cycle-sheet: closing without "Bắt đầu" still keeps a valid new choice.
+  onKeep?: (cycle: CycleConfig) => void;
 }) {
   const { t } = useTranslation();
   const [choice, setChoice] = useState<Choice>(() => choiceOf(initial));
@@ -62,6 +65,15 @@ export function CycleSheet({
       long_break_min: Number(fields.long_break_min),
       long_break_every: Number(fields.long_break_every),
     }),
+  };
+
+  const dismiss = () => {
+    const kept =
+      choice === 'custom'
+        ? CycleConfig.safeParse(custom).data
+        : PRESETS[choice];
+    if (kept && onKeep) onKeep(kept);
+    onDismiss();
   };
 
   const submit = () => {
@@ -97,7 +109,7 @@ export function CycleSheet({
       title={t(
         mode === 'start' ? 'study.sheet.chooseTitle' : 'study.sheet.editTitle',
       )}
-      onDismiss={onDismiss}
+      onDismiss={dismiss}
       action={{
         label: t(mode === 'start' ? 'study.start' : 'study.sheet.apply'),
         onPress: submit,

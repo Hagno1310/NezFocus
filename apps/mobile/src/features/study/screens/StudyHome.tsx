@@ -1,63 +1,335 @@
+import type { CycleConfig, StudyStatsResponse } from '@nezfocus/shared';
+import { ChevronDown, ChevronRight, Play } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { endingOf } from '../../../domain/study/solo';
-import { Placeholder } from '../../../app/navigation/Placeholder';
+import {
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useStore } from 'zustand';
+import { homeStore } from '../../../domain/servers/homeStore';
+import { endingOf, timerOf, type SoloTimer } from '../../../domain/study/solo';
+import { ConnectionBanner } from '../../gateway/components/ConnectionBanner';
+import { radius, size, space, useTheme } from '../../../shared/theme';
+import { Button } from '../../../shared/ui/Button';
+import { EmptyState, Skeleton } from '../../../shared/ui/Feedback';
+import { PhaseBadge } from '../../../shared/ui/Focus';
+import { Icon } from '../../../shared/ui/Icon';
+import { StatText } from '../../../shared/ui/Stats';
+import { Text } from '../../../shared/ui/Text';
 import { CycleSheet } from '../components/CycleSheet';
-import { cycleText } from '../format';
-import { useLastCycle, useSolo, useStartSolo } from '../hooks/useSolo';
-import { notificationPrompt } from '../hooks/useSoloAlerts';
+import { Today } from '../components/Today';
+import { WeekChart } from '../components/WeekChart';
+import { cycleText, minutesText } from '../format';
+import { FIRST_FOCUS, useBeginSolo } from '../hooks/useBeginSolo';
+import { useNow, useSolo } from '../hooks/useSolo';
+import {
+  useOnline,
+  useRefreshStudy,
+  useStudyStats,
+} from '../hooks/useStudyStats';
 
-// ponytail: stand-in for S-STUDY-01 with only the Solo block; the real tab is P1-B3.4 (#87).
+// S-STUDY-01. "Đang học lúc này" has rooms only from P3-B3.7 (#212); until then it is
+// `no-active-rooms` or `no-server`.
 export function StudyHome({
   onOpenSolo,
   onAskNotifications,
+  onOpenStats,
+  onCreateServer,
 }: {
   onOpenSolo: () => void;
   onAskNotifications: () => void;
+  onOpenStats: (date: string) => void;
+  onCreateServer: () => void;
 }) {
   const { t } = useTranslation();
-  const snap = useSolo();
-  const { cycle, set } = useLastCycle();
-  const start = useStartSolo();
-  const [choosing, setChoosing] = useState(false);
-  const live = snap && !endingOf(snap);
+  const { top } = useSafeAreaInsets();
+  const online = useOnline();
+  const stats = useStudyStats('week');
+  const refresh = useRefreshStudy();
+  const [refreshing, setRefreshing] = useState(false);
+  const { begin, cycle, setCycle, starting } = useBeginSolo({
+    onOpenSolo,
+    onAskNotifications,
+  });
 
-  const begin = async (c = cycle) => {
-    set(c);
-    // 04 › Tương tác: "Bắt đầu" → S-ROOM-09 first if notifications were never asked for.
-    if (await notificationPrompt.needed()) return onAskNotifications();
-    // 40903 (already running elsewhere) still lands on the Solo screen, showing that session.
-    start.mutate(c, { onSettled: () => onOpenSolo() });
+  const pull = async () => {
+    setRefreshing(true);
+    await refresh().finally(() => setRefreshing(false));
   };
 
   return (
-    <>
-      <Placeholder
-        title={t('tabs.study')}
-        actions={
-          live
-            ? [{ label: t('study.open'), onPress: onOpenSolo }]
-            : [
-                {
-                  label: t('study.cycle', { cycle: cycleText(cycle) }),
-                  onPress: () => setChoosing(true),
-                },
-                { label: t('study.start'), onPress: () => void begin() },
-              ]
+    <View style={[styles.screen, { paddingTop: top }]}>
+      <Text variant="title-1" accessibilityRole="header" style={styles.title}>
+        {t('tabs.study')}
+      </Text>
+      {/* 04 offline: the banner sits right under the tab title. */}
+      <ConnectionBanner />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={pull} />
         }
-      />
+      >
+        <Rooms online={online} onCreateServer={onCreateServer} />
+        <SoloBlock
+          cycle={cycle}
+          onChangeCycle={setCycle}
+          onStart={(c) => void begin(c)}
+          starting={starting}
+          onOpen={onOpenSolo}
+        />
+        <WeekBlock
+          stats={stats.data}
+          online={online}
+          onOpen={onOpenStats}
+          onFirstFocus={() => void begin(FIRST_FOCUS)}
+        />
+      </ScrollView>
+    </View>
+  );
+}
+
+function Rooms({
+  online,
+  onCreateServer,
+}: {
+  online: boolean;
+  onCreateServer: () => void;
+}) {
+  const { t } = useTranslation();
+  // null until READY lists the servers (S-HOME-02: an empty list means no server).
+  const servers = useStore(homeStore, (s) => s.servers);
+  return (
+    <View style={styles.section}>
+      <Text variant="headline">{t('study.home.rooms')}</Text>
+      {!online ? (
+        <Text color="text-secondary">{t('study.home.roomsOffline')}</Text>
+      ) : servers === null ? (
+        <View style={styles.skeletons}>
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} width="100%" height={size.settingsRow} />
+          ))}
+        </View>
+      ) : servers.length === 0 ? (
+        <EmptyState
+          title={t('study.home.noServerTitle')}
+          action={{
+            label: t('study.home.createServer'),
+            variant: 'secondary',
+            onPress: onCreateServer,
+          }}
+        />
+      ) : (
+        <EmptyState
+          title={t('study.home.noRoomsTitle')}
+          body={t('study.home.noRoomsBody')}
+        />
+      )}
+    </View>
+  );
+}
+
+// C-16 `list`: minutes only (the MiniPlayer on the same screen counts seconds).
+function soloLine(t: ReturnType<typeof useTranslation>['t'], timer: SoloTimer) {
+  const minutes = Math.floor(timer.remainingMs / 60_000);
+  if (timer.status === 'paused') return t('study.phase.pausedShort');
+  if (timer.status === 'waiting')
+    return t('study.home.waitingLeft', { minutes });
+  const phase = t(`study.phase.${timer.phase}`);
+  return minutes
+    ? t('study.home.left', { phase, minutes })
+    : t('study.home.leftUnder', { phase });
+}
+
+function SoloBlock({
+  cycle,
+  onChangeCycle,
+  onStart,
+  starting,
+  onOpen,
+}: {
+  cycle: CycleConfig;
+  onChangeCycle: (c: CycleConfig) => void;
+  onStart: (c?: CycleConfig) => void;
+  starting: boolean;
+  onOpen: () => void;
+}) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const { fontScale } = useWindowDimensions();
+  const snap = useSolo();
+  const now = useNow(1000);
+  const [choosing, setChoosing] = useState(false);
+  const timer = snap && !endingOf(snap) ? timerOf(snap, now) : null;
+  // 04 › Khối Solo: at 200% "Bắt đầu" goes under the text, full width.
+  const stacked = fontScale >= 1.5;
+  const cycleLabel = cycle.long_break_min
+    ? t('study.cycleLong', {
+        cycle: cycleText(cycle),
+        long: cycle.long_break_min,
+      })
+    : t('study.cycle', { cycle: cycleText(cycle) });
+
+  return (
+    <View style={[styles.solo, { borderColor: colors.border }]}>
+      <View style={[styles.soloHead, stacked && styles.stacked]}>
+        <Text variant="headline" style={styles.flex}>
+          {t('study.solo')}
+        </Text>
+        {timer ? (
+          <Button
+            variant="secondary"
+            size="S"
+            label={t('study.open')}
+            onPress={onOpen}
+          />
+        ) : (
+          <Button
+            icon={Play}
+            label={t('study.start')}
+            loading={starting}
+            fullWidth={stacked}
+            onPress={() => onStart()}
+          />
+        )}
+      </View>
+      {timer ? (
+        <PhaseBadge
+          phase={timer.phase}
+          state={timer.status}
+          size="S"
+          label={soloLine(t, timer)}
+        />
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={cycleLabel}
+          onPress={() => setChoosing(true)}
+          style={styles.cycleRow}
+        >
+          <Text color="text-secondary" numberOfLines={2} style={styles.shrink}>
+            {cycleLabel}
+          </Text>
+          <Icon as={ChevronDown} size="base" color="text-secondary" />
+        </Pressable>
+      )}
       <CycleSheet
         key={String(choosing)}
         visible={choosing}
         mode="start"
         initial={cycle}
-        loading={start.isPending}
+        loading={starting}
+        onKeep={onChangeCycle}
         onDismiss={() => setChoosing(false)}
         onSubmit={(c) => {
           setChoosing(false);
-          void begin(c);
+          onStart(c);
         }}
       />
-    </>
+    </View>
   );
 }
+
+function WeekBlock({
+  stats,
+  online,
+  onOpen,
+  onFirstFocus,
+}: {
+  stats: StudyStatsResponse | undefined;
+  online: boolean;
+  onOpen: (date: string) => void;
+  onFirstFocus: () => void;
+}) {
+  const { t } = useTranslation();
+  if (!stats)
+    return online ? (
+      <View style={styles.skeletons}>
+        <Skeleton width="60%" height={40} />
+        <Skeleton width="100%" height={120} />
+      </View>
+    ) : (
+      <EmptyState title={t('study.stats.offline')} />
+    );
+  // never-studied: the only primary button on the screen stays Solo's "Bắt đầu".
+  if (!stats.first_date)
+    return (
+      <EmptyState
+        mascot
+        title={t('study.home.neverTitle')}
+        body={t('study.home.neverBody')}
+        action={{
+          label: t('study.home.neverStart'),
+          variant: 'secondary',
+          onPress: onFirstFocus,
+        }}
+      />
+    );
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => onOpen(stats.today)}
+      style={styles.section}
+    >
+      <View style={styles.row}>
+        <Text variant="headline" style={styles.flex}>
+          {t('study.home.week')}
+        </Text>
+        <Icon as={ChevronRight} size="lg" color="text-secondary" />
+      </View>
+      <View style={styles.streakRow}>
+        {stats.current_streak_days ? (
+          <StatText
+            text={`${stats.current_streak_days} ${t('study.streakUnit')}`}
+          />
+        ) : (
+          // STUDY-03 AC2: neutral, no mascot.
+          <Text color="text-secondary" style={styles.shrink}>
+            {t('study.streakZero')}
+          </Text>
+        )}
+        <StatText text={minutesText(t, stats.total_minutes)} />
+      </View>
+      <Today minutes={stats.today_minutes} />
+      <WeekChart days={stats.days} today={stats.today} />
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: { flex: 1 },
+  title: { paddingHorizontal: space[3], paddingVertical: space[2] },
+  content: { padding: space[3], gap: space[4] },
+  section: { gap: space[2] },
+  skeletons: { gap: space[2] },
+  solo: {
+    borderWidth: size.hairline,
+    borderRadius: radius.button,
+    padding: space[3],
+    gap: space[2],
+  },
+  soloHead: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
+  stacked: { flexDirection: 'column', alignItems: 'stretch' },
+  cycleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[1],
+    minHeight: size.touch,
+  },
+  row: { flexDirection: 'row', alignItems: 'center' },
+  streakRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: space[2],
+  },
+  flex: { flex: 1 },
+  shrink: { flexShrink: 1 },
+});

@@ -207,11 +207,14 @@ export class RolesService {
       server_id: serverId.toString(),
       role_id: roleId.toString(),
     });
-    // The channels whose overwrites lost the role (REQ-ROLE-03).
-    await this.channelEvents.updated(
-      serverId,
-      (await this.channels.byIds(touched)).map(toChannelResponse),
+    // The channels whose overwrites lost the role, and the ones synced to such a category.
+    const hit = new Set(touched);
+    const affected = (await this.channels.listForServer(serverId)).filter(
+      (c) =>
+        hit.has(c.id) ||
+        (c.permissionsSynced && c.parentId !== null && hit.has(c.parentId)),
     );
+    await this.channelEvents.updated(serverId, affected.map(toChannelResponse));
   }
 
   async reorder(

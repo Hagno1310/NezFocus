@@ -43,7 +43,7 @@ const TEMPLATES: Record<
     ],
   },
   study_server: {
-    // ponytail: #viec-nhom's Task Board flag arrives with REQ-STUDY-06.
+    // ponytail: #viec-nhom's Task Board flag arrives with REQ-STUDY-06, P4-A1 (#32).
     channels: [
       {
         type: 'category',

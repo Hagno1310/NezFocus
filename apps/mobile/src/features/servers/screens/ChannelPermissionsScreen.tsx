@@ -1,6 +1,5 @@
 import {
   categoryTitle,
-  type ChannelResponse,
   type PermissionOverwrite,
   type RoleResponse,
 } from '@nezfocus/shared';
@@ -12,6 +11,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   addTargets,
   canEditTarget,
+  channelLabel,
+  searchKey,
   overwriteSummary,
   shownOverwrites,
 } from '../../../domain/servers/channelPermissions';
@@ -24,26 +25,12 @@ import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { SettingsRow } from '../../../shared/ui/SettingsRow';
 import { Text } from '../../../shared/ui/Text';
 import { SearchField } from '../../../shared/ui/TextField';
-import { useOverwrites, type Target } from '../hooks/useOverwrites';
-import { NoteLine } from './RolesScreen';
-
-// "#thong-bao" for a text channel, the name for a voice room, capitals for a category.
-export const channelLabel = (c: ChannelResponse) =>
-  c.type === 'text'
-    ? `#${c.name}`
-    : c.type === 'category'
-      ? categoryTitle(c.name)
-      : c.name;
-
-// The name of an overwrite's target, as the rows show it.
-export function useTargetName(roles: readonly RoleResponse[] | undefined) {
-  const { t } = useTranslation();
-  // ponytail: a member target shows their name with the member list, P2-A2 (#15).
-  return (o: Target) =>
-    o.target_type === 'role'
-      ? (roles?.find((r) => r.id === o.target_id)?.name ?? '')
-      : t('servers.overwrites.member');
-}
+import {
+  useOverwrites,
+  useTargetName,
+  type Target,
+} from '../hooks/useOverwrites';
+import { NoteLine } from '../../../shared/ui/NoteLine';
 
 // S-SET-06 `overwrites`, `overwrites-synced`, `category-overwrites`, `add-target`.
 // Synced: the category's rows, disabled, with "Sửa quyền danh mục ›".
@@ -83,7 +70,7 @@ export function ChannelPermissionsScreen({
     : [];
 
   const summary = (row: PermissionOverwrite) => {
-    const { allow, deny } = overwriteSummary(row);
+    const { allow, deny } = overwriteSummary(row, channel.type);
     const parts = [
       allow && t('servers.overwrites.allowCount', { count: allow }),
       deny && t('servers.overwrites.denyCount', { count: deny }),
@@ -124,7 +111,7 @@ export function ChannelPermissionsScreen({
             description={
               synced
                 ? t('servers.overwrites.syncedHint', { name: parentName })
-                : t('servers.overwrites.unsyncedHint')
+                : undefined
             }
             toggle={{
               value: channel.permissions_synced,
@@ -170,6 +157,12 @@ export function ChannelPermissionsScreen({
               }
               label={nameOf(row)}
               value={summary(row)}
+              // Spec 08 › Hiện theo quyền: blocked by hierarchy → shown, locked, with a reason.
+              description={
+                !editable && !synced
+                  ? t('servers.overwrites.lockedTarget')
+                  : undefined
+              }
               disabled={synced || o.offline || !editable}
               onPress={() => onEdit(row)}
             />
@@ -237,10 +230,8 @@ function AddTargetSheet({
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
   useOnOpen(visible, () => setQuery(''));
-  const q = query.trim().toLocaleLowerCase('vi');
-  const shown = targets.filter((x) =>
-    x.role.name.toLocaleLowerCase('vi').includes(q),
-  );
+  const q = searchKey(query.trim());
+  const shown = targets.filter((x) => searchKey(x.role.name).includes(q));
   return (
     <BottomSheet
       visible={visible}

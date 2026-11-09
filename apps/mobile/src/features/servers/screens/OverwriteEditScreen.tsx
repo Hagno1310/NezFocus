@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   canEditTarget,
+  channelLabel,
   overwritePermissions,
   triOf,
 } from '../../../domain/servers/channelPermissions';
@@ -28,9 +29,9 @@ import { SystemBanner } from '../../../shared/ui/Feedback';
 import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { TriState } from '../../../shared/ui/SegmentedControl';
 import { Text } from '../../../shared/ui/Text';
-import { useOverwrites } from '../hooks/useOverwrites';
-import { channelLabel, useTargetName } from './ChannelPermissionsScreen';
-import { NoteLine } from './RolesScreen';
+import { useOverwrites, useTargetName } from '../hooks/useOverwrites';
+
+import { NoteLine } from '../../../shared/ui/NoteLine';
 
 type PermissionLabels = (typeof vi)['permissions']['labels'];
 

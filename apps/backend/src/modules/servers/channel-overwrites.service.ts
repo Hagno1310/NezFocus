@@ -2,11 +2,8 @@ import { Injectable } from '@nestjs/common';
 import {
   ErrorCode,
   addedAllows,
-  canEditOverwrite,
   type ChannelResponse,
-  type OverwriteTarget,
   type PermissionOverwrite,
-  type PermissionServer,
   type PutChannelPermissionRequest,
 } from '@nezfocus/shared';
 import { AppError } from '../../common/app-error.js';
@@ -16,30 +13,20 @@ import { ChannelEvents } from './channel-events.js';
 import {
   ChannelsRepository,
   type LockedChannels,
-  type People,
 } from './channels.repository.js';
 import { ChannelsService } from './channels.service.js';
+import { assertCanEditTarget, overwriteTarget } from './overwrite-targets.js';
 import { toChannelResponse } from './servers.dto.js';
 
 const invalid = (field: string, code: string, message: string) =>
   new AppError(ErrorCode.ValidationError, message, {
     [field]: [{ code, message }],
   });
-const outranked = () =>
-  new AppError(
-    ErrorCode.InsufficientRoleHierarchy,
-    'The target is level with or above your highest role',
-  );
 
-const toServer = (serverId: bigint, people: People): PermissionServer => ({
-  id: serverId.toString(),
-  ownerId: people.ownerId.toString(),
-  roles: people.roles.map((r) => ({ ...r, id: r.id.toString() })),
-});
-const toMember = (people: People, userId: bigint) => ({
-  userId: userId.toString(),
-  roleIds: (people.roleIdsOf.get(userId) ?? []).map(String),
-});
+const sameTarget =
+  (a: Pick<PermissionOverwrite, 'target_id' | 'target_type'>) =>
+  (b: Pick<PermissionOverwrite, 'target_id' | 'target_type'>) =>
+    a.target_id === b.target_id && a.target_type === b.target_type;
 
 // REQ-ROLE-03: one role's or member's allow / deny in a channel or category. The caller
 // needs MANAGE_CHANNELS there (SRS 8.5.1), edits only targets below them and only allows
@@ -69,18 +56,15 @@ export class ChannelOverwritesService {
       channelId,
       async (locked, self) => {
         const people = await locked.people(self.serverId, [userId, targetId]);
-        const target = this.target(people, next);
-        if (!target)
+        if (!overwriteTarget(people, next))
           throw invalid(
             'target_id',
             'UNKNOWN_TARGET',
             'Not a role or a member of this server',
           );
-        this.checkRank(self.serverId, people, userId, target);
+        assertCanEditTarget(self.serverId, people, userId, next);
         const before = self.channel.permission_overwrites.find(
-          (o) =>
-            o.target_id === next.target_id &&
-            o.target_type === next.target_type,
+          sameTarget(next),
         );
         await this.permissions.require(
           userId,
@@ -88,29 +72,23 @@ export class ChannelOverwritesService {
           addedAllows(before, next),
         );
         await locked.putOverwrite(channelId, next);
+        return true;
       },
     );
-    return channel.permission_overwrites.find(
-      (o) =>
-        o.target_id === next.target_id && o.target_type === next.target_type,
-    )!;
+    return channel.permission_overwrites.find(sameTarget(next))!;
   }
 
-  // 204 also when there is nothing to drop.
+  // 204 also when there is nothing to drop; then nothing is invalidated or sent.
   async remove(userId: bigint, channelId: bigint, targetId: bigint) {
     await this.write(userId, channelId, async (locked, self) => {
       const existing = self.channel.permission_overwrites.find(
         (o) => o.target_id === targetId.toString(),
       );
-      if (!existing) return;
+      if (!existing) return false;
       const people = await locked.people(self.serverId, [userId, targetId]);
-      // A role deleted meanwhile, or a member who left, outranks nobody.
-      const target = this.target(people, existing) ?? {
-        type: 'member' as const,
-        member: { userId: existing.target_id, roleIds: [] },
-      };
-      this.checkRank(self.serverId, people, userId, target);
+      assertCanEditTarget(self.serverId, people, userId, existing);
       await locked.deleteOverwrite(channelId, targetId);
+      return true;
     });
   }
 
@@ -121,11 +99,11 @@ export class ChannelOverwritesService {
     change: (
       locked: LockedChannels,
       self: { serverId: bigint; channel: ChannelResponse },
-    ) => Promise<void>,
+    ) => Promise<boolean>, // false: nothing changed
   ): Promise<ChannelResponse> {
     const row = await this.channels.manageable(userId, channelId);
     const serverId = row.serverId!;
-    const channels = await this.repo.locked(serverId, async (locked) => {
+    const result = await this.repo.locked(serverId, async (locked) => {
       const current = locked.rows.find((c) => c.id === channelId);
       if (!current) throw new AppError(ErrorCode.NotFound, 'Unknown channel'); // deleted meanwhile
       const self = toChannelResponse(current);
@@ -136,48 +114,24 @@ export class ChannelOverwritesService {
           'SYNCED',
           'The channel follows its category; turn syncing off first',
         );
-      await change(locked, { serverId, channel: self });
+      if (!(await change(locked, { serverId, channel: self })))
+        return { changed: false, channels: [self] };
       // A category's synced channels change who sees them too, so they go out again.
       const followers = locked.rows
         .filter((c) => c.parentId === channelId && c.permissionsSynced)
         .map(toChannelResponse);
-      return [
-        toChannelResponse((await locked.reload(channelId))!),
-        ...followers,
-      ];
+      return {
+        changed: true,
+        channels: [
+          toChannelResponse((await locked.reload(channelId))!),
+          ...followers,
+        ],
+      };
     });
-    await this.cache.invalidateServer(serverId);
-    await this.channelEvents.updated(serverId, channels);
-    return channels[0]!;
-  }
-
-  // undefined: no such role in this server, or the user is not a member.
-  private target(
-    people: People,
-    o: Pick<PermissionOverwrite, 'target_id' | 'target_type'>,
-  ): OverwriteTarget | undefined {
-    const id = BigInt(o.target_id);
-    if (o.target_type === 'role') {
-      const role = people.roles.find((r) => r.id === id);
-      return role && { type: 'role', role: { ...role, id: o.target_id } };
+    if (result.changed) {
+      await this.cache.invalidateServer(serverId);
+      await this.channelEvents.updated(serverId, result.channels);
     }
-    if (!people.roleIdsOf.has(id)) return undefined;
-    return { type: 'member', member: toMember(people, id) };
-  }
-
-  private checkRank(
-    serverId: bigint,
-    people: People,
-    userId: bigint,
-    target: OverwriteTarget,
-  ) {
-    if (
-      !canEditOverwrite(
-        toServer(serverId, people),
-        toMember(people, userId),
-        target,
-      )
-    )
-      throw outranked();
+    return result.channels[0]!;
   }
 }

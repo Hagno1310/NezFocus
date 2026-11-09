@@ -13,7 +13,11 @@ import {
   myChannelPermissions,
   overwritePermissions,
   overwriteSummary,
+  privateHidesCreator,
   privateViewers,
+  saveOverwrite,
+  withSteps,
+  searchKey,
   shownOverwrites,
   triOf,
   withTri,
@@ -122,8 +126,14 @@ describe('triOf / withTri / overwriteSummary', () => {
     expect(
       overwriteSummary(
         ow('102', P.SEND_MESSAGES | P.ATTACH_FILES, P.EMBED_LINKS),
+        'text',
       ),
     ).toEqual({ allow: 2, deny: 1 });
+    // A voice bit copied onto a text channel has no row there, so it doesn't count.
+    expect(overwriteSummary(ow('102', P.SPEAK, 0n), 'text')).toEqual({
+      allow: 0,
+      deny: 0,
+    });
   });
 });
 
@@ -189,10 +199,60 @@ describe('privateViewers (S-SET-09 `private-roles`, `private-self-warning`)', ()
       ['Điều phối phòng học', false, false],
     ]);
     expect(v.initial).toEqual(['103']);
-    expect(v.wouldHide(['102'])).toBe(true);
-    expect(v.wouldHide(['103'])).toBe(false);
     const an = privateViewers(server, roles, { userId: '1', roleIds: [] });
     expect(an.initial).toEqual([]);
-    expect(an.wouldHide([])).toBe(false);
+  });
+
+  it('warns when the creator would not see it, counting the category overwrites', () => {
+    const tuan = { userId: '9', roleIds: ['103'] };
+    const draft = { type: 'text' as const, parent_id: '10' };
+    const plain = ch('10', 'category', null, true);
+    const hides = (category: ChannelResponse, viewers: string[]) =>
+      privateHidesCreator(server, ROLES, tuan, draft, [category], viewers);
+    expect(hides(plain, ['102'])).toBe(true);
+    expect(hides(plain, ['103'])).toBe(false);
+    const allowsAdmin = ch('10', 'category', null, true, [
+      ow('103', P.VIEW_CHANNEL, 0n),
+    ]);
+    expect(hides(allowsAdmin, ['102'])).toBe(false); // the category's allow stays
+    expect(
+      privateHidesCreator(
+        server,
+        ROLES,
+        { userId: '1', roleIds: [] },
+        draft,
+        [plain],
+        [],
+      ),
+    ).toBe(false);
+  });
+
+  it('searchKey ignores marks and case ("đ" = "d")', () => {
+    expect(searchKey('Điều phối')).toBe(searchKey('dieu PHOI'));
+  });
+});
+
+describe('withSteps / saveOverwrite (each step saves at once)', () => {
+  it('applies every step still in flight; an empty overwrite is a DELETE', async () => {
+    const target = { target_id: '102', target_type: 'role' as const };
+    const next = withSteps(
+      ow('102', P.SEND_MESSAGES, 0n),
+      target,
+      new Map([
+        ['SEND_MESSAGES', 'default'],
+        ['VIEW_CHANNEL', 'deny'],
+      ] as const),
+    );
+    expect(next).toEqual(ow('102', 0n, P.VIEW_CHANNEL));
+    const calls: string[] = [];
+    const repo = {
+      setChannelPermission: async () => (calls.push('put'), next),
+      deleteChannelPermission: async () => void calls.push('delete'),
+    };
+    expect(await saveOverwrite(repo, '12', next)).toBe('saved');
+    expect(
+      await saveOverwrite(repo, '12', { ...target, allow: '0', deny: '0' }),
+    ).toBe('dropped');
+    expect(calls).toEqual(['put', 'delete']);
   });
 });

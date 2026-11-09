@@ -25,6 +25,7 @@ import { PermissionService } from '../permissions/permission.service.js';
 import { ChannelEvents } from './channel-events.js';
 import { ruleError } from './channel-rules.js';
 import { ChannelsRepository, type ChannelMove } from './channels.repository.js';
+import { assertCanEditTarget } from './overwrite-targets.js';
 import { toChannelResponse, toServerSummary } from './servers.dto.js';
 import { ServersRepository } from './servers.repository.js';
 import { ChannelTypeCode, type ChannelRow } from './servers.schema.js';
@@ -199,6 +200,17 @@ export class ChannelsService {
               self.type === 'category' ? 'CATEGORY' : 'NO_CATEGORY',
               'Only a channel in a category follows it',
             );
+          // On drops the channel's own overwrites: each one must be below the caller (8.5.2).
+          if (synced && self.permission_overwrites.length) {
+            const people = await locked.people(serverId, [
+              userId,
+              ...self.permission_overwrites
+                .filter((o) => o.target_type === 'member')
+                .map((o) => BigInt(o.target_id)),
+            ]);
+            for (const o of self.permission_overwrites)
+              assertCanEditTarget(serverId, people, userId, o);
+          }
           // Off: the category's overwrites are where the channel's own start.
           await locked.update(row.id, { permissionsSynced: synced });
           await locked.replaceOverwrites(

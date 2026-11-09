@@ -1,10 +1,4 @@
-import {
-  Permission,
-  ROLE_NAME_MAX,
-  parsePermissionBitmap,
-  toPermissionBitmap,
-  type PermissionName,
-} from '@nezfocus/shared';
+import { ROLE_NAME_MAX, type PermissionName } from '@nezfocus/shared';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { Info, Lock, Trash2, Users } from 'lucide-react-native';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
@@ -14,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   checkRoleName,
   roleEditor,
+  withPermissions,
   type RoleError,
 } from '../../../domain/servers/roles';
 import { disabledOpacity, size, space, useTheme } from '../../../shared/theme';
@@ -31,7 +26,7 @@ import { homeStore } from '../../../domain/servers/homeStore';
 import { useRoles } from '../hooks/useRoles';
 
 type PermissionLabels = (typeof vi)['permissions']['labels'];
-import { NoteLine } from './RolesScreen';
+import { NoteLine } from '../../../shared/ui/NoteLine';
 
 // S-SET-02 `edit-role` (+ `-middle`, `-lower`), `edit-role-name-taken`, `everyone`,
 // `role-readonly`, `permission-locked` (+ `-lower`), `admin-on`, `delete-confirm`,
@@ -133,25 +128,16 @@ export function RoleEditScreen({
     explain(r.error);
   };
 
-  // `save-error`: the switch goes back and the Toast offers to try again.
   // `save-error`: the switch goes back and the Toast offers to try again. Each save sends
   // every switch still in flight, so two quick taps never undo each other.
   const flip = async (name: PermissionName, on: boolean) => {
     inFlight.current[name] = on;
     setPending({ ...inFlight.current });
-    let bits = parsePermissionBitmap(
-      (
-        homeStore.getState().roles[serverId]?.find((r) => r.id === roleId) ??
-        role
-      ).permissions,
-    );
-    for (const [n, v] of Object.entries(inFlight.current) as [
-      PermissionName,
-      boolean,
-    ][])
-      bits = v ? bits | Permission[n] : bits & ~Permission[n];
+    const latest =
+      homeStore.getState().roles[serverId]?.find((r) => r.id === roleId) ??
+      role;
     const r = await roles.update(role.id, {
-      permissions: toPermissionBitmap(bits),
+      permissions: withPermissions(latest, inFlight.current),
     });
     if (inFlight.current[name] === on) delete inFlight.current[name];
     setPending({ ...inFlight.current });

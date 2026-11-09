@@ -522,6 +522,50 @@ describe('Channel permissions (e2e)', () => {
     expect(await channelOf(chi, server.id, secret.id)).toBeUndefined();
   });
 
+  it('turning sync on is 40301 when it would drop an overwrite of a role level with or above you', async () => {
+    const an = await signedIn();
+    const tuan = await signedIn();
+    const server = await serverOf(an, tuan);
+    const admin = await addRole(server.id, 'Quản trị', 2, P.MANAGE_CHANNELS, [
+      tuan,
+    ]);
+    await an
+      .patch(byId(server.text.id))
+      .send({ permissions_synced: false })
+      .expect(200);
+    await put(an, server.text.id, ow(admin, 0n, P.SEND_MESSAGES)).expect(200);
+
+    const res = await tuan
+      .patch(byId(server.text.id))
+      .send({ permissions_synced: true });
+    expect(res.body.code).toBe(ErrorCode.InsufficientRoleHierarchy);
+    await an
+      .patch(byId(server.text.id))
+      .send({ permissions_synced: true })
+      .expect(200);
+  });
+
+  it("deleting a role a category allowed VIEW_CHANNEL also re-sends the category's synced channels", async () => {
+    const an = await signedIn();
+    const chi = await signedIn();
+    const server = await serverOf(an, chi);
+    const mod = await addRole(server.id, 'Mod', 1, 0n, [chi]);
+    await put(an, server.category.id, ow(server.id, 0n, P.VIEW_CHANNEL)).expect(
+      200,
+    );
+    await put(an, server.category.id, ow(mod, P.VIEW_CHANNEL, 0n)).expect(200);
+    const gateway = await connectGateway(app, chi.token);
+
+    await an
+      .delete(RoleRoutes.byId.replace(':id', server.id).replace(':roleId', mod))
+      .expect(204);
+    await gateway.next(
+      'CHANNEL_DELETE',
+      (d) => (d as { id: string }).id === server.text.id,
+    );
+    gateway.close();
+  });
+
   it('the Study Server template starts #thong-bao with @everyone deny SEND_MESSAGES, not synced (8.5.3)', async () => {
     const an = await signedIn();
     const binh = await signedIn();

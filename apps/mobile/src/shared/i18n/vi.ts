@@ -369,7 +369,6 @@ export const vi = {
       sync: 'Đồng bộ với danh mục {{name}}',
       syncedHint:
         'Đang dùng quyền của danh mục {{name}}. Tắt đồng bộ để đặt quyền riêng.',
-      unsyncedHint: 'Tắt để đặt quyền riêng cho kênh này.',
       groupOwn: 'QUYỀN RIÊNG CỦA KÊNH',
       groupSynced: 'QUYỀN CỦA DANH MỤC {{name}}',
       groupCategory: 'QUYỀN RIÊNG CỦA DANH MỤC',
@@ -378,6 +377,7 @@ export const vi = {
       none: 'Không đổi gì',
       categoryEmpty:
         'Danh mục {{name}} chưa đặt quyền riêng: mọi người dùng quyền theo vai trò trong server.',
+      lockedTarget: 'Bạn chỉ sửa được đối tượng thấp hơn mình.',
       editCategory: 'Sửa quyền danh mục',
       categoryNote:
         'Kênh trong danh mục đang bật “Đồng bộ với danh mục” sẽ dùng quyền này.',
@@ -388,7 +388,6 @@ export const vi = {
       add: 'Thêm vai trò hoặc thành viên',
       search: 'Tìm vai trò hoặc thành viên',
       rolesGroup: 'VAI TRÒ',
-      membersGroup: 'THÀNH VIÊN',
       editTitle: '{{target}} ở {{channel}}',
       editSubtitle: 'Quyền riêng ở kênh',
       defaultHint: 'Mặc định = theo quyền của vai trò trong server.',

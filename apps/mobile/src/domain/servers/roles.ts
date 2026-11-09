@@ -61,7 +61,7 @@ const byRank = (a: RoleResponse, b: RoleResponse) =>
   b.position - a.position || a.id.localeCompare(b.id);
 
 // Highest first, @everyone (the role with the server's id) last.
-const ranked = (serverId: string, roles: readonly RoleResponse[]) => [
+export const ranked = (serverId: string, roles: readonly RoleResponse[]) => [
   ...roles.filter((r) => r.id !== serverId).sort(byRank),
   ...roles.filter((r) => r.id === serverId),
 ];
@@ -168,11 +168,21 @@ export const withPermission = (
   role: RoleResponse,
   name: PermissionName,
   on: boolean,
-) => {
-  const bits = parsePermissionBitmap(role.permissions);
-  const bit = Permission[name];
-  return toPermissionBitmap(on ? bits | bit : bits & ~bit);
-};
+) => withPermissions(role, { [name]: on });
+
+// Several switches at once (the ones still being saved).
+export function withPermissions(
+  role: RoleResponse,
+  changes: Partial<Record<PermissionName, boolean>>,
+) {
+  let bits = parsePermissionBitmap(role.permissions);
+  for (const [name, on] of Object.entries(changes) as [
+    PermissionName,
+    boolean,
+  ][])
+    bits = on ? bits | Permission[name] : bits & ~Permission[name];
+  return toPermissionBitmap(bits);
+}
 
 export type RoleNameError = 'empty' | 'reserved' | 'taken';
 

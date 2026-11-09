@@ -14,7 +14,10 @@ import {
   namePreview,
   type ChannelActionError,
 } from '../../../domain/servers/channels';
-import { privateViewers } from '../../../domain/servers/channelPermissions';
+import {
+  privateHidesCreator,
+  privateViewers,
+} from '../../../domain/servers/channelPermissions';
 import { channelSections } from '../../../domain/servers/drawer';
 import { homeStore, removeChannel } from '../../../domain/servers/homeStore';
 import { useOnOpen } from '../../../shared/hooks/useOnOpen';
@@ -195,7 +198,18 @@ export function CreateChannelSheet({
           : null;
 
   // `private-self-warning`: only a warning, the channel is still created.
-  const hidesMe = isPrivate && type !== 'category' && !!v?.wouldHide(viewers);
+  const hidesMe =
+    isPrivate &&
+    type !== 'category' &&
+    !!access?.userId &&
+    privateHidesCreator(
+      access.server,
+      access.roles ?? [],
+      { userId: access.userId, roleIds: access.roleIds },
+      { type, parent_id: parentId },
+      channels ?? [],
+      viewers,
+    );
   const warning = (
     <FormMessage
       tone="info"

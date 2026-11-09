@@ -374,7 +374,6 @@ export const en: Strings = {
       sync: 'Sync with category {{name}}',
       syncedHint:
         'Using the permissions of category {{name}}. Turn sync off to set this channel’s own.',
-      unsyncedHint: 'Turn off to set this channel’s own permissions.',
       groupOwn: 'CHANNEL PERMISSIONS',
       groupSynced: 'PERMISSIONS OF CATEGORY {{name}}',
       groupCategory: 'CATEGORY PERMISSIONS',
@@ -383,6 +382,7 @@ export const en: Strings = {
       none: 'No change',
       categoryEmpty:
         'Category {{name}} has no permissions of its own: everyone follows their server roles.',
+      lockedTarget: 'You can only edit what sits below you.',
       editCategory: 'Edit category permissions',
       categoryNote:
         'Channels in this category with sync on use these permissions.',
@@ -392,7 +392,6 @@ export const en: Strings = {
       add: 'Add role or member',
       search: 'Search roles or members',
       rolesGroup: 'ROLES',
-      membersGroup: 'MEMBERS',
       editTitle: '{{target}} in {{channel}}',
       editSubtitle: 'Channel permissions',
       defaultHint: 'Default = whatever the server roles give.',

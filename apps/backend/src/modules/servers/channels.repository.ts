@@ -242,19 +242,6 @@ export class ChannelsRepository {
     return liveRows(this.db, serverId);
   }
 
-  async byIds(channelIds: bigint[]): Promise<ChannelWithOverwrites[]> {
-    if (!channelIds.length) return [];
-    return withOverwrites(
-      this.db,
-      await this.db
-        .select()
-        .from(channels)
-        .where(
-          and(inArray(channels.id, channelIds), isNull(channels.deletedAt)),
-        ),
-    );
-  }
-
   // Every channel write of a server runs here: the server row is locked first, so two
   // requests at once (two creates at the 500 limit, two channels renamed to one name) run
   // one after the other and the second one checks against what the first one wrote.

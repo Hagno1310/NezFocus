@@ -1,11 +1,5 @@
 import { ROLE_NAME_MAX, type RoleResponse } from '@nezfocus/shared';
-import {
-  GripVertical,
-  Lock,
-  Shield,
-  Users,
-  type LucideIcon,
-} from 'lucide-react-native';
+import { GripVertical, Lock, Shield, Users } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -22,6 +16,7 @@ import { size, space, useTheme } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import { SystemBanner } from '../../../shared/ui/Feedback';
 import { Icon } from '../../../shared/ui/Icon';
+import { NoteLine } from '../../../shared/ui/NoteLine';
 import { BottomSheet } from '../../../shared/ui/Overlay';
 import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { SettingsRow } from '../../../shared/ui/SettingsRow';
@@ -29,18 +24,6 @@ import { Text } from '../../../shared/ui/Text';
 import { TextField } from '../../../shared/ui/TextField';
 import { RoleReorderList } from '../components/RoleReorderList';
 import { useRoles } from '../hooks/useRoles';
-
-// The line under the header: an icon in front when it explains a limit on the caller.
-export function NoteLine({ icon, text }: { icon?: LucideIcon; text: string }) {
-  return (
-    <View style={styles.note}>
-      {icon && <Icon as={icon} size="sm" color="text-secondary" />}
-      <Text variant="label" color="text-secondary" style={styles.flex}>
-        {text}
-      </Text>
-    </View>
-  );
-}
 
 // S-SET-02 `list`, `reorder`, `hierarchy-blocked`, `limit`, `offline`, `create-sheet`,
 // `create-name-taken`; Edge case `long-role-name`, `roles-empty`.
@@ -71,7 +54,8 @@ export function RolesScreen({
 
   const people = (row: RoleListRow) => {
     if (row.everyone) return t('servers.roles.everyoneValue');
-    if (row.locked) return t('servers.roles.level');
+    if (row.locked && row.role.position === actor.highest)
+      return t('servers.roles.level');
     const count = roles.counts.get(row.role.id);
     return count === undefined
       ? undefined
@@ -297,12 +281,6 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   flex: { flex: 1 },
   body: { paddingHorizontal: space[3] },
-  note: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: space[2],
-    paddingVertical: space[2],
-  },
   group: { height: size.groupTitle, paddingTop: space[2] },
   sortRow: {
     minHeight: size.settingsRow,

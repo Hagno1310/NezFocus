@@ -2,6 +2,8 @@ import {
   ALL_PERMISSIONS,
   Permission,
   canEditOverwrite,
+  categoryTitle,
+  privateChannelOverwrites,
   computeBasePermissions,
   computeChannelPermissions,
   hasPermission,
@@ -17,6 +19,8 @@ import {
   type RoleResponse,
   type ServerSummary,
 } from '@nezfocus/shared';
+import type { ServerRepository } from './ServerRepository';
+import { ranked } from './roles';
 import { toPermissionServer } from './serverAccess';
 
 // S-SET-06 `overwrites` / `overwrite-edit` and S-SET-09 `private-roles` (REQ-ROLE-03,
@@ -74,12 +78,16 @@ export function withTri(o: Bits | undefined, name: PermissionName, tri: Tri) {
   return { allow: toPermissionBitmap(allow), deny: toPermissionBitmap(deny) };
 }
 
-// "2 cho phép · 1 từ chối"
-export const overwriteSummary = (o: Bits) => ({
-  allow: permissionNames(parsePermissionBitmap(o.allow) & ALL_PERMISSIONS)
-    .length,
-  deny: permissionNames(parsePermissionBitmap(o.deny) & ALL_PERMISSIONS).length,
-});
+// "2 cho phép · 1 từ chối", over the rows the edit screen of this channel type shows.
+export function overwriteSummary(o: Bits, type: ChannelType) {
+  const shown = overwritePermissions(type).reduce(
+    (bits, p) => bits | Permission[p],
+    0n,
+  );
+  const count = (b: string) =>
+    permissionNames(parsePermissionBitmap(b) & shown).length;
+  return { allow: count(o.allow), deny: count(o.deny) };
+}
 
 const rankOf = (roles: readonly RoleResponse[], id: string) =>
   roles.find((r) => r.id === id)?.position ?? -1;
@@ -126,13 +134,6 @@ export function myChannelPermissions(
       : null,
   });
 }
-
-const ranked = (serverId: string, roles: readonly RoleResponse[]) => [
-  ...roles
-    .filter((r) => r.id !== serverId)
-    .sort((a, b) => b.position - a.position || a.id.localeCompare(b.id)),
-  ...roles.filter((r) => r.id === serverId),
-];
 
 const editable = (
   server: Pick<ServerSummary, 'id' | 'owner_id'>,
@@ -218,7 +219,94 @@ export function privateViewers(
     rows,
     initial: highest ? [highest.role.id] : [],
     // `private-self-warning`
-    wouldHide: (picked: readonly string[]) =>
-      !alwaysSees && !actor.roleIds.some((id) => picked.includes(id)),
   };
+}
+
+// `private-self-warning`: would the creator lose sight of the channel? The category's
+// overwrites count too, since the private channel starts from them.
+export function privateHidesCreator(
+  server: Pick<ServerSummary, 'id' | 'owner_id'>,
+  roles: readonly RoleResponse[],
+  actor: PermissionMember,
+  draft: Pick<ChannelResponse, 'type' | 'parent_id'>,
+  channels: readonly ChannelResponse[],
+  viewers: readonly string[],
+): boolean {
+  const parent = channels.find((c) => c.id === draft.parent_id);
+  const channel: ChannelResponse = {
+    ...draft,
+    id: '',
+    server_id: server.id,
+    name: '',
+    position: 0,
+    focus_control: 'off',
+    permissions_synced: false,
+    permission_overwrites: privateChannelOverwrites(
+      server.id,
+      parent?.permission_overwrites ?? [],
+      viewers,
+    ),
+  };
+  return !hasPermission(
+    myChannelPermissions(
+      server,
+      roles,
+      actor.userId,
+      actor.roleIds,
+      channel,
+      channels,
+    ),
+    Permission.VIEW_CHANNEL,
+  );
+}
+
+// NFR-I18N-03: search ignores Vietnamese marks ("đ" = "d") and case.
+export const searchKey = (text: string) =>
+  text
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLocaleLowerCase('vi');
+
+// "#thong-bao" for a text channel, the name for a voice room, capitals for a category.
+export const channelLabel = (c: Pick<ChannelResponse, 'type' | 'name'>) =>
+  c.type === 'text'
+    ? `#${c.name}`
+    : c.type === 'category'
+      ? categoryTitle(c.name)
+      : c.name;
+
+type Target = Pick<PermissionOverwrite, 'target_id' | 'target_type'>;
+
+// One target's overwrite after the steps still being saved, applied over what is stored.
+export function withSteps(
+  saved: Bits | undefined,
+  target: Target,
+  steps: ReadonlyMap<PermissionName, Tri>,
+): PermissionOverwrite {
+  let bits = { allow: saved?.allow ?? '0', deny: saved?.deny ?? '0' };
+  for (const [name, tri] of steps) bits = withTri(bits, name, tri);
+  return { ...target, ...bits };
+}
+
+// PUT the overwrite; one that allows and denies nothing is dropped instead (DELETE).
+export async function saveOverwrite(
+  repo: Pick<
+    ServerRepository,
+    'setChannelPermission' | 'deleteChannelPermission'
+  >,
+  channelId: string,
+  next: PermissionOverwrite,
+): Promise<'saved' | 'dropped'> {
+  if (next.allow === '0' && next.deny === '0') {
+    await repo.deleteChannelPermission(channelId, next.target_id);
+    return 'dropped';
+  }
+  await repo.setChannelPermission(channelId, next.target_id, {
+    target_type: next.target_type,
+    allow: next.allow,
+    deny: next.deny,
+  });
+  return 'saved';
 }

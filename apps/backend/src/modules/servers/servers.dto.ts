@@ -48,5 +48,5 @@ export const toServerResponse = (s: FullServer): ServerResponse => ({
   ...toServerSummary(s),
   channels: s.channels.map(toChannelResponse),
   roles: s.roles.map(toRoleResponse),
-  me: { role_ids: [] }, // ponytail: read from server_member_roles with P1-A3.2 (#65)
+  me: { role_ids: s.myRoleIds.map(String) },
 });

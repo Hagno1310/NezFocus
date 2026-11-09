@@ -113,6 +113,23 @@ describe('role requests', () => {
     );
   });
 
+  it('refuses reserved bits: 13 and 29–62 (8.5.1)', () => {
+    for (const bit of [1n << 13n, 1n << 29n, 1n << 62n])
+      expect(
+        UpdateRoleRequest.safeParse({ permissions: toPermissionBitmap(bit) })
+          .success,
+      ).toBe(false);
+  });
+
+  it('refuses the same role twice in one reorder', () => {
+    expect(
+      UpdateRolePositionsRequest.safeParse([
+        { id: '101', position: 2 },
+        { id: '101', position: 3 },
+      ]).success,
+    ).toBe(false);
+  });
+
   it('reorders roles above @everyone only', () => {
     expect(
       UpdateRolePositionsRequest.parse([{ id: '101', position: 1 }]),
@@ -146,6 +163,16 @@ describe('channel permission overwrites', () => {
     expect(
       PermissionOverwrite.safeParse({ ...body, target_id: '7' }).success,
     ).toBe(true);
+  });
+
+  it('refuses a reserved bit in allow or deny', () => {
+    expect(
+      PutChannelPermissionRequest.safeParse({
+        target_type: 'role',
+        allow: '0',
+        deny: toPermissionBitmap(1n << 13n),
+      }).success,
+    ).toBe(false);
   });
 
   it('refuses a bit both allowed and denied (DDL CHECK)', () => {

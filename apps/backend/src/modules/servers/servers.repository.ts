@@ -18,6 +18,7 @@ export type ServerWithCount = ServerRow & { memberCount: number };
 export type FullServer = ServerWithCount & {
   channels: ChannelRow[];
   roles: RoleRow[];
+  myRoleIds: bigint[]; // the caller's roles, without @everyone
 };
 
 const memberCount = sql<number>`(SELECT count(*)::int FROM ${serverMembers} WHERE ${serverMembers.serverId} = ${servers.id})`;
@@ -108,7 +109,7 @@ export class ServersRepository {
     if (!(await this.isMember(serverId, userId))) return undefined;
     const server = await this.summary(serverId);
     if (!server) return undefined;
-    const [channelRows, roleRows] = await Promise.all([
+    const [channelRows, roleRows, myRoles] = await Promise.all([
       this.db
         .select()
         .from(channels)
@@ -119,8 +120,22 @@ export class ServersRepository {
         .from(roles)
         .where(eq(roles.serverId, serverId))
         .orderBy(asc(roles.position), asc(roles.id)),
+      this.db
+        .select({ roleId: serverMemberRoles.roleId })
+        .from(serverMemberRoles)
+        .where(
+          and(
+            eq(serverMemberRoles.serverId, serverId),
+            eq(serverMemberRoles.userId, userId),
+          ),
+        ),
     ]);
-    return { ...server, channels: channelRows, roles: roleRows };
+    return {
+      ...server,
+      channels: channelRows,
+      roles: roleRows,
+      myRoleIds: myRoles.map((r) => r.roleId),
+    };
   }
 
   // Live channels only: a soft-deleted channel is gone for every caller.

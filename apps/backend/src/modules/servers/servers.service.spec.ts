@@ -23,6 +23,7 @@ function memoryRepo(atLimit = false) {
       permissionsSynced: true,
     })) as FullServer['channels'],
     roles: rows.roles as FullServer['roles'],
+    myRoleIds: rows.ownerRoleIds,
   });
   const find = (id: bigint) => made.find((r) => r.server.id === id);
   const repo = {

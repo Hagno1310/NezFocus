@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+  DefinedPermissionBitmap,
   PermissionBitmap,
   parsePermissionBitmap,
   type PermissionOverwriteInput,
@@ -16,11 +17,8 @@ export const ChannelRoutes = {
   positions: '/servers/:id/channels/positions',
   // REQ-SRV-02 · PATCH: 40001, 40302, 40401 · DELETE: 204, 40302, 40401
   byId: '/channels/:id',
-  // REQ-ROLE-03 · PUT: PermissionOverwrite · 40001 (target not a role / member of the server;
-  // the channel follows its category), 40301 (target at or above the caller), 40302
-  // (MANAGE_CHANNELS — 8.5.1; allowing a bit the caller lacks), 40401 · DELETE: 204, same codes.
-  // `:targetId` is a role id (the server id = @everyone) or a user id.
-  permission: '/channels/:id/permissions/:targetId',
+  // REQ-ROLE-03 · PUT: PermissionOverwrite · DELETE: 204 · 40001 (synced; bad target), 40301, 40302, 40401
+  permission: '/channels/:id/permissions/:targetId', // targetId: role id (server id = @everyone) or user id
 } as const;
 
 // SRS 8.2 channels.type 0–2 (DMs come with their own area).
@@ -36,23 +34,27 @@ export type OverwriteTargetType = z.infer<typeof OverwriteTargetType>;
 
 const overwriteBits = {
   target_type: OverwriteTargetType,
-  allow: PermissionBitmap,
-  deny: PermissionBitmap,
+  allow: DefinedPermissionBitmap,
+  deny: DefinedPermissionBitmap,
 };
-// SRS 8.2 CHECK ((allow & deny) = 0). A bad bitmap already failed on its own field.
-const neverBoth = ({ allow, deny }: { allow: string; deny: string }) =>
-  !/^\d+$/.test(allow + deny) || (BigInt(allow) & BigInt(deny)) === 0n;
+// SRS 8.2 CHECK ((allow & deny) = 0); a bad bitmap already failed on its own field.
+const neverBoth = [
+  ({ allow, deny }: { allow: string; deny: string }) =>
+    ![allow, deny].every((b) => PermissionBitmap.safeParse(b).success) ||
+    (BigInt(allow) & BigInt(deny)) === 0n,
+  'a bit cannot be both allowed and denied',
+] as const;
 
 // REQ-ROLE-03: a channel's or category's allow / deny for one role or member (SRS 8.2
 // channel_permission_overwrites). A bit in neither is "Mặc định".
 export const PermissionOverwrite = z
   .object({ target_id: SnowflakeId, ...overwriteBits })
-  .refine(neverBoth, 'a bit cannot be both allowed and denied');
+  .refine(...neverBoth);
 export type PermissionOverwrite = z.infer<typeof PermissionOverwrite>;
 
 export const PutChannelPermissionRequest = z
   .object(overwriteBits)
-  .refine(neverBoth, 'a bit cannot be both allowed and denied');
+  .refine(...neverBoth);
 export type PutChannelPermissionRequest = z.infer<
   typeof PutChannelPermissionRequest
 >;

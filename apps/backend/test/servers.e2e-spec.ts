@@ -130,6 +130,7 @@ describe('Servers (e2e)', () => {
     expect(server).toMatchObject({
       system_channel_id: text.id.toString(),
       member_count: 1,
+      me: { role_ids: [] }, // a general server gives its Owner no role
     });
   });
 

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+  DefinedPermissionBitmap,
   PermissionBitmap,
   parsePermissionBitmap,
   type PermissionRole,
@@ -11,14 +12,11 @@ import { RoleName } from './role-names.js';
 // Owner only touches roles below their highest role and only grants bits they have;
 // ADMINISTRATOR does not skip it.
 export const RoleRoutes = {
-  // GET: RoleListResponse · 40401 (not a member)
-  // POST REQ-ROLE-01: 201 RoleResponse · 40001 (field name; code MAX_ROLES), 40302 (MANAGE_ROLES), 40401
+  // REQ-ROLE-01 · GET: RoleListResponse, 40401 · POST: 201 RoleResponse, 40001 (name; MAX_ROLES), 40302, 40401
   list: '/servers/:id/roles',
-  // REQ-ROLE-01 · 204 · 40001 (@everyone, a role of another server), 40301 (to or above the
-  // caller's highest role), 40302, 40401. Register before byId: "positions" is not a role id.
+  // REQ-ROLE-01 · 204 · 40001 (@everyone), 40301 (to or above own highest), 40302, 40401; route before byId
   positions: '/servers/:id/roles/positions',
-  // PATCH: RoleResponse · 40001 (field name; renaming @everyone), 40301, 40302 (MANAGE_ROLES,
-  // or granting a bit the caller lacks), 40401 · DELETE: 204 · 40001 (@everyone), 40301, 40302, 40401
+  // REQ-ROLE-01 · PATCH: RoleResponse · DELETE: 204 · 40001 (name; @everyone), 40301, 40302 (bit not held), 40401
   byId: '/servers/:id/roles/:roleId',
 } as const;
 
@@ -36,7 +34,7 @@ export const RoleResponse = z.object({
 });
 export type RoleResponse = z.infer<typeof RoleResponse>;
 
-// S-SET-02 `list` ("2 người"); the count is only fetched with the list, events carry the role.
+// S-SET-02 `list`: highest first, @everyone last, with "2 người"; events carry no count.
 export const RoleListResponse = z.array(
   RoleResponse.extend({ member_count: z.number().int() }),
 );
@@ -51,7 +49,7 @@ export type CreateRoleRequest = z.infer<typeof CreateRoleRequest>;
 export const UpdateRoleRequest = z
   .object({
     name: RoleName.optional(),
-    permissions: PermissionBitmap.optional(),
+    permissions: DefinedPermissionBitmap.optional(),
     is_mentionable: z.boolean().optional(),
   })
   .refine((body) => Object.keys(body).length > 0, 'nothing to update');
@@ -60,7 +58,10 @@ export type UpdateRoleRequest = z.infer<typeof UpdateRoleRequest>;
 // @everyone stays at 0, so every listed role goes to 1 or above.
 export const UpdateRolePositionsRequest = z
   .array(z.object({ id: SnowflakeId, position: z.number().int().min(1) }))
-  .min(1);
+  .min(1)
+  .refine((rows) => new Set(rows.map((r) => r.id)).size === rows.length, {
+    message: 'a role is listed twice',
+  });
 export type UpdateRolePositionsRequest = z.infer<
   typeof UpdateRolePositionsRequest
 >;

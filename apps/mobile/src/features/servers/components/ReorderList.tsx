@@ -184,19 +184,22 @@ export function ReorderList({
     <View onLayout={(e) => top.set(e.nativeEvent.layout.y)}>
       {entries.map((entry, i) =>
         i === d ? (
-          <GestureDetector key={keyOf(entry)} gesture={gesture}>
-            <Animated.View
-              onLayout={measured(i)}
-              style={[
-                styles.lifted,
-                { backgroundColor: colors['surface-3'] },
-                sheetShadow(colors),
-                lifted,
-              ]}
-            >
-              {renderEntry(entry, true)}
-            </Animated.View>
-          </GestureDetector>
+          // Gotcha: GestureDetector wraps its child in a native view of its own, so an
+          // onLayout inside it reads y = 0. The row is measured outside it, like the others.
+          <Animated.View
+            key={keyOf(entry)}
+            onLayout={measured(i)}
+            style={[
+              styles.lifted,
+              { backgroundColor: colors['surface-3'] },
+              sheetShadow(colors),
+              lifted,
+            ]}
+          >
+            <GestureDetector gesture={gesture}>
+              <View>{renderEntry(entry, true)}</View>
+            </GestureDetector>
+          </Animated.View>
         ) : (
           <Item
             key={keyOf(entry)}

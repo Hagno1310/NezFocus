@@ -17,6 +17,8 @@ const UNREAD_DOT = { width: 4, height: 8 };
 
 // C-05 ChannelRow. P1 draws default / selected / pressed; unread and mention come with
 // read state (P2-A4 #17), the Room Session line with P3-B3 (#28).
+const noop = () => {};
+
 export function ChannelRow({
   channel,
   selected = false,
@@ -41,7 +43,9 @@ export function ChannelRow({
       accessibilityLabel={label}
       accessibilityState={{ selected }}
       onPress={onPress}
-      onLongPress={onLongPress}
+      // 02 `channel-menu`: without the permission a long press does nothing; with no
+      // handler at all, Pressable would open the channel when the finger lifts.
+      onLongPress={onLongPress ?? noop}
       hitSlop={{ top: space[1] / 2, bottom: space[1] / 2 }}
       style={({ pressed }) => [
         styles.row,

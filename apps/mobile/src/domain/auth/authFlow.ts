@@ -7,7 +7,7 @@ export type ApiErrorLike = {
   code: number;
   attempts_left?: number;
   retry_after?: number | null;
-  errors?: Record<string, { code: string }[]>;
+  errors?: Record<string, { code: string; message?: string }[]>;
 };
 
 export const asApiError = (err: unknown): ApiErrorLike | null =>

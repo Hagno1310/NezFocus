@@ -11,7 +11,6 @@ import {
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from 'zustand';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
 import {
@@ -53,7 +52,6 @@ export function SoloScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const navigation = useNavigation();
-  const { top } = useSafeAreaInsets();
   const snap = useSolo();
   const now = useNow();
   const close = useCloseSolo();
@@ -68,10 +66,9 @@ export function SoloScreen() {
 
   const background = timer ? colors[phaseRoomColor[timer.phase]] : colors.bg;
   return (
-    // Full-bleed phase background (DESIGN.md › Colors) runs under the status bar too.
-    <View
-      style={[styles.screen, { backgroundColor: background, paddingTop: top }]}
-    >
+    // Full-bleed phase background (DESIGN.md › Colors) runs under the status bar too; the
+    // transparent header takes the inset.
+    <View style={[styles.screen, { backgroundColor: background }]}>
       <ScreenHeader
         title={t('study.solo')}
         onBack={() => navigation.goBack()}

@@ -48,7 +48,7 @@ const errorOf = (err: unknown): CreateServerError => {
 
 // SRV-01: create, then open the first text channel the creator can view (#general).
 export async function createServer(
-  repo: ServerRepository,
+  repo: Pick<ServerRepository, 'createServer'>,
   template: ServerTemplate,
   rawName: string,
 ): Promise<CreateServerResult> {

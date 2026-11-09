@@ -17,6 +17,7 @@ import { SearchField, TextField } from '../../shared/ui/TextField';
 import { FocusSections } from './galleryFocus';
 import { FormSections } from './galleryForms';
 import { PeopleSections } from './galleryPeople';
+import { ServerSections } from './galleryServers';
 import { Caption, Row, Section, Stack } from './kit';
 
 // Dev-only board mirror (P0-3b): one section per C-NN board, sample data from docs/design/screens/README.md.
@@ -159,22 +160,25 @@ function Headers() {
   const noop = () => {};
   return (
     <>
-      <ScreenHeader title="Thống kê" onBack={noop} />
+      <ScreenHeader topInset={false} title="Thống kê" onBack={noop} />
       <ScreenHeader
+        topInset={false}
         title="Đang học lúc này"
         onBack={noop}
         action={<IconButton icon={Plus} label="Thêm" />}
       />
       <ScreenHeader
+        topInset={false}
         title="Học một mình"
         onBack={noop}
         action={<Button variant="text" label="Lưu" />}
       />
       <ScreenHeader
+        topInset={false}
         title="Cài đặt thông báo của server Ôn thi Giải tích 2"
         onBack={noop}
       />
-      <ScreenHeader title="Việc của tôi" />
+      <ScreenHeader topInset={false} title="Việc của tôi" />
     </>
   );
 }
@@ -208,6 +212,7 @@ export function UiGallery() {
       </Section>
       <FormSections />
       <PeopleSections />
+      <ServerSections />
       <FocusSections />
     </ScrollView>
   );

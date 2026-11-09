@@ -113,8 +113,16 @@ export function Button({
               ]}
             />
           )}
-          {/* Loading keeps the label in layout (invisible) so the width does not change. */}
-          <View style={[styles.content, loading && styles.hidden]}>
+          {/* Loading keeps the label in layout (invisible) so the width does not change.
+              collapsable={false}: without opacity this View is layout-only, so Fabric would
+              flatten it and move the label to the Pressable when loading ends. That often
+              happens while the screen is closing (create → popTo), and react-native-screens
+              keeps a closing screen's views attached for the exit animation, so the move
+              crashes: "addViewAt … The specified child already has a parent". */}
+          <View
+            collapsable={false}
+            style={[styles.content, loading && styles.hidden]}
+          >
             {icon && <Icon as={icon} size="base" color={fg} />}
             {/* Board C-01: every variant and size (48 / 44 / 40) is 16/600. */}
             <Text

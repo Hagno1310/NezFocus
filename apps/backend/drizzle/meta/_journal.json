@@ -29,6 +29,13 @@
       "when": 1794155012331,
       "tag": "0003_ancient_alex_wilder",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794159932600,
+      "tag": "0004_redundant_warpath",
+      "breakpoints": true
     }
   ]
 }

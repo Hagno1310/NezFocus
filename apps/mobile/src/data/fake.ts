@@ -17,3 +17,6 @@ export function pickRepository<T>(
 ): T {
   return fakes.has(area) ? impls.fake : impls.remote;
 }
+
+// For fakes that depend on each other (READY lists the fake servers).
+export const isFakeArea = (area: string) => fakeAreas.has(area);

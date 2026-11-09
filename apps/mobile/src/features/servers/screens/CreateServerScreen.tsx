@@ -50,7 +50,7 @@ export function CreateServerScreen({
 }: Props) {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const { top, bottom } = useSafeAreaInsets();
+  const { bottom } = useSafeAreaInsets();
   const online = useStore(gatewayStore, (s) => s.online);
   const [step, setStep] = useState<'choose' | 'name'>('choose');
   const [template, setTemplate] = useState<ServerTemplate>(
@@ -95,16 +95,14 @@ export function CreateServerScreen({
       behavior="padding"
       style={[styles.flex, { backgroundColor: colors.bg }]}
     >
-      <View style={{ paddingTop: top }}>
-        <ScreenHeader
-          title={
-            step === 'choose'
-              ? t('servers.create.title')
-              : t(`servers.create.nameTitle_${template}`)
-          }
-          onBack={back}
-        />
-      </View>
+      <ScreenHeader
+        title={
+          step === 'choose'
+            ? t('servers.create.title')
+            : t(`servers.create.nameTitle_${template}`)
+        }
+        onBack={back}
+      />
       <ScrollView
         style={styles.flex}
         keyboardShouldPersistTaps="handled"
@@ -147,7 +145,7 @@ export function CreateServerScreen({
           </>
         ) : (
           <>
-            {/* ponytail: server icons (POST /attachments server_icon) are not needed in P1; no picker yet. */}
+            {/* ponytail: server icons (POST /attachments server_icon) land with P1-A4.7 (#211); no picker yet. */}
             <View style={styles.pickerWrap}>
               <View
                 style={[styles.picker, { borderColor: colors['border-input'] }]}

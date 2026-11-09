@@ -5,7 +5,7 @@ import {
   createServer,
   type CreateServerError,
 } from '../../../domain/servers/createServer';
-import { openChannel } from '../../../domain/servers/homeStore';
+import { addServer, openChannel } from '../../../domain/servers/homeStore';
 import { useGuardedMutation } from '../../../shared/hooks/useGuardedMutation';
 
 // S-HOME-06 name-server → creating → created / create-error. A second tap while creating is
@@ -22,13 +22,8 @@ export function useCreateServer(onCreated: () => void) {
     if (!result) return;
     if (!result.ok) return setError(result.error);
     const { server, channel } = result;
-    if (channel)
-      openChannel({
-        serverId: server.id,
-        serverName: server.name,
-        channelId: channel.id,
-        channelName: channel.name,
-      });
+    addServer(server);
+    if (channel) openChannel({ serverId: server.id, channelId: channel.id });
     // ponytail: S-HOME-07 (invite sheet, opened on arrival per the spec) comes with P2-A1 (#14).
     onCreated();
   };

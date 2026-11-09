@@ -58,6 +58,7 @@ Task là GitHub Issues của repo (quy ước nhãn, body, branch: `docs/agents/
 - Agent **được** `git commit` và merge giữa các branch **trên máy** (branch ticket, integration branch của `/implement-spec`). Trên GitHub, agent được gán issue cho người đang làm (`gh issue edit --add-assignee`), bình luận / tích AC trên issue, và **mở PR khi người bảo** (sau khi người đã push).
 - Agent **không** push, không merge vào `main`, không approve PR, không `reset --hard`, không `rebase` branch đã push, không sửa lịch sử. Push và merge vào `main` là việc của người.
 - Commit message: Conventional Commits (`feat(mobile): …`; scope: mobile, backend, shared, mascot, infra, docs, ci, deps), footer `Refs #<số>`. **Không thêm dòng `Co-Authored-By`** hay bất kỳ dòng ghi công agent nào.
+- Sau `git pull` / `git switch` / merge có file mới trong `apps/backend/drizzle/`: chạy `pnpm build && pnpm db:migrate` trong `apps/backend` trước khi chạy backend hay e2e (hook husky in dòng nhắc "Co migration moi"). Backend báo `column ... does not exist` → kiểm migration chưa chạy trước khi sửa code; người dùng gặp lỗi đó thì nhắc họ migrate.
 - Kết thúc mỗi việc: tóm tắt đã đổi gì, AC đạt / chưa đạt.
 
 ## Agent skills

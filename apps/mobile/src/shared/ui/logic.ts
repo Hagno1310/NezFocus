@@ -68,3 +68,16 @@ export function clockText(ms: number): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`;
 }
+
+// S-MOD-03 `type-name-match`: case, accents and extra spaces do not count.
+const fold = (s: string) =>
+  s
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/đ/gi, 'd')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+
+export const typedNameMatches = (typed: string, name: string) =>
+  fold(typed) !== '' && fold(typed) === fold(name);

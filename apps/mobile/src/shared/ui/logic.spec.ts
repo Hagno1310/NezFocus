@@ -5,6 +5,7 @@ import {
   dialogLayout,
   nextCode,
   passwordRuleStates,
+  typedNameMatches,
   CODE_LENGTH,
 } from './logic';
 
@@ -87,5 +88,16 @@ describe('clockText', () => {
     expect(clockText(32 * 60_000 + 9_400)).toBe('32:10');
     expect(clockText(0)).toBe('00:00');
     expect(clockText(120 * 60_000)).toBe('120:00');
+  });
+});
+
+describe('typedNameMatches (S-MOD-03 `type-name-match`)', () => {
+  it('ignores case, accents and extra spaces', () => {
+    expect(typedNameMatches(' phong hoc  im lang ', 'Phòng học im lặng')).toBe(
+      true,
+    );
+    expect(typedNameMatches('Đề cương', 'de cuong')).toBe(true);
+    expect(typedNameMatches('Phòng học', 'Phòng học im lặng')).toBe(false);
+    expect(typedNameMatches('', '')).toBe(false);
   });
 });

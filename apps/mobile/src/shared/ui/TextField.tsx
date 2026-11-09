@@ -103,7 +103,9 @@ export function TextField({
         <TextInput
           ref={ref}
           accessibilityLabel={label}
-          accessibilityState={{ disabled }}
+          // Gotcha: on Android accessibilityState.disabled also sets the view's enabled flag,
+          // so `disabled: false` on a readonly field re-enabled it and the keyboard typed in.
+          accessibilityState={{ disabled: !editable }}
           editable={editable}
           value={value}
           multiline={multiline}

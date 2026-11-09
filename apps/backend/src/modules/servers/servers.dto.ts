@@ -16,7 +16,7 @@ const CHANNEL_TYPES: readonly ChannelType[] = ['category', 'text', 'voice'];
 export const toServerSummary = (s: ServerWithCount): ServerSummary => ({
   id: s.id.toString(),
   name: s.name,
-  icon_url: null, // ponytail: server icons are not needed in P1
+  icon_url: null, // ponytail: server icons land with P1-A4.7 (#211)
   owner_id: s.ownerId.toString(),
   template: s.template as ServerTemplate,
   system_channel_id: s.systemChannelId?.toString() ?? null,

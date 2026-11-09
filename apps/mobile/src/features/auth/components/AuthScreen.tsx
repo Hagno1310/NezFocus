@@ -31,15 +31,13 @@ export function AuthScreen({
   children: ReactNode;
 }) {
   const { colors } = useTheme();
-  const { top, bottom } = useSafeAreaInsets();
+  const { bottom } = useSafeAreaInsets();
   return (
     <KeyboardAvoidingView
       behavior="padding"
       style={[styles.flex, { backgroundColor: colors.bg }]}
     >
-      <View style={{ paddingTop: top }}>
-        <ScreenHeader title={title} onBack={onBack} />
-      </View>
+      <ScreenHeader title={title} onBack={onBack} />
       {banner}
       <ScrollView
         style={styles.flex}

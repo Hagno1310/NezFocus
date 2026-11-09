@@ -56,7 +56,7 @@ export const ServerResponse = ServerSummary.extend({
 });
 export type ServerResponse = z.infer<typeof ServerResponse>;
 
-// ponytail: icon via POST /attachments `server_icon` is not needed in P1.
+// ponytail: icon via POST /attachments `server_icon` lands with P1-A4.7 (#211).
 export const CreateServerRequest = z.object({
   name: ServerName,
   template: ServerTemplate,

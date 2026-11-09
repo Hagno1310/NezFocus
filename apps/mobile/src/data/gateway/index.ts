@@ -4,7 +4,8 @@ import { endSession, requireUpgrade } from '../../domain/session/sessionStore';
 import { api, apiBaseUrl } from '../api';
 import { getDeviceInfo } from '../auth/deviceInfo';
 import { secureTokenStore } from '../auth/secureTokenStore';
-import { pickRepository } from '../fake';
+import { isFakeArea, pickRepository } from '../fake';
+import { fakeServerRepository } from '../servers/FakeServerRepository';
 import { AN, createFakeGatewayClient } from './FakeGatewayClient';
 import { createGatewayClient, type GatewaySocket } from './RemoteGatewayClient';
 
@@ -41,8 +42,10 @@ const remote = createGatewayClient({
 });
 
 // EXPO_PUBLIC_FAKE=gateway: what plays after READY. Each area adds steps for its own events here.
-const fake = createFakeGatewayClient([
-  { after: 3000, t: 'USER_UPDATE', d: { ...AN, display_name: 'An Nguyễn' } },
-]);
+// With `servers` faked too, READY lists the fake servers; otherwise none (S-HOME-02 no-server).
+const fake = createFakeGatewayClient(
+  [{ after: 3000, t: 'USER_UPDATE', d: { ...AN, display_name: 'An Nguyễn' } }],
+  () => (isFakeArea('servers') ? fakeServerRepository.summaries() : []),
+);
 
 export const gatewayClient = pickRepository('gateway', { remote, fake });

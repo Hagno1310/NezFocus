@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react-native';
+import { Check, ChevronLeft } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -33,7 +33,7 @@ import {
   useTheme,
   type ColorToken,
 } from '../theme';
-import { Button, type ButtonProps } from './Button';
+import { Button, IconButton, type ButtonProps } from './Button';
 import { FormMessage } from './FormMessage';
 import { Icon, type IconComponent } from './Icon';
 import { dialogLayout } from './logic';
@@ -138,6 +138,7 @@ export function Dialog({
   confirm,
   cancel,
   error,
+  children,
   onDismiss,
 }: {
   visible: boolean;
@@ -146,6 +147,8 @@ export function Dialog({
   confirm: DialogAction;
   cancel?: { label: string; onPress: () => void };
   error?: string | null;
+  // One input under the text (08 S-SET-06 `category-rename`).
+  children?: ReactNode;
   onDismiss: () => void;
 }) {
   const { colors } = useTheme();
@@ -192,11 +195,13 @@ export function Dialog({
         <ScrollView
           style={styles.shrink}
           contentContainerStyle={styles.dialogText}
+          keyboardShouldPersistTaps="handled"
         >
           <Text variant="headline" accessibilityRole="header">
             {title}
           </Text>
           {body && <Text color="text-secondary">{body}</Text>}
+          {children}
         </ScrollView>
         {error && <FormMessage tone="error" text={error} />}
         {layout === 'row' ? (
@@ -289,16 +294,29 @@ export function BottomSheet({
   title,
   children,
   action,
+  secondary,
   error,
+  notice,
+  icon,
+  onBack,
   onDismiss,
 }: {
   visible: boolean;
   title: string;
   children?: ReactNode;
   action?: ButtonProps;
+  // Under the main button (S-MOD-03 "Hủy").
+  secondary?: ButtonProps;
   error?: string | null;
+  // Neutral FormMessage above the button (S-SET-09 `limit`).
+  notice?: string | null;
+  // 32 above the title (S-MOD-03 `trash-2` danger).
+  icon?: { as: IconComponent; color: ColorToken };
+  // `chevron-left` before the title: the same sheet showing a sub-list (S-SET-09 `category-picker`).
+  onBack?: () => void;
   onDismiss: () => void;
 }) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const busy = !!action?.loading;
   return (
@@ -322,17 +340,35 @@ export function BottomSheet({
           <>
             {handle}
             <View style={styles.sheetBody}>
-              <Text variant="title-2" accessibilityRole="header">
-                {title}
-              </Text>
+              {icon && <Icon as={icon.as} size="hero" color={icon.color} />}
+              <View style={styles.sheetTitle}>
+                {onBack && (
+                  <IconButton
+                    icon={ChevronLeft}
+                    label={t('ui.back')}
+                    onPress={onBack}
+                  />
+                )}
+                <Text
+                  variant="title-2"
+                  accessibilityRole="header"
+                  style={styles.flex}
+                >
+                  {title}
+                </Text>
+              </View>
               <ScrollView
                 style={styles.shrink}
                 keyboardShouldPersistTaps="handled"
               >
                 {children}
               </ScrollView>
+              {notice && <FormMessage tone="info" text={notice} />}
               {error && <FormMessage tone="error" text={error} />}
               {action && <Button size="L" fullWidth {...action} />}
+              {secondary && (
+                <Button variant="text" size="L" fullWidth {...secondary} />
+              )}
             </View>
           </>
         )}
@@ -356,13 +392,20 @@ export function ActionSheet({
   visible,
   title,
   subtitle,
+  icon,
   groups,
+  cancel = true,
   onDismiss,
 }: {
   visible: boolean;
   title?: string;
   subtitle?: string;
+  // Beside the title (08 `channel-menu`: the channel icon; 02 `category-menu`: folder).
+  icon?: IconComponent;
   groups: ActionGroup[];
+  // false: no Cancel card; drag down, the scrim or system Back close it (spec 02 S-HOME-09,
+  // spec 08 `channel-menu`, 02 `category-menu`).
+  cancel?: boolean;
   onDismiss: () => void;
 }) {
   const { t } = useTranslation();
@@ -390,17 +433,29 @@ export function ActionSheet({
             <View style={[card, styles.actionGroups]}>
               {handle}
               {(title || subtitle) && (
-                <View style={styles.actionHead}>
-                  {title && (
-                    <Text variant="headline" numberOfLines={1}>
-                      {title}
-                    </Text>
+                <View style={[styles.actionHead, icon && styles.actionHeadRow]}>
+                  {icon && (
+                    <View
+                      style={[
+                        styles.actionHeadIcon,
+                        { backgroundColor: colors['surface-2'] },
+                      ]}
+                    >
+                      <Icon as={icon} size="lg" color="text-secondary" />
+                    </View>
                   )}
-                  {subtitle && (
-                    <Text variant="label" color="text-secondary">
-                      {subtitle}
-                    </Text>
-                  )}
+                  <View style={styles.flex}>
+                    {title && (
+                      <Text variant="headline" numberOfLines={1}>
+                        {title}
+                      </Text>
+                    )}
+                    {subtitle && (
+                      <Text variant="label" color="text-secondary">
+                        {subtitle}
+                      </Text>
+                    )}
+                  </View>
                 </View>
               )}
               <ScrollView style={styles.shrink}>
@@ -431,18 +486,20 @@ export function ActionSheet({
                 ))}
               </ScrollView>
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('ui.cancel')}
-              onPress={onDismiss}
-              style={({ pressed }) => [
-                card,
-                styles.actionCancel,
-                pressed && { backgroundColor: colors['surface-2'] },
-              ]}
-            >
-              <Text weight="600">{t('ui.cancel')}</Text>
-            </Pressable>
+            {cancel && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('ui.cancel')}
+                onPress={onDismiss}
+                style={({ pressed }) => [
+                  card,
+                  styles.actionCancel,
+                  pressed && { backgroundColor: colors['surface-2'] },
+                ]}
+              >
+                <Text weight="600">{t('ui.cancel')}</Text>
+              </Pressable>
+            )}
           </>
         )}
       </SheetFrame>
@@ -522,6 +579,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   sheetBody: { gap: space[3], flexShrink: 1 },
+  sheetTitle: { flexDirection: 'row', alignItems: 'center', gap: space[1] },
   // Board ActionSheet: outer padding 8 (24 at the bottom), cards radius 24, gap 8.
   actionSheet: {
     maxHeight: '90%',
@@ -535,6 +593,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[3],
     paddingVertical: space[2],
     gap: space[1] / 2,
+  },
+  actionHeadRow: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  actionHeadIcon: {
+    width: size.avatar[3],
+    height: size.avatar[3],
+    borderRadius: radius.input,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   actionCancel: {
     height: size.actionRow,

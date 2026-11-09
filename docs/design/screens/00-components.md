@@ -738,6 +738,8 @@ Chữ dài (sửa 19/10/2026 — bản cũ để cột nhãn giãn nên giá tr�
 ```
 `IconButton` back `chevron-left` + tiêu đề `headline` (1 dòng, cắt `…`) + tối đa một `IconButton` hoặc `Button · text` bên phải. Biến thể `no-back` (màn hình gốc của một stack; v1.9: 01 không còn dùng — S-AUTH-03 có ‹, màn Hoàn tất tài khoản S-ONB-01 không có header, tiêu đề nằm trong thân). Ở 200% tiêu đề vẫn 1 dòng, tên đầy đủ qua `accessibilityLabel`.
 
+**Thanh trạng thái** (09/11/2026): header luôn ở đỉnh màn nên tự nhận safe area trên — cao 56 + safe area, nền header (hoặc trong suốt) chạy dưới thanh trạng thái; ‹ và tiêu đề luôn nằm dưới thanh trạng thái, không bao giờ đè lên nó. Màn dùng header không tự cộng thêm khoảng trên.
+
 **Back** (v1.9, CR-15): ‹ của `ScreenHeader` làm đúng việc của Back hệ thống ở bước "quay lại màn trước trong stack của tab" (thứ tự đủ: DESIGN.md › Platform & Touch); màn đẩy chồng luôn giữ ‹. Không thêm nút → (tiến tới). Predictive back (Android 14+) xem trước màn sắp về khi đang vuốt. Không đổi frame.
 
 ---

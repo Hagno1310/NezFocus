@@ -1,4 +1,10 @@
-import { ServerResponse, ServerRoutes } from '@nezfocus/shared';
+import {
+  ChannelResponse,
+  ChannelRoutes,
+  ServerResponse,
+  ServerRoutes,
+  ServerSummary,
+} from '@nezfocus/shared';
 import type { ServerRepository } from '../../domain/servers/ServerRepository';
 import { api } from '../api';
 
@@ -7,4 +13,40 @@ export const remoteServerRepository: ServerRepository = {
     ServerResponse.parse(
       await api.request(ServerRoutes.create, { method: 'POST', body }),
     ),
+  getServer: async (id) =>
+    ServerResponse.parse(
+      await api.request(ServerRoutes.byId.replace(':id', id)),
+    ),
+  updateServer: async (id, body) =>
+    ServerSummary.parse(
+      await api.request(ServerRoutes.byId.replace(':id', id), {
+        method: 'PATCH',
+        body,
+      }),
+    ),
+  createChannel: async (serverId, body) =>
+    ChannelResponse.parse(
+      await api.request(ChannelRoutes.list.replace(':id', serverId), {
+        method: 'POST',
+        body,
+      }),
+    ),
+  updateChannel: async (id, body) =>
+    ChannelResponse.parse(
+      await api.request(ChannelRoutes.byId.replace(':id', id), {
+        method: 'PATCH',
+        body,
+      }),
+    ),
+  deleteChannel: async (id) => {
+    await api.request(ChannelRoutes.byId.replace(':id', id), {
+      method: 'DELETE',
+    });
+  },
+  setChannelPositions: async (serverId, body) => {
+    await api.request(ChannelRoutes.positions.replace(':id', serverId), {
+      method: 'PATCH',
+      body,
+    });
+  },
 };

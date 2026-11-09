@@ -1,0 +1,2 @@
+[ "$1" = rebase ] && sh .husky/remind-migrate.sh ORIG_HEAD HEAD
+exit 0

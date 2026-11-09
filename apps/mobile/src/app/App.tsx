@@ -29,6 +29,7 @@ import { loadLastMethod } from '../features/auth/authFlowStore';
 import { fontFamily, useTheme, type Theme } from '../shared/theme';
 import { ToastHost } from '../shared/ui/Toast';
 import { startGatewayLifecycle } from './gatewayLifecycle';
+import { startHomeLifecycle } from './homeLifecycle';
 import { linking } from './navigation/linking';
 import {
   RootNavigator,
@@ -96,6 +97,8 @@ export default function App() {
   useEffect(() => {
     void sessionRestored.then(() => setReady(true));
   }, []);
+  // Before the Gateway starts, so READY reaches the Home tab.
+  useEffect(startHomeLifecycle, []);
   useEffect(startGatewayLifecycle, []);
   useEffect(watchNavigationRestore, []);
   // REQ-STUDY-10 / SRS 7.3.5: the "Nhắc học tập" channel exists from launch.

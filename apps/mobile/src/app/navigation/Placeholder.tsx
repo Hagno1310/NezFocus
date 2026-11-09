@@ -11,9 +11,11 @@ type Action = { label: string; onPress: () => void };
 // Stand-in screen. Every route that uses it names the ticket that replaces it.
 export function Placeholder({
   title,
+  ticket,
   actions = [],
 }: {
   title: string;
+  ticket?: string; // the ticket that builds the real screen, e.g. "P1-A3.6 (#69)"
   actions?: Action[];
 }) {
   const { t } = useTranslation();
@@ -27,7 +29,9 @@ export function Placeholder({
           {title}
         </Text>
         <Text variant="body-sm" color="text-secondary">
-          {t('placeholder.note')}
+          {ticket
+            ? t('placeholder.noteTicket', { ticket })
+            : t('placeholder.note')}
         </Text>
         {actions.map((a) => (
           <Button

@@ -188,6 +188,8 @@ git pull
 git switch -c feat/12-dang-ky-tai-khoan
 ```
 
+- Pull về có migration mới thì chạy migrate trước khi code (mục 5).
+
 - Tên branch: `<loại>/<số issue>-<mo-ta-ngan>`, ví dụ `feat/21-tao-server`, `fix/40-fanout-sai-quyen`.
 - Bắt đầu bằng cách copy module mẫu (`_example`) của backend và/hoặc app. Các bước cụ thể: [`OVERVIEW.md`](../OVERVIEW.md) mục 4 và 5.
 - Viết test cho **từng AC**, kể cả case âm (dùng đúng mã lỗi SRS 11.1).
@@ -288,6 +290,7 @@ pnpm db:studio       # (tùy chọn) giao diện xem dữ liệu
 ```
 
 - File trong `apps/backend/drizzle/` **phải commit** cùng thay đổi schema.
+- **Sau khi `git pull`** mà có file mới trong `apps/backend/drizzle/` (người khác thêm migration): chạy `pnpm build` rồi `pnpm db:migrate` trong `apps/backend` trước khi bật backend. Không chạy thì backend lỗi khi đọc cột hoặc bảng mới (`column ... does not exist`). Hook husky (`post-merge`, `post-rewrite`, `post-checkout`) tự in dòng nhắc "Co migration moi" khi pull / đổi branch kéo về migration mới; nó chỉ nhắc, không tự chạy.
 - Không sửa migration đã merge vào `main`; cần đổi thì tạo migration mới.
 - Khi deploy, service `migrate` tự chạy migration trước khi backend khởi động.
 - Xóa sạch database dev: `docker compose -f infra/docker-compose.yml down -v` (**mất toàn bộ dữ liệu dev**).

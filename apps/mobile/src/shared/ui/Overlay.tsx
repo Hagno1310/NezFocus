@@ -394,6 +394,7 @@ export function ActionSheet({
   subtitle,
   icon,
   groups,
+  cancel = true,
   onDismiss,
 }: {
   visible: boolean;
@@ -402,6 +403,9 @@ export function ActionSheet({
   // Beside the title (08 `channel-menu`: the channel icon; 02 `category-menu`: folder).
   icon?: IconComponent;
   groups: ActionGroup[];
+  // false: no Cancel card; drag down, the scrim or system Back close it (spec 02 S-HOME-09,
+  // spec 08 `channel-menu`, 02 `category-menu`).
+  cancel?: boolean;
   onDismiss: () => void;
 }) {
   const { t } = useTranslation();
@@ -482,18 +486,20 @@ export function ActionSheet({
                 ))}
               </ScrollView>
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('ui.cancel')}
-              onPress={onDismiss}
-              style={({ pressed }) => [
-                card,
-                styles.actionCancel,
-                pressed && { backgroundColor: colors['surface-2'] },
-              ]}
-            >
-              <Text weight="600">{t('ui.cancel')}</Text>
-            </Pressable>
+            {cancel && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('ui.cancel')}
+                onPress={onDismiss}
+                style={({ pressed }) => [
+                  card,
+                  styles.actionCancel,
+                  pressed && { backgroundColor: colors['surface-2'] },
+                ]}
+              >
+                <Text weight="600">{t('ui.cancel')}</Text>
+              </Pressable>
+            )}
           </>
         )}
       </SheetFrame>

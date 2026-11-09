@@ -50,6 +50,7 @@ export function ServerMenu({
           : t('servers.drawer.subtitle', { count: server.member_count })
       }
       groups={[{ items }]}
+      cancel={false}
       onDismiss={onDismiss}
     />
   );

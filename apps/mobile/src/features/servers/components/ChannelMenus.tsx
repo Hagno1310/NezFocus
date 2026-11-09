@@ -66,6 +66,7 @@ export function ChannelMenu({
           ],
         },
       ]}
+      cancel={false}
       onDismiss={onDismiss}
     />
   );
@@ -117,6 +118,7 @@ export function CategoryMenu({
           ],
         },
       ]}
+      cancel={false}
       onDismiss={onDismiss}
     />
   );

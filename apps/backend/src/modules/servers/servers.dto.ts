@@ -33,6 +33,7 @@ export const toChannelResponse = (c: ChannelRow): ChannelResponse => ({
   position: c.position,
   focus_control: c.focusControl as FocusControl,
   permissions_synced: c.permissionsSynced,
+  permission_overwrites: [], // ponytail: overwrites are stored with P1-A3.4 (#67)
 });
 
 export const toRoleResponse = (r: RoleRow): RoleResponse => ({
@@ -40,10 +41,12 @@ export const toRoleResponse = (r: RoleRow): RoleResponse => ({
   name: r.name,
   permissions: toPermissionBitmap(r.permissions),
   position: r.position,
+  is_mentionable: false, // ponytail: the column lands with P1-A3.3 (#66)
 });
 
 export const toServerResponse = (s: FullServer): ServerResponse => ({
   ...toServerSummary(s),
   channels: s.channels.map(toChannelResponse),
   roles: s.roles.map(toRoleResponse),
+  me: { role_ids: [] }, // ponytail: read from server_member_roles with P1-A3.2 (#65)
 });

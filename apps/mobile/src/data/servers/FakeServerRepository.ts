@@ -105,6 +105,7 @@ function buildServer(
           ? 'everyone'
           : 'off',
       permissions_synced: true,
+      permission_overwrites: [],
     });
     children?.forEach((child, i) => add(child, i, id));
   };
@@ -119,8 +120,10 @@ function buildServer(
         name: '@everyone',
         permissions: toPermissionBitmap(DEFAULT_EVERYONE_PERMISSIONS),
         position: 0,
+        is_mentionable: false,
       },
     ],
+    me: { role_ids: [] },
   };
 }
 
@@ -223,6 +226,7 @@ export function createFakeServerRepository(
               (server.template === 'study_server' ? 'everyone' : 'off'))
             : 'off',
         permissions_synced: body.type === 'category' || parent_id !== null,
+        permission_overwrites: [],
       };
       setChannels(server, [...server.channels, channel]);
       return channel;

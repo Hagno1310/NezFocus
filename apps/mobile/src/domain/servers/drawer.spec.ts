@@ -28,6 +28,7 @@ const ch = (
   position,
   focus_control: type === 'voice' ? 'everyone' : 'off',
   permissions_synced: true,
+  permission_overwrites: [],
 });
 
 // "Ôn thi Giải tích 2" (02 › Dữ liệu mẫu).
@@ -164,6 +165,7 @@ describe('reduceHome (Gateway events)', () => {
       ...summary('300', 'CLB Guitar PTIT'),
       channels: [ch('301', 'text', 'general', null, 0)],
       roles: [],
+      me: { role_ids: [] },
     };
     let { state } = reduceHome(
       loaded,

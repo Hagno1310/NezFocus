@@ -29,6 +29,7 @@ const everyone = (perms: bigint): RoleResponse => ({
   name: '@everyone',
   permissions: toPermissionBitmap(perms),
   position: 0,
+  is_mentionable: false,
 });
 
 describe('S-HOME-09 / S-SET-01: rows shown by permission (Q17: no disabled rows)', () => {

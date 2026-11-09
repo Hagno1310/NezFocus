@@ -50,8 +50,9 @@ export class LockedRoles {
   }
 
   // Members lose it by FK cascade; its overwrites have no FK (target is a role or a user).
-  async remove(role: RoleRow) {
-    await this.tx
+  // Returns the channels whose overwrites changed.
+  async remove(role: RoleRow): Promise<bigint[]> {
+    const dropped = await this.tx
       .delete(channelPermissionOverwrites)
       .where(
         and(
@@ -65,8 +66,10 @@ export class LockedRoles {
               .where(eq(channels.serverId, role.serverId)),
           ),
         ),
-      );
+      )
+      .returning({ channelId: channelPermissionOverwrites.channelId });
     await this.tx.delete(roles).where(eq(roles.id, role.id));
+    return dropped.map((d) => d.channelId);
   }
 
   async byIds(ids: bigint[]): Promise<RoleRow[]> {

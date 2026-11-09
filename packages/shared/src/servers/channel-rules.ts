@@ -84,10 +84,20 @@ export function findClash(
   return null;
 }
 
-// REQ-ROLE-03 v1.8: a channel that changes category keeps following its category;
-// taken out of every category it stops (copying the overwrites lands with P1-A3.4 #67).
-const synced = (c: ChannelResponse, parentId: string | null) =>
-  parentId === null && c.parent_id !== null ? false : c.permissions_synced;
+// REQ-ROLE-03 v1.8: a channel that changes category keeps following its category; taken
+// out of every category it stops, keeping the overwrites in force as its own.
+const leaving = (
+  c: ChannelResponse,
+  parentId: string | null,
+  byId: ReadonlyMap<string, ChannelResponse>,
+): Partial<ChannelResponse> => {
+  if (parentId !== null || c.parent_id === null) return {};
+  if (!c.permissions_synced) return { permissions_synced: false };
+  return {
+    permissions_synced: false,
+    permission_overwrites: byId.get(c.parent_id)?.permission_overwrites ?? [],
+  };
+};
 
 // REQ-SRV-02 AC1 (v1.8: positions carry parent_id). Returns only the channels that change.
 export function applyPositions(
@@ -111,7 +121,7 @@ export function applyPositions(
       ...channel,
       position,
       parent_id,
-      permissions_synced: synced(channel, parent_id),
+      ...leaving(channel, parent_id, byId),
     };
     if (
       next.position !== channel.position ||
@@ -133,6 +143,7 @@ export function planCategoryDelete(
     (c) => c.type !== 'category' && c.parent_id === null,
   );
   let position = Math.max(-1, ...top.map((c) => c.position));
+  const byId = new Map(channels.map((c) => [c.id, c]));
   const moved = channels
     .filter((c) => c.parent_id === category.id)
     .sort(byPosition)
@@ -140,7 +151,7 @@ export function planCategoryDelete(
       ...c,
       parent_id: null,
       position: ++position,
-      permissions_synced: synced(c, null),
+      ...leaving(c, null, byId),
     }));
   const movedIds = new Set(moved.map((c) => c.id));
   const next = [

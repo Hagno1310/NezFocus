@@ -236,6 +236,8 @@ export function createFakeServerRepository(
       const server = serverOf(channelId);
       const channel = server?.channels.find((c) => c.id === channelId);
       if (!server || !channel) throw fail(404, ErrorCode.NotFound);
+      // ponytail: the "Đồng bộ với danh mục" switch is faked with its screen, P1-A3.6 (#69).
+      if (body.name === undefined) return channel;
       playErrors(body.name);
       const free = FreeChannelName.safeParse(body.name);
       if (!free.success) throw invalid('name', 'INVALID');

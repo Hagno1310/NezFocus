@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { ChannelEvents } from './channel-events.js';
+import { ChannelOverwritesService } from './channel-overwrites.service.js';
 import { ChannelsController } from './channels.controller.js';
 import { ChannelsRepository } from './channels.repository.js';
 import { ChannelsService } from './channels.service.js';
@@ -16,6 +18,8 @@ import { ServersService } from './servers.service.js';
     ServersService,
     ChannelsRepository,
     ChannelsService,
+    ChannelEvents,
+    ChannelOverwritesService,
     RolesRepository,
     RolesService,
   ],

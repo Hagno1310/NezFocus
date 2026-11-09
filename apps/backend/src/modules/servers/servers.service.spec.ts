@@ -19,8 +19,9 @@ function memoryRepo(atLimit = false) {
     systemChannelId: rows.server.systemChannelId ?? null,
     memberCount: members.get(rows.server.id!)!.size,
     channels: rows.channels.map((c) => ({
-      ...c,
       permissionsSynced: true,
+      ...c,
+      overwrites: rows.overwrites.filter((o) => o.channelId === c.id),
     })) as FullServer['channels'],
     roles: rows.roles as FullServer['roles'],
     myRoleIds: rows.ownerRoleIds,

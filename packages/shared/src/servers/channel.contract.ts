@@ -17,7 +17,8 @@ export const ChannelRoutes = {
   positions: '/servers/:id/channels/positions',
   // REQ-SRV-02 · PATCH: 40001, 40302, 40401 · DELETE: 204, 40302, 40401
   byId: '/channels/:id',
-  // REQ-ROLE-03 · PUT: PermissionOverwrite · DELETE: 204 · 40001 (synced; bad target), 40301, 40302, 40401
+  // REQ-ROLE-03 · PUT: PermissionOverwrite · DELETE: 204 · 40001 (SYNCED, UNKNOWN_TARGET),
+  // 40301 (target level with or above you), 40302 (MANAGE_CHANNELS; allowing a bit you lack), 40401
   permission: '/channels/:id/permissions/:targetId', // targetId: role id (server id = @everyone) or user id
 } as const;
 
@@ -110,7 +111,8 @@ export const TextChannelName = z
   .pipe(z.string().max(CHANNEL_NAME_MAX));
 
 const parent_id = SnowflakeId.nullable().default(null);
-// v1.9 CR-17: a private channel at creation; roles other than these lose VIEW_CHANNEL.
+// v1.9 CR-17: sent (even empty) = a private channel at creation (privateChannelOverwrites);
+// a role not in this server, or @everyone → 40001 UNKNOWN_ROLE.
 const viewer_role_ids = z
   .array(SnowflakeId)
   .max(MAX_ROLES_PER_SERVER)
@@ -137,7 +139,16 @@ export type CreateChannelRequest = z.infer<typeof CreateChannelRequest>;
 
 // The backend normalizes the name when the channel is a text channel. The Phòng học settings
 // (focus_control, default_cycle_config) join this body with REQ-STUDY-11's ticket.
-export const UpdateChannelRequest = z.object({ name: FreeChannelName });
+// permissions_synced (REQ-ROLE-03 v1.7): off copies the category's overwrites as the channel's
+// own, on drops them; a category or a channel outside every category → 40001.
+export const UpdateChannelRequest = z
+  .object({
+    name: FreeChannelName.optional(),
+    permissions_synced: z.boolean().optional(),
+  })
+  .refine((b) => b.name !== undefined || b.permissions_synced !== undefined, {
+    message: 'Nothing to change',
+  });
 export type UpdateChannelRequest = z.infer<typeof UpdateChannelRequest>;
 
 export const UpdateChannelPositionsRequest = z

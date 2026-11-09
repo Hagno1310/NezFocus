@@ -24,6 +24,13 @@ const ch = (
   permission_overwrites: [],
 });
 
+const EVERYONE_DENY_SEND = {
+  target_id: '1',
+  target_type: 'role' as const,
+  allow: '0',
+  deny: '512', // SEND_MESSAGES
+};
+
 // "Ôn thi Giải tích 2" (02 › Dữ liệu mẫu), trimmed.
 const INFO = ch('10', 'category', 'THÔNG TIN', null, 0);
 const ROOMS = ch('20', 'category', 'Phòng học', null, 1);
@@ -83,6 +90,39 @@ describe('applyPositions (REQ-SRV-02 AC1, v1.8 parent_id; REQ-ROLE-03 v1.8)', ()
     });
   });
 
+  it('a synced channel leaving its category keeps the overwrites in force as its own (v1.8)', () => {
+    const rooms = { ...ROOMS, permission_overwrites: [EVERYONE_DENY_SEND] };
+    const own = ch('23', 'text', 'rieng', '20', 2, false);
+    const r = applyPositions(
+      [...server.map((c) => (c.id === '20' ? rooms : c)), own],
+      [
+        { id: '21', position: 1, parent_id: null },
+        { id: '23', position: 2, parent_id: null },
+      ],
+    );
+    expect(r).toMatchObject({
+      ok: true,
+      changed: [
+        { id: '21', permission_overwrites: [EVERYONE_DENY_SEND] },
+        { id: '23', permission_overwrites: [] }, // not synced: its own stay
+      ],
+    });
+  });
+
+  it('a synced channel moving to another category follows the new one, nothing copied', () => {
+    const rooms = { ...ROOMS, permission_overwrites: [EVERYONE_DENY_SEND] };
+    const r = applyPositions(
+      server.map((c) => (c.id === '20' ? rooms : c)),
+      [{ id: '21', position: 3, parent_id: '10' }],
+    );
+    expect(r).toMatchObject({
+      ok: true,
+      changed: [
+        { id: '21', permissions_synced: true, permission_overwrites: [] },
+      ],
+    });
+  });
+
   it('dropping #tai-lieu next to another #tai-lieu is a duplicate', () => {
     expect(
       applyPositions(server, [{ id: '30', position: 2, parent_id: '10' }]),
@@ -134,6 +174,21 @@ describe('planCategoryDelete (REQ-SRV-02 AC5)', () => {
           position: 2,
           permissions_synced: false,
         },
+      ],
+    });
+  });
+
+  it("synced children keep the category's overwrites as their own (REQ-ROLE-03 v1.8)", () => {
+    const rooms = { ...ROOMS, permission_overwrites: [EVERYONE_DENY_SEND] };
+    const r = planCategoryDelete(
+      server.map((c) => (c.id === '20' ? rooms : c)),
+      rooms,
+    );
+    expect(r).toMatchObject({
+      ok: true,
+      moved: [
+        { id: '21', permission_overwrites: [EVERYONE_DENY_SEND] },
+        { id: '22', permission_overwrites: [EVERYONE_DENY_SEND] },
       ],
     });
   });

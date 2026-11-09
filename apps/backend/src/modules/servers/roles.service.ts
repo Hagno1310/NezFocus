@@ -27,8 +27,10 @@ import { SnowflakeGenerator } from '../../common/snowflake.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
 import { PermissionCache } from '../permissions/permission-cache.js';
 import { PermissionService } from '../permissions/permission.service.js';
+import { ChannelEvents } from './channel-events.js';
+import { ChannelsRepository } from './channels.repository.js';
 import { RolesRepository, type LockedRoles } from './roles.repository.js';
-import { toRoleResponse } from './servers.dto.js';
+import { toChannelResponse, toRoleResponse } from './servers.dto.js';
 import { ServersRepository } from './servers.repository.js';
 import type { RoleRow } from './servers.schema.js';
 
@@ -86,6 +88,8 @@ export class RolesService {
     private readonly events: EventPublisher,
     private readonly ids: SnowflakeGenerator,
     private readonly clock: Clock,
+    private readonly channels: ChannelsRepository,
+    private readonly channelEvents: ChannelEvents,
   ) {}
 
   async list(userId: bigint, serverId: bigint): Promise<RoleListResponse> {
@@ -192,18 +196,22 @@ export class RolesService {
 
   async remove(userId: bigint, serverId: bigint, roleId: bigint) {
     await this.managerOf(serverId, userId);
-    await this.repo.locked(serverId, userId, async (locked) => {
+    const touched = await this.repo.locked(serverId, userId, async (locked) => {
       if (roleId === serverId)
         throw invalid('role_id', 'EVERYONE', '@everyone cannot be deleted');
       const actor = actorOf(serverId, userId, locked);
-      await locked.remove(this.manageable(actor, locked, roleId));
+      return locked.remove(this.manageable(actor, locked, roleId));
     });
-    // ponytail: channels whose overwrites lost the role send CHANNEL_UPDATE with P1-A3.4 (#67).
     await this.cache.invalidateServer(serverId);
     await this.events.toServer(serverId, 'SERVER_ROLE_DELETE', {
       server_id: serverId.toString(),
       role_id: roleId.toString(),
     });
+    // The channels whose overwrites lost the role (REQ-ROLE-03).
+    await this.channelEvents.updated(
+      serverId,
+      (await this.channels.byIds(touched)).map(toChannelResponse),
+    );
   }
 
   async reorder(

@@ -14,6 +14,7 @@ export * from './permissions/permission-groups.js';
 export * from './servers/channel-names.js';
 export * from './servers/channel-rules.js';
 export * from './servers/channel.contract.js';
+export * from './servers/overwrite-rules.js';
 export * from './servers/server.contract.js';
 export * from './servers/role-names.js';
 export * from './servers/role.contract.js';

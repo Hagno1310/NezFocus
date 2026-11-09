@@ -7,25 +7,32 @@ import {
   Param,
   Patch,
   Post,
+  Put,
 } from '@nestjs/common';
 import {
   ChannelRoutes,
   CreateChannelRequest,
+  PutChannelPermissionRequest,
   SnowflakeId,
   UpdateChannelPositionsRequest,
   UpdateChannelRequest,
   type ChannelResponse,
+  type PermissionOverwrite,
 } from '@nezfocus/shared';
 import { ZodValidationPipe } from '../../common/zod-validation.pipe.js';
 import { CurrentUser, type AuthUser } from '../auth/auth.decorators.js';
+import { ChannelOverwritesService } from './channel-overwrites.service.js';
 import { ChannelsService } from './channels.service.js';
 
 const idParam = new ZodValidationPipe(SnowflakeId);
 
-// SRS 5.3 Server › channels (REQ-SRV-02).
+// SRS 5.3 Server › channels (REQ-SRV-02) and their overwrites (REQ-ROLE-03).
 @Controller()
 export class ChannelsController {
-  constructor(private readonly channels: ChannelsService) {}
+  constructor(
+    private readonly channels: ChannelsService,
+    private readonly overwrites: ChannelOverwritesService,
+  ) {}
 
   @Get(ChannelRoutes.list)
   list(
@@ -57,13 +64,13 @@ export class ChannelsController {
   }
 
   @Patch(ChannelRoutes.byId)
-  rename(
+  update(
     @CurrentUser() user: AuthUser,
     @Param('id', idParam) id: string,
     @Body(new ZodValidationPipe(UpdateChannelRequest))
     body: UpdateChannelRequest,
   ): Promise<ChannelResponse> {
-    return this.channels.rename(user.userId, BigInt(id), body);
+    return this.channels.update(user.userId, BigInt(id), body);
   }
 
   @Delete(ChannelRoutes.byId)
@@ -73,5 +80,26 @@ export class ChannelsController {
     @Param('id', idParam) id: string,
   ): Promise<void> {
     return this.channels.remove(user.userId, BigInt(id));
+  }
+
+  @Put(ChannelRoutes.permission)
+  putPermission(
+    @CurrentUser() user: AuthUser,
+    @Param('id', idParam) id: string,
+    @Param('targetId', idParam) targetId: string,
+    @Body(new ZodValidationPipe(PutChannelPermissionRequest))
+    body: PutChannelPermissionRequest,
+  ): Promise<PermissionOverwrite> {
+    return this.overwrites.put(user.userId, BigInt(id), BigInt(targetId), body);
+  }
+
+  @Delete(ChannelRoutes.permission)
+  @HttpCode(204)
+  deletePermission(
+    @CurrentUser() user: AuthUser,
+    @Param('id', idParam) id: string,
+    @Param('targetId', idParam) targetId: string,
+  ): Promise<void> {
+    return this.overwrites.remove(user.userId, BigInt(id), BigInt(targetId));
   }
 }

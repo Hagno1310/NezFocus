@@ -1,15 +1,19 @@
 import {
   MAX_SERVERS_PER_USER,
+  Permission,
   permissionBits,
   type ServerTemplate,
 } from '@nezfocus/shared';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { SeedContext } from '../../db/seed.js';
 import { SAMPLE_USERS } from '../users/users.seed.js';
 import { users } from '../users/users.schema.js';
 import { buildServer } from './server-templates.js';
 import { ServersRepository } from './servers.repository.js';
 import {
+  OverwriteTargetCode,
+  channelPermissionOverwrites,
+  channels,
   roles,
   serverMemberRoles,
   serverMembers,
@@ -92,6 +96,45 @@ export async function seedServers(ctx: SeedContext) {
     `servers: ${created} created, ${SAMPLE_SERVERS.length - created} already there`,
   );
   await seedSampleRoles(ctx, an, idOf);
+  await seedAnnouncements(ctx, an);
+}
+
+// SRS 8.5.3 for Study Servers seeded before overwrites existed: #thong-bao still synced and
+// without overwrites gets its own @everyone deny SEND_MESSAGES. Reruns find it done.
+async function seedAnnouncements({ db }: SeedContext, an: bigint) {
+  const names = SAMPLE_SERVERS.filter((s) => s.template === 'study_server').map(
+    (s) => s.name,
+  );
+  const found = await db
+    .select({ id: channels.id, serverId: channels.serverId })
+    .from(channels)
+    .innerJoin(servers, eq(servers.id, channels.serverId))
+    .where(
+      and(
+        eq(servers.ownerId, an),
+        inArray(servers.name, names),
+        eq(channels.name, 'thong-bao'),
+        eq(channels.permissionsSynced, true),
+        isNull(channels.deletedAt),
+      ),
+    );
+  for (const { id, serverId } of found) {
+    const [own] = await db
+      .select({ id: channelPermissionOverwrites.channelId })
+      .from(channelPermissionOverwrites)
+      .where(eq(channelPermissionOverwrites.channelId, id));
+    if (own) continue;
+    await db
+      .update(channels)
+      .set({ permissionsSynced: false })
+      .where(eq(channels.id, id));
+    await db.insert(channelPermissionOverwrites).values({
+      channelId: id,
+      targetId: serverId!, // @everyone
+      targetType: OverwriteTargetCode.role,
+      deny: Permission.SEND_MESSAGES,
+    });
+  }
 }
 
 // Spec 08 › Quy ước chung: Quản trị (Tuấn) > Trưởng nhóm (An, Bình) > Điều phối phòng học

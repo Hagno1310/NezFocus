@@ -1,17 +1,13 @@
-import type { AddressInfo } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import {
   ChannelRoutes,
   ErrorCode,
-  GatewayRoutes,
   Permission,
   ServerRoutes,
   type ChannelResponse,
-  type ServerFrame,
   type ServerResponse,
 } from '@nezfocus/shared';
 import { eq } from 'drizzle-orm';
-import WebSocket from 'ws';
 import { SnowflakeGenerator } from '../src/common/snowflake.js';
 import { DB, type Db } from '../src/db/db.module.js';
 import {
@@ -28,6 +24,7 @@ import {
 import {
   CapturingMailer,
   completion,
+  connectGateway,
   createTestApp,
   http,
   signInWithCode,
@@ -127,50 +124,7 @@ describe('Channels (e2e)', () => {
   const create = (me: Me, serverId: string, body: object) =>
     me.post(list(serverId)).send(body);
 
-  // A signed-in Gateway session that keeps every DISPATCH it gets.
-  const connect = async (me: Me) => {
-    const { port } = app.getHttpServer().address() as AddressInfo;
-    const ws = new WebSocket(
-      `ws://127.0.0.1:${port}${GatewayRoutes.connect}?v=1&encoding=json`,
-    );
-    const dispatches: { t: string; d: unknown; at: number }[] = [];
-    const waiters: (() => void)[] = [];
-    await new Promise<void>((ready) => {
-      ws.on('message', (data) => {
-        const frame = JSON.parse(data.toString()) as ServerFrame;
-        if (frame.op === 10)
-          ws.send(
-            JSON.stringify({
-              op: 2,
-              d: {
-                token: me.token,
-                device: {
-                  platform: 'android',
-                  app_version: '0.1.0',
-                  device_id: 'd2',
-                },
-              },
-            }),
-          );
-        if (frame.op !== 0) return;
-        if (frame.t === 'READY') return ready();
-        dispatches.push({ t: frame.t, d: frame.d, at: Date.now() });
-        waiters.splice(0).forEach((w) => w());
-      });
-    });
-    const next = (t: string) =>
-      new Promise<{ d: unknown; at: number }>((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error(`no ${t}`)), 3000);
-        const look = () => {
-          const hit = dispatches.find((x) => x.t === t);
-          if (!hit) return void waiters.push(look);
-          clearTimeout(timer);
-          resolve(hit);
-        };
-        look();
-      });
-    return { dispatches, next, close: () => ws.close() };
-  };
+  const connect = (me: Me) => connectGateway(app, me.token);
 
   it('AC1: a move persists and CHANNEL_UPDATE reaches an online member within 1 second', async () => {
     const owner = await signedIn();

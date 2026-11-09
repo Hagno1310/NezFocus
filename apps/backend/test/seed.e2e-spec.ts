@@ -1,11 +1,13 @@
 import { randomInt } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
+import { Permission } from '@nezfocus/shared';
 import { and, eq, inArray } from 'drizzle-orm';
 import { SnowflakeGenerator } from '../src/common/snowflake.js';
 import { DB, type Db } from '../src/db/db.module.js';
 import { runSeeds } from '../src/db/seed.js';
 import { SAMPLE_SERVERS } from '../src/modules/servers/servers.seed.js';
 import {
+  channelPermissionOverwrites,
   channels,
   roles,
   serverMemberRoles,
@@ -173,6 +175,25 @@ describe('db:seed (e2e)', () => {
       '1 Điều phối phòng học',
       '2 Trưởng nhóm',
       '3 Quản trị',
+    ]);
+
+    // SRS 8.5.3: #thong-bao denies @everyone SEND_MESSAGES on its own, once.
+    const news = await db
+      .select({
+        synced: channels.permissionsSynced,
+        target: channelPermissionOverwrites.targetId,
+        deny: channelPermissionOverwrites.deny,
+      })
+      .from(channels)
+      .innerJoin(
+        channelPermissionOverwrites,
+        eq(channelPermissionOverwrites.channelId, channels.id),
+      )
+      .where(
+        and(eq(channels.serverId, study.id), eq(channels.name, 'thong-bao')),
+      );
+    expect(news).toEqual([
+      { synced: false, target: study.id, deny: Permission.SEND_MESSAGES },
     ]);
   });
 });

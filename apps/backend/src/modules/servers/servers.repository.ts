@@ -2,8 +2,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, count, eq, isNull, sql } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
 import { users } from '../users/users.schema.js';
+import {
+  withOverwrites,
+  type ChannelWithOverwrites,
+} from './channels.repository.js';
 import type { ServerRows } from './server-templates.js';
 import {
+  channelPermissionOverwrites,
   channels,
   roles,
   serverMemberRoles,
@@ -16,7 +21,7 @@ import {
 
 export type ServerWithCount = ServerRow & { memberCount: number };
 export type FullServer = ServerWithCount & {
-  channels: ChannelRow[];
+  channels: ChannelWithOverwrites[];
   roles: RoleRow[];
   myRoleIds: bigint[]; // the caller's roles, without @everyone
 };
@@ -47,6 +52,8 @@ export class ServersRepository {
       await tx.insert(servers).values({ ...server, systemChannelId: null });
       await tx.insert(roles).values(rows.roles);
       await tx.insert(channels).values(rows.channels);
+      if (rows.overwrites.length)
+        await tx.insert(channelPermissionOverwrites).values(rows.overwrites);
       await tx.insert(serverMembers).values({
         serverId: server.id,
         userId: server.ownerId,
@@ -132,7 +139,7 @@ export class ServersRepository {
     ]);
     return {
       ...server,
-      channels: channelRows,
+      channels: await withOverwrites(this.db, channelRows),
       roles: roleRows,
       myRoleIds: myRoles.map((r) => r.roleId),
     };

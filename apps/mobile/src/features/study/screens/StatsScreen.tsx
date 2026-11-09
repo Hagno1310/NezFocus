@@ -346,12 +346,15 @@ function dayA11y(t: T, c: DayCell) {
 
 // Week view only: four weeks ending with the one being viewed, a cell per day.
 function FourWeeks({ to, today }: { to: string; today: string }) {
+  // keepPreviousData would show a neighbour's week in a row while it loads, duplicating a row.
+  const fresh = (q: ReturnType<typeof useStudyStats>) =>
+    q.isPlaceholderData ? undefined : q.data;
   const weeks = [
-    useStudyStats('week', addDays(to, -21)).data,
-    useStudyStats('week', addDays(to, -14)).data,
-    useStudyStats('week', addDays(to, -7)).data,
+    fresh(useStudyStats('week', addDays(to, -21))),
+    fresh(useStudyStats('week', addDays(to, -14))),
+    fresh(useStudyStats('week', addDays(to, -7))),
   ];
-  const last = useStudyStats('week', to).data;
+  const last = fresh(useStudyStats('week', to));
   const { colors } = useTheme();
   const { t } = useTranslation();
   // Weeks not loaded yet (or offline) are left out rather than hiding the grid.

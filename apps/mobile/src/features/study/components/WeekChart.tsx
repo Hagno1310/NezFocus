@@ -17,7 +17,7 @@ const H = 54;
 const MIN = 4;
 const FLAT = 2;
 const NUMBER = 20; // room for the number above the tallest column
-const GUTTER = 48; // right margin for the "15 phút" label
+const GUTTER = 64; // right margin for the "15 phút" label, fits it at fontScale.narrowLabel
 
 const tone: Record<DayTone, ColorToken> = {
   today: 'primary',

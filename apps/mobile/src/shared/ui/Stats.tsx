@@ -132,45 +132,45 @@ export function MonthCalendar({
             const filled = c.state === 'reached';
             const fg: ColorToken = filled ? 'on-primary' : 'text-tertiary';
             return (
-              <Pressable
-                key={i}
-                accessible
-                accessibilityLabel={c.a11y}
-                onLongPress={() => setTip(c.a11y)}
-                onPressOut={() => setTip(null)}
-                style={[
-                  styles.cellSlot,
-                  styles.cell,
-                  filled && { backgroundColor: colors.primary },
-                  c.state === 'below' && {
-                    borderWidth: size.hairline,
-                    borderColor: colors['border-input'],
-                  },
-                  c.today && {
-                    borderWidth: size.strokeThick,
-                    borderColor: colors['text-primary'],
-                  },
-                ]}
-              >
-                <Text
-                  variant="label"
-                  color={fg}
-                  maxFontSizeMultiplier={fontScale.narrowLabel}
+              <View key={i} style={styles.cellSlot}>
+                <Pressable
+                  accessible
+                  accessibilityLabel={c.a11y}
+                  onLongPress={() => setTip(c.a11y)}
+                  onPressOut={() => setTip(null)}
+                  style={[
+                    styles.cell,
+                    filled && { backgroundColor: colors.primary },
+                    c.state === 'below' && {
+                      borderWidth: size.hairline,
+                      borderColor: colors['border-input'],
+                    },
+                    c.today && {
+                      borderWidth: size.strokeThick,
+                      borderColor: colors['text-primary'],
+                    },
+                  ]}
                 >
-                  {c.day}
-                </Text>
-                {c.state !== 'future' && (
                   <Text
-                    variant="numeric-inline"
-                    color={filled ? 'on-primary' : 'text-primary'}
+                    variant="label"
+                    color={fg}
                     maxFontSizeMultiplier={fontScale.narrowLabel}
-                    style={styles.cellMinutes}
                   >
-                    {c.minutes ? c.minutes : '—'}
+                    {c.day}
                   </Text>
-                )}
-                {tip === c.a11y && <Tooltip text={c.a11y} />}
-              </Pressable>
+                  {c.state !== 'future' && (
+                    <Text
+                      variant="numeric-inline"
+                      color={filled ? 'on-primary' : 'text-primary'}
+                      maxFontSizeMultiplier={fontScale.narrowLabel}
+                      style={styles.cellMinutes}
+                    >
+                      {c.minutes ? c.minutes : '—'}
+                    </Text>
+                  )}
+                  {tip === c.a11y && <Tooltip text={c.a11y} />}
+                </Pressable>
+              </View>
             );
           })}
         </View>
@@ -235,8 +235,10 @@ const styles = StyleSheet.create({
   calendar: { gap: space[1] },
   week: { flexDirection: 'row', gap: space[1] },
   weekday: { flex: 1, textAlign: 'center' },
+  // Padding and borders live on the inner cell: Yoga adds them to a flex item's share, misaligning columns.
   cellSlot: { flex: 1, minHeight: 52 },
   cell: {
+    flex: 1,
     borderRadius: radius.input,
     padding: space[1],
   },

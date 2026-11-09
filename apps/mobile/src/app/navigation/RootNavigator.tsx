@@ -55,6 +55,8 @@ import { homeStore } from '../../domain/servers/homeStore';
 import { NoServerHome } from '../../features/servers/screens/LeftDrawer';
 import { ChannelOverviewScreen } from '../../features/servers/screens/ChannelOverviewScreen';
 import { ChannelSettingsScreen } from '../../features/servers/screens/ChannelSettingsScreen';
+import { RoleEditScreen } from '../../features/servers/screens/RoleEditScreen';
+import { RolesScreen } from '../../features/servers/screens/RolesScreen';
 import { ServerOverviewScreen } from '../../features/servers/screens/ServerOverviewScreen';
 import { ServerSettingsScreen } from '../../features/servers/screens/ServerSettingsScreen';
 import { HomeDrawers } from './HomeDrawers';
@@ -95,6 +97,8 @@ type HomeParamList = {
   HomePlaceholder: { title: string; ticket?: string };
   ServerSettings: { serverId: string }; // S-SET-01
   ServerOverview: { serverId: string }; // S-SET-01 overview
+  Roles: { serverId: string }; // S-SET-02
+  RoleEdit: { serverId: string; roleId: string }; // S-SET-02 edit-role
   ChannelSettings: { serverId: string; channelId: string }; // S-SET-06
   ChannelOverview: { serverId: string; channelId: string }; // S-SET-06 overview
 };
@@ -180,10 +184,48 @@ function HomeTab() {
                 serverId: route.params.serverId,
               })
             }
+            onRoles={() =>
+              navigation.navigate('Roles', { serverId: route.params.serverId })
+            }
             onRow={(title, ticket) =>
               navigation.navigate('HomePlaceholder', { title, ticket })
             }
             onLostAccess={() => navigation.popTo('HomeRoot')}
+          />
+        )}
+      </HomeStack.Screen>
+      <HomeStack.Screen name="Roles">
+        {({ navigation, route }) => (
+          <RolesScreen
+            serverId={route.params.serverId}
+            onBack={navigation.goBack}
+            onEdit={(roleId) =>
+              navigation.navigate('RoleEdit', {
+                serverId: route.params.serverId,
+                roleId,
+              })
+            }
+            onLostAccess={() =>
+              navigation.popTo('ServerSettings', route.params)
+            }
+          />
+        )}
+      </HomeStack.Screen>
+      <HomeStack.Screen name="RoleEdit">
+        {({ navigation, route }) => (
+          <RoleEditScreen
+            {...route.params}
+            onMembers={(title) =>
+              navigation.navigate('HomePlaceholder', {
+                title,
+                ticket: 'P2-A2 (#15)',
+              })
+            }
+            onLostAccess={() =>
+              navigation.popTo('ServerSettings', {
+                serverId: route.params.serverId,
+              })
+            }
           />
         )}
       </HomeStack.Screen>

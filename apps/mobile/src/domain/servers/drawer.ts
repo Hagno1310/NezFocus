@@ -16,6 +16,7 @@ export type HomeState = {
   selectedServerId: string | null; // the server whose channels the drawer lists
   channels: Record<string, ChannelResponse[]>; // server id → channels the caller may view
   roles: Record<string, RoleResponse[]>; // server id → roles (rows shown by permission)
+  myRoleIds: Record<string, string[]>; // server id → the caller's roles, without @everyone
   open: OpenChannel | null; // the channel on screen
   collapsed: Record<string, string[]>; // server id → collapsed category ids (per device)
 };
@@ -25,6 +26,7 @@ export const emptyHome: HomeState = {
   selectedServerId: null,
   channels: {},
   roles: {},
+  myRoleIds: {},
   open: null,
   collapsed: {},
 };
@@ -103,6 +105,7 @@ function apply(s: HomeState, e: DispatchEvent): HomeState {
         servers,
         channels: {},
         roles: {},
+        myRoleIds: {},
         selectedServerId: has(s.selectedServerId)
           ? s.selectedServerId
           : (servers[0]?.id ?? null),
@@ -110,12 +113,41 @@ function apply(s: HomeState, e: DispatchEvent): HomeState {
       };
     }
     case 'SERVER_CREATE': {
-      const { channels, roles, ...server } = e.d;
+      const { channels, roles, me, ...server } = e.d;
       return {
         ...s,
         servers: upsert(s.servers ?? [], server),
         channels: { ...s.channels, [server.id]: channels },
         roles: { ...s.roles, [server.id]: roles },
+        myRoleIds: { ...s.myRoleIds, [server.id]: me.role_ids },
+      };
+    }
+    // REQ-ROLE-01: kept up only for a server whose roles were fetched.
+    case 'SERVER_ROLE_CREATE':
+    case 'SERVER_ROLE_UPDATE': {
+      const list = s.roles[e.d.server_id];
+      if (!list) return s;
+      return {
+        ...s,
+        roles: { ...s.roles, [e.d.server_id]: upsert(list, e.d.role) },
+      };
+    }
+    case 'SERVER_ROLE_DELETE': {
+      const { server_id, role_id } = e.d;
+      const list = s.roles[server_id];
+      if (!list) return s;
+      return {
+        ...s,
+        roles: {
+          ...s.roles,
+          [server_id]: list.filter((r) => r.id !== role_id),
+        },
+        myRoleIds: {
+          ...s.myRoleIds,
+          [server_id]: (s.myRoleIds[server_id] ?? []).filter(
+            (id) => id !== role_id,
+          ),
+        },
       };
     }
     case 'SERVER_UPDATE':

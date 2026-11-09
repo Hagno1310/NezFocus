@@ -67,6 +67,8 @@ export function SettingsRow({
       onPress={toggle ? () => toggle.onChange(!toggle.value) : onPress}
       style={({ pressed }) => [
         styles.row,
+        // S-SET-EDGE `edit-role-large-text`: at 200% the switch keeps its size, on top.
+        stacked && toggle && styles.top,
         pressed && { backgroundColor: colors['overlay-pressed'] },
       ]}
     >
@@ -113,6 +115,7 @@ const styles = StyleSheet.create({
     gap: space[2] + space[1],
     paddingVertical: space[2],
   },
+  top: { alignItems: 'flex-start' },
   labels: { gap: space[1] / 2 },
   grow: { flex: 1 },
   keep: { flexShrink: 0 },

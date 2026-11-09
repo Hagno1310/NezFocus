@@ -77,6 +77,22 @@ describe('S-HOME-09 / S-SET-01: rows shown by permission (Q17: no disabled rows)
     expect(serverMenuRows(0n, false)).toEqual(['report', 'leave']);
   });
 
+  it("a member's own roles count (me.role_ids): Quản trị with MANAGE_ROLES sees Vai trò", () => {
+    const admin: RoleResponse = {
+      id: '103',
+      name: 'Quản trị',
+      permissions: toPermissionBitmap(permissionBits('MANAGE_ROLES')),
+      position: 3,
+      is_mentionable: false,
+    };
+    const roles = [everyone(DEFAULT_EVERYONE_PERMISSIONS), admin];
+    const tuan = myServerPermissions(server, roles, '9', ['103']);
+    expect(serverSettingsRows(tuan, false)).toEqual(['roles', 'members']);
+    expect(myServerPermissions(server, roles, '9')).toBe(
+      DEFAULT_EVERYONE_PERMISSIONS,
+    );
+  });
+
   it('a manager without MANAGE_CHANNELS sees settings, not Tạo kênh', () => {
     const mod = permissionBits(
       'CREATE_INVITE',

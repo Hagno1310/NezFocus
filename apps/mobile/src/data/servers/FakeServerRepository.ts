@@ -4,15 +4,25 @@ import {
   ErrorCode,
   FreeChannelName,
   MAX_CHANNELS_PER_SERVER,
+  MAX_ROLES_PER_SERVER,
+  RoleName,
   ServerName,
   applyPositions,
   describeDuplicate,
   duplicateNameMessage,
+  duplicateRoleMessage,
   findDuplicateChannel,
+  findDuplicateRole,
+  keepHiddenPermissions,
+  newRolePlace,
   normalizeTextChannelName,
+  parsePermissionBitmap,
+  permissionBits,
   planCategoryDelete,
+  planRoleReorder,
   toPermissionBitmap,
   type ChannelResponse,
+  type RoleResponse,
   type ServerResponse,
   type ServerSummary,
   type ServerTemplate,
@@ -26,6 +36,7 @@ import { ApiError } from '../api/client';
 export const FAKE_FULL_NAME = 'Đủ 100 server'; // shows create-error 40011
 export const FAKE_NETWORK_NAME = 'Mất kết nối'; // shows create-error, network sentence
 export const FAKE_FORBIDDEN_NAME = 'Hết quyền'; // S-SET-01: saving it plays 40302
+export const FAKE_OUTRANKED_NAME = 'Ngang bạn'; // S-SET-02: saving it plays 40301
 
 const fail = (status: number, code: number) =>
   new ApiError(status, { code, message: `fake ${code}` });
@@ -162,8 +173,43 @@ const SAMPLES = [
   sample('300', 'CLB Guitar PTIT', 'general', 3, '2026-10-10T01:00:00.000Z'),
 ];
 
-const toSummary = ({ channels: _c, roles: _r, ...summary }: ServerResponse) =>
-  summary;
+const toSummary = ({
+  channels: _c,
+  roles: _r,
+  me: _m,
+  ...summary
+}: ServerResponse) => summary;
+
+// Spec 08 › Quy ước chung for "Ôn thi Giải tích 2": An holds Trưởng nhóm.
+const SAMPLE_ROLES: [string, number, bigint, number][] = [
+  ['Điều phối phòng học', 1, permissionBits('MANAGE_STUDY_ROOMS'), 1],
+  [
+    'Trưởng nhóm',
+    2,
+    permissionBits(
+      'MANAGE_STUDY_ROOMS',
+      'MANAGE_TASKS',
+      'MANAGE_EVENTS',
+      'MANAGE_MESSAGES',
+      'MODERATE_MEMBERS',
+      'KICK_MEMBERS',
+    ),
+    2,
+  ],
+  [
+    'Quản trị',
+    3,
+    permissionBits(
+      'MANAGE_ROLES',
+      'MANAGE_CHANNELS',
+      'KICK_MEMBERS',
+      'BAN_MEMBERS',
+      'MODERATE_MEMBERS',
+      'MANAGE_MESSAGES',
+    ),
+    1,
+  ],
+];
 
 export function createFakeServerRepository(
   delayMs = 600,
@@ -175,6 +221,50 @@ export function createFakeServerRepository(
   const servers = new Map(
     SAMPLES.map((s) => [s.id, buildServer(s, id)] as const),
   );
+  const counts = new Map<string, number>(); // role id → members holding it
+  {
+    const study = servers.get('100')!;
+    const roles = SAMPLE_ROLES.map(([name, position, perms, count]) => {
+      const role = {
+        id: id(),
+        name,
+        position,
+        permissions: toPermissionBitmap(perms),
+        is_mentionable: false,
+      };
+      counts.set(role.id, count);
+      return role;
+    });
+    servers.set('100', {
+      ...study,
+      roles: [...study.roles, ...roles],
+      me: { role_ids: [roles[1]!.id] },
+    });
+  }
+  const setRoles = (server: ServerResponse, roles: RoleResponse[]) =>
+    servers.set(server.id, { ...server, roles });
+  const serverFor = (serverId: string) => {
+    const server = servers.get(serverId);
+    if (!server) throw fail(404, ErrorCode.NotFound);
+    return server;
+  };
+  // REQ-ROLE-01 name rules, as RolesService sends them.
+  const checkName = (server: ServerResponse, raw: string, self?: string) => {
+    if (raw === FAKE_NETWORK_NAME)
+      throw new TypeError('Network request failed');
+    if (raw === FAKE_FORBIDDEN_NAME) throw fail(403, ErrorCode.Forbidden);
+    if (raw === FAKE_OUTRANKED_NAME)
+      throw fail(403, ErrorCode.InsufficientRoleHierarchy);
+    const parsed = RoleName.safeParse(raw);
+    if (!parsed.success) throw invalid('name', 'RESERVED_NAME');
+    const clash = findDuplicateRole(server.roles, {
+      id: self,
+      name: parsed.data,
+    });
+    if (clash)
+      throw invalid('name', 'DUPLICATE_NAME', duplicateRoleMessage(clash));
+    return parsed.data;
+  };
 
   const serverOf = (channelId: string) =>
     [...servers.values()].find((s) =>
@@ -191,6 +281,91 @@ export function createFakeServerRepository(
 
   return {
     summaries: () => [...servers.values()].map(toSummary),
+    async listRoles(serverId) {
+      await wait();
+      const server = serverFor(serverId);
+      return [...server.roles]
+        .sort((a, b) => b.position - a.position)
+        .map((r) => ({
+          ...r,
+          member_count:
+            r.id === serverId ? server.member_count : (counts.get(r.id) ?? 0),
+        }));
+    },
+    async createRole(serverId, body) {
+      await wait();
+      const server = serverFor(serverId);
+      const name = checkName(server, body.name);
+      if (server.roles.length >= MAX_ROLES_PER_SERVER)
+        throw invalid('_', 'MAX_ROLES');
+      // The fake caller is An, the Owner: the new role goes on top.
+      const place = newRolePlace(serverId, server.roles, null);
+      const role = {
+        id: id(),
+        name,
+        position: place.position,
+        permissions: '0',
+        is_mentionable: false,
+      };
+      setRoles(server, [...server.roles, role]);
+      return role;
+    },
+    async updateRole(serverId, roleId, body) {
+      await wait();
+      const server = serverFor(serverId);
+      const role = server.roles.find((r) => r.id === roleId);
+      if (!role) throw fail(404, ErrorCode.NotFound);
+      const next = { ...role };
+      if (body.name !== undefined) {
+        if (roleId === serverId) throw invalid('name', 'EVERYONE');
+        next.name = checkName(server, body.name, roleId);
+      }
+      if (body.is_mentionable !== undefined)
+        next.is_mentionable = body.is_mentionable;
+      if (body.permissions !== undefined)
+        next.permissions = toPermissionBitmap(
+          keepHiddenPermissions(
+            parsePermissionBitmap(role.permissions),
+            parsePermissionBitmap(body.permissions),
+          ),
+        );
+      setRoles(
+        server,
+        server.roles.map((r) => (r.id === roleId ? next : r)),
+      );
+      return next;
+    },
+    async deleteRole(serverId, roleId) {
+      await wait();
+      const server = serverFor(serverId);
+      if (roleId === serverId) throw invalid('role_id', 'EVERYONE');
+      if (!server.roles.some((r) => r.id === roleId))
+        throw fail(404, ErrorCode.NotFound);
+      setRoles(
+        server,
+        server.roles.filter((r) => r.id !== roleId),
+      );
+      servers.set(serverId, {
+        ...servers.get(serverId)!,
+        me: {
+          role_ids: server.me.role_ids.filter((r) => r !== roleId),
+        },
+      });
+    },
+    async setRolePositions(serverId, body) {
+      await wait();
+      const server = serverFor(serverId);
+      const plan = planRoleReorder(serverId, server.roles, body, null);
+      if (!plan.ok) throw invalid('id', 'UNKNOWN_ROLE');
+      const moved = new Map(plan.changed.map((p) => [p.id, p.position]));
+      setRoles(
+        server,
+        server.roles.map((r) => ({
+          ...r,
+          position: moved.get(r.id) ?? r.position,
+        })),
+      );
+    },
     async createChannel(serverId, raw) {
       await wait();
       const server = servers.get(serverId);

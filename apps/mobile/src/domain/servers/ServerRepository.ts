@@ -1,11 +1,16 @@
 import type {
   ChannelResponse,
   CreateChannelRequest,
+  CreateRoleRequest,
   CreateServerRequest,
+  RoleListResponse,
+  RoleResponse,
   ServerResponse,
   ServerSummary,
   UpdateChannelPositionsRequest,
   UpdateChannelRequest,
+  UpdateRolePositionsRequest,
+  UpdateRoleRequest,
   UpdateServerRequest,
 } from '@nezfocus/shared';
 
@@ -29,5 +34,18 @@ export interface ServerRepository {
   setChannelPositions(
     serverId: string,
     body: UpdateChannelPositionsRequest,
+  ): Promise<void>;
+  // REQ-ROLE-01/02 (MANAGE_ROLES; hierarchy 8.5.2): S-SET-02.
+  listRoles(serverId: string): Promise<RoleListResponse>;
+  createRole(serverId: string, body: CreateRoleRequest): Promise<RoleResponse>;
+  updateRole(
+    serverId: string,
+    roleId: string,
+    body: UpdateRoleRequest,
+  ): Promise<RoleResponse>;
+  deleteRole(serverId: string, roleId: string): Promise<void>;
+  setRolePositions(
+    serverId: string,
+    body: UpdateRolePositionsRequest,
   ): Promise<void>;
 }

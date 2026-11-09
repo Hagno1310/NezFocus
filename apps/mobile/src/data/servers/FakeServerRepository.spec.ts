@@ -127,4 +127,35 @@ describe('FakeServerRepository channels (REQ-SRV-02)', () => {
     await r.deleteChannel(welcome.id);
     expect((await r.getServer('100')).system_channel_id).toBeNull();
   });
+
+  it('S-SET-02: the sample roles with counts; create on top, duplicate / reserved / 40301 / 40302', async () => {
+    const fresh = createFakeServerRepository(0);
+    const roles = await fresh.listRoles('100');
+    expect(roles.map((r) => [r.name, r.member_count])).toEqual([
+      ['Quản trị', 1],
+      ['Trưởng nhóm', 2],
+      ['Điều phối phòng học', 1],
+      ['@everyone', 24],
+    ]);
+    expect((await fresh.getServer('100')).me.role_ids).toEqual([roles[1]!.id]);
+    const created = await fresh.createRole('100', { name: 'Thư ký' });
+    expect(created).toMatchObject({ position: 4, permissions: '0' });
+    const field = (p: Promise<unknown>) =>
+      p.catch(
+        (e: { code?: number; errors?: Record<string, { code: string }[]> }) =>
+          e.errors ? Object.values(e.errors)[0]![0]!.code : e.code,
+      );
+    expect(await field(fresh.createRole('100', { name: 'trưởng nhóm' }))).toBe(
+      'DUPLICATE_NAME',
+    );
+    expect(
+      await field(fresh.updateRole('100', created.id, { name: 'everyone' })),
+    ).toBe('RESERVED_NAME');
+    expect(
+      await field(fresh.updateRole('100', created.id, { name: 'Ngang bạn' })),
+    ).toBe(ErrorCode.InsufficientRoleHierarchy);
+    expect(
+      await field(fresh.updateRole('100', created.id, { name: 'Hết quyền' })),
+    ).toBe(ErrorCode.Forbidden);
+  });
 });

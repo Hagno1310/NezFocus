@@ -1,12 +1,18 @@
 import {
   ChannelResponse,
   ChannelRoutes,
+  RoleListResponse,
+  RoleResponse,
+  RoleRoutes,
   ServerResponse,
   ServerRoutes,
   ServerSummary,
 } from '@nezfocus/shared';
 import type { ServerRepository } from '../../domain/servers/ServerRepository';
 import { api } from '../api';
+
+const role = (serverId: string, roleId: string) =>
+  RoleRoutes.byId.replace(':id', serverId).replace(':roleId', roleId);
 
 export const remoteServerRepository: ServerRepository = {
   createServer: async (body) =>
@@ -45,6 +51,30 @@ export const remoteServerRepository: ServerRepository = {
   },
   setChannelPositions: async (serverId, body) => {
     await api.request(ChannelRoutes.positions.replace(':id', serverId), {
+      method: 'PATCH',
+      body,
+    });
+  },
+  listRoles: async (serverId) =>
+    RoleListResponse.parse(
+      await api.request(RoleRoutes.list.replace(':id', serverId)),
+    ),
+  createRole: async (serverId, body) =>
+    RoleResponse.parse(
+      await api.request(RoleRoutes.list.replace(':id', serverId), {
+        method: 'POST',
+        body,
+      }),
+    ),
+  updateRole: async (serverId, roleId, body) =>
+    RoleResponse.parse(
+      await api.request(role(serverId, roleId), { method: 'PATCH', body }),
+    ),
+  deleteRole: async (serverId, roleId) => {
+    await api.request(role(serverId, roleId), { method: 'DELETE' });
+  },
+  setRolePositions: async (serverId, body) => {
+    await api.request(RoleRoutes.positions.replace(':id', serverId), {
       method: 'PATCH',
       body,
     });

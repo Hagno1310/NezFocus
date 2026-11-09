@@ -3,31 +3,37 @@ import {
   computeBasePermissions,
   hasPermission,
   parsePermissionBitmap,
+  type PermissionServer,
   type RoleResponse,
   type ServerSummary,
 } from '@nezfocus/shared';
 
-// What the caller may do in a server, from the shared 8.5.2 calculator.
-// ponytail: the caller's own roles arrive with P1-A3 (#8); until then only Owner and
-// @everyone count.
+// A server as the shared 8.5.2 calculator reads it (@everyone has the server's id).
+export const toPermissionServer = (
+  server: Pick<ServerSummary, 'id' | 'owner_id'>,
+  roles: readonly RoleResponse[] | undefined,
+): PermissionServer => ({
+  id: server.id,
+  ownerId: server.owner_id,
+  roles: (roles ?? []).map((r) => ({
+    id: r.id,
+    permissions: parsePermissionBitmap(r.permissions),
+    position: r.position,
+  })),
+});
+
+// What the caller may do in a server: @everyone and the caller's roles (`me.role_ids`).
 export function myServerPermissions(
   server: ServerSummary,
   roles: readonly RoleResponse[] | undefined,
   userId: string | null,
+  roleIds: readonly string[] = [],
 ): bigint {
   if (!userId) return 0n;
-  return computeBasePermissions(
-    {
-      id: server.id,
-      ownerId: server.owner_id,
-      roles: (roles ?? []).map((r) => ({
-        id: r.id,
-        permissions: parsePermissionBitmap(r.permissions),
-        position: r.position,
-      })),
-    },
-    { userId, roleIds: [] },
-  );
+  return computeBasePermissions(toPermissionServer(server, roles), {
+    userId,
+    roleIds: [...roleIds],
+  });
 }
 
 export type SettingsRow =

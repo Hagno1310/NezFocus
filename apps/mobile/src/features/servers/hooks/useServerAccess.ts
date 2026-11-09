@@ -15,13 +15,18 @@ export function useServerAccess(serverId: string | null) {
   const roles = useStore(homeStore, (s) =>
     serverId ? s.roles[serverId] : undefined,
   );
+  const roleIds = useStore(homeStore, (s) =>
+    serverId ? s.myRoleIds[serverId] : undefined,
+  );
   const userId = useStore(sessionStore, (s) => s.user?.id ?? null);
   if (!server) return null;
-  const perms = myServerPermissions(server, roles, userId);
+  const perms = myServerPermissions(server, roles, userId, roleIds);
   const isOwner = server.owner_id === userId;
   return {
     server,
     roles,
+    roleIds: roleIds ?? [],
+    userId,
     perms,
     isOwner,
     menuRows: serverMenuRows(perms, isOwner),

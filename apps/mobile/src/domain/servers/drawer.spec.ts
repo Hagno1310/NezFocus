@@ -223,6 +223,60 @@ describe('reduceHome (Gateway events)', () => {
     expect(other.state.channels).toEqual(loaded.channels);
   });
 
+  it('SERVER_CREATE keeps my roles; SERVER_ROLE_* edit the roles of that server and my roles lose a deleted one', () => {
+    const lead = {
+      id: '102',
+      name: 'Trưởng nhóm',
+      permissions: '0',
+      position: 1,
+      is_mentionable: false,
+    };
+    let { state } = reduceHome(
+      loaded,
+      event({
+        t: 'SERVER_CREATE',
+        d: {
+          ...summary('300', 'CLB Guitar PTIT'),
+          channels: [],
+          roles: [lead],
+          me: { role_ids: ['102'] },
+        },
+      }),
+    );
+    expect(state.myRoleIds['300']).toEqual(['102']);
+    const admin = { ...lead, id: '103', name: 'Quản trị', position: 2 };
+    ({ state } = reduceHome(
+      state,
+      event({ t: 'SERVER_ROLE_CREATE', d: { server_id: '300', role: admin } }),
+    ));
+    ({ state } = reduceHome(
+      state,
+      event({
+        t: 'SERVER_ROLE_UPDATE',
+        d: { server_id: '300', role: { ...lead, name: 'Nhóm trưởng' } },
+      }),
+    ));
+    expect(state.roles['300']?.map((r) => r.name)).toEqual([
+      'Nhóm trưởng',
+      'Quản trị',
+    ]);
+    ({ state } = reduceHome(
+      state,
+      event({
+        t: 'SERVER_ROLE_DELETE',
+        d: { server_id: '300', role_id: '102' },
+      }),
+    ));
+    expect(state.roles['300']?.map((r) => r.id)).toEqual(['103']);
+    expect(state.myRoleIds['300']).toEqual([]);
+    // A server whose roles were never fetched stays unfetched.
+    const other = reduceHome(
+      state,
+      event({ t: 'SERVER_ROLE_CREATE', d: { server_id: '999', role: admin } }),
+    );
+    expect(other.state.roles['999']).toBeUndefined();
+  });
+
   it('channel-removed: the open channel is deleted → first text channel left, and its name for the toast', () => {
     const { state, removed } = reduceHome(
       loaded,

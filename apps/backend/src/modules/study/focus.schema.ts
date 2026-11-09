@@ -14,7 +14,7 @@ const id = () => bigint({ mode: 'bigint' });
 const tz = () => timestamp({ withTimezone: true });
 
 // SRS 8.2 `focus_sessions` (Room Session). Only what the history (REQ-STUDY-17) reads;
-// the phase / host / cycle columns arrive with Room Sessions, P3-B3 (#28).
+// the phase / host / cycle columns arrive with Room Sessions, P3-B3.2 (#146) and P3-B3.3 (#147).
 export const focusSessions = pgTable(
   'focus_sessions',
   {

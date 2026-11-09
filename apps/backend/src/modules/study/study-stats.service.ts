@@ -128,7 +128,7 @@ export class StudyStatsService {
                   local_date,
                   focused_seconds,
                 }))
-            : // ponytail: Participations keep no per-day split yet; P3-B3 (#28) credits them per local day like Solo.
+            : // ponytail: Participations keep no per-day split yet; P3-B3.3 (#147) credits them per local day like Solo.
               [
                 {
                   local_date: localDate(r.startedAt.getTime(), timezone),

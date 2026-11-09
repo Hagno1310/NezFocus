@@ -40,6 +40,7 @@ import {
 import { useSolo, useSoloSync } from '../../features/study/hooks/useSolo';
 import { AskNotifications } from '../../features/study/screens/AskNotifications';
 import { SoloScreen } from '../../features/study/screens/SoloScreen';
+import { StatsScreen } from '../../features/study/screens/StatsScreen';
 import { StudyHome } from '../../features/study/screens/StudyHome';
 import { useStudyStatsSync } from '../../features/study/hooks/useStudyStats';
 import { CreateServerScreen } from '../../features/servers/screens/CreateServerScreen';
@@ -360,7 +361,6 @@ function MainTabBar({
 }
 
 function StudyTab() {
-  const { t } = useTranslation();
   return (
     <StudyStack.Navigator screenOptions={{ headerShown: false }}>
       <StudyStack.Screen name="StudyHome">
@@ -379,8 +379,13 @@ function StudyTab() {
         )}
       </StudyStack.Screen>
       <StudyStack.Screen name="Stats">
-        {() => (
-          <Placeholder title={t('study.stats.title')} ticket="P1-B3.5 (#88)" />
+        {({ navigation, route }) => (
+          <StatsScreen
+            initialDate={route.params?.date}
+            onBack={navigation.goBack}
+            onOpenSolo={() => navigation.navigate('Solo')}
+            onAskNotifications={() => navigation.navigate('AskNotifications')}
+          />
         )}
       </StudyStack.Screen>
       <StudyStack.Screen name="Solo" component={SoloScreen} />

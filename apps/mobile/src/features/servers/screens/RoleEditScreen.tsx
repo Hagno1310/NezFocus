@@ -80,11 +80,18 @@ export function RoleEditScreen({
     wasReadonly.current = readonly;
   }, [editor, readonly]);
 
-  // The role went away (someone deleted it): back to the list.
+  // The role went away (someone deleted it): back to the list. Our own delete takes the
+  // role out of the store before its call returns, so both paths go back through `leave`.
+  const left = useRef(false);
+  const leave = () => {
+    if (left.current) return;
+    left.current = true;
+    navigation.goBack();
+  };
   const gone = !role && roles.roles.length > 0;
   const onGone = useEffectEvent(() => {
     if (!deleted.current) showToast({ message: t('servers.roles.gone') });
-    navigation.goBack();
+    leave();
   });
   useEffect(() => {
     if (gone) onGone();
@@ -157,13 +164,12 @@ export function RoleEditScreen({
 
   const remove = async () => {
     setDeleting(true);
+    deleted.current = true;
     const r = await roles.remove(role);
     setDeleting(false);
     setConfirming(false);
-    if (r.ok) {
-      deleted.current = true;
-      return navigation.goBack();
-    }
+    if (r.ok) return leave();
+    deleted.current = false;
     if (r.error === 'failed') return saveFailed(() => void remove());
     explain(r.error);
   };

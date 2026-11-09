@@ -43,6 +43,13 @@
       "when": 1794209927345,
       "tag": "0005_overconfident_thena",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794219192254,
+      "tag": "0006_fuzzy_hellfire_club",
+      "breakpoints": true
     }
   ]
 }

@@ -320,7 +320,7 @@ function Ended({
             {n}
           </Text>
         ))}
-        {/* ponytail: "Chuỗi {N} ngày liên tiếp" hidden until streaks exist, P1-B3.2 (#85). */}
+        {/* ponytail: "Chuỗi {N} ngày liên tiếp" hidden until the app reads the streak (STREAK_UPDATE / study-stats), P1-B3.4 (#87). */}
         {kind === 'stopped-other-device' && (
           <View style={styles.row}>
             <Icon as={Smartphone} size="sm" color="text-secondary" />

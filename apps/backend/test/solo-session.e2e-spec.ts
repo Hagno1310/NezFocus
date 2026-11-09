@@ -9,6 +9,7 @@ import { Clock, fixedClock } from '../src/common/clock.js';
 import { DB, type Db } from '../src/db/db.module.js';
 import { EventPublisher } from '../src/modules/gateway/event-publisher.js';
 import { SoloSessionService } from '../src/modules/study/solo-session.service.js';
+import { StudyStatsRepository } from '../src/modules/study/study-stats.repository.js';
 import { dailyStudyStats } from '../src/modules/study/study.schema.js';
 import {
   CapturingMailer,
@@ -154,6 +155,34 @@ describe('Solo Session (e2e)', () => {
     expect(await statsOf(u.userId, day.local_date)).toMatchObject({
       focusedSeconds: 1500,
     });
+  });
+
+  it('STUDY-03 AC5: the phase end raises the streak at once, without stopping', async () => {
+    const u = await signedIn();
+    const yesterday = new Date(clock.now().getTime() - 24 * 3600_000);
+    await app.get(StudyStatsRepository).credit({
+      userId: u.userId,
+      source: 'room',
+      intervals: [
+        { start: yesterday, end: new Date(yesterday.getTime() + 20 * 60_000) },
+      ],
+    });
+    const id = (await u.start().expect(201)).body.solo_session.id as string;
+    events.length = 0;
+
+    clock.advance(25 * 60);
+    await app.get(SoloSessionService).tick(BigInt(id));
+    expect(events.filter((e) => e.t === 'STREAK_UPDATE')).toEqual([
+      {
+        userId: u.userId,
+        t: 'STREAK_UPDATE',
+        d: {
+          current_streak_days: 2,
+          longest_streak_days: 2,
+          today_minutes: 25,
+        },
+      },
+    ]);
   });
 
   it('AC5: a wait that runs out ends the session at the end of the break; current is then empty', async () => {

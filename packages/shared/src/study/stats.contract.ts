@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { SnowflakeId } from '../snowflake.js';
+import { daysBetween } from './local-date.js';
 
 // REQ-STUDY-17: a whole week (Mon–Sun) or calendar month; no custom range, no year.
 export const StatsView = z.enum(['week', 'month']);
@@ -108,15 +109,12 @@ export const formatSessionSeconds = (seconds: number) =>
     ? 'dưới 1 phút'
     : formatMinutes(Math.floor(seconds / 60));
 
-const dayNumber = (isoDate: string) =>
-  Date.parse(`${isoDate}T00:00:00Z`) / 86_400_000;
-
 // REQ-STUDY-17 AC2: period total ÷ days elapsed (today included), rounded down.
 export const averageMinutesPerDay = (
   totalMinutes: number,
   p: { from: string; to: string; today: string },
 ) => {
   const last = p.today < p.to ? p.today : p.to;
-  const days = dayNumber(last) - dayNumber(p.from) + 1;
+  const days = daysBetween(p.from, last) + 1;
   return days > 0 ? Math.floor(totalMinutes / days) : 0;
 };

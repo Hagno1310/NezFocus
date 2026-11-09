@@ -22,6 +22,7 @@ import {
   SoloSessionRepository,
   type SoloRecord,
 } from './solo-session.repository.js';
+import { StreakService } from './streak.service.js';
 import { StudyStatsRepository } from './study-stats.repository.js';
 
 // Where the next clock-driven change of a session is due (the BullMQ job, SRS 7.3.6).
@@ -51,6 +52,7 @@ export class SoloSessionService {
     private readonly clock: Clock,
     private readonly events: EventPublisher,
     private readonly scheduler: SoloScheduler,
+    private readonly streaks: StreakService,
   ) {}
 
   async start(userId: bigint, config: CycleConfig): Promise<SoloView> {
@@ -108,37 +110,41 @@ export class SoloSessionService {
     step: (s: SoloState, now: Date) => SoloStep,
   ): Promise<SoloView> {
     const now = this.clock.now();
-    const { record, changed } = await this.sessions.transaction(async (tx) => {
-      const before = await this.sessions.lock(tx, id);
-      if (!before || (userId !== null && before.userId !== userId))
-        throw new AppError(ErrorCode.NotFound, 'Solo Session not found');
-      const { state, focus } = step(before.state, now);
-      if (focus.length === 0 && isDeepStrictEqual(state, before.state))
-        return { record: before, changed: false };
+    const { record, changed, credited } = await this.sessions.transaction(
+      async (tx) => {
+        const before = await this.sessions.lock(tx, id);
+        if (!before || (userId !== null && before.userId !== userId))
+          throw new AppError(ErrorCode.NotFound, 'Solo Session not found');
+        const { state, focus } = step(before.state, now);
+        if (focus.length === 0 && isDeepStrictEqual(state, before.state))
+          return { record: before, changed: false, credited: false };
 
-      // DEC-24: focus is credited at each phase end and on pause / skip / stop, in the same transaction.
-      const credits = focus.length
-        ? await this.stats.credit(
-            { userId: before.userId, source: 'solo', intervals: focus },
-            tx,
-          )
-        : [];
-      const creditedDays = { ...before.creditedDays };
-      for (const c of credits)
-        creditedDays[c.localDate] =
-          (creditedDays[c.localDate] ?? 0) + c.seconds;
-      const record: SoloRecord = {
-        ...before,
-        state,
-        focusedSeconds:
-          before.focusedSeconds + credits.reduce((n, c) => n + c.seconds, 0),
-        creditedDays,
-        hitDailyCap: before.hitDailyCap || credits.some((c) => c.capped),
-      };
-      await this.sessions.save(tx, record);
-      return { record, changed: true };
-    });
+        // DEC-24: focus is credited at each phase end and on pause / skip / stop, in the same transaction.
+        const credits = focus.length
+          ? await this.stats.credit(
+              { userId: before.userId, source: 'solo', intervals: focus },
+              tx,
+            )
+          : [];
+        const creditedDays = { ...before.creditedDays };
+        for (const c of credits)
+          creditedDays[c.localDate] =
+            (creditedDays[c.localDate] ?? 0) + c.seconds;
+        const record: SoloRecord = {
+          ...before,
+          state,
+          focusedSeconds:
+            before.focusedSeconds + credits.reduce((n, c) => n + c.seconds, 0),
+          creditedDays,
+          hitDailyCap: before.hitDailyCap || credits.some((c) => c.capped),
+        };
+        await this.sessions.save(tx, record);
+        return { record, changed: true, credited: credits.length > 0 };
+      },
+    );
     if (changed) await this.announce(record, now);
+    // STUDY-03 AC5: the streak rises at the phase end, without stopping the session.
+    if (credited) await this.streaks.announce(record.userId);
     return { record, now };
   }
 

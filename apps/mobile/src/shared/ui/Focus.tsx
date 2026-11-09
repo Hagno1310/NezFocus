@@ -66,6 +66,7 @@ export function PhaseBadge({
         weight="600"
         color={color}
         numberOfLines={1}
+        style={styles.shrink}
       >
         {label}
       </Text>
@@ -306,6 +307,8 @@ export function MiniPlayer({
 }
 
 const styles = StyleSheet.create({
+  // Cut inside the parent, never past its edge (04 › large-text).
+  shrink: { flexShrink: 1 },
   badge: { flexDirection: 'row', alignItems: 'center', gap: size.iconGap },
   ring: {
     width: RING,

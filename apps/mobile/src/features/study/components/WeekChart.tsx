@@ -17,7 +17,8 @@ const H = 54;
 const MIN = 4;
 const FLAT = 2;
 const NUMBER = 20; // room for the number above the tallest column
-const GUTTER = 64; // right margin for the "15 phút" label, fits it at fontScale.narrowLabel
+const GUTTER = 64; // right margin for the "15 phút" label
+const LABEL_ROOM = 10;
 
 const tone: Record<DayTone, ColorToken> = {
   today: 'primary',
@@ -30,18 +31,19 @@ const tone: Record<DayTone, ColorToken> = {
 export function WeekChart({
   days,
   today,
-  numbers = false,
+  showNumbers = false,
 }: {
   days: readonly StudyDay[];
   today: string;
-  numbers?: boolean;
+  showNumbers?: boolean;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { bars, line } = weekChart(days, today);
   const names = weekdays(t);
   const longNames = weekdaysLong(t);
-  const top = numbers ? NUMBER : 0;
+  // Without numbers, room for the "15 phút" label when the line sits at the top (empty-week).
+  const top = showNumbers ? NUMBER : LABEL_ROOM;
   const lineY = top + H - line * H;
   return (
     <View>
@@ -75,7 +77,7 @@ export function WeekChart({
               {!b.future && (
                 <>
                   {/* 04 › Biểu đồ tuần: the 15-minute line never strikes through a number. */}
-                  {numbers && (
+                  {showNumbers && (
                     <Text
                       variant="numeric-inline"
                       color="text-secondary"
@@ -114,7 +116,6 @@ export function WeekChart({
           <Text
             key={b.date}
             variant="label"
-            // Frames: every day text-tertiary, today text-primary and bold.
             color={b.today ? 'text-primary' : 'text-tertiary'}
             weight={b.today ? '700' : undefined}
             maxFontSizeMultiplier={fontScale.narrowLabel}
@@ -137,12 +138,8 @@ const styles = StyleSheet.create({
   },
   column: { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
   bar: { alignSelf: 'stretch', borderRadius: 2 },
-  lineLabel: {
-    position: 'absolute',
-    right: 0,
-    width: GUTTER - space[1],
-    textAlign: 'right',
-  },
+  // No fixed width: at 200% the label may reach over the line's end but stays one line (04 › large-text).
+  lineLabel: { position: 'absolute', right: 0 },
   axis: { height: undefined, marginTop: space[1] },
   day: { flex: 1, textAlign: 'center' },
 });

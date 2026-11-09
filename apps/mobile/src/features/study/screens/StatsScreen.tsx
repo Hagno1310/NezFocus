@@ -303,7 +303,7 @@ function PeriodNumbers({ stats, t }: { stats: StudyStatsResponse; t: T }) {
       )}
       <NumberText text={t('study.stats.average', { d: minutesText(t, avg) })} />
       {v === 'week' ? (
-        <WeekChart days={stats.days} today={stats.today} numbers />
+        <WeekChart days={stats.days} today={stats.today} showNumbers />
       ) : (
         <MonthCalendar
           title={t('study.stats.calendarTitle', {
@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
   group: { gap: space[2] },
   milestone: { alignItems: 'center', gap: space[2] },
   streak: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
-  // Frame S-STUDY-03 › Four weeks: cells share the width, 28 high, 6 apart.
+  // Frame S-STUDY-03 › Four weeks.
   grid: { gap: GRID_GAP },
   gridRow: { flexDirection: 'row', gap: GRID_GAP },
   gridCell: { flex: 1, height: 28, borderRadius: radius.input },

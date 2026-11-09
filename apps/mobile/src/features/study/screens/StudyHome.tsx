@@ -16,7 +16,13 @@ import { homeStore } from '../../../domain/servers/homeStore';
 import { endingOf, timerOf, type SoloTimer } from '../../../domain/study/solo';
 import { ConnectionBanner } from '../../gateway/components/ConnectionBanner';
 import { useOnline } from '../../gateway/hooks/useOnline';
-import { radius, size, space, useTheme } from '../../../shared/theme';
+import {
+  radius,
+  size,
+  space,
+  touchSlop,
+  useTheme,
+} from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import { EmptyState, Skeleton } from '../../../shared/ui/Feedback';
 import { PhaseBadge } from '../../../shared/ui/Focus';
@@ -199,23 +205,27 @@ function SoloBlock({
         { borderColor: colors.border, backgroundColor: colors['surface-1'] },
       ]}
     >
-      <View style={styles.soloInfo}>
-        <Text weight="600">{t('study.solo')}</Text>
-        {timer ? (
+      {timer ? (
+        <View style={[styles.soloInfo, !stacked && styles.flex]}>
+          <Text weight="600">{t('study.solo')}</Text>
           <PhaseBadge
             phase={timer.phase}
             state={timer.status}
             size="S"
             label={soloLine(t, timer)}
           />
-        ) : (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={cycleLabel}
-            onPress={() => setChoosing(true)}
-            hitSlop={CYCLE_SLOP}
-            style={styles.cycleRow}
-          >
+        </View>
+      ) : (
+        // Title and cycle line form one control: the line alone is too short for 48 (SRS 3.5).
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={cycleLabel}
+          onPress={() => setChoosing(true)}
+          hitSlop={touchSlop(INFO_HEIGHT)}
+          style={[styles.soloInfo, !stacked && styles.flex]}
+        >
+          <Text weight="600">{t('study.solo')}</Text>
+          <View style={styles.cycleRow}>
             <Text
               color="text-secondary"
               numberOfLines={2}
@@ -224,9 +234,9 @@ function SoloBlock({
               {cycleLabel}
             </Text>
             <Icon as={ChevronDown} size="base" color="text-secondary" />
-          </Pressable>
-        )}
-      </View>
+          </View>
+        </Pressable>
+      )}
       {button}
       <CycleSheet
         key={String(choosing)}
@@ -308,8 +318,8 @@ function WeekBlock({
   );
 }
 
-// The cycle line is 20 high; the slop brings its touch target to 48 (SRS 3.5).
-const CYCLE_SLOP = { top: 14, bottom: 14 };
+// Frame S-STUDY-01 › Solo › Info at 100%.
+const INFO_HEIGHT = 42;
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
@@ -326,7 +336,7 @@ const styles = StyleSheet.create({
     padding: space[3],
     gap: 12,
   },
-  soloInfo: { flex: 1, gap: 2 },
+  soloInfo: { gap: 2 },
   stacked: { flexDirection: 'column', alignItems: 'stretch' },
   cycleRow: { flexDirection: 'row', alignItems: 'center', gap: space[1] },
   row: { flexDirection: 'row', alignItems: 'center' },

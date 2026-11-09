@@ -1,6 +1,6 @@
 import { LampDesk, Timer } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import {
   fontScale,
   radius,
@@ -23,20 +23,20 @@ export function NumberText({
   variant = 'label',
   color = 'text-secondary',
   numberOfLines,
-  max = Infinity,
+  maxFigures = Infinity,
 }: {
   text: string;
   variant?: TypeVariant;
   color?: ColorToken;
   numberOfLines?: number;
   // Only the first `max` numbers are figures; later ones (the fixed "15 phút") stay text.
-  max?: number;
+  maxFigures?: number;
 }) {
   let seen = 0;
   return (
     <Text variant={variant} color={color} numberOfLines={numberOfLines}>
       {parts(text).map((p, i) =>
-        isNumber(p) && seen++ < max ? (
+        isNumber(p) && seen++ < maxFigures ? (
           <Text key={i} variant="numeric-inline" color={color}>
             {p}
           </Text>
@@ -81,7 +81,7 @@ export function TodayProgress({
       style={styles.progress}
     >
       {/* Frame C-37: only today's minutes is a figure, "15 phút" is the fixed goal. */}
-      <NumberText text={label} max={1} />
+      <NumberText text={label} maxFigures={1} />
       <View style={[styles.track, { backgroundColor: colors['surface-2'] }]}>
         <View
           style={[
@@ -199,6 +199,7 @@ export function SessionRow({
   running?: string; // ChipStatus "Đang học"
 }) {
   const { colors } = useTheme();
+  const large = useWindowDimensions().fontScale >= 1.5;
   return (
     <View
       accessible
@@ -208,21 +209,18 @@ export function SessionRow({
       style={[styles.row, { borderBottomColor: colors.border }]}
     >
       <Icon as={kind === 'room' ? LampDesk : Timer} size="md" />
-      {/* Frame C-39: line 1 = title, "Đang học", minutes; line 2 one plain line cut at the end. */}
       <View style={styles.rowText}>
-        <View style={styles.rowLine}>
+        <View style={[styles.rowLine, large && styles.wrap]}>
           <Text
             variant="body"
             weight="600"
             numberOfLines={1}
-            style={styles.rowTitle}
+            style={[styles.rowTitle, large && styles.fullLine]}
           >
             {title}
           </Text>
           {running && (
-            <View
-              style={[styles.chip, { backgroundColor: colors['surface-2'] }]}
-            >
+            <View style={[styles.chip, { borderColor: colors.border }]}>
               <Icon as={LampDesk} size="xs" color="text-secondary" />
               <Text variant="label" color="text-secondary">
                 {running}
@@ -231,7 +229,12 @@ export function SessionRow({
           )}
           <NumberText text={minutes} color="text-primary" />
         </View>
-        <Text variant="label" color="text-tertiary" numberOfLines={1}>
+        {/* 04 S-STUDY-03: one line cut at the end; C-39 › 200%: wraps freely. */}
+        <Text
+          variant="label"
+          color="text-tertiary"
+          numberOfLines={large ? undefined : 1}
+        >
           {line}
         </Text>
       </View>
@@ -271,13 +274,18 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, minWidth: 0, gap: 2 },
   rowLine: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
   // The title gives way first (04 › month · 360: room name cut before the minutes).
-  rowTitle: { flex: 1, flexShrink: 1 },
+  rowTitle: { flex: 1 },
+  // 200%: "Đang học" drops under the title instead of squeezing it to "H…".
+  wrap: { flexWrap: 'wrap' },
+  fullLine: { flexBasis: '100%' },
+  // C-21 ChipStatus: 28 high, border, no fill.
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: size.iconGap,
-    paddingHorizontal: space[2],
-    paddingVertical: 2,
+    minHeight: 28,
+    paddingHorizontal: space[3],
+    borderWidth: size.hairline,
     borderRadius: radius.full,
   },
 });

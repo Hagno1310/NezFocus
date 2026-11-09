@@ -1,4 +1,4 @@
-import { addDays } from '@nezfocus/shared';
+import { addDays, QUALIFIED_DAY_MINUTES } from '@nezfocus/shared';
 import { eq } from 'drizzle-orm';
 import type { SeedContext } from '../../db/seed.js';
 import { users } from '../users/users.schema.js';
@@ -58,10 +58,14 @@ function sampleDays() {
   const out = new Map<string, [number, number]>();
   for (const [monday, mins] of Object.entries(weeks))
     mins.forEach((m, i) => out.set(addDays(monday, i), m));
-  // 1–18/9 = 9 h 10 min; 2/9–15/9 is the 14-day longest streak ("Dài nhất 14 ngày").
+  // "Dài nhất 14 ngày" in August, outside the weeks above: 18/8–31/8.
+  for (let d = '2026-08-18'; d <= '2026-08-31'; d = addDays(d, 1))
+    out.set(d, [30, 0]);
+  // 1–18/9 = 9 h 10 min; 1/9 and 13/9 break the runs so none beats 14.
   out.set('2026-09-01', [10, 0]);
-  for (let i = 2; i <= 13; i++)
-    out.set(`2026-09-${String(i).padStart(2, '0')}`, [i <= 8 ? 35 : 36, 0]);
+  for (let i = 2; i <= 12; i++)
+    out.set(`2026-09-${String(i).padStart(2, '0')}`, [i <= 8 ? 39 : 38, 0]);
+  out.set('2026-09-13', [0, 0]);
   // The rest of "Từ trước tới nay 86 giờ 12 phút", every other day from before 12/2025 (no long run).
   const known = [...out.values()].reduce((n, [m]) => n + m, 0);
   let rest = 86 * 60 + 12 - known;
@@ -95,7 +99,7 @@ export async function seedStudy({ db }: SeedContext) {
     .onConflictDoNothing();
   const run = streakRun(
     [...days]
-      .filter(([, [m]]) => m >= 15)
+      .filter(([, [m]]) => m >= QUALIFIED_DAY_MINUTES)
       .map(([d]) => d)
       .sort(),
   );

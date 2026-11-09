@@ -97,7 +97,7 @@ export class StudyStatsRepository {
   }
 
   // DEC-24: recomputed in the credit transaction, so the streak rises the moment a day reaches 15 minutes.
-  // ponytail: reads every Qualified Day of the user per credit; keep a running count if users reach thousands of days.
+  // ponytail: khi một user có hàng nghìn Qualified Day: giữ số đếm chạy thay vì đọc lại mọi ngày mỗi lần ghi.
   private async saveStreak(tx: Tx, userId: bigint) {
     const rows = await tx
       .select({ localDate: dailyStudyStats.localDate })
@@ -127,7 +127,6 @@ export class StudyStatsRepository {
       });
   }
 
-  // Today as the user's time zone has it, the stored run, and today's seconds.
   async timezoneOf(userId: bigint) {
     const [settings] = await this.db
       .select({ timezone: userSettings.timezone })
@@ -137,6 +136,7 @@ export class StudyStatsRepository {
     return settings.timezone;
   }
 
+  // "Today" follows the current time zone, so the visible streak is decided here, not stored.
   async streakSnapshot(userId: bigint, now: Date) {
     const timezone = await this.timezoneOf(userId);
     const today = localDate(now.getTime(), timezone);
@@ -184,7 +184,7 @@ export class StudyStatsRepository {
         minutes: sql<number>`coalesce(sum(${dailyStudyStats.focusedSeconds} / 60), 0)::int`,
         firstDate: sql<
           string | null
-        >`min(${dailyStudyStats.localDate}) filter (where ${dailyStudyStats.focusedSeconds} >= 60)`,
+        >`min(${dailyStudyStats.localDate}) filter (where ${dailyStudyStats.focusedSeconds} > 0)`,
       })
       .from(dailyStudyStats)
       .where(eq(dailyStudyStats.userId, userId));

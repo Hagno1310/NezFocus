@@ -26,7 +26,7 @@ export const previousPeriod = (
   today: string,
 ) => {
   const prev = periodOf(view, addDays(p.from, -1));
-  if (today > p.to) return prev;
+  if (today > p.to || today < p.from) return prev;
   const end = addDays(prev.from, daysBetween(p.from, today));
   return { from: prev.from, to: end < prev.to ? end : prev.to };
 };

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
   addDays,
+  toFocusedMinutes as minutes,
   ErrorCode,
   Permission,
   periodOf,
@@ -20,8 +21,6 @@ import {
   type HistoryCursor,
   type HistoryRow,
 } from './study-stats.repository.js';
-
-const minutes = (seconds: number) => Math.floor(seconds / 60);
 
 const GONE: SessionRoom = {
   access: 'gone',
@@ -143,25 +142,30 @@ export class StudyStatsService {
 
   // REQ-STUDY-17 AC5: names follow what the user may see today.
   private async rooms(userId: bigint, channelIds: bigint[]) {
-    const out = new Map<bigint, SessionRoom>();
-    for (const c of await this.repo.roomsOf(userId, [...new Set(channelIds)])) {
-      const access: SessionRoom['access'] = !c.member
-        ? 'gone'
-        : c.deleted
-          ? 'deleted'
-          : (await this.permissions.can(
-                userId,
-                { channelId: c.channelId },
-                Permission.VIEW_CHANNEL,
-              ))
-            ? 'visible'
-            : 'hidden';
-      out.set(c.channelId, {
-        access,
-        channel_name: access === 'visible' ? c.channelName : null,
-        server_name: access === 'gone' ? null : c.serverName,
-      });
-    }
-    return out;
+    const rooms = await this.repo.roomsOf(userId, [...new Set(channelIds)]);
+    const entries = await Promise.all(
+      rooms.map(async (c): Promise<[bigint, SessionRoom]> => {
+        const access: SessionRoom['access'] = !c.member
+          ? 'gone'
+          : c.deleted
+            ? 'deleted'
+            : (await this.permissions.can(
+                  userId,
+                  { channelId: c.channelId },
+                  Permission.VIEW_CHANNEL,
+                ))
+              ? 'visible'
+              : 'hidden';
+        return [
+          c.channelId,
+          {
+            access,
+            channel_name: access === 'visible' ? c.channelName : null,
+            server_name: access === 'gone' ? null : c.serverName,
+          },
+        ];
+      }),
+    );
+    return new Map(entries);
   }
 }

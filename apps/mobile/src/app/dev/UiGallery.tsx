@@ -160,22 +160,25 @@ function Headers() {
   const noop = () => {};
   return (
     <>
-      <ScreenHeader title="Thống kê" onBack={noop} />
+      <ScreenHeader topInset={false} title="Thống kê" onBack={noop} />
       <ScreenHeader
+        topInset={false}
         title="Đang học lúc này"
         onBack={noop}
         action={<IconButton icon={Plus} label="Thêm" />}
       />
       <ScreenHeader
+        topInset={false}
         title="Học một mình"
         onBack={noop}
         action={<Button variant="text" label="Lưu" />}
       />
       <ScreenHeader
+        topInset={false}
         title="Cài đặt thông báo của server Ôn thi Giải tích 2"
         onBack={noop}
       />
-      <ScreenHeader title="Việc của tôi" />
+      <ScreenHeader topInset={false} title="Việc của tôi" />
     </>
   );
 }

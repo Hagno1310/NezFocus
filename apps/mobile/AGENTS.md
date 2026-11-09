@@ -30,6 +30,11 @@ Run lint and typecheck before declaring any task done.
 - State: Zustand for client state, TanStack Query for backend data — one place per datum.
 - Docs: https://reactnavigation.org/docs/getting-started
 
+## Gotchas (đã gặp trên máy thật)
+
+- **Thanh trạng thái:** `ScreenHeader` tự nhận safe area trên. Màn có `ScreenHeader` không thêm `paddingTop: top`; màn không có header (drawer, placeholder, màn toàn khung) tự lấy `useSafeAreaInsets().top`. Màn mới: chụp màn trên máy thật, xem ‹ và tiêu đề không đè thanh trạng thái.
+- **Màn đang đóng (react-native-screens, Fabric):** khi một màn bị pop, react-native-screens giữ view của nó cho hiệu ứng thoát (`startViewTransition`). Nếu lúc đó cây view của màn đổi hình — một `View` chỉ có style bố cục được bật/tắt `opacity`, `backgroundColor`… nên lúc bị Fabric gộp (flatten), lúc không — thì view con phải đổi cha và app crash: "addViewAt … The specified child already has a parent". View nào có style đổi theo state mà có thể vừa đóng màn vừa đổi (nút loading, overlay) thì đặt `collapsable={false}`. Đọc log bằng `adb logcat`: dòng "Views created for surface" cho biết tag nào thuộc component nào.
+
 ## Building with EAS
 
 Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.

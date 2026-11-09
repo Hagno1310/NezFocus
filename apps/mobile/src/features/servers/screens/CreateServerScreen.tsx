@@ -50,7 +50,7 @@ export function CreateServerScreen({
 }: Props) {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const { top, bottom } = useSafeAreaInsets();
+  const { bottom } = useSafeAreaInsets();
   const online = useStore(gatewayStore, (s) => s.online);
   const [step, setStep] = useState<'choose' | 'name'>('choose');
   const [template, setTemplate] = useState<ServerTemplate>(
@@ -95,16 +95,14 @@ export function CreateServerScreen({
       behavior="padding"
       style={[styles.flex, { backgroundColor: colors.bg }]}
     >
-      <View style={{ paddingTop: top }}>
-        <ScreenHeader
-          title={
-            step === 'choose'
-              ? t('servers.create.title')
-              : t(`servers.create.nameTitle_${template}`)
-          }
-          onBack={back}
-        />
-      </View>
+      <ScreenHeader
+        title={
+          step === 'choose'
+            ? t('servers.create.title')
+            : t(`servers.create.nameTitle_${template}`)
+        }
+        onBack={back}
+      />
       <ScrollView
         style={styles.flex}
         keyboardShouldPersistTaps="handled"

@@ -58,7 +58,6 @@ import { ChannelSettingsScreen } from '../../features/servers/screens/ChannelSet
 import { ServerOverviewScreen } from '../../features/servers/screens/ServerOverviewScreen';
 import { ServerSettingsScreen } from '../../features/servers/screens/ServerSettingsScreen';
 import { HomeDrawers } from './HomeDrawers';
-import { useHeldWhileCovered } from './useHeldWhileCovered';
 import { Placeholder } from './Placeholder';
 // Metro folds __DEV__ before collecting dependencies, so release bundles leave the gallery out.
 const UiGallery: ComponentType | null = __DEV__
@@ -113,62 +112,55 @@ const Tab = createBottomTabNavigator<TabParamList>();
 const StudyStack = createNativeStackNavigator<StudyParamList>();
 const HomeStack = createNativeStackNavigator<HomeParamList>();
 
-// S-HOME-02 `no-server`: READY listed none; the drawer becomes the Home root. The switch
-// waits while S-HOME-06 covers this screen (useHeldWhileCovered).
-function HomeRoot({
-  navigation,
-}: {
-  navigation: NativeStackNavigationProp<HomeParamList, 'HomeRoot'>;
-}) {
-  const { t } = useTranslation();
-  const noServer = useHeldWhileCovered(
-    useStore(homeStore, (s) => s.servers?.length === 0),
-  );
-  const placeholder = (title: string, ticket?: string) => () =>
-    navigation.navigate('HomePlaceholder', { title, ticket });
-  const dm = placeholder(t('screens.directMessages'), 'P2-B3 (#20)');
-  return noServer ? (
-    <NoServerHome
-      onCreate={() => navigation.navigate('CreateServer')}
-      onJoinByCode={() => navigation.navigate('JoinByCode')}
-      onDirectMessages={dm}
-    />
-  ) : (
-    <HomeDrawers
-      actions={{
-        onAdd: () => navigation.navigate('CreateServer'),
-        onOpenVoice: (channel) => placeholder(channel.name, 'P3-B1 (#26)')(),
-        onDirectMessages: dm,
-        onInvite: placeholder(t('screens.invite'), 'P2-A1 (#14)'),
-        menu: {
-          invite: placeholder(t('screens.invite'), 'P2-A1 (#14)'),
-          settings: (serverId) =>
-            navigation.navigate('ServerSettings', { serverId }),
-          // ponytail: report (P3-A5 #25), leave / owner-leave (P3-A4 #24).
-          report: placeholder(t('servers.menu.report'), 'P3-A5 (#25)'),
-          leave: placeholder(t('servers.menu.leave'), 'P3-A4 (#24)'),
-        },
-        onChannelSettings: (channel) =>
-          navigation.navigate('ChannelSettings', {
-            serverId: channel.server_id,
-            channelId: channel.id,
-          }),
-        // ponytail: `category-overwrites` comes with P1-A3.6 (#69).
-        onCategoryPermissions: placeholder(
-          t('servers.channels.categoryPermissions'),
-          'P1-A3.6 (#69)',
-        ),
-      }}
-    />
-  );
-}
-
 // CR-15: S-HOME-06 and other Home screens stack above the drawers; Back pops them first.
 function HomeTab() {
   const { t } = useTranslation();
+  // S-HOME-02 `no-server`: READY listed none; the drawer becomes the Home root.
+  const noServer = useStore(homeStore, (s) => s.servers?.length === 0);
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
-      <HomeStack.Screen name="HomeRoot" component={HomeRoot} />
+      <HomeStack.Screen name="HomeRoot">
+        {({ navigation }) => {
+          const placeholder = (title: string, ticket?: string) => () =>
+            navigation.navigate('HomePlaceholder', { title, ticket });
+          const dm = placeholder(t('screens.directMessages'), 'P2-B3 (#20)');
+          return noServer ? (
+            <NoServerHome
+              onCreate={() => navigation.navigate('CreateServer')}
+              onJoinByCode={() => navigation.navigate('JoinByCode')}
+              onDirectMessages={dm}
+            />
+          ) : (
+            <HomeDrawers
+              actions={{
+                onAdd: () => navigation.navigate('CreateServer'),
+                onOpenVoice: (channel) =>
+                  placeholder(channel.name, 'P3-B1 (#26)')(),
+                onDirectMessages: dm,
+                onInvite: placeholder(t('screens.invite'), 'P2-A1 (#14)'),
+                menu: {
+                  invite: placeholder(t('screens.invite'), 'P2-A1 (#14)'),
+                  settings: (serverId) =>
+                    navigation.navigate('ServerSettings', { serverId }),
+                  // ponytail: report (P3-A5 #25), leave / owner-leave (P3-A4 #24).
+                  report: placeholder(t('servers.menu.report'), 'P3-A5 (#25)'),
+                  leave: placeholder(t('servers.menu.leave'), 'P3-A4 (#24)'),
+                },
+                onChannelSettings: (channel) =>
+                  navigation.navigate('ChannelSettings', {
+                    serverId: channel.server_id,
+                    channelId: channel.id,
+                  }),
+                // ponytail: `category-overwrites` comes with P1-A3.6 (#69).
+                onCategoryPermissions: placeholder(
+                  t('servers.channels.categoryPermissions'),
+                  'P1-A3.6 (#69)',
+                ),
+              }}
+            />
+          );
+        }}
+      </HomeStack.Screen>
       <HomeStack.Screen name="CreateServer">
         {({ navigation }) => (
           <CreateServerScreen

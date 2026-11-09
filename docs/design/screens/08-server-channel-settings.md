@@ -142,7 +142,7 @@ Frame nằm trong nhóm "08 · Cài đặt Server & kênh — Edge case", tên `
 ### Chỉ ghi luật (giao diện không đổi)
 | Tình huống | Luật |
 |---|---|
-| Bị thu hồi quyền khi đang ở S-SET-06 / S-SET-07 | Màn tự đóng về kênh, `Toast` "Bạn không còn quyền chỉnh kênh này"; thao tác đang lưu bị từ chối `40302` cũng đi đường này |
+| Bị thu hồi quyền khi đang ở S-SET-06 / S-SET-07 | Màn tự đóng về drawer S-HOME-02 (09/11/2026, P1-A2.6 #63: trước ghi "về kênh"; cùng đích với kênh bị xóa và S-SET-01), `Toast` "Bạn không còn quyền chỉnh kênh này"; thao tác đang lưu bị từ chối `40302` cũng đi đường này |
 | Kênh bị người khác xóa khi đang ở S-SET-06 / S-SET-07 | Về drawer S-HOME-02, `Toast` "Kênh này đã bị xóa" |
 | Phiên học kết thúc khi đang mở dialog tắt Phòng học | Dialog đóng; radio "Tắt" áp dụng ngay (không còn phiên để xác nhận) |
 | Phiên học bắt đầu / kết thúc khi đang xem | Dòng "Đang có phiên học · N người" hiện / biến mất ngay; N cập nhật thưa (khi có người vào / rời) |

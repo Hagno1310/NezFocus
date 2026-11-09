@@ -89,48 +89,48 @@ export class ChannelsService {
         'NOT_AVAILABLE',
         'Private channels at creation are not available yet',
       );
-    const current = await this.live(serverId);
     const parentId = body.type === 'category' ? null : body.parent_id;
-    if (
-      parentId !== null &&
-      !current.some((c) => c.id === parentId && c.type === 'category')
-    )
-      throw invalid(
-        'parent_id',
-        'NOT_A_CATEGORY',
-        'The parent must be a category of this server',
-      );
-    const candidate = { type: body.type, name: body.name, parent_id: parentId };
-    const clash = findClash(current, [candidate]);
-    if (clash) throw rejected(clash);
-
     // REQ-SRV-02 AC6, v1.9 CR-22: "Bật phòng học" follows the server's template when unsent.
     const focusControl =
       body.type === 'voice'
         ? (body.focus_control ??
           (server.template === 'study_server' ? 'everyone' : 'off'))
         : 'off';
-    const row = await this.repo.create(
-      {
-        id: this.ids.next(),
-        serverId,
-        parentId: parentId === null ? null : BigInt(parentId),
-        type: ChannelTypeCode[body.type],
-        name: body.name,
-        focusControl,
-        // Nothing to follow outside a category (REQ-ROLE-03 v1.8).
-        permissionsSynced: body.type === 'category' || parentId !== null,
-        createdAt: this.clock.now(),
-      },
-      MAX_CHANNELS_PER_SERVER,
-    );
-    if (!row)
-      throw invalid(
-        '_',
-        'MAX_CHANNELS',
-        `A server has at most ${MAX_CHANNELS_PER_SERVER} channels`,
+    const channel = await this.repo.locked(serverId, async (locked) => {
+      const current = locked.rows.map(toChannelResponse);
+      if (
+        parentId !== null &&
+        !current.some((c) => c.id === parentId && c.type === 'category')
+      )
+        throw invalid(
+          'parent_id',
+          'NOT_A_CATEGORY',
+          'The parent must be a category of this server',
+        );
+      const clash = findClash(current, [
+        { type: body.type, name: body.name, parent_id: parentId },
+      ]);
+      if (clash) throw rejected(clash);
+      if (current.length >= MAX_CHANNELS_PER_SERVER)
+        throw invalid(
+          '_',
+          'MAX_CHANNELS',
+          `A server has at most ${MAX_CHANNELS_PER_SERVER} channels`,
+        );
+      return toChannelResponse(
+        await locked.create({
+          id: this.ids.next(),
+          serverId,
+          parentId: parentId === null ? null : BigInt(parentId),
+          type: ChannelTypeCode[body.type],
+          name: body.name,
+          focusControl,
+          // Nothing to follow outside a category (REQ-ROLE-03 v1.8).
+          permissionsSynced: body.type === 'category' || parentId !== null,
+          createdAt: this.clock.now(),
+        }),
       );
-    const channel = toChannelResponse(row);
+    });
     await this.events.toServer(serverId, 'CHANNEL_CREATE', channel);
     return channel;
   }
@@ -146,10 +146,14 @@ export class ChannelsService {
       type === 'text' ? normalizeTextChannelName(body.name) : body.name;
     if (!name)
       throw invalid('name', 'NO_LETTER_OR_DIGIT', NO_LETTER_OR_DIGIT_MESSAGE);
-    const current = await this.live(row.serverId!);
-    const clash = findClash(current, [{ ...toChannelResponse(row), name }]);
-    if (clash) throw rejected(clash);
-    const channel = toChannelResponse(await this.repo.rename(row.id, name));
+    const channel = await this.repo.locked(row.serverId!, async (locked) => {
+      const current = locked.rows.map(toChannelResponse);
+      const self = current.find((c) => c.id === row.id.toString());
+      if (!self) throw notFound('Unknown channel'); // deleted meanwhile
+      const clash = findClash(current, [{ ...self, name }]);
+      if (clash) throw rejected(clash);
+      return toChannelResponse(await locked.rename(row.id, name));
+    });
     await this.events.toServer(row.serverId!, 'CHANNEL_UPDATE', channel);
     return channel;
   }
@@ -165,29 +169,38 @@ export class ChannelsService {
       { serverId },
       Permission.MANAGE_CHANNELS,
     );
-    const plan = applyPositions(await this.live(serverId), body);
-    if (!plan.ok) throw rejected(plan);
-    await this.repo.move(plan.changed.map(toMove));
-    for (const channel of plan.changed)
+    const changed = await this.repo.locked(serverId, async (locked) => {
+      const plan = applyPositions(locked.rows.map(toChannelResponse), body);
+      if (!plan.ok) throw rejected(plan);
+      await locked.move(plan.changed.map(toMove));
+      return plan.changed;
+    });
+    for (const channel of changed)
       await this.events.toServer(serverId, 'CHANNEL_UPDATE', channel);
   }
 
   async remove(userId: bigint, channelId: bigint): Promise<void> {
     const row = await this.managed(userId, channelId);
     const serverId = row.serverId!;
-    let moved: ChannelResponse[] = [];
-    if (row.type === ChannelTypeCode.category) {
-      const plan = planCategoryDelete(
-        await this.live(serverId),
-        toChannelResponse(row),
-      );
-      if (!plan.ok) throw rejected(plan);
-      moved = plan.moved;
-    }
-    const welcomeCleared = await this.repo.softDelete(
-      row,
-      moved.map(toMove),
-      this.clock.now(),
+    const { moved, welcomeCleared } = await this.repo.locked(
+      serverId,
+      async (locked) => {
+        const current = locked.rows.map(toChannelResponse);
+        const self = current.find((c) => c.id === row.id.toString());
+        if (!self) throw notFound('Unknown channel'); // deleted meanwhile
+        let moved: ChannelResponse[] = [];
+        if (self.type === 'category') {
+          const plan = planCategoryDelete(current, self);
+          if (!plan.ok) throw rejected(plan);
+          moved = plan.moved;
+        }
+        const welcomeCleared = await locked.softDelete(
+          row,
+          moved.map(toMove),
+          this.clock.now(),
+        );
+        return { moved, welcomeCleared };
+      },
     );
     await this.events.toServer(serverId, 'CHANNEL_DELETE', {
       id: row.id.toString(),
@@ -201,10 +214,6 @@ export class ChannelsService {
         'SERVER_UPDATE',
         toServerSummary((await this.servers.summary(serverId))!),
       );
-  }
-
-  private async live(serverId: bigint) {
-    return (await this.repo.listForServer(serverId)).map(toChannelResponse);
   }
 
   // 40401 for a server that does not exist and for one the caller is not in.

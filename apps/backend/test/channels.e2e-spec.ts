@@ -338,6 +338,36 @@ describe('Channels (e2e)', () => {
     );
   });
 
+  it('AC7 under load: requests at the same time never leave two channels with one name', async () => {
+    const me = await signedIn();
+    const server = await createGeneral(me);
+    const statuses = async (calls: Promise<{ status: number }>[]) =>
+      (await Promise.all(calls)).map((r) => r.status).sort();
+
+    // Five creates of the same name: the server row lock lets exactly one through.
+    expect(
+      await statuses(
+        Array.from({ length: 5 }, () =>
+          create(me, server.id, { type: 'text', name: 'Đề cương' }),
+        ),
+      ),
+    ).toEqual([201, 400, 400, 400, 400]);
+
+    // Two channels renamed to one name at once: one wins.
+    const a = await create(me, server.id, { type: 'text', name: 'a' });
+    const b = await create(me, server.id, { type: 'text', name: 'b' });
+    expect(
+      await statuses([
+        me.patch(byId(a.body.id)).send({ name: 'Ôn tập' }),
+        me.patch(byId(b.body.id)).send({ name: 'ôn tập' }),
+      ]),
+    ).toEqual([200, 400]);
+
+    const names = (await channelsOf(me, server.id)).map((c) => c.name);
+    expect(names.filter((n) => n === 'đề-cương')).toHaveLength(1);
+    expect(names.filter((n) => n === 'ôn-tập')).toHaveLength(1);
+  });
+
   it('AC8: hỏi-đáp next to hoi-dap is fine (accents count)', async () => {
     const me = await signedIn();
     const server = await createGeneral(me);

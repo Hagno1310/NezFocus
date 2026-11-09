@@ -3,10 +3,13 @@ import {
   permissionBits,
   type ChannelType,
   type FocusControl,
+  type PermissionName,
   type ServerTemplate,
 } from '@nezfocus/shared';
 import {
   ChannelTypeCode,
+  OverwriteTargetCode,
+  type OverwriteRow,
   type channels,
   type roles,
   type servers,
@@ -16,6 +19,7 @@ type Plan = {
   type: ChannelType;
   name: string;
   focusControl?: FocusControl;
+  everyoneDeny?: PermissionName[]; // its own @everyone overwrite, so not synced
   children?: Plan[];
 };
 
@@ -39,8 +43,7 @@ const TEMPLATES: Record<
     ],
   },
   study_server: {
-    // ponytail: #thong-bao's @everyone deny SEND_MESSAGES needs overwrites, P1-A3.1 (#64);
-    // #viec-nhom's Task Board flag arrives with REQ-STUDY-06.
+    // ponytail: #viec-nhom's Task Board flag arrives with REQ-STUDY-06, P4-A1 (#32).
     channels: [
       {
         type: 'category',
@@ -51,7 +54,13 @@ const TEMPLATES: Record<
           'tai-lieu',
           'hoi-dap',
           'viec-nhom',
-        ].map((name) => ({ type: 'text', name })),
+        ].map((name) => ({
+          type: 'text',
+          name,
+          // SRS 8.5.3: only the managers post announcements.
+          everyoneDeny:
+            name === 'thong-bao' ? ['SEND_MESSAGES' as const] : undefined,
+        })),
       },
       {
         type: 'category',
@@ -81,6 +90,7 @@ export type ServerRows = {
   server: typeof servers.$inferInsert;
   roles: (typeof roles.$inferInsert)[];
   channels: (typeof channels.$inferInsert)[];
+  overwrites: OverwriteRow[];
   ownerRoleIds: bigint[]; // besides @everyone
 };
 
@@ -92,6 +102,7 @@ export function buildServer(
   const serverId = opts.nextId();
   const plan = TEMPLATES[template];
   const rows: ServerRows['channels'] = [];
+  const overwrites: OverwriteRow[] = [];
   const add = (p: Plan, position: number, parentId: bigint | null) => {
     const id = opts.nextId();
     rows.push({
@@ -102,8 +113,17 @@ export function buildServer(
       name: p.name,
       position,
       focusControl: p.focusControl ?? 'off',
+      permissionsSynced: !p.everyoneDeny,
       createdAt: opts.now,
     });
+    if (p.everyoneDeny)
+      overwrites.push({
+        channelId: id,
+        targetId: serverId, // @everyone
+        targetType: OverwriteTargetCode.role,
+        allow: 0n,
+        deny: permissionBits(...p.everyoneDeny),
+      });
     p.children?.forEach((child, i) => add(child, i, id));
   };
   plan.channels.forEach((p, i) => add(p, i, null));
@@ -136,6 +156,7 @@ export function buildServer(
     },
     roles: ownerRole ? [everyone, ownerRole] : [everyone],
     channels: rows,
+    overwrites,
     ownerRoleIds: ownerRole ? [ownerRole.id] : [],
   };
 }

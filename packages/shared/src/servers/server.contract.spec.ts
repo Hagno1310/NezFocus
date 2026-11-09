@@ -27,6 +27,7 @@ const channels = [
     position: 0,
     focus_control: 'off',
     permissions_synced: true,
+    permission_overwrites: [],
   },
   {
     id: '201',
@@ -37,6 +38,7 @@ const channels = [
     position: 0,
     focus_control: 'off',
     permissions_synced: true,
+    permission_overwrites: [],
   },
   {
     id: '202',
@@ -47,6 +49,7 @@ const channels = [
     position: 1,
     focus_control: 'off',
     permissions_synced: true,
+    permission_overwrites: [],
   },
 ];
 const server = {
@@ -63,8 +66,15 @@ const full = {
   ...server,
   channels,
   roles: [
-    { id: '100', name: '@everyone', permissions: '69442369', position: 0 },
+    {
+      id: '100',
+      name: '@everyone',
+      permissions: '69442369',
+      position: 0,
+      is_mentionable: false,
+    },
   ],
+  me: { role_ids: [] }, // the Owner of a new server has no role
 };
 
 describe('server contract (SRS 5.3 Server, REQ-SRV-01)', () => {

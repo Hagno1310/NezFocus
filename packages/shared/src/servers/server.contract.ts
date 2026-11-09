@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { PermissionBitmap } from '../permissions/permissions.js';
 import { SnowflakeId } from '../snowflake.js';
 import { ChannelResponse } from './channel.contract.js';
+import { RoleResponse } from './role.contract.js';
 
 // Paths are relative to /api/v1 (SRS 5.3 Server).
 export const ServerRoutes = {
@@ -27,15 +27,6 @@ export const ServerName = z
 export const ServerTemplate = z.enum(['general', 'study_server']);
 export type ServerTemplate = z.infer<typeof ServerTemplate>;
 
-// P1 carries what the server needs to exist; REQ-ROLE-01 (P1-A3.1 #64) adds the rest.
-export const RoleResponse = z.object({
-  id: SnowflakeId, // @everyone has the server's id
-  name: z.string(),
-  permissions: PermissionBitmap,
-  position: z.number().int(), // @everyone = 0, higher = more senior
-});
-export type RoleResponse = z.infer<typeof RoleResponse>;
-
 // What READY lists and SERVER_UPDATE carries: enough for the drawer's server rail and header.
 export const ServerSummary = z.object({
   id: SnowflakeId,
@@ -49,10 +40,18 @@ export const ServerSummary = z.object({
 });
 export type ServerSummary = z.infer<typeof ServerSummary>;
 
-// "Server đầy đủ": the categories and channels the caller may view, and the roles.
+// The caller's own membership; with `roles` and each channel's overwrites it is what the
+// app's calculator needs (REQ-ROLE-08). Role ids leave out @everyone, like PermissionMember.
+// SERVER_MEMBER_UPDATE (P2-A2 #15) keeps it current; the timeout joins with P3-A3 (#23).
+export const ServerMe = z.object({ role_ids: z.array(SnowflakeId) });
+export type ServerMe = z.infer<typeof ServerMe>;
+
+// "Server đầy đủ": the categories and channels the caller may view, the roles, and the
+// caller's own roles.
 export const ServerResponse = ServerSummary.extend({
   channels: z.array(ChannelResponse),
   roles: z.array(RoleResponse),
+  me: ServerMe,
 });
 export type ServerResponse = z.infer<typeof ServerResponse>;
 

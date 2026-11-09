@@ -1,11 +1,13 @@
 import { randomInt } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
+import { Permission } from '@nezfocus/shared';
 import { and, eq, inArray } from 'drizzle-orm';
 import { SnowflakeGenerator } from '../src/common/snowflake.js';
 import { DB, type Db } from '../src/db/db.module.js';
 import { runSeeds } from '../src/db/seed.js';
 import { SAMPLE_SERVERS } from '../src/modules/servers/servers.seed.js';
 import {
+  channelPermissionOverwrites,
   channels,
   roles,
   serverMemberRoles,
@@ -146,5 +148,52 @@ describe('db:seed (e2e)', () => {
         ),
       );
     expect(lead!.name).toBe('Trưởng nhóm');
+
+    // Spec 08 › Quy ước chung: the sample roles, highest first, and who holds them.
+    const held = await db
+      .select({
+        role: roles.name,
+        position: roles.position,
+        user: users.username,
+      })
+      .from(roles)
+      .leftJoin(serverMemberRoles, eq(serverMemberRoles.roleId, roles.id))
+      .leftJoin(users, eq(users.id, serverMemberRoles.userId))
+      .where(eq(roles.serverId, study.id));
+    const holders = (role: string) =>
+      held
+        .filter((h) => h.role === role)
+        .map((h) => h.user)
+        .sort();
+    expect(holders('Quản trị')).toEqual(['tuan.hoang']);
+    expect(holders('Trưởng nhóm')).toEqual(['an.nguyen', 'binh.tran']);
+    expect(holders('Điều phối phòng học')).toEqual(['chi.le']);
+    expect(
+      [...new Set(held.map((h) => `${h.position} ${h.role}`))].sort(),
+    ).toEqual([
+      '0 @everyone',
+      '1 Điều phối phòng học',
+      '2 Trưởng nhóm',
+      '3 Quản trị',
+    ]);
+
+    // SRS 8.5.3: #thong-bao denies @everyone SEND_MESSAGES on its own, once.
+    const news = await db
+      .select({
+        synced: channels.permissionsSynced,
+        target: channelPermissionOverwrites.targetId,
+        deny: channelPermissionOverwrites.deny,
+      })
+      .from(channels)
+      .innerJoin(
+        channelPermissionOverwrites,
+        eq(channelPermissionOverwrites.channelId, channels.id),
+      )
+      .where(
+        and(eq(channels.serverId, study.id), eq(channels.name, 'thong-bao')),
+      );
+    expect(news).toEqual([
+      { synced: false, target: study.id, deny: Permission.SEND_MESSAGES },
+    ]);
   });
 });

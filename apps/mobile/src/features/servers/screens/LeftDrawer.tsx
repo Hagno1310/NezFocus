@@ -315,7 +315,10 @@ function ChannelPanel({
                 const menuRows =
                   channel.type === 'category'
                     ? []
-                    : channelMenuRows(perms, channel.type);
+                    : channelMenuRows(
+                        access?.channelPerms(channel) ?? 0n,
+                        channel.type,
+                      );
                 return (
                   <ChannelRow
                     key={channel.id}
@@ -359,7 +362,10 @@ function ChannelPanel({
         channel={channelMenu.value}
         rows={
           channelMenu.value && channelMenu.value.type !== 'category'
-            ? channelMenuRows(perms, channelMenu.value.type)
+            ? channelMenuRows(
+                access?.channelPerms(channelMenu.value) ?? 0n,
+                channelMenu.value.type,
+              )
             : []
         }
         onSettings={actions.onChannelSettings}

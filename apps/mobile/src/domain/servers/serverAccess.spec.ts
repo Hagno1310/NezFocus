@@ -29,6 +29,7 @@ const everyone = (perms: bigint): RoleResponse => ({
   name: '@everyone',
   permissions: toPermissionBitmap(perms),
   position: 0,
+  is_mentionable: false,
 });
 
 describe('S-HOME-09 / S-SET-01: rows shown by permission (Q17: no disabled rows)', () => {
@@ -74,6 +75,22 @@ describe('S-HOME-09 / S-SET-01: rows shown by permission (Q17: no disabled rows)
   it('roles not loaded yet: only @everyone counts, and nothing for an unknown user', () => {
     expect(myServerPermissions(server, undefined, '7')).toBe(0n);
     expect(serverMenuRows(0n, false)).toEqual(['report', 'leave']);
+  });
+
+  it("a member's own roles count (me.role_ids): Quản trị with MANAGE_ROLES sees Vai trò", () => {
+    const admin: RoleResponse = {
+      id: '103',
+      name: 'Quản trị',
+      permissions: toPermissionBitmap(permissionBits('MANAGE_ROLES')),
+      position: 3,
+      is_mentionable: false,
+    };
+    const roles = [everyone(DEFAULT_EVERYONE_PERMISSIONS), admin];
+    const tuan = myServerPermissions(server, roles, '9', ['103']);
+    expect(serverSettingsRows(tuan, false)).toEqual(['roles', 'members']);
+    expect(myServerPermissions(server, roles, '9')).toBe(
+      DEFAULT_EVERYONE_PERMISSIONS,
+    );
   });
 
   it('a manager without MANAGE_CHANNELS sees settings, not Tạo kênh', () => {
@@ -124,5 +141,11 @@ describe('S-HOME-02 `channel-menu` / S-SET-06: rows by permission', () => {
     ]);
     expect(channelSettingsRows(chi, 'voice')).toEqual(['studyRoom']);
     expect(channelSettingsRows(chi, 'text')).toEqual([]);
+  });
+
+  it('Quyền needs MANAGE_CHANNELS only (SRS 8.5.1: overwrites belong to it)', () => {
+    expect(
+      channelSettingsRows(permissionBits('MANAGE_CHANNELS'), 'text'),
+    ).toContain('permissions');
   });
 });

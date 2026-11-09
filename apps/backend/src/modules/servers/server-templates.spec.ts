@@ -46,6 +46,7 @@ describe('buildServer (REQ-SRV-01)', () => {
     ]);
     expect(rows.server.systemChannelId).toBe(rows.channels[1]!.id);
     expect(rows.ownerRoleIds).toEqual([]);
+    expect(rows.overwrites).toEqual([]);
   });
 
   it('study_server (STUDY-05, seed only in P1): #chao-mung welcomes, two Phòng học, Trưởng nhóm for the Owner', () => {
@@ -81,6 +82,28 @@ describe('buildServer (REQ-SRV-01)', () => {
         Permission.KICK_MEMBERS,
     );
     expect(rows.ownerRoleIds).toEqual([lead.id]);
+  });
+
+  it('8.5.3: #thong-bao has its own @everyone deny SEND_MESSAGES, so it is not synced', () => {
+    const rows = buildServer('study_server', {
+      name: 'Ôn thi Giải tích 2',
+      ownerId: 1n,
+      now,
+      nextId: ids(),
+    });
+    const news = rows.channels.find((c) => c.name === 'thong-bao')!;
+    expect(rows.overwrites).toEqual([
+      {
+        channelId: news.id,
+        targetId: rows.server.id, // @everyone
+        targetType: 0,
+        allow: 0n,
+        deny: Permission.SEND_MESSAGES,
+      },
+    ]);
+    expect(
+      rows.channels.filter((c) => !c.permissionsSynced).map((c) => c.name),
+    ).toEqual(['thong-bao']);
   });
 
   it('numbers channels by position inside their group', () => {

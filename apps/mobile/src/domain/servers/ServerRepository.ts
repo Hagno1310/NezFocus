@@ -1,11 +1,18 @@
 import type {
   ChannelResponse,
   CreateChannelRequest,
+  CreateRoleRequest,
   CreateServerRequest,
+  PermissionOverwrite,
+  PutChannelPermissionRequest,
+  RoleListResponse,
+  RoleResponse,
   ServerResponse,
   ServerSummary,
   UpdateChannelPositionsRequest,
   UpdateChannelRequest,
+  UpdateRolePositionsRequest,
+  UpdateRoleRequest,
   UpdateServerRequest,
 } from '@nezfocus/shared';
 
@@ -30,4 +37,24 @@ export interface ServerRepository {
     serverId: string,
     body: UpdateChannelPositionsRequest,
   ): Promise<void>;
+  // REQ-ROLE-01/02 (MANAGE_ROLES; hierarchy 8.5.2): S-SET-02.
+  listRoles(serverId: string): Promise<RoleListResponse>;
+  createRole(serverId: string, body: CreateRoleRequest): Promise<RoleResponse>;
+  updateRole(
+    serverId: string,
+    roleId: string,
+    body: UpdateRoleRequest,
+  ): Promise<RoleResponse>;
+  deleteRole(serverId: string, roleId: string): Promise<void>;
+  setRolePositions(
+    serverId: string,
+    body: UpdateRolePositionsRequest,
+  ): Promise<void>;
+  // REQ-ROLE-03 (MANAGE_CHANNELS in the channel): S-SET-06 `overwrite-edit`.
+  setChannelPermission(
+    channelId: string,
+    targetId: string,
+    body: PutChannelPermissionRequest,
+  ): Promise<PermissionOverwrite>;
+  deleteChannelPermission(channelId: string, targetId: string): Promise<void>;
 }

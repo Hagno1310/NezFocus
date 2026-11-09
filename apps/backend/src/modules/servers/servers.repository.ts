@@ -2,8 +2,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, count, eq, isNull, sql } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
 import { users } from '../users/users.schema.js';
+import {
+  withOverwrites,
+  type ChannelWithOverwrites,
+} from './channels.repository.js';
 import type { ServerRows } from './server-templates.js';
 import {
+  channelPermissionOverwrites,
   channels,
   roles,
   serverMemberRoles,
@@ -16,8 +21,9 @@ import {
 
 export type ServerWithCount = ServerRow & { memberCount: number };
 export type FullServer = ServerWithCount & {
-  channels: ChannelRow[];
+  channels: ChannelWithOverwrites[];
   roles: RoleRow[];
+  myRoleIds: bigint[]; // the caller's roles, without @everyone
 };
 
 const memberCount = sql<number>`(SELECT count(*)::int FROM ${serverMembers} WHERE ${serverMembers.serverId} = ${servers.id})`;
@@ -46,6 +52,8 @@ export class ServersRepository {
       await tx.insert(servers).values({ ...server, systemChannelId: null });
       await tx.insert(roles).values(rows.roles);
       await tx.insert(channels).values(rows.channels);
+      if (rows.overwrites.length)
+        await tx.insert(channelPermissionOverwrites).values(rows.overwrites);
       await tx.insert(serverMembers).values({
         serverId: server.id,
         userId: server.ownerId,
@@ -108,7 +116,7 @@ export class ServersRepository {
     if (!(await this.isMember(serverId, userId))) return undefined;
     const server = await this.summary(serverId);
     if (!server) return undefined;
-    const [channelRows, roleRows] = await Promise.all([
+    const [channelRows, roleRows, myRoles] = await Promise.all([
       this.db
         .select()
         .from(channels)
@@ -119,8 +127,22 @@ export class ServersRepository {
         .from(roles)
         .where(eq(roles.serverId, serverId))
         .orderBy(asc(roles.position), asc(roles.id)),
+      this.db
+        .select({ roleId: serverMemberRoles.roleId })
+        .from(serverMemberRoles)
+        .where(
+          and(
+            eq(serverMemberRoles.serverId, serverId),
+            eq(serverMemberRoles.userId, userId),
+          ),
+        ),
     ]);
-    return { ...server, channels: channelRows, roles: roleRows };
+    return {
+      ...server,
+      channels: await withOverwrites(this.db, channelRows),
+      roles: roleRows,
+      myRoleIds: myRoles.map((r) => r.roleId),
+    };
   }
 
   // Live channels only: a soft-deleted channel is gone for every caller.

@@ -5,6 +5,7 @@ import {
   canManageRole,
   computeBasePermissions,
   computeChannelPermissions,
+  highestRole,
 } from './compute-permissions.js';
 import {
   HIERARCHY_MATRIX,
@@ -76,6 +77,28 @@ describe('@everyone in roleIds', () => {
     };
     expect(computeChannelPermissions(c.server, member, c.channel!, c.now)).toBe(
       c.expected,
+    );
+  });
+});
+
+describe('highestRole (REQ-ROLE-01 hierarchy)', () => {
+  const server = {
+    id: '1000',
+    ownerId: '1',
+    roles: [
+      { id: '1000', permissions: 0n, position: 0 },
+      { id: 'dieu-phoi', permissions: 0n, position: 1 },
+      { id: 'quan-tri', permissions: 0n, position: 3 },
+    ],
+  };
+
+  it('the position of the member’s highest role; 0 with none; null for the Owner', () => {
+    expect(
+      highestRole(server, { userId: '5', roleIds: ['dieu-phoi', 'quan-tri'] }),
+    ).toBe(3);
+    expect(highestRole(server, { userId: '4', roleIds: [] })).toBe(0);
+    expect(highestRole(server, { userId: '1', roleIds: ['dieu-phoi'] })).toBe(
+      null,
     );
   });
 });

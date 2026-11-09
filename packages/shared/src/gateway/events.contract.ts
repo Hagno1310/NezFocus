@@ -4,6 +4,10 @@ import {
   ChannelDeleted,
   ChannelResponse,
 } from '../servers/channel.contract.js';
+import {
+  ServerRoleDeleted,
+  ServerRoleEvent,
+} from '../servers/role.contract.js';
 import { ServerResponse, ServerSummary } from '../servers/server.contract.js';
 import { SnowflakeId } from '../snowflake.js';
 import { SoloSessionResponse } from '../study/solo.contract.js';
@@ -25,8 +29,11 @@ export const DispatchEvents = {
   SOLO_SESSION_UPDATE: SoloSessionResponse, // REQ-STUDY-10: every change, to every session of the user
   SERVER_CREATE: ServerResponse, // REQ-SRV-01: to every session of the creator
   SERVER_UPDATE: ServerSummary, // to the members
+  SERVER_ROLE_CREATE: ServerRoleEvent, // REQ-ROLE-01: to the members
+  SERVER_ROLE_UPDATE: ServerRoleEvent, // also one per role moved by a reorder
+  SERVER_ROLE_DELETE: ServerRoleDeleted,
   CHANNEL_CREATE: ChannelResponse, // REQ-SRV-02: only to members who can view it
-  CHANNEL_UPDATE: ChannelResponse,
+  CHANNEL_UPDATE: ChannelResponse, // also when its overwrites or sync change (REQ-ROLE-03)
   CHANNEL_DELETE: ChannelDeleted,
 } satisfies Record<string, z.ZodType>;
 

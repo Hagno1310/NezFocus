@@ -64,6 +64,31 @@ export const channels = pgTable(
   ],
 );
 
+// REQ-ROLE-03: a channel's or category's allow / deny for one role (server id = @everyone)
+// or member. target_id has no FK: it points at a role or a user.
+export const OverwriteTargetCode = { role: 0, member: 1 } as const;
+
+export const channelPermissionOverwrites = pgTable(
+  'channel_permission_overwrites',
+  {
+    channelId: id()
+      .notNull()
+      .references(() => channels.id, { onDelete: 'cascade' }),
+    targetId: id().notNull(),
+    targetType: smallint().notNull(), // OverwriteTargetCode
+    allow: bigint({ mode: 'bigint' })
+      .notNull()
+      .default(sql`0`),
+    deny: bigint({ mode: 'bigint' })
+      .notNull()
+      .default(sql`0`),
+  },
+  (t) => [
+    primaryKey({ columns: [t.channelId, t.targetId, t.targetType] }),
+    check('overwrite_allow_deny_disjoint', sql`(${t.allow} & ${t.deny}) = 0`),
+  ],
+);
+
 export const roles = pgTable(
   'roles',
   {
@@ -76,6 +101,9 @@ export const roles = pgTable(
       .notNull()
       .default(sql`0`), // 8.5.1 bitmap; drizzle-kit cannot write a 0n default
     position: integer().notNull().default(0), // higher = more senior; @everyone = 0
+    color: integer().notNull().default(0), // v1.7: kept for v1.x, the app never shows it
+    isHoisted: boolean().notNull().default(false), // v1.7: same
+    isMentionable: boolean().notNull().default(false),
     createdAt: tz().notNull().defaultNow(),
   },
   (t) => [
@@ -94,6 +122,7 @@ export const serverMembers = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     joinedAt: tz().notNull().defaultNow(),
+    timeoutUntil: tz(), // CR-28 #17: until then only VIEW_CHANNEL (set by P3-A3 #23)
   },
   (t) => [
     primaryKey({ columns: [t.serverId, t.userId] }),
@@ -125,3 +154,4 @@ export const serverMemberRoles = pgTable(
 export type ServerRow = typeof servers.$inferSelect;
 export type ChannelRow = typeof channels.$inferSelect;
 export type RoleRow = typeof roles.$inferSelect;
+export type OverwriteRow = typeof channelPermissionOverwrites.$inferSelect;

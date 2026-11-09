@@ -1,8 +1,14 @@
 import { randomUUID } from 'node:crypto';
+import type { AddressInfo } from 'node:net';
 import { Controller, Get, type INestApplication } from '@nestjs/common';
 import { Test, type TestingModuleBuilder } from '@nestjs/testing';
-import { TERMS_VERSION } from '@nezfocus/shared';
+import {
+  GatewayRoutes,
+  TERMS_VERSION,
+  type ServerFrame,
+} from '@nezfocus/shared';
 import request from 'supertest';
+import WebSocket from 'ws';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/configure-app.js';
 import { AuthMailer } from '../src/modules/auth/auth-mailer.js';
@@ -68,6 +74,8 @@ export const http = (app: INestApplication) => {
       request(server)
         .patch(`/api/v1${path}`)
         .set('X-Client-Platform', 'android'),
+    put: (path: string) =>
+      request(server).put(`/api/v1${path}`).set('X-Client-Platform', 'android'),
     delete: (path: string) =>
       request(server)
         .delete(`/api/v1${path}`)
@@ -113,3 +121,49 @@ export async function signInWithCode(
 // Lets a test send again to the same email without waiting out the 1-minute resend limit.
 export const resetResendLimit = (app: INestApplication, email: string) =>
   app.get(KeyValueStore).delete(`email-code:minute:${email}`);
+
+// A signed-in Gateway session that keeps every DISPATCH it gets. The app must be listening.
+export async function connectGateway(app: INestApplication, token: string) {
+  const { port } = app.getHttpServer().address() as AddressInfo;
+  const ws = new WebSocket(
+    `ws://127.0.0.1:${port}${GatewayRoutes.connect}?v=1&encoding=json`,
+  );
+  const dispatches: { t: string; d: unknown; at: number }[] = [];
+  const waiters: (() => void)[] = [];
+  await new Promise<void>((ready) => {
+    ws.on('message', (data) => {
+      const frame = JSON.parse(data.toString()) as ServerFrame;
+      if (frame.op === 10)
+        ws.send(
+          JSON.stringify({
+            op: 2,
+            d: {
+              token,
+              device: {
+                platform: 'android',
+                app_version: '0.1.0',
+                device_id: 'd2',
+              },
+            },
+          }),
+        );
+      if (frame.op !== 0) return;
+      if (frame.t === 'READY') return ready();
+      dispatches.push({ t: frame.t, d: frame.d, at: Date.now() });
+      waiters.splice(0).forEach((w) => w());
+    });
+  });
+  // The first `t` (matching `where`) already got or still to come, within 3 seconds.
+  const next = (t: string, where: (d: unknown) => boolean = () => true) =>
+    new Promise<{ d: unknown; at: number }>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(`no ${t}`)), 3000);
+      const look = () => {
+        const hit = dispatches.find((x) => x.t === t && where(x.d));
+        if (!hit) return void waiters.push(look);
+        clearTimeout(timer);
+        resolve(hit);
+      };
+      look();
+    });
+  return { dispatches, next, close: () => ws.close() };
+}

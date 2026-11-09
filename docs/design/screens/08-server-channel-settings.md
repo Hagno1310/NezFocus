@@ -279,7 +279,7 @@ Lưu tổng quan xong → về danh sách + `Toast` "Đã lưu thay đổi". (09
 | `save-error` | Công tắc trả về giá trị cũ + `Toast` | "Chưa lưu được thay đổi · Thử lại" |
 | `offline` | `Banner · offline`; mọi điều khiển `disabled`; danh sách là cache | "Bạn đang offline" |
 
-Hàng role **không có màu và không có "Hiển thị riêng" (hoist)** ở MVP (Q1). Không áp dụng: `loading` (role có trong `READY`), `empty` (luôn có @everyone), `os-permission`.
+Hàng role **không có màu và không có "Hiển thị riêng" (hoist)** ở MVP (Q1). Không áp dụng: `loading` (role đã tải cùng server khi mở drawer — `GET /servers/{id}`, 09/11/2026 P1-A3.1 #64; trước ghi "có trong `READY`"), `empty` (luôn có @everyone), `os-permission`.
 
 ---
 

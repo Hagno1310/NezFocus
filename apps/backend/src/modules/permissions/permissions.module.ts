@@ -1,15 +1,18 @@
 import { Global, Module } from '@nestjs/common';
-import {
-  AllowAllPermissionService,
-  PermissionService,
-} from './permission.service.js';
+import { DbPermissionService } from './db-permission.service.js';
+import { PermissionCache } from './permission-cache.js';
+import { PermissionService } from './permission.service.js';
+import { PermissionsRepository } from './permissions.repository.js';
 
-// WORKFLOW 4.3: other modules inject PermissionService.
+// WORKFLOW 4.3: other modules inject PermissionService, and PermissionCache to invalidate.
 @Global()
 @Module({
   providers: [
-    { provide: PermissionService, useClass: AllowAllPermissionService },
+    PermissionsRepository,
+    PermissionCache,
+    DbPermissionService,
+    { provide: PermissionService, useExisting: DbPermissionService },
   ],
-  exports: [PermissionService],
+  exports: [PermissionService, PermissionCache],
 })
 export class PermissionsModule {}

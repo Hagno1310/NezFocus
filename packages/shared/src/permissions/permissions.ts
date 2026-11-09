@@ -72,6 +72,14 @@ export const PermissionBitmap = z
   );
 export type PermissionBitmap = z.infer<typeof PermissionBitmap>;
 
+// What a request may set: only bits 8.5.1 defines (bit 13 and 29–62 are reserved).
+export const DefinedPermissionBitmap = PermissionBitmap.refine(
+  (s) =>
+    !PermissionBitmap.safeParse(s).success ||
+    (BigInt(s) & ~ALL_PERMISSIONS) === 0n,
+  'reserved permission bit',
+);
+
 export const toPermissionBitmap = (perms: bigint): PermissionBitmap =>
   perms.toString();
 

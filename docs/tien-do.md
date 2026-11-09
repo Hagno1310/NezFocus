@@ -70,10 +70,10 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
   - [x] mốc **P1-A1.2** [#56](https://github.com/Hagno1310/NezFocus/issues/56) Backend: tạo server và kênh tin chào mừng (SRV-01) · người kia chờ: P1-B4 (Hoàng)
 - [x] **P1-A2** [#7](https://github.com/Hagno1310/NezFocus/issues/7) Kênh, danh mục, drawer trái và menu server
   - Cần trước: P1-A1
-- [ ] **P1-A3** [#8](https://github.com/Hagno1310/NezFocus/issues/8) Vai trò và quyền theo kênh
+- [x] **P1-A3** [#8](https://github.com/Hagno1310/NezFocus/issues/8) Vai trò và quyền theo kênh
   - Cần trước: P0-6, P1-A1, P1-A2
-  - [ ] mốc **P1-A3.1** [#64](https://github.com/Hagno1310/NezFocus/issues/64) Hợp đồng role và quyền kênh trong shared · hợp đồng
-  - [ ] mốc **P1-A3.2** [#65](https://github.com/Hagno1310/NezFocus/issues/65) PermissionService thật và kiểm tra quyền tập trung (ROLE-02, ROLE-08) · người kia chờ: P2-B1 (Hoàng)
+  - [x] mốc **P1-A3.1** [#64](https://github.com/Hagno1310/NezFocus/issues/64) Hợp đồng role và quyền kênh trong shared · hợp đồng
+  - [x] mốc **P1-A3.2** [#65](https://github.com/Hagno1310/NezFocus/issues/65) PermissionService thật và kiểm tra quyền tập trung (ROLE-02, ROLE-08) · người kia chờ: P2-B1 (Hoàng)
 - [ ] **P1-A4** [#9](https://github.com/Hagno1310/NezFocus/issues/9) Tài khoản: đăng xuất và phiên, quên / đổi mật khẩu, hồ sơ
   - Cần trước: P0-2, P0-4, P0-5.2 (Hoàng)
   - Trong lúc làm: P1-A4.4 chờ P1-B4.1 (Hoàng); P1-A4.4 chờ P1-B3.1 (Hoàng); P1-A4.4 chờ P0-3b.3 (Hoàng)

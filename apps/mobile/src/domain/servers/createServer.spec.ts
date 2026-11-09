@@ -20,6 +20,7 @@ const channel = (
   position,
   focus_control: 'off' as const,
   permissions_synced: true,
+  permission_overwrites: [],
 });
 
 // "CLB Guitar PTIT" (02 › Dữ liệu mẫu): what POST /servers returns for template general.
@@ -38,6 +39,7 @@ const server: ServerResponse = {
     channel('201', 'text', '200', 0),
   ],
   roles: [],
+  me: { role_ids: [] },
 };
 
 const repo = (createServer: ServerRepository['createServer']) => ({

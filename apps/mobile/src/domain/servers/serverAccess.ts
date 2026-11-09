@@ -3,31 +3,37 @@ import {
   computeBasePermissions,
   hasPermission,
   parsePermissionBitmap,
+  type PermissionServer,
   type RoleResponse,
   type ServerSummary,
 } from '@nezfocus/shared';
 
-// What the caller may do in a server, from the shared 8.5.2 calculator.
-// ponytail: the caller's own roles arrive with P1-A3 (#8); until then only Owner and
-// @everyone count.
+// A server as the shared 8.5.2 calculator reads it (@everyone has the server's id).
+export const toPermissionServer = (
+  server: Pick<ServerSummary, 'id' | 'owner_id'>,
+  roles: readonly RoleResponse[] | undefined,
+): PermissionServer => ({
+  id: server.id,
+  ownerId: server.owner_id,
+  roles: (roles ?? []).map((r) => ({
+    id: r.id,
+    permissions: parsePermissionBitmap(r.permissions),
+    position: r.position,
+  })),
+});
+
+// What the caller may do in a server: @everyone and the caller's roles (`me.role_ids`).
 export function myServerPermissions(
   server: ServerSummary,
   roles: readonly RoleResponse[] | undefined,
   userId: string | null,
+  roleIds: readonly string[] = [],
 ): bigint {
   if (!userId) return 0n;
-  return computeBasePermissions(
-    {
-      id: server.id,
-      ownerId: server.owner_id,
-      roles: (roles ?? []).map((r) => ({
-        id: r.id,
-        permissions: parsePermissionBitmap(r.permissions),
-        position: r.position,
-      })),
-    },
-    { userId, roleIds: [] },
-  );
+  return computeBasePermissions(toPermissionServer(server, roles), {
+    userId,
+    roleIds: [...roleIds],
+  });
 }
 
 export type SettingsRow =
@@ -83,9 +89,8 @@ export type ChannelMenuRow = 'settings' | 'reorder';
 type ChannelKind = 'text' | 'voice';
 
 // S-HOME-02 `channel-menu`: MANAGE_CHANNELS, or MANAGE_STUDY_ROOMS on a voice channel
-// (REQ-STUDY-11). An empty list means a long press does nothing.
-// ponytail: these are server-level bits; channel overwrites count once P1-A3 (#8) gives
-// the app the caller's roles and the channel's overwrites (P1-A3.6 #69).
+// (REQ-STUDY-11), in that channel (myChannelPermissions). An empty list means a long press
+// does nothing.
 export function channelMenuRows(
   perms: bigint,
   type: ChannelKind,
@@ -108,8 +113,7 @@ export function channelSettingsRows(
   const channels = hasPermission(perms, P.MANAGE_CHANNELS);
   const rows: ChannelSettingsRow[] = [];
   if (channels) rows.push('overview');
-  if (channels && hasPermission(perms, P.MANAGE_ROLES))
-    rows.push('permissions');
+  if (channels) rows.push('permissions'); // SRS 8.5.1: overwrites are MANAGE_CHANNELS
   if (type === 'text' && channels) rows.push('taskBoard');
   if (
     type === 'voice' &&

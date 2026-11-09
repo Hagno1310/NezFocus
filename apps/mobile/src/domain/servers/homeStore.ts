@@ -1,6 +1,7 @@
 import type {
   ChannelResponse,
   DispatchEvent,
+  RoleResponse,
   ServerResponse,
 } from '@nezfocus/shared';
 import { createStore } from 'zustand/vanilla';
@@ -24,11 +25,44 @@ export const selectServer = (serverId: string) =>
   homeStore.setState({ selectedServerId: serverId });
 
 // GET /servers/:id: what the drawer lists and what decides the rows shown by permission.
-export const setServerDetail = ({ id, channels, roles }: ServerResponse) =>
+export const setServerDetail = ({ id, channels, roles, me }: ServerResponse) =>
   homeStore.setState((s) => ({
     channels: { ...s.channels, [id]: channels },
     roles: { ...s.roles, [id]: roles },
+    myRoleIds: { ...s.myRoleIds, [id]: me.role_ids },
   }));
+
+// GET /servers/:id/roles (S-SET-02 `list`): the newest roles, without their counts.
+export const setRoles = (serverId: string, roles: readonly RoleResponse[]) =>
+  homeStore.setState((s) => ({
+    roles: {
+      ...s.roles,
+      [serverId]: roles.map(
+        ({ id, name, permissions, position, is_mentionable }) => ({
+          id,
+          name,
+          permissions,
+          position,
+          is_mentionable,
+        }),
+      ),
+    },
+  }));
+
+// What a role request just answered, before (or instead of) its SERVER_ROLE_* event.
+export const upsertRole = (serverId: string, role: RoleResponse) =>
+  applyGatewayEvent({
+    t: 'SERVER_ROLE_UPDATE',
+    d: { server_id: serverId, role },
+    s: 0,
+  });
+
+export const removeRole = (serverId: string, roleId: string) =>
+  applyGatewayEvent({
+    t: 'SERVER_ROLE_DELETE',
+    d: { server_id: serverId, role_id: roleId },
+    s: 0,
+  });
 
 export const setCollapsed = (serverId: string, categoryIds: string[]) =>
   homeStore.setState((s) => ({

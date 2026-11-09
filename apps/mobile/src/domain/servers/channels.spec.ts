@@ -27,6 +27,7 @@ const ch = (
   position,
   focus_control: type === 'voice' ? 'everyone' : 'off',
   permissions_synced: parent_id !== null,
+  permission_overwrites: [],
 });
 
 // "Ôn thi Giải tích 2" (02 › Dữ liệu mẫu), with a `#viec-nhom` in PHÒNG HỌC for `drop-blocked`.
@@ -161,6 +162,38 @@ describe('createChannel (S-SET-09)', () => {
         focus_control: 'everyone',
       },
       { type: 'category', name: 'Đề cương' },
+    ]);
+  });
+
+  it('a private channel sends viewer_role_ids, even empty (v1.9 CR-17)', async () => {
+    const sent: unknown[] = [];
+    const repo = {
+      createChannel: async (_id: string, body: unknown) => (
+        sent.push(body),
+        created
+      ),
+    };
+    for (const viewerRoleIds of [['103', '102'], []])
+      await createChannel(repo, '100', server, {
+        type: 'text',
+        name: 'ban quan tri',
+        parentId: '10',
+        studyRoom: false,
+        viewerRoleIds,
+      });
+    expect(sent).toEqual([
+      {
+        type: 'text',
+        name: 'ban-quan-tri',
+        parent_id: '10',
+        viewer_role_ids: ['103', '102'],
+      },
+      {
+        type: 'text',
+        name: 'ban-quan-tri',
+        parent_id: '10',
+        viewer_role_ids: [],
+      },
     ]);
   });
 

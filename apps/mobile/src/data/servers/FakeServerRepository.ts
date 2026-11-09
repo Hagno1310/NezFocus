@@ -4,15 +4,26 @@ import {
   ErrorCode,
   FreeChannelName,
   MAX_CHANNELS_PER_SERVER,
+  MAX_ROLES_PER_SERVER,
+  RoleName,
   ServerName,
   applyPositions,
   describeDuplicate,
   duplicateNameMessage,
+  duplicateRoleMessage,
   findDuplicateChannel,
+  findDuplicateRole,
+  keepHiddenPermissions,
+  newRolePlace,
   normalizeTextChannelName,
+  parsePermissionBitmap,
+  permissionBits,
   planCategoryDelete,
+  planRoleReorder,
+  privateChannelOverwrites,
   toPermissionBitmap,
   type ChannelResponse,
+  type RoleResponse,
   type ServerResponse,
   type ServerSummary,
   type ServerTemplate,
@@ -26,6 +37,7 @@ import { ApiError } from '../api/client';
 export const FAKE_FULL_NAME = 'Đủ 100 server'; // shows create-error 40011
 export const FAKE_NETWORK_NAME = 'Mất kết nối'; // shows create-error, network sentence
 export const FAKE_FORBIDDEN_NAME = 'Hết quyền'; // S-SET-01: saving it plays 40302
+export const FAKE_OUTRANKED_NAME = 'Ngang bạn'; // S-SET-02: saving it plays 40301
 
 const fail = (status: number, code: number) =>
   new ApiError(status, { code, message: `fake ${code}` });
@@ -104,7 +116,19 @@ function buildServer(
         type === 'voice' && summary.template === 'study_server'
           ? 'everyone'
           : 'off',
-      permissions_synced: true,
+      // SRS 8.5.3: #thong-bao has its own @everyone deny SEND_MESSAGES.
+      permissions_synced: name !== 'thong-bao',
+      permission_overwrites:
+        name === 'thong-bao'
+          ? [
+              {
+                target_id: summary.id,
+                target_type: 'role',
+                allow: '0',
+                deny: toPermissionBitmap(permissionBits('SEND_MESSAGES')),
+              },
+            ]
+          : [],
     });
     children?.forEach((child, i) => add(child, i, id));
   };
@@ -119,8 +143,10 @@ function buildServer(
         name: '@everyone',
         permissions: toPermissionBitmap(DEFAULT_EVERYONE_PERMISSIONS),
         position: 0,
+        is_mentionable: false,
       },
     ],
+    me: { role_ids: [] },
   };
 }
 
@@ -159,8 +185,43 @@ const SAMPLES = [
   sample('300', 'CLB Guitar PTIT', 'general', 3, '2026-10-10T01:00:00.000Z'),
 ];
 
-const toSummary = ({ channels: _c, roles: _r, ...summary }: ServerResponse) =>
-  summary;
+const toSummary = ({
+  channels: _c,
+  roles: _r,
+  me: _m,
+  ...summary
+}: ServerResponse) => summary;
+
+// Spec 08 › Quy ước chung for "Ôn thi Giải tích 2": An holds Trưởng nhóm.
+const SAMPLE_ROLES: [string, number, bigint, number][] = [
+  ['Điều phối phòng học', 1, permissionBits('MANAGE_STUDY_ROOMS'), 1],
+  [
+    'Trưởng nhóm',
+    2,
+    permissionBits(
+      'MANAGE_STUDY_ROOMS',
+      'MANAGE_TASKS',
+      'MANAGE_EVENTS',
+      'MANAGE_MESSAGES',
+      'MODERATE_MEMBERS',
+      'KICK_MEMBERS',
+    ),
+    2,
+  ],
+  [
+    'Quản trị',
+    3,
+    permissionBits(
+      'MANAGE_ROLES',
+      'MANAGE_CHANNELS',
+      'KICK_MEMBERS',
+      'BAN_MEMBERS',
+      'MODERATE_MEMBERS',
+      'MANAGE_MESSAGES',
+    ),
+    1,
+  ],
+];
 
 export function createFakeServerRepository(
   delayMs = 600,
@@ -172,6 +233,50 @@ export function createFakeServerRepository(
   const servers = new Map(
     SAMPLES.map((s) => [s.id, buildServer(s, id)] as const),
   );
+  const counts = new Map<string, number>(); // role id → members holding it
+  {
+    const study = servers.get('100')!;
+    const roles = SAMPLE_ROLES.map(([name, position, perms, count]) => {
+      const role = {
+        id: id(),
+        name,
+        position,
+        permissions: toPermissionBitmap(perms),
+        is_mentionable: false,
+      };
+      counts.set(role.id, count);
+      return role;
+    });
+    servers.set('100', {
+      ...study,
+      roles: [...study.roles, ...roles],
+      me: { role_ids: [roles[1]!.id] },
+    });
+  }
+  const setRoles = (server: ServerResponse, roles: RoleResponse[]) =>
+    servers.set(server.id, { ...server, roles });
+  const serverFor = (serverId: string) => {
+    const server = servers.get(serverId);
+    if (!server) throw fail(404, ErrorCode.NotFound);
+    return server;
+  };
+  // REQ-ROLE-01 name rules, as RolesService sends them.
+  const checkName = (server: ServerResponse, raw: string, self?: string) => {
+    if (raw === FAKE_NETWORK_NAME)
+      throw new TypeError('Network request failed');
+    if (raw === FAKE_FORBIDDEN_NAME) throw fail(403, ErrorCode.Forbidden);
+    if (raw === FAKE_OUTRANKED_NAME)
+      throw fail(403, ErrorCode.InsufficientRoleHierarchy);
+    const parsed = RoleName.safeParse(raw);
+    if (!parsed.success) throw invalid('name', 'RESERVED_NAME');
+    const clash = findDuplicateRole(server.roles, {
+      id: self,
+      name: parsed.data,
+    });
+    if (clash)
+      throw invalid('name', 'DUPLICATE_NAME', duplicateRoleMessage(clash));
+    return parsed.data;
+  };
 
   const serverOf = (channelId: string) =>
     [...servers.values()].find((s) =>
@@ -188,6 +293,91 @@ export function createFakeServerRepository(
 
   return {
     summaries: () => [...servers.values()].map(toSummary),
+    async listRoles(serverId) {
+      await wait();
+      const server = serverFor(serverId);
+      return [...server.roles]
+        .sort((a, b) => b.position - a.position)
+        .map((r) => ({
+          ...r,
+          member_count:
+            r.id === serverId ? server.member_count : (counts.get(r.id) ?? 0),
+        }));
+    },
+    async createRole(serverId, body) {
+      await wait();
+      const server = serverFor(serverId);
+      const name = checkName(server, body.name);
+      if (server.roles.length >= MAX_ROLES_PER_SERVER)
+        throw invalid('_', 'MAX_ROLES');
+      // The fake caller is An, the Owner: the new role goes on top.
+      const place = newRolePlace(serverId, server.roles, null);
+      const role = {
+        id: id(),
+        name,
+        position: place.position,
+        permissions: '0',
+        is_mentionable: false,
+      };
+      setRoles(server, [...server.roles, role]);
+      return role;
+    },
+    async updateRole(serverId, roleId, body) {
+      await wait();
+      const server = serverFor(serverId);
+      const role = server.roles.find((r) => r.id === roleId);
+      if (!role) throw fail(404, ErrorCode.NotFound);
+      const next = { ...role };
+      if (body.name !== undefined) {
+        if (roleId === serverId) throw invalid('name', 'EVERYONE');
+        next.name = checkName(server, body.name, roleId);
+      }
+      if (body.is_mentionable !== undefined)
+        next.is_mentionable = body.is_mentionable;
+      if (body.permissions !== undefined)
+        next.permissions = toPermissionBitmap(
+          keepHiddenPermissions(
+            parsePermissionBitmap(role.permissions),
+            parsePermissionBitmap(body.permissions),
+          ),
+        );
+      setRoles(
+        server,
+        server.roles.map((r) => (r.id === roleId ? next : r)),
+      );
+      return next;
+    },
+    async deleteRole(serverId, roleId) {
+      await wait();
+      const server = serverFor(serverId);
+      if (roleId === serverId) throw invalid('role_id', 'EVERYONE');
+      if (!server.roles.some((r) => r.id === roleId))
+        throw fail(404, ErrorCode.NotFound);
+      setRoles(
+        server,
+        server.roles.filter((r) => r.id !== roleId),
+      );
+      servers.set(serverId, {
+        ...servers.get(serverId)!,
+        me: {
+          role_ids: server.me.role_ids.filter((r) => r !== roleId),
+        },
+      });
+    },
+    async setRolePositions(serverId, body) {
+      await wait();
+      const server = serverFor(serverId);
+      const plan = planRoleReorder(serverId, server.roles, body, null);
+      if (!plan.ok) throw invalid('id', 'UNKNOWN_ROLE');
+      const moved = new Map(plan.changed.map((p) => [p.id, p.position]));
+      setRoles(
+        server,
+        server.roles.map((r) => ({
+          ...r,
+          position: moved.get(r.id) ?? r.position,
+        })),
+      );
+    },
     async createChannel(serverId, raw) {
       await wait();
       const server = servers.get(serverId);
@@ -197,6 +387,8 @@ export function createFakeServerRepository(
       if (!parsed.success) throw invalid('name', 'INVALID');
       const body = parsed.data;
       const parent_id = body.type === 'category' ? null : body.parent_id;
+      const viewers =
+        body.type === 'category' ? undefined : body.viewer_role_ids;
       const existing = findDuplicateChannel(server.channels, {
         type: body.type,
         name: body.name,
@@ -222,7 +414,17 @@ export function createFakeServerRepository(
             ? (body.focus_control ??
               (server.template === 'study_server' ? 'everyone' : 'off'))
             : 'off',
-        permissions_synced: body.type === 'category' || parent_id !== null,
+        permissions_synced:
+          body.type === 'category' || (parent_id !== null && !viewers),
+        // v1.9 CR-17: private at creation, from the category's overwrites.
+        permission_overwrites: viewers
+          ? privateChannelOverwrites(
+              serverId,
+              server.channels.find((c) => c.id === parent_id)
+                ?.permission_overwrites ?? [],
+              viewers,
+            )
+          : [],
       };
       setChannels(server, [...server.channels, channel]);
       return channel;
@@ -232,6 +434,23 @@ export function createFakeServerRepository(
       const server = serverOf(channelId);
       const channel = server?.channels.find((c) => c.id === channelId);
       if (!server || !channel) throw fail(404, ErrorCode.NotFound);
+      // REQ-ROLE-03 v1.7: off copies the category's overwrites, on drops the channel's own.
+      if (body.name === undefined) {
+        const synced = body.permissions_synced!;
+        const parent = server.channels.find((c) => c.id === channel.parent_id);
+        if (channel.type === 'category' || !parent)
+          throw invalid('permissions_synced', 'NO_CATEGORY');
+        const next = {
+          ...channel,
+          permissions_synced: synced,
+          permission_overwrites: synced ? [] : parent.permission_overwrites,
+        };
+        setChannels(
+          server,
+          server.channels.map((c) => (c.id === channelId ? next : c)),
+        );
+        return next;
+      }
       playErrors(body.name);
       const free = FreeChannelName.safeParse(body.name);
       if (!free.success) throw invalid('name', 'INVALID');
@@ -251,6 +470,50 @@ export function createFakeServerRepository(
         server.channels.map((c) => (c.id === channelId ? next : c)),
       );
       return next;
+    },
+    async setChannelPermission(channelId, targetId, body) {
+      await wait();
+      const server = serverOf(channelId);
+      const channel = server?.channels.find((c) => c.id === channelId);
+      if (!server || !channel) throw fail(404, ErrorCode.NotFound);
+      if (channel.type !== 'category' && channel.permissions_synced)
+        throw invalid('_', 'SYNCED');
+      const next = { target_id: targetId, ...body };
+      const same = (o: { target_id: string; target_type: string }) =>
+        o.target_id === targetId && o.target_type === body.target_type;
+      setChannels(
+        server,
+        server.channels.map((c) =>
+          c.id === channelId
+            ? {
+                ...c,
+                permission_overwrites: [
+                  ...c.permission_overwrites.filter((o) => !same(o)),
+                  next,
+                ],
+              }
+            : c,
+        ),
+      );
+      return next;
+    },
+    async deleteChannelPermission(channelId, targetId) {
+      await wait();
+      const server = serverOf(channelId);
+      if (!server) throw fail(404, ErrorCode.NotFound);
+      setChannels(
+        server,
+        server.channels.map((c) =>
+          c.id === channelId
+            ? {
+                ...c,
+                permission_overwrites: c.permission_overwrites.filter(
+                  (o) => o.target_id !== targetId,
+                ),
+              }
+            : c,
+        ),
+      );
     },
     async deleteChannel(channelId) {
       await wait();

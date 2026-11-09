@@ -54,7 +54,9 @@ import { space } from '../../shared/theme';
 import { homeStore } from '../../domain/servers/homeStore';
 import { NoServerHome } from '../../features/servers/screens/LeftDrawer';
 import { ChannelOverviewScreen } from '../../features/servers/screens/ChannelOverviewScreen';
+import { ChannelPermissionsScreen } from '../../features/servers/screens/ChannelPermissionsScreen';
 import { ChannelSettingsScreen } from '../../features/servers/screens/ChannelSettingsScreen';
+import { OverwriteEditScreen } from '../../features/servers/screens/OverwriteEditScreen';
 import { RoleEditScreen } from '../../features/servers/screens/RoleEditScreen';
 import { RolesScreen } from '../../features/servers/screens/RolesScreen';
 import { ServerOverviewScreen } from '../../features/servers/screens/ServerOverviewScreen';
@@ -100,6 +102,14 @@ type HomeParamList = {
   Roles: { serverId: string }; // S-SET-02
   RoleEdit: { serverId: string; roleId: string }; // S-SET-02 edit-role
   ChannelSettings: { serverId: string; channelId: string }; // S-SET-06
+  // S-SET-06 `overwrites` (a category: `category-overwrites`)
+  ChannelPermissions: { serverId: string; channelId: string };
+  OverwriteEdit: {
+    serverId: string;
+    channelId: string;
+    targetId: string;
+    targetType: 'role' | 'member';
+  }; // S-SET-06 `overwrite-edit`
   ChannelOverview: { serverId: string; channelId: string }; // S-SET-06 overview
 };
 
@@ -155,11 +165,11 @@ function HomeTab() {
                     serverId: channel.server_id,
                     channelId: channel.id,
                   }),
-                // ponytail: `category-overwrites` comes with P1-A3.6 (#69).
-                onCategoryPermissions: placeholder(
-                  t('servers.channels.categoryPermissions'),
-                  'P1-A3.6 (#69)',
-                ),
+                onCategoryPermissions: (category) =>
+                  navigation.navigate('ChannelPermissions', {
+                    serverId: category.server_id,
+                    channelId: category.id,
+                  }),
               }}
             />
           );
@@ -246,9 +256,43 @@ function HomeTab() {
             onOverview={() =>
               navigation.navigate('ChannelOverview', route.params)
             }
+            onPermissions={() =>
+              navigation.navigate('ChannelPermissions', route.params)
+            }
             onRow={(title, ticket) =>
               navigation.navigate('HomePlaceholder', { title, ticket })
             }
+            onClose={() => navigation.popTo('HomeRoot')}
+          />
+        )}
+      </HomeStack.Screen>
+      <HomeStack.Screen name="ChannelPermissions">
+        {({ navigation, route }) => (
+          <ChannelPermissionsScreen
+            {...route.params}
+            onBack={navigation.goBack}
+            onEdit={(target) =>
+              navigation.navigate('OverwriteEdit', {
+                ...route.params,
+                targetId: target.target_id,
+                targetType: target.target_type,
+              })
+            }
+            onCategory={(categoryId) =>
+              navigation.push('ChannelPermissions', {
+                serverId: route.params.serverId,
+                channelId: categoryId,
+              })
+            }
+            onClose={() => navigation.popTo('HomeRoot')}
+          />
+        )}
+      </HomeStack.Screen>
+      <HomeStack.Screen name="OverwriteEdit">
+        {({ navigation, route }) => (
+          <OverwriteEditScreen
+            {...route.params}
+            onBack={navigation.goBack}
             onClose={() => navigation.popTo('HomeRoot')}
           />
         )}

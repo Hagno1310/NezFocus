@@ -1,6 +1,7 @@
 import {
   ChannelResponse,
   ChannelRoutes,
+  PermissionOverwrite,
   RoleListResponse,
   RoleResponse,
   RoleRoutes,
@@ -10,6 +11,11 @@ import {
 } from '@nezfocus/shared';
 import type { ServerRepository } from '../../domain/servers/ServerRepository';
 import { api } from '../api';
+
+const permission = (channelId: string, targetId: string) =>
+  ChannelRoutes.permission
+    .replace(':id', channelId)
+    .replace(':targetId', targetId);
 
 const role = (serverId: string, roleId: string) =>
   RoleRoutes.byId.replace(':id', serverId).replace(':roleId', roleId);
@@ -78,5 +84,15 @@ export const remoteServerRepository: ServerRepository = {
       method: 'PATCH',
       body,
     });
+  },
+  setChannelPermission: async (channelId, targetId, body) =>
+    PermissionOverwrite.parse(
+      await api.request(permission(channelId, targetId), {
+        method: 'PUT',
+        body,
+      }),
+    ),
+  deleteChannelPermission: async (channelId, targetId) => {
+    await api.request(permission(channelId, targetId), { method: 'DELETE' });
   },
 };

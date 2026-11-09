@@ -89,9 +89,8 @@ export type ChannelMenuRow = 'settings' | 'reorder';
 type ChannelKind = 'text' | 'voice';
 
 // S-HOME-02 `channel-menu`: MANAGE_CHANNELS, or MANAGE_STUDY_ROOMS on a voice channel
-// (REQ-STUDY-11). An empty list means a long press does nothing.
-// ponytail: these are server-level bits; channel overwrites count once P1-A3 (#8) gives
-// the app the caller's roles and the channel's overwrites (P1-A3.6 #69).
+// (REQ-STUDY-11), in that channel (myChannelPermissions). An empty list means a long press
+// does nothing.
 export function channelMenuRows(
   perms: bigint,
   type: ChannelKind,
@@ -114,8 +113,7 @@ export function channelSettingsRows(
   const channels = hasPermission(perms, P.MANAGE_CHANNELS);
   const rows: ChannelSettingsRow[] = [];
   if (channels) rows.push('overview');
-  if (channels && hasPermission(perms, P.MANAGE_ROLES))
-    rows.push('permissions');
+  if (channels) rows.push('permissions'); // SRS 8.5.1: overwrites are MANAGE_CHANNELS
   if (type === 'text' && channels) rows.push('taskBoard');
   if (
     type === 'voice' &&

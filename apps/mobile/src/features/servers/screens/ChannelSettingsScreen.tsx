@@ -20,8 +20,10 @@ import { Text } from '../../../shared/ui/Text';
 import { channelIcon } from '../components/ChannelRow';
 import { useChannelAccess } from '../hooks/useChannelAccess';
 
-const TICKETS: Record<Exclude<ChannelSettingsRow, 'overview'>, string> = {
-  permissions: 'P1-A3.6 (#69)',
+const TICKETS: Record<
+  Exclude<ChannelSettingsRow, 'overview' | 'permissions'>,
+  string
+> = {
   studyRoom: 'P3-B2 (#27)',
   taskBoard: 'P4-A1 (#32)',
 };
@@ -35,14 +37,14 @@ const ICONS = {
 
 // S-SET-06 `text`, `welcome-text`, `voice`, `voice · study-rooms-only`; Edge case
 // `long-name-hub` (the name line cuts at one line).
-// ponytail: rows still on a placeholder until their ticket — Quyền (`overwrites`,
-// `overwrites-synced`) P1-A3.6 #69, Phòng học (S-SET-07) P3-B2 #27, Task Board switch
-// (`taskboard-off`) P4-A1 #32.
+// ponytail: rows still on a placeholder until their ticket — Phòng học (S-SET-07) P3-B2
+// #27, Task Board switch (`taskboard-off`) P4-A1 #32.
 export function ChannelSettingsScreen({
   serverId,
   channelId,
   onBack,
   onOverview,
+  onPermissions,
   onRow,
   onClose,
 }: {
@@ -50,6 +52,7 @@ export function ChannelSettingsScreen({
   channelId: string;
   onBack: () => void;
   onOverview: () => void;
+  onPermissions: () => void;
   onRow: (title: string, ticket: string) => void;
   onClose: () => void; // back to the drawer
 }) {
@@ -121,7 +124,9 @@ export function ChannelSettingsScreen({
             onPress={() =>
               row === 'overview'
                 ? onOverview()
-                : onRow(label(row), TICKETS[row])
+                : row === 'permissions'
+                  ? onPermissions()
+                  : onRow(label(row), TICKETS[row])
             }
           />
         ))}

@@ -363,6 +363,45 @@ export const vi = {
         study: 'HỌC TẬP',
       },
     },
+    overwrites: {
+      title: 'Quyền',
+      categoryTitle: 'Quyền · {{name}}',
+      sync: 'Đồng bộ với danh mục {{name}}',
+      syncedHint:
+        'Đang dùng quyền của danh mục {{name}}. Tắt đồng bộ để đặt quyền riêng.',
+      unsyncedHint: 'Tắt để đặt quyền riêng cho kênh này.',
+      groupOwn: 'QUYỀN RIÊNG CỦA KÊNH',
+      groupSynced: 'QUYỀN CỦA DANH MỤC {{name}}',
+      groupCategory: 'QUYỀN RIÊNG CỦA DANH MỤC',
+      allowCount: '{{count}} cho phép',
+      denyCount: '{{count}} từ chối',
+      none: 'Không đổi gì',
+      categoryEmpty:
+        'Danh mục {{name}} chưa đặt quyền riêng: mọi người dùng quyền theo vai trò trong server.',
+      editCategory: 'Sửa quyền danh mục',
+      categoryNote:
+        'Kênh trong danh mục đang bật “Đồng bộ với danh mục” sẽ dùng quyền này.',
+      categoryNoteSynced:
+        'Kênh trong danh mục đang bật “Đồng bộ với danh mục” sẽ dùng quyền này. Hiện có {{count}} kênh đồng bộ: {{names}}.',
+      empty:
+        'Chưa có quyền riêng: mọi người dùng quyền theo vai trò trong server.',
+      add: 'Thêm vai trò hoặc thành viên',
+      search: 'Tìm vai trò hoặc thành viên',
+      rolesGroup: 'VAI TRÒ',
+      membersGroup: 'THÀNH VIÊN',
+      editTitle: '{{target}} ở {{channel}}',
+      editSubtitle: 'Quyền riêng ở kênh',
+      defaultHint: 'Mặc định = theo quyền của vai trò trong server.',
+      voiceSend: 'Gửi tin trong chat phòng',
+      member: 'Thành viên',
+      private: 'Kênh riêng tư',
+      privateHint:
+        'Chỉ Owner, Quản trị viên và các vai trò được chọn thấy kênh này.',
+      viewers: 'Vai trò được xem',
+      alwaysSees: 'Luôn thấy kênh',
+      yourRole: 'Vai trò của bạn',
+      selfWarning: 'Bạn sẽ không thấy kênh này sau khi tạo',
+    },
     drawer: {
       subtitleStudy: 'Study Server · {{count}} thành viên',
       subtitle: '{{count}} thành viên',

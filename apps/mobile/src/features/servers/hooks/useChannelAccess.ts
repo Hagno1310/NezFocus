@@ -36,7 +36,7 @@ export function useChannelAccess(
 
   const rows =
     access && channel && channel.type !== 'category'
-      ? channelSettingsRows(access.perms, channel.type)
+      ? channelSettingsRows(access.channelPerms(channel), channel.type)
       : [];
   // The list is refetched after a reconnect; wait for it instead of closing on the gap.
   const deleted = seen && listed && !channel;

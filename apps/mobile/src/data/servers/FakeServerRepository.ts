@@ -20,6 +20,7 @@ import {
   permissionBits,
   planCategoryDelete,
   planRoleReorder,
+  privateChannelOverwrites,
   toPermissionBitmap,
   type ChannelResponse,
   type RoleResponse,
@@ -115,8 +116,19 @@ function buildServer(
         type === 'voice' && summary.template === 'study_server'
           ? 'everyone'
           : 'off',
-      permissions_synced: true,
-      permission_overwrites: [],
+      // SRS 8.5.3: #thong-bao has its own @everyone deny SEND_MESSAGES.
+      permissions_synced: name !== 'thong-bao',
+      permission_overwrites:
+        name === 'thong-bao'
+          ? [
+              {
+                target_id: summary.id,
+                target_type: 'role',
+                allow: '0',
+                deny: toPermissionBitmap(permissionBits('SEND_MESSAGES')),
+              },
+            ]
+          : [],
     });
     children?.forEach((child, i) => add(child, i, id));
   };
@@ -375,6 +387,8 @@ export function createFakeServerRepository(
       if (!parsed.success) throw invalid('name', 'INVALID');
       const body = parsed.data;
       const parent_id = body.type === 'category' ? null : body.parent_id;
+      const viewers =
+        body.type === 'category' ? undefined : body.viewer_role_ids;
       const existing = findDuplicateChannel(server.channels, {
         type: body.type,
         name: body.name,
@@ -400,8 +414,17 @@ export function createFakeServerRepository(
             ? (body.focus_control ??
               (server.template === 'study_server' ? 'everyone' : 'off'))
             : 'off',
-        permissions_synced: body.type === 'category' || parent_id !== null,
-        permission_overwrites: [],
+        permissions_synced:
+          body.type === 'category' || (parent_id !== null && !viewers),
+        // v1.9 CR-17: private at creation, from the category's overwrites.
+        permission_overwrites: viewers
+          ? privateChannelOverwrites(
+              serverId,
+              server.channels.find((c) => c.id === parent_id)
+                ?.permission_overwrites ?? [],
+              viewers,
+            )
+          : [],
       };
       setChannels(server, [...server.channels, channel]);
       return channel;
@@ -411,8 +434,23 @@ export function createFakeServerRepository(
       const server = serverOf(channelId);
       const channel = server?.channels.find((c) => c.id === channelId);
       if (!server || !channel) throw fail(404, ErrorCode.NotFound);
-      // ponytail: the "Đồng bộ với danh mục" switch is faked with its screen, P1-A3.6 (#69).
-      if (body.name === undefined) return channel;
+      // REQ-ROLE-03 v1.7: off copies the category's overwrites, on drops the channel's own.
+      if (body.name === undefined) {
+        const synced = body.permissions_synced!;
+        const parent = server.channels.find((c) => c.id === channel.parent_id);
+        if (channel.type === 'category' || !parent)
+          throw invalid('permissions_synced', 'NO_CATEGORY');
+        const next = {
+          ...channel,
+          permissions_synced: synced,
+          permission_overwrites: synced ? [] : parent.permission_overwrites,
+        };
+        setChannels(
+          server,
+          server.channels.map((c) => (c.id === channelId ? next : c)),
+        );
+        return next;
+      }
       playErrors(body.name);
       const free = FreeChannelName.safeParse(body.name);
       if (!free.success) throw invalid('name', 'INVALID');
@@ -432,6 +470,50 @@ export function createFakeServerRepository(
         server.channels.map((c) => (c.id === channelId ? next : c)),
       );
       return next;
+    },
+    async setChannelPermission(channelId, targetId, body) {
+      await wait();
+      const server = serverOf(channelId);
+      const channel = server?.channels.find((c) => c.id === channelId);
+      if (!server || !channel) throw fail(404, ErrorCode.NotFound);
+      if (channel.type !== 'category' && channel.permissions_synced)
+        throw invalid('_', 'SYNCED');
+      const next = { target_id: targetId, ...body };
+      const same = (o: { target_id: string; target_type: string }) =>
+        o.target_id === targetId && o.target_type === body.target_type;
+      setChannels(
+        server,
+        server.channels.map((c) =>
+          c.id === channelId
+            ? {
+                ...c,
+                permission_overwrites: [
+                  ...c.permission_overwrites.filter((o) => !same(o)),
+                  next,
+                ],
+              }
+            : c,
+        ),
+      );
+      return next;
+    },
+    async deleteChannelPermission(channelId, targetId) {
+      await wait();
+      const server = serverOf(channelId);
+      if (!server) throw fail(404, ErrorCode.NotFound);
+      setChannels(
+        server,
+        server.channels.map((c) =>
+          c.id === channelId
+            ? {
+                ...c,
+                permission_overwrites: c.permission_overwrites.filter(
+                  (o) => o.target_id !== targetId,
+                ),
+              }
+            : c,
+        ),
+      );
     },
     async deleteChannel(channelId) {
       await wait();

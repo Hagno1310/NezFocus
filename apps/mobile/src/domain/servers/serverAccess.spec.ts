@@ -142,4 +142,10 @@ describe('S-HOME-02 `channel-menu` / S-SET-06: rows by permission', () => {
     expect(channelSettingsRows(chi, 'voice')).toEqual(['studyRoom']);
     expect(channelSettingsRows(chi, 'text')).toEqual([]);
   });
+
+  it('Quyền needs MANAGE_CHANNELS only (SRS 8.5.1: overwrites belong to it)', () => {
+    expect(
+      channelSettingsRows(permissionBits('MANAGE_CHANNELS'), 'text'),
+    ).toContain('permissions');
+  });
 });

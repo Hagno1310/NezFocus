@@ -165,6 +165,38 @@ describe('createChannel (S-SET-09)', () => {
     ]);
   });
 
+  it('a private channel sends viewer_role_ids, even empty (v1.9 CR-17)', async () => {
+    const sent: unknown[] = [];
+    const repo = {
+      createChannel: async (_id: string, body: unknown) => (
+        sent.push(body),
+        created
+      ),
+    };
+    for (const viewerRoleIds of [['103', '102'], []])
+      await createChannel(repo, '100', server, {
+        type: 'text',
+        name: 'ban quan tri',
+        parentId: '10',
+        studyRoom: false,
+        viewerRoleIds,
+      });
+    expect(sent).toEqual([
+      {
+        type: 'text',
+        name: 'ban-quan-tri',
+        parent_id: '10',
+        viewer_role_ids: ['103', '102'],
+      },
+      {
+        type: 'text',
+        name: 'ban-quan-tri',
+        parent_id: '10',
+        viewer_role_ids: [],
+      },
+    ]);
+  });
+
   it('a duplicate never reaches the backend', async () => {
     const r = await createChannel(
       { createChannel: () => Promise.reject(new Error('no call')) },

@@ -3,6 +3,8 @@ import type {
   CreateChannelRequest,
   CreateRoleRequest,
   CreateServerRequest,
+  PermissionOverwrite,
+  PutChannelPermissionRequest,
   RoleListResponse,
   RoleResponse,
   ServerResponse,
@@ -48,4 +50,11 @@ export interface ServerRepository {
     serverId: string,
     body: UpdateRolePositionsRequest,
   ): Promise<void>;
+  // REQ-ROLE-03 (MANAGE_CHANNELS in the channel): S-SET-06 `overwrite-edit`.
+  setChannelPermission(
+    channelId: string,
+    targetId: string,
+    body: PutChannelPermissionRequest,
+  ): Promise<PermissionOverwrite>;
+  deleteChannelPermission(channelId: string, targetId: string): Promise<void>;
 }

@@ -5,7 +5,7 @@ import {
   type ChannelResponse,
   type ChannelType,
 } from '@nezfocus/shared';
-import { Check, Folder, Hash, Volume2 } from 'lucide-react-native';
+import { Check, EyeOff, Folder, Hash, Volume2 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -14,10 +14,12 @@ import {
   namePreview,
   type ChannelActionError,
 } from '../../../domain/servers/channels';
+import { privateViewers } from '../../../domain/servers/channelPermissions';
 import { channelSections } from '../../../domain/servers/drawer';
-import { homeStore } from '../../../domain/servers/homeStore';
+import { homeStore, removeChannel } from '../../../domain/servers/homeStore';
 import { useOnOpen } from '../../../shared/hooks/useOnOpen';
 import { size, space, useTheme } from '../../../shared/theme';
+import { Checkbox } from '../../../shared/ui/Checkbox';
 import { FormMessage } from '../../../shared/ui/FormMessage';
 import { Icon } from '../../../shared/ui/Icon';
 import { BottomSheet } from '../../../shared/ui/Overlay';
@@ -28,6 +30,7 @@ import { TextField } from '../../../shared/ui/TextField';
 import { showToast } from '../../../shared/ui/Toast';
 import { useChannelActions } from '../hooks/useChannelActions';
 import { useChannelText } from '../hooks/useChannelText';
+import { useServerAccess } from '../hooks/useServerAccess';
 
 const TYPES = [
   { type: 'text', icon: Hash, label: 'typeText', hint: 'typeTextHint' },
@@ -78,8 +81,8 @@ function PickRow({
 }
 
 // S-SET-09 Tạo kênh: `text`, `text-slug`, `voice`, `voice-off`, `category`,
-// `category-picker`, `name-error`, `name-taken`, `limit`, `created`.
-// ponytail: the "Kênh riêng tư" row and its `private*` states come with P1-A3.6 (#69).
+// `category-picker`, `name-error`, `name-taken`, `limit`, `created`, `private`,
+// `private-roles`, `private-self-warning`.
 export function CreateChannelSheet({
   serverId,
   visible,
@@ -113,6 +116,17 @@ export function CreateChannelSheet({
   const [parentId, setParentId] = useState<string | null>(null);
   const [studyRoom, setStudyRoom] = useState(false);
   const [picking, setPicking] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [viewers, setViewers] = useState<string[]>([]);
+  const [pickingRoles, setPickingRoles] = useState(false);
+  const access = useServerAccess(serverId);
+  const v =
+    access?.userId && access.roles
+      ? privateViewers(access.server, access.roles, {
+          userId: access.userId,
+          roleIds: access.roleIds,
+        })
+      : null;
   const [error, setError] = useState<ChannelActionError | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -126,6 +140,9 @@ export function CreateChannelSheet({
     // v1.9 CR-22: "Bật phòng học" on in a Study Server, off elsewhere.
     setStudyRoom(server?.template === 'study_server');
     setPicking(false);
+    setIsPrivate(false);
+    setViewers([]);
+    setPickingRoles(false);
     setError(null);
   });
 
@@ -136,11 +153,27 @@ export function CreateChannelSheet({
 
   const submit = async () => {
     setSubmitting(true);
-    const result = await actions.create({ type, name, parentId, studyRoom });
+    const result = await actions.create({
+      type,
+      name,
+      parentId,
+      studyRoom,
+      viewerRoleIds: isPrivate && type !== 'category' ? viewers : undefined,
+    });
     setSubmitting(false);
     if (!result.ok) return setError(result.error);
     const channel = result.channel;
     onDismiss();
+    // `private-self-warning` went ahead: the creator does not see the channel.
+    if (hidesMe) {
+      removeChannel(channel);
+      return showToast({
+        message:
+          channel.type === 'text'
+            ? t('servers.channels.createdText', { name: channel.name })
+            : t('servers.channels.created', { name: channel.name }),
+      });
+    }
     // `created`: a new category only shows up in the drawer (spec 08 › S-SET-09).
     if (channel.type !== 'category')
       showToast({
@@ -160,6 +193,48 @@ export function CreateChannelSheet({
         : error?.kind === 'other'
           ? t('servers.channels.failed')
           : null;
+
+  // `private-self-warning`: only a warning, the channel is still created.
+  const hidesMe = isPrivate && type !== 'category' && !!v?.wouldHide(viewers);
+  const warning = (
+    <FormMessage
+      tone="info"
+      icon={EyeOff}
+      text={t('servers.overwrites.selfWarning')}
+    />
+  );
+
+  if (pickingRoles && v)
+    return (
+      <BottomSheet
+        visible={visible}
+        title={t('servers.overwrites.viewers')}
+        onBack={() => setPickingRoles(false)}
+        onDismiss={onDismiss}
+      >
+        {v.rows.map(({ role, locked, mine }) => (
+          <Checkbox
+            key={role.id}
+            label={role.name}
+            locked={locked}
+            description={
+              locked
+                ? t('servers.overwrites.alwaysSees')
+                : mine
+                  ? t('servers.overwrites.yourRole')
+                  : undefined
+            }
+            checked={locked || viewers.includes(role.id)}
+            onChange={(on) =>
+              setViewers((ids) =>
+                on ? [...ids, role.id] : ids.filter((id) => id !== role.id),
+              )
+            }
+          />
+        ))}
+        {hidesMe && warning}
+      </BottomSheet>
+    );
 
   if (picking)
     return (
@@ -198,7 +273,13 @@ export function CreateChannelSheet({
     <BottomSheet
       visible={visible}
       title={t('servers.channels.createTitle')}
-      notice={limit ? t('servers.channels.limit') : null}
+      notice={
+        limit
+          ? t('servers.channels.limit')
+          : hidesMe
+            ? t('servers.overwrites.selfWarning')
+            : null
+      }
       error={blockError}
       action={{
         label: t('servers.channels.create'),
@@ -271,6 +352,30 @@ export function CreateChannelSheet({
             label={t('servers.channels.studyRoom')}
             description={t('servers.channels.studyRoomHint')}
             toggle={{ value: studyRoom, onChange: setStudyRoom }}
+          />
+        )}
+        {type !== 'category' && (
+          <SettingsRow
+            label={t('servers.overwrites.private')}
+            description={t('servers.overwrites.privateHint')}
+            toggle={{
+              value: isPrivate,
+              onChange: (on) => {
+                setIsPrivate(on);
+                // The creator's highest role starts ticked (v1.9 CR-17 #5).
+                if (on) setViewers(v?.initial ?? []);
+              },
+            }}
+          />
+        )}
+        {type !== 'category' && isPrivate && v && (
+          <SettingsRow
+            label={t('servers.overwrites.viewers')}
+            value={String(
+              v.rows.filter((r) => r.locked || viewers.includes(r.role.id))
+                .length,
+            )}
+            onPress={() => setPickingRoles(true)}
           />
         )}
       </View>

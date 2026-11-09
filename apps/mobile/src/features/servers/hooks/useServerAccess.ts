@@ -1,4 +1,6 @@
+import type { ChannelResponse } from '@nezfocus/shared';
 import { useStore } from 'zustand';
+import { myChannelPermissions } from '../../../domain/servers/channelPermissions';
 import {
   myServerPermissions,
   serverMenuRows,
@@ -18,6 +20,9 @@ export function useServerAccess(serverId: string | null) {
   const roleIds = useStore(homeStore, (s) =>
     serverId ? s.myRoleIds[serverId] : undefined,
   );
+  const channels = useStore(homeStore, (s) =>
+    serverId ? s.channels[serverId] : undefined,
+  );
   const userId = useStore(sessionStore, (s) => s.user?.id ?? null);
   if (!server) return null;
   const perms = myServerPermissions(server, roles, userId, roleIds);
@@ -31,5 +36,17 @@ export function useServerAccess(serverId: string | null) {
     isOwner,
     menuRows: serverMenuRows(perms, isOwner),
     settingsRows: serverSettingsRows(perms, isOwner),
+    // In one channel: its overwrites (or its category's while synced) apply.
+    channelPerms: (channel: ChannelResponse) =>
+      userId
+        ? myChannelPermissions(
+            server,
+            roles ?? [],
+            userId,
+            roleIds ?? [],
+            channel,
+            channels ?? [],
+          )
+        : 0n,
   };
 }

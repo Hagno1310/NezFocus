@@ -97,6 +97,7 @@ export type CreateChannelForm = {
   name: string;
   parentId: string | null; // the "Danh mục" row; ignored for a category
   studyRoom: boolean; // v1.9 CR-22 "Bật phòng học", voice only
+  viewerRoleIds?: string[]; // v1.9 CR-17 "Kênh riêng tư" on; not for a category
 };
 
 export async function createChannel(
@@ -112,16 +113,20 @@ export async function createChannel(
   });
   if (!checked.ok) return checked;
   const { name } = checked;
+  const viewers = form.viewerRoleIds && {
+    viewer_role_ids: form.viewerRoleIds,
+  };
   const body: CreateChannelRequest =
     form.type === 'category'
       ? { type: 'category', name }
       : form.type === 'text'
-        ? { type: 'text', name, parent_id: form.parentId }
+        ? { type: 'text', name, parent_id: form.parentId, ...viewers }
         : {
             type: 'voice',
             name,
             parent_id: form.parentId,
             focus_control: form.studyRoom ? 'everyone' : 'off',
+            ...viewers,
           };
   try {
     return { ok: true, channel: await repo.createChannel(serverId, body) };

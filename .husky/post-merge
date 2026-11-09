@@ -1,0 +1,1 @@
+sh .husky/remind-migrate.sh ORIG_HEAD HEAD

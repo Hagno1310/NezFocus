@@ -290,7 +290,7 @@ pnpm db:studio       # (tùy chọn) giao diện xem dữ liệu
 ```
 
 - File trong `apps/backend/drizzle/` **phải commit** cùng thay đổi schema.
-- **Sau khi `git pull`** mà có file mới trong `apps/backend/drizzle/` (người khác thêm migration): chạy `pnpm build` rồi `pnpm db:migrate` trong `apps/backend` trước khi bật backend. Không chạy thì backend lỗi khi đọc cột hoặc bảng mới (`column ... does not exist`). Kiểm nhanh: `git diff --stat HEAD@{1} -- apps/backend/drizzle`.
+- **Sau khi `git pull`** mà có file mới trong `apps/backend/drizzle/` (người khác thêm migration): chạy `pnpm build` rồi `pnpm db:migrate` trong `apps/backend` trước khi bật backend. Không chạy thì backend lỗi khi đọc cột hoặc bảng mới (`column ... does not exist`). Hook husky (`post-merge`, `post-rewrite`, `post-checkout`) tự in dòng nhắc "Co migration moi" khi pull / đổi branch kéo về migration mới; nó chỉ nhắc, không tự chạy.
 - Không sửa migration đã merge vào `main`; cần đổi thì tạo migration mới.
 - Khi deploy, service `migrate` tự chạy migration trước khi backend khởi động.
 - Xóa sạch database dev: `docker compose -f infra/docker-compose.yml down -v` (**mất toàn bộ dữ liệu dev**).

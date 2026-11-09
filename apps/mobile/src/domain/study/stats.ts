@@ -17,8 +17,6 @@ export interface StudyStatsRepository {
   sessions(q: Partial<StudySessionsQuery>): Promise<StudySessionsResponse>;
 }
 
-const Q = QUALIFIED_DAY_MINUTES;
-
 // 0 = Monday … 6 = Sunday (REQ-STUDY-17: weeks run Mon–Sun).
 export const weekdayOf = (d: string) =>
   (new Date(`${d}T00:00:00Z`).getUTCDay() + 6) % 7;
@@ -45,7 +43,9 @@ export function withLiveFocus(
   const inPeriod = s.today >= s.from && s.today <= s.to;
   const today_minutes = s.today_minutes + m;
   // The streak counts today once it reaches 15 minutes (spec 04 › Dữ liệu nhất quán).
-  const crossed = s.today_minutes < Q && today_minutes >= Q;
+  const crossed =
+    s.today_minutes < QUALIFIED_DAY_MINUTES &&
+    today_minutes >= QUALIFIED_DAY_MINUTES;
   const current_streak_days = s.current_streak_days + (crossed ? 1 : 0);
   return {
     ...s,
@@ -69,8 +69,8 @@ export function withLiveFocus(
 }
 
 export const todayProgress = (minutes: number) => ({
-  reached: minutes >= Q,
-  ratio: Math.min(1, minutes / Q),
+  reached: minutes >= QUALIFIED_DAY_MINUTES,
+  ratio: Math.min(1, minutes / QUALIFIED_DAY_MINUTES),
 });
 
 export type DayTone = 'today' | 'reached' | 'below';
@@ -84,7 +84,10 @@ export type Bar = {
 
 // 04 › Biểu đồ tuần: scale = max(highest column, 15) so the 15-minute line stays inside.
 export function weekChart(days: readonly StudyDay[], today: string) {
-  const scale = Math.max(Q, ...days.map((d) => d.focused_minutes));
+  const scale = Math.max(
+    QUALIFIED_DAY_MINUTES,
+    ...days.map((d) => d.focused_minutes),
+  );
   const bars: Bar[] = days.map((d) => ({
     date: d.local_date,
     minutes: d.focused_minutes,
@@ -92,12 +95,12 @@ export function weekChart(days: readonly StudyDay[], today: string) {
     tone:
       d.local_date === today
         ? 'today'
-        : d.focused_minutes >= Q
+        : d.focused_minutes >= QUALIFIED_DAY_MINUTES
           ? 'reached'
           : 'below',
     future: d.local_date > today,
   }));
-  return { bars, line: Q / scale };
+  return { bars, line: QUALIFIED_DAY_MINUTES / scale };
 }
 
 export type CellState = 'reached' | 'below' | 'future';
@@ -116,7 +119,7 @@ const cellOf = (d: StudyDay, today: string): DayCell => ({
   state:
     d.local_date > today
       ? 'future'
-      : d.focused_minutes >= Q
+      : d.focused_minutes >= QUALIFIED_DAY_MINUTES
         ? 'reached'
         : 'below',
   today: d.local_date === today,
@@ -192,8 +195,7 @@ export function weekRange(from: string, to: string, today: string) {
 export const monthLabel = (from: string) =>
   `${from.slice(5, 7)}/${from.slice(0, 4)}`;
 
-export const MILESTONES = [7, 30, 100];
-export const isMilestone = (streak: number) => MILESTONES.includes(streak);
+export const isMilestone = (streak: number) => [7, 30, 100].includes(streak);
 
 // Local wall time of an instant in the user's time zone (history follows study-stats.timezone).
 const formatters = new Map<string, Intl.DateTimeFormat>();
@@ -251,4 +253,16 @@ export function sessionLine(
     joins: row.join_count,
     laterMinutes: Math.floor(later / 60),
   };
+}
+
+// "Qua nửa đêm": the user's next 00:00, so today's progress and the streak start over on time.
+export function msUntilMidnight(now: Date, timeZone: string) {
+  const [h, m] = localTime(now.toISOString(), timeZone)
+    .time.split(':')
+    .map(Number);
+  const msIntoDay =
+    (h! * 60 + m!) * 60_000 +
+    now.getUTCSeconds() * 1000 +
+    now.getUTCMilliseconds();
+  return 86_400_000 - msIntoDay;
 }

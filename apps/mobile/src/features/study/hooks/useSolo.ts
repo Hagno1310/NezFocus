@@ -188,9 +188,11 @@ export function useNow(ms = 250) {
 // S-STUDY-01: the last cycle chosen, kept on the device; 50/10 the first time.
 export const useLastCycle = create<{
   cycle: CycleConfig;
+  pending: CycleConfig | null; // what S-ROOM-09 starts, e.g. never-studied's 25/5 (not remembered)
   set: (cycle: CycleConfig) => void;
 }>((set) => ({
   cycle: { focus_min: 50, short_break_min: 10 },
+  pending: null,
   set: (cycle) => {
     set({ cycle });
     void cycleMemory.save(cycle);

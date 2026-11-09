@@ -9,11 +9,14 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { useStore } from 'zustand';
+import { useEffect } from 'react';
 import { studyStatsRepository } from '../../../data/study';
-import { gatewayStore } from '../../../domain/gateway/gatewayStore';
 import { timerOf } from '../../../domain/study/solo';
-import { liveFocusSeconds, withLiveFocus } from '../../../domain/study/stats';
+import {
+  liveFocusSeconds,
+  msUntilMidnight,
+  withLiveFocus,
+} from '../../../domain/study/stats';
 import { useGatewayEvent } from '../../gateway/hooks/useGatewayEvent';
 import { useNow, useSolo } from './useSolo';
 
@@ -21,13 +24,13 @@ const STATS = 'study-stats';
 const SESSIONS = 'study-sessions';
 
 // Focus already credited by a pause in the running phase (DEC-24), so it is not counted twice.
-// ponytail: only pauses this phone saw; a restart after pause + resume overcounts until the phase ends.
+// ponytail: only pauses this phone saw, so a restart after pause + resume overcounts until the phase ends; exact once the Solo contract carries the credited seconds of the phase.
 const creditedInPhase = new Map<string, number>();
 
-// The running Solo focus not yet credited by the backend, refreshed every minute.
+// The running Solo focus not yet credited by the backend; a 10 s tick keeps the minute close.
 export function useLiveFocusSeconds() {
   const snap = useSolo();
-  const now = useNow(60_000);
+  const now = useNow(10_000);
   if (!snap) return 0;
   const s = snap.session;
   const key = `${s.id}:${s.focus_phases_done}`;
@@ -44,7 +47,21 @@ export function useStudyStats(view: StatsView, date?: string) {
     queryKey: [STATS, view, date ?? 'today'],
     queryFn: () => studyStatsRepository.stats({ view, date }),
     placeholderData: keepPreviousData,
+    // SRS 7.3.2: a period once loaded stays readable offline.
+    // ponytail: in memory only, lost on restart; persist the cache once op-sqlite lands (P2-A3.3 #101).
+    gcTime: Infinity,
   });
+  const qc = useQueryClient();
+  const timeZone = q.data?.timezone;
+  // Past the user's midnight, today's progress and the streak start over (S-STUDY-03 › Qua nửa đêm).
+  useEffect(() => {
+    if (!timeZone) return;
+    const id = setTimeout(
+      () => void qc.invalidateQueries({ queryKey: [STATS] }),
+      msUntilMidnight(new Date(), timeZone) + 1000,
+    );
+    return () => clearTimeout(id);
+  }, [qc, timeZone, q.dataUpdatedAt]);
   const data: StudyStatsResponse | undefined =
     q.data && withLiveFocus(q.data, live);
   return { ...q, data };
@@ -65,10 +82,9 @@ export function useSessionHistory(view: StatsView, date: string | undefined) {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.next_cursor ?? undefined,
     enabled: !!p,
+    gcTime: Infinity,
   });
 }
-
-export const useOnline = () => useStore(gatewayStore, (s) => s.online);
 
 // Mounted once under the tabs. REQ-STUDY-03: STREAK_UPDATE after each credit, to every session.
 export function useStudyStatsSync() {

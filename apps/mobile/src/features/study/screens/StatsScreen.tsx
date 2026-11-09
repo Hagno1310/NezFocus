@@ -33,6 +33,7 @@ import {
   type DayCell,
 } from '../../../domain/study/stats';
 import { ConnectionBanner } from '../../gateway/components/ConnectionBanner';
+import { useOnline } from '../../gateway/hooks/useOnline';
 import { radius, size, space, useTheme } from '../../../shared/theme';
 import { Button, IconButton } from '../../../shared/ui/Button';
 import { EmptyState, Skeleton } from '../../../shared/ui/Feedback';
@@ -60,12 +61,13 @@ import {
 import { FIRST_FOCUS, useBeginSolo } from '../hooks/useBeginSolo';
 import {
   useLiveFocusSeconds,
-  useOnline,
   useSessionHistory,
   useStudyStats,
 } from '../hooks/useStudyStats';
 
 type T = ReturnType<typeof useTranslation>['t'];
+
+const NBSP = String.fromCharCode(0xa0);
 
 // S-STUDY-03. Streak, today's progress and all-time are always the current numbers (from the
 // current week), never those of the period being viewed.
@@ -145,7 +147,7 @@ export function StatsScreen({
             action={{
               label: t('study.home.neverStart'),
               variant: 'secondary',
-              onPress: () => void begin(FIRST_FOCUS),
+              onPress: () => void begin(FIRST_FOCUS, false),
             }}
           />
         ) : (
@@ -201,9 +203,9 @@ function PeriodPicker({
   return (
     <View style={styles.picker}>
       {/* Long press on the disabled "‹" says why (S-STUDY-03 › Thể hiện kỳ). */}
+      {/* No `disabled` here: on Android it setEnabled(false)s the wrapper (apps/mobile/AGENTS.md). */}
       <Pressable
-        disabled={back}
-        onLongPress={() => setTip(true)}
+        onLongPress={back ? undefined : () => setTip(true)}
         onPressOut={() => setTip(false)}
       >
         <IconButton
@@ -243,19 +245,17 @@ function Current({ stats }: { stats: StudyStatsResponse }) {
           />
         </View>
       )}
+      <View style={styles.streak}>
+        <Icon as={Flame} size="xl" color="text-secondary" />
+        <StatText text={`${streak} ${t('study.streakUnit')}`} />
+      </View>
       {streak ? (
-        <>
-          <View style={styles.streak}>
-            <Icon as={Flame} size="xl" color="text-secondary" />
-            <StatText text={`${streak} ${t('study.streakUnit')}`} />
-          </View>
-          <NumberText text={longest} />
-        </>
+        <NumberText text={longest} />
       ) : (
         // STUDY-03 AC2: neutral, no mascot; "14 ngày" stays on one line.
-        <Text color="text-secondary">
-          {`${t('study.streakZero')} · ${longest.replace(/ (?=\S+$)/, ' ')}`}
-        </Text>
+        <NumberText
+          text={`${t('study.streakZero')} · ${longest.replace(/ (?=\S+$)/, NBSP)}`}
+        />
       )}
       <Today minutes={stats.today_minutes} />
     </View>
@@ -354,12 +354,14 @@ function FourWeeks({ to, today }: { to: string; today: string }) {
   const last = useStudyStats('week', to).data;
   const { colors } = useTheme();
   const { t } = useTranslation();
-  if (weeks.some((w) => !w) || !last) return null;
+  // Weeks not loaded yet (or offline) are left out rather than hiding the grid.
+  const loaded = [...weeks, last].filter((w) => !!w);
+  if (!loaded.length) return null;
   return (
     <View style={styles.grid}>
-      {[...weeks, last].map((w) => (
-        <View key={w!.from} style={styles.gridRow}>
-          {weekCells(w!.days, today).map((c) => (
+      {loaded.map((w) => (
+        <View key={w.from} style={styles.gridRow}>
+          {weekCells(w.days, today).map((c) => (
             <View
               key={c.date}
               accessible
@@ -420,7 +422,10 @@ function History({
         />
       </View>
     );
-  else if (!stats || (history.isPending && online)) body = <SkeletonRows />;
+  // A period whose numbers are cached but whose history never loaded: not "no sessions".
+  else if (history.isPending && !online)
+    body = <Text color="text-secondary">{t('study.stats.offline')}</Text>;
+  else if (!stats || history.isPending) body = <SkeletonRows />;
   else if (!rows.length)
     body = <Text color="text-secondary">{t('study.stats.historyEmpty')}</Text>;
   else

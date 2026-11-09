@@ -10,6 +10,7 @@ import {
   comparison,
   isMilestone,
   liveFocusSeconds,
+  msUntilMidnight,
   monthRows,
   sessionLine,
   stepDate,
@@ -275,5 +276,14 @@ describe('history line (C-39, REQ-STUDY-17 AC3–AC4)', () => {
       '2026-01-04',
     );
     expect(l).toMatchObject({ date: '31/12/2025', end: null });
+  });
+});
+
+describe('midnight (S-STUDY-03 › Qua nửa đêm)', () => {
+  it('counts to 00:00 in the user time zone, not the phone', () => {
+    // 23:30:15 in Ho Chi Minh City = 16:30:15 UTC.
+    expect(
+      msUntilMidnight(new Date('2026-10-18T16:30:15Z'), 'Asia/Ho_Chi_Minh'),
+    ).toBe(29 * 60_000 + 45_000);
   });
 });

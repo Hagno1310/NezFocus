@@ -9,8 +9,10 @@ export function useBeginSolo(nav: {
 }) {
   const { cycle, set } = useLastCycle();
   const start = useStartSolo();
-  const begin = async (c: CycleConfig = cycle) => {
-    set(c);
+  // remember = false: never-studied's "Bắt đầu Tập trung 25 phút" keeps the chosen cycle.
+  const begin = async (c: CycleConfig = cycle, remember = true) => {
+    if (remember) set(c);
+    useLastCycle.setState({ pending: c });
     if (await notificationPrompt.needed()) return nav.onAskNotifications();
     // 40903 (already running elsewhere) still lands on the Solo screen, showing that session.
     start.mutate(c, { onSettled: () => nav.onOpenSolo() });

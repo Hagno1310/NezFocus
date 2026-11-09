@@ -15,6 +15,7 @@ import { useStore } from 'zustand';
 import { homeStore } from '../../../domain/servers/homeStore';
 import { endingOf, timerOf, type SoloTimer } from '../../../domain/study/solo';
 import { ConnectionBanner } from '../../gateway/components/ConnectionBanner';
+import { useOnline } from '../../gateway/hooks/useOnline';
 import { radius, size, space, useTheme } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import { EmptyState, Skeleton } from '../../../shared/ui/Feedback';
@@ -28,11 +29,7 @@ import { WeekChart } from '../components/WeekChart';
 import { cycleText, minutesText } from '../format';
 import { FIRST_FOCUS, useBeginSolo } from '../hooks/useBeginSolo';
 import { useNow, useSolo } from '../hooks/useSolo';
-import {
-  useOnline,
-  useRefreshStudy,
-  useStudyStats,
-} from '../hooks/useStudyStats';
+import { useRefreshStudy, useStudyStats } from '../hooks/useStudyStats';
 
 // S-STUDY-01. "Đang học lúc này" has rooms only from P3-B3.7 (#212); until then it is
 // `no-active-rooms` or `no-server`.
@@ -88,7 +85,7 @@ export function StudyHome({
           stats={stats.data}
           online={online}
           onOpen={onOpenStats}
-          onFirstFocus={() => void begin(FIRST_FOCUS)}
+          onFirstFocus={() => void begin(FIRST_FOCUS, false)}
         />
       </ScrollView>
     </View>
@@ -284,18 +281,15 @@ function WeekBlock({
         <Icon as={ChevronRight} size="lg" color="text-secondary" />
       </View>
       <View style={styles.streakRow}>
-        {stats.current_streak_days ? (
-          <StatText
-            text={`${stats.current_streak_days} ${t('study.streakUnit')}`}
-          />
-        ) : (
-          // STUDY-03 AC2: neutral, no mascot.
-          <Text color="text-secondary" style={styles.shrink}>
-            {t('study.streakZero')}
-          </Text>
-        )}
+        <StatText
+          text={`${stats.current_streak_days} ${t('study.streakUnit')}`}
+        />
         <StatText text={minutesText(t, stats.total_minutes)} />
       </View>
+      {/* STUDY-03 AC2 streak-zero: "0" plus a neutral line, no mascot. */}
+      {!stats.current_streak_days && (
+        <Text color="text-secondary">{t('study.streakZero')}</Text>
+      )}
       <Today minutes={stats.today_minutes} />
       <WeekChart days={stats.days} today={stats.today} />
     </Pressable>

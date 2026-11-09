@@ -40,7 +40,7 @@ import {
   openExactAlarmSettings,
   useNotificationAccess,
 } from '../hooks/useSoloAlerts';
-import { cycleText, durationText, hhmm } from '../format';
+import { cycleText, hhmm, minutesText } from '../format';
 import {
   useCloseSolo,
   useNow,
@@ -263,8 +263,8 @@ function Ended({
     tooShort && t('study.ended.tooShortNote'),
     ending.days &&
       t('study.ended.days', {
-        yesterday: durationText(t, ending.days.yesterday),
-        today: durationText(t, ending.days.today),
+        yesterday: minutesText(t, ending.days.yesterday),
+        today: minutesText(t, ending.days.today),
       }),
     ending.hitCap && t('study.ended.cap'),
     kind === 'expired' &&

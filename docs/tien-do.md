@@ -68,7 +68,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
   - Trong lúc làm: P1-A1.2 chờ P0-5.2 (Hoàng); P1-A1.3 chờ P0-3b.2 (Hoàng); P1-A1.3 chờ P0-3b.3 (Hoàng)
   - [x] mốc **P1-A1.1** [#55](https://github.com/Hagno1310/NezFocus/issues/55) Hợp đồng server và kênh trong shared · hợp đồng · người kia chờ: P1-B3 (Hoàng)
   - [x] mốc **P1-A1.2** [#56](https://github.com/Hagno1310/NezFocus/issues/56) Backend: tạo server và kênh tin chào mừng (SRV-01) · người kia chờ: P1-B4 (Hoàng)
-- [ ] **P1-A2** [#7](https://github.com/Hagno1310/NezFocus/issues/7) Kênh, danh mục, drawer trái và menu server
+- [x] **P1-A2** [#7](https://github.com/Hagno1310/NezFocus/issues/7) Kênh, danh mục, drawer trái và menu server
   - Cần trước: P1-A1
 - [ ] **P1-A3** [#8](https://github.com/Hagno1310/NezFocus/issues/8) Vai trò và quyền theo kênh
   - Cần trước: P0-6, P1-A1, P1-A2

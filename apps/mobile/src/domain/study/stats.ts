@@ -79,6 +79,7 @@ export type Bar = {
   minutes: number;
   height: number; // share of the chart height, 0–1
   tone: DayTone;
+  today: boolean;
   future: boolean;
 };
 
@@ -92,12 +93,14 @@ export function weekChart(days: readonly StudyDay[], today: string) {
     date: d.local_date,
     minutes: d.focused_minutes,
     height: d.focused_minutes / scale,
+    // A 0-minute today stays a flat `border` bar (frames empty-week, streak-zero).
     tone:
-      d.local_date === today
+      d.local_date === today && d.focused_minutes > 0
         ? 'today'
         : d.focused_minutes >= QUALIFIED_DAY_MINUTES
           ? 'reached'
           : 'below',
+    today: d.local_date === today,
     future: d.local_date > today,
   }));
   return { bars, line: QUALIFIED_DAY_MINUTES / scale };

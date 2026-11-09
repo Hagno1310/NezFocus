@@ -26,22 +26,26 @@ const tone: Record<DayTone, ColorToken> = {
 };
 
 // 04 › Biểu đồ tuần, for S-STUDY-01 and S-STUDY-03. Not a shared component.
+// Numbers above the columns only on S-STUDY-03 (frames of S-STUDY-01 have none).
 export function WeekChart({
   days,
   today,
+  numbers = false,
 }: {
   days: readonly StudyDay[];
   today: string;
+  numbers?: boolean;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { bars, line } = weekChart(days, today);
   const names = weekdays(t);
   const longNames = weekdaysLong(t);
-  const lineY = NUMBER + H - line * H;
+  const top = numbers ? NUMBER : 0;
+  const lineY = top + H - line * H;
   return (
     <View>
-      <View style={styles.plot}>
+      <View style={{ height: top + H }}>
         {/* Drawn first so the columns and their numbers sit on top of it. */}
         <Svg
           style={[StyleSheet.absoluteFill, { right: GUTTER }]}
@@ -70,13 +74,17 @@ export function WeekChart({
             >
               {!b.future && (
                 <>
-                  <Text
-                    variant="numeric-inline"
-                    color="text-secondary"
-                    maxFontSizeMultiplier={fontScale.narrowLabel}
-                  >
-                    {b.minutes}
-                  </Text>
+                  {/* 04 › Biểu đồ tuần: the 15-minute line never strikes through a number. */}
+                  {numbers && (
+                    <Text
+                      variant="numeric-inline"
+                      color="text-secondary"
+                      maxFontSizeMultiplier={fontScale.narrowLabel}
+                      style={{ backgroundColor: colors.bg }}
+                    >
+                      {b.minutes}
+                    </Text>
+                  )}
                   <View
                     style={[
                       styles.bar,
@@ -106,7 +114,9 @@ export function WeekChart({
           <Text
             key={b.date}
             variant="label"
-            color={b.future ? 'text-tertiary' : 'text-secondary'}
+            // Frames: every day text-tertiary, today text-primary and bold.
+            color={b.today ? 'text-primary' : 'text-tertiary'}
+            weight={b.today ? '700' : undefined}
             maxFontSizeMultiplier={fontScale.narrowLabel}
             style={styles.day}
           >
@@ -119,7 +129,6 @@ export function WeekChart({
 }
 
 const styles = StyleSheet.create({
-  plot: { height: NUMBER + H },
   bars: {
     flexDirection: 'row',
     gap: space[2],

@@ -173,49 +173,61 @@ function SoloBlock({
       })
     : t('study.cycle', { cycle: cycleText(cycle) });
 
+  const button = timer ? (
+    <Button
+      variant="secondary"
+      size="S"
+      label={t('study.open')}
+      onPress={onOpen}
+    />
+  ) : (
+    <Button
+      icon={Play}
+      label={t('study.start')}
+      loading={starting}
+      fullWidth={stacked}
+      onPress={() => onStart()}
+    />
+  );
+
+  // Frame S-STUDY-01 › Solo: one row [title + cycle | button], filled surface-1.
   return (
-    <View style={[styles.solo, { borderColor: colors.border }]}>
-      <View style={[styles.soloHead, stacked && styles.stacked]}>
-        <Text variant="headline" style={styles.flex}>
-          {t('study.solo')}
-        </Text>
+    <View
+      style={[
+        styles.solo,
+        stacked && styles.stacked,
+        { borderColor: colors.border, backgroundColor: colors['surface-1'] },
+      ]}
+    >
+      <View style={styles.soloInfo}>
+        <Text weight="600">{t('study.solo')}</Text>
         {timer ? (
-          <Button
-            variant="secondary"
+          <PhaseBadge
+            phase={timer.phase}
+            state={timer.status}
             size="S"
-            label={t('study.open')}
-            onPress={onOpen}
+            label={soloLine(t, timer)}
           />
         ) : (
-          <Button
-            icon={Play}
-            label={t('study.start')}
-            loading={starting}
-            fullWidth={stacked}
-            onPress={() => onStart()}
-          />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={cycleLabel}
+            onPress={() => setChoosing(true)}
+            hitSlop={CYCLE_SLOP}
+            style={styles.cycleRow}
+          >
+            <Text
+              color="text-secondary"
+              numberOfLines={2}
+              style={styles.shrink}
+            >
+              {cycleLabel}
+            </Text>
+            <Icon as={ChevronDown} size="base" color="text-secondary" />
+          </Pressable>
         )}
       </View>
-      {timer ? (
-        <PhaseBadge
-          phase={timer.phase}
-          state={timer.status}
-          size="S"
-          label={soloLine(t, timer)}
-        />
-      ) : (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={cycleLabel}
-          onPress={() => setChoosing(true)}
-          style={styles.cycleRow}
-        >
-          <Text color="text-secondary" numberOfLines={2} style={styles.shrink}>
-            {cycleLabel}
-          </Text>
-          <Icon as={ChevronDown} size="base" color="text-secondary" />
-        </Pressable>
-      )}
+      {button}
       <CycleSheet
         key={String(choosing)}
         visible={choosing}
@@ -272,7 +284,7 @@ function WeekBlock({
     <Pressable
       accessibilityRole="button"
       onPress={() => onOpen(stats.today)}
-      style={styles.section}
+      style={styles.week}
     >
       <View style={styles.row}>
         <Text variant="headline" style={styles.flex}>
@@ -296,33 +308,34 @@ function WeekBlock({
   );
 }
 
+// The cycle line is 20 high; the slop brings its touch target to 48 (SRS 3.5).
+const CYCLE_SLOP = { top: 14, bottom: 14 };
+
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   title: { paddingHorizontal: space[3], paddingVertical: space[2] },
-  content: { padding: space[3], gap: space[4] },
+  content: { padding: space[3], gap: space[3] },
   section: { gap: space[2] },
+  week: { gap: 12 },
   skeletons: { gap: space[2] },
   solo: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: size.hairline,
     borderRadius: radius.button,
     padding: space[3],
-    gap: space[2],
+    gap: 12,
   },
-  soloHead: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
+  soloInfo: { flex: 1, gap: 2 },
   stacked: { flexDirection: 'column', alignItems: 'stretch' },
-  cycleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space[1],
-    minHeight: size.touch,
-  },
+  cycleRow: { flexDirection: 'row', alignItems: 'center', gap: space[1] },
   row: { flexDirection: 'row', alignItems: 'center' },
   streakRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'baseline',
-    justifyContent: 'space-between',
-    gap: space[2],
+    columnGap: space[5],
+    rowGap: space[1],
   },
   flex: { flex: 1 },
   shrink: { flexShrink: 1 },

@@ -135,6 +135,12 @@ describe('week chart (04 › Biểu đồ tuần)', () => {
     ]);
   });
 
+  it('today at 0 minutes is a flat border bar, like any 0 (frame empty-week, streak-zero)', () => {
+    const { bars } = weekChart(days([0, 0, 0, 0, 0, 0, 0]), '2026-10-14');
+    expect(bars[2]!.tone).toBe('below');
+    expect(bars[2]!.today).toBe(true);
+  });
+
   it('week-spike: 540 sets the scale', () => {
     const { line } = weekChart(
       days([15, 20, 540, 40, 25, 30, 15]),

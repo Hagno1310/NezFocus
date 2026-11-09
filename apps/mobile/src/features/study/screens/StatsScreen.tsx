@@ -249,14 +249,12 @@ function Current({ stats }: { stats: StudyStatsResponse }) {
         <Icon as={Flame} size="xl" color="text-secondary" />
         <StatText text={`${streak} ${t('study.streakUnit')}`} />
       </View>
-      {streak ? (
-        <NumberText text={longest} />
-      ) : (
-        // STUDY-03 AC2: neutral, no mascot; "14 ngày" stays on one line.
-        <NumberText
-          text={`${t('study.streakZero')} · ${longest.replace(/ (?=\S+$)/, NBSP)}`}
-        />
-      )}
+      {/* STUDY-03 AC2: neutral, no mascot. Frames: plain label text; "Dài nhất: 14 ngày" never splits. */}
+      <Text variant="label" color="text-secondary">
+        {streak
+          ? longest
+          : `${t('study.streakZero')} · ${longest.replaceAll(' ', NBSP)}`}
+      </Text>
       <Today minutes={stats.today_minutes} />
     </View>
   );
@@ -305,7 +303,7 @@ function PeriodNumbers({ stats, t }: { stats: StudyStatsResponse; t: T }) {
       )}
       <NumberText text={t('study.stats.average', { d: minutesText(t, avg) })} />
       {v === 'week' ? (
-        <WeekChart days={stats.days} today={stats.today} />
+        <WeekChart days={stats.days} today={stats.today} numbers />
       ) : (
         <MonthCalendar
           title={t('study.stats.calendarTitle', {
@@ -320,12 +318,12 @@ function PeriodNumbers({ stats, t }: { stats: StudyStatsResponse; t: T }) {
       )}
       {/* empty-week: no split line when nothing was studied. */}
       {stats.total_minutes > 0 && (
-        <NumberText
-          text={t('study.stats.split', {
+        <Text variant="label" color="text-secondary">
+          {t('study.stats.split', {
             room: minutesText(t, stats.room_minutes),
             solo: minutesText(t, stats.solo_minutes),
           })}
-        />
+        </Text>
       )}
     </View>
   );
@@ -494,7 +492,7 @@ const SkeletonRows = () => (
   </View>
 );
 
-const CELL = 20;
+const GRID_GAP = 6;
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   content: { padding: space[3], gap: space[4] },
@@ -503,8 +501,9 @@ const styles = StyleSheet.create({
   group: { gap: space[2] },
   milestone: { alignItems: 'center', gap: space[2] },
   streak: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
-  grid: { gap: space[1] },
-  gridRow: { flexDirection: 'row', gap: space[1] },
-  gridCell: { width: CELL, height: CELL, borderRadius: radius.badge },
+  // Frame S-STUDY-03 › Four weeks: cells share the width, 28 high, 6 apart.
+  grid: { gap: GRID_GAP },
+  gridRow: { flexDirection: 'row', gap: GRID_GAP },
+  gridCell: { flex: 1, height: 28, borderRadius: radius.input },
   historyError: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
 });

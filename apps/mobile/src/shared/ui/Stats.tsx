@@ -23,16 +23,20 @@ export function NumberText({
   variant = 'label',
   color = 'text-secondary',
   numberOfLines,
+  max = Infinity,
 }: {
   text: string;
   variant?: TypeVariant;
   color?: ColorToken;
   numberOfLines?: number;
+  // Only the first `max` numbers are figures; later ones (the fixed "15 phút") stay text.
+  max?: number;
 }) {
+  let seen = 0;
   return (
     <Text variant={variant} color={color} numberOfLines={numberOfLines}>
       {parts(text).map((p, i) =>
-        isNumber(p) ? (
+        isNumber(p) && seen++ < max ? (
           <Text key={i} variant="numeric-inline" color={color}>
             {p}
           </Text>
@@ -76,7 +80,8 @@ export function TodayProgress({
       accessibilityValue={{ text: a11y }}
       style={styles.progress}
     >
-      <NumberText text={label} />
+      {/* Frame C-37: only today's minutes is a figure, "15 phút" is the fixed goal. */}
+      <NumberText text={label} max={1} />
       <View style={[styles.track, { backgroundColor: colors['surface-2'] }]}>
         <View
           style={[
@@ -203,21 +208,33 @@ export function SessionRow({
       style={[styles.row, { borderBottomColor: colors.border }]}
     >
       <Icon as={kind === 'room' ? LampDesk : Timer} size="md" />
+      {/* Frame C-39: line 1 = title, "Đang học", minutes; line 2 one plain line cut at the end. */}
       <View style={styles.rowText}>
-        <Text variant="body" weight="600" numberOfLines={1}>
-          {title}
-        </Text>
-        <NumberText text={line} color="text-tertiary" />
-      </View>
-      {running && (
-        <View style={[styles.chip, { backgroundColor: colors['surface-2'] }]}>
-          <Icon as={LampDesk} size="xs" color="text-secondary" />
-          <Text variant="label" color="text-secondary">
-            {running}
+        <View style={styles.rowLine}>
+          <Text
+            variant="body"
+            weight="600"
+            numberOfLines={1}
+            style={styles.rowTitle}
+          >
+            {title}
           </Text>
+          {running && (
+            <View
+              style={[styles.chip, { backgroundColor: colors['surface-2'] }]}
+            >
+              <Icon as={LampDesk} size="xs" color="text-secondary" />
+              <Text variant="label" color="text-secondary">
+                {running}
+              </Text>
+            </View>
+          )}
+          <NumberText text={minutes} color="text-primary" />
         </View>
-      )}
-      <NumberText text={minutes} color="text-primary" />
+        <Text variant="label" color="text-tertiary" numberOfLines={1}>
+          {line}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -251,7 +268,10 @@ const styles = StyleSheet.create({
     paddingVertical: space[1],
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  rowText: { flex: 1, minWidth: 0 },
+  rowText: { flex: 1, minWidth: 0, gap: 2 },
+  rowLine: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
+  // The title gives way first (04 › month · 360: room name cut before the minutes).
+  rowTitle: { flex: 1, flexShrink: 1 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { type LayoutChangeEvent } from 'react-native';
+import { useRef, type ReactNode } from 'react';
+import { StyleSheet, type LayoutChangeEvent } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedStyle,
@@ -7,7 +7,6 @@ import Animated, {
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
 import {
   motion,
   radius,
@@ -40,32 +39,31 @@ function Row({
   children: ReactNode;
 }) {
   const { colors } = useTheme();
+  // On the JS thread: a role list is short, and the drop calls React state straight away.
   const gesture = usePanGesture({
+    runOnJS: true,
     enabled: draggable,
     activeOffsetY: [-space[1], space[1]],
     onActivate: () => {
-      'worklet';
       drag.active.set(index);
       drag.slot.set(index);
       drag.ty.set(0);
     },
     onUpdate: (e) => {
-      'worklet';
       drag.ty.set(e.translationY);
       const centers = drag.centers.get();
       const c = (centers[index] ?? 0) + e.translationY;
       let n = 0;
-      centers.forEach((x, j) => {
-        if (j !== index && x < c) n++;
-      });
+      for (let j = 0; j < centers.length; j++)
+        if (j !== index && centers[j]! < c) n++;
       drag.slot.set(n);
     },
-    onDeactivate: () => {
-      'worklet';
+    onFinalize: () => {
+      if (drag.active.get() !== index) return;
       const to = drag.slot.get();
       drag.active.set(-1);
       drag.ty.set(0);
-      scheduleOnRN(onDrop, index, to);
+      onDrop(index, to);
     },
   });
   // The dragged row follows the finger; the rows it passes slide by its height.
@@ -85,19 +83,24 @@ function Row({
       ],
     };
   });
-  const surface = colors['surface-3'];
-  const shadow = sheetShadow(colors);
-  const lifted = useAnimatedStyle(() =>
-    drag.active.get() === index
-      ? { backgroundColor: surface, ...shadow }
-      : { backgroundColor: 'transparent' },
-  );
+  // The lifted look (`surface-3`, sheet shadow) is a layer under the row that fades in:
+  // an animated style that swaps boxShadow back to none left it stuck on the device.
+  const lifted = useAnimatedStyle(() => ({
+    opacity: drag.active.get() === index ? 1 : 0,
+  }));
   // Gotcha (AGENTS.md): measure outside GestureDetector, which wraps its child.
   return (
-    <Animated.View
-      onLayout={onLayout}
-      style={[style, lifted, { borderRadius: radius.input }]}
-    >
+    <Animated.View onLayout={onLayout} style={style}>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          StyleSheet.absoluteFill,
+          styles.lifted,
+          { backgroundColor: colors['surface-3'] },
+          sheetShadow(colors),
+          lifted,
+        ]}
+      />
       <GestureDetector gesture={gesture}>
         <Animated.View collapsable={false}>{children}</Animated.View>
       </GestureDetector>
@@ -127,14 +130,15 @@ export function RoleReorderList<T>({
     centers: useSharedValue<number[]>([]),
     heights: useSharedValue<number[]>([]),
   };
+  // Gotcha: rows lay out in one batch, and a shared value read on the JS thread right
+  // after a set still gives the old array, so each row would wipe the others. Collect in a ref.
+  const layouts = useRef<{ y: number; h: number }[]>([]);
   const measured = (i: number) => (e: LayoutChangeEvent) => {
     const { y, height } = e.nativeEvent.layout;
-    const centers = [...drag.centers.get()];
-    const heights = [...drag.heights.get()];
-    centers[i] = y + height / 2;
-    heights[i] = height;
-    drag.centers.set(centers);
-    drag.heights.set(heights);
+    layouts.current[i] = { y, h: height };
+    const all = layouts.current.slice(0, items.length);
+    drag.centers.set(all.map((l) => (l ? l.y + l.h / 2 : 0)));
+    drag.heights.set(all.map((l) => l?.h ?? 0));
   };
   return (
     <>
@@ -153,3 +157,7 @@ export function RoleReorderList<T>({
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  lifted: { borderRadius: radius.input },
+});

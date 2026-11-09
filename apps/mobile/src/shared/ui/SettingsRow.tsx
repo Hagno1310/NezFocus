@@ -82,7 +82,12 @@ export function SettingsRow({
             : styles.keep,
         ]}
       >
-        <Text color={fg} weight="500" numberOfLines={stacked ? undefined : 1}>
+        {/* A switch row's label wraps (`permission-locked`: "Cho phép nhắc @Điều phối phòng học"). */}
+        <Text
+          color={fg}
+          weight="500"
+          numberOfLines={stacked || toggle ? undefined : 1}
+        >
           {label}
         </Text>
         {description && (

@@ -65,16 +65,15 @@ export function createIdleTimer(onChange: (afk: boolean) => void) {
 // The one place that sends op 3: my chosen status plus the afk of this device.
 export function createPresenceSync(client: Pick<GatewayClient, 'setPresence'>) {
   let afk = false;
-  const send = () =>
-    client.setPresence({ status: presenceStore.getState().mine, afk });
+  // afk alone never carries the status, so it cannot undo one picked on another device.
   const idle = createIdleTimer((next) => {
     afk = next;
-    send();
+    client.setPresence({ afk });
   });
   return {
     setMine(status: PresenceStatus) {
       presenceStore.setState({ mine: status });
-      send();
+      client.setPresence({ status, afk });
     },
     touch: () => idle.touch(),
     // Only counted in the foreground; the backend handles the background (DEC-34).

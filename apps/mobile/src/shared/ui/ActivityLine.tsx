@@ -14,16 +14,35 @@ import { phaseColor, phaseIcon } from './Focus';
 import { Icon, type IconComponent } from './Icon';
 import { Text, type AppTextProps } from './Text';
 
-// C-40: "còn N phút" moves every minute, never by the second.
-function useMinute(fixed?: Date) {
+// C-40: "còn N phút" moves every minute, never by the second, on the minute the phase end sets.
+function useMinute(endsAt: string | null, fixed?: Date) {
   const [now, setNow] = useState(() => fixed ?? new Date());
   useEffect(() => {
     if (fixed) return;
-    const id = setInterval(() => setNow(new Date()), 60_000);
-    return () => clearInterval(id);
-  }, [fixed]);
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      const t = Date.now();
+      const left = endsAt ? (Date.parse(endsAt) - t) % 60_000 : 0;
+      timer = setTimeout(
+        () => {
+          setNow(new Date());
+          tick();
+        },
+        (left > 0 ? left : 60_000 + left) + 50,
+      );
+    };
+    tick();
+    return () => clearTimeout(timer);
+  }, [endsAt, fixed]);
   return fixed ?? now;
 }
+
+const endOf = (a: StudyActivity) =>
+  a.kind === 'solo'
+    ? a.phase_ends_at
+    : a.kind === 'group_study'
+      ? (a.room?.phase_ends_at ?? null)
+      : null;
 
 // C-40 › Icon 14: the phase icon in its colour while running (and the wait, like PhaseBadge).
 function iconOf(a: StudyActivity): { as: IconComponent; color: ColorToken } {
@@ -67,7 +86,7 @@ export function ActivityLine({
   now?: Date; // fixed time, for the gallery
 }) {
   const { colors } = useTheme();
-  const at = useMinute(now);
+  const at = useMinute(endOf(activity), now);
   const icon = iconOf(activity);
   const label = activityLine(activityText(activity, 'full', at));
 
@@ -116,7 +135,7 @@ const styles = StyleSheet.create({
   first: { flexShrink: 1000, minWidth: 40 },
   last: { flexShrink: 1 },
   never: { flexShrink: 0 },
-  // Board C-40 · block: padding 12, lines 2 apart, icon 6 from the title.
+  // Board C-40 · block draws 12 / 2 / 6, off the space scale (DESIGN.md has no such steps).
   block: { padding: 12, gap: 2, borderRadius: radius.button },
   blockRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 });

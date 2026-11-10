@@ -195,7 +195,8 @@ export class GatewayConnection implements SessionSocket {
     }
     this.session = result.session;
     this.sessions.dispatch(this.session, 'RESUMED', {});
-    void this.presence.changed(auth.userId);
+    // Presence is best effort: a failed read must not take the process down.
+    this.presence.changed(auth.userId).catch(() => undefined);
   }
 
   private send(frame: { op: number; d: unknown }) {

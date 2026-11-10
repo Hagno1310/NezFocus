@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   type OnModuleDestroy,
   type OnModuleInit,
 } from '@nestjs/common';
@@ -50,6 +51,7 @@ export class PresenceService
 {
   private readonly users = new Map<bigint, UserPresence>();
   private sweep?: ReturnType<typeof setInterval>;
+  private readonly logger = new Logger('Presence');
 
   constructor(
     private readonly sessions: GatewaySessions,
@@ -79,18 +81,24 @@ export class PresenceService
   async update(session: GatewaySession, d: PresenceUpdate) {
     session.afk = d.afk;
     const me = await this.load(session.userId);
-    if (d.status !== me.settings.preferred) {
+    // An afk-only frame (no status) leaves the status picked on another device alone.
+    if (d.status && d.status !== me.settings.preferred) {
       me.settings = { ...me.settings, preferred: d.status };
       await this.repo.savePreferred(session.userId, d.status);
     }
     await this.changed(session.userId);
   }
 
+  // Fire and forget from SoloSessionService: a failure is logged, never thrown into the Solo action.
   soloChanged(userId: bigint, solo: SoloSession | null) {
-    void this.load(userId).then((me) => {
-      me.activity = soloActivity(solo);
-      return this.changed(userId);
-    });
+    this.load(userId)
+      .then((me) => {
+        me.activity = soloActivity(solo);
+        return this.changed(userId);
+      })
+      .catch((err: unknown) =>
+        this.logger.error(`solo ${userId}: ${String(err)}`),
+      );
   }
 
   async settingsChanged(userId: bigint) {
@@ -100,15 +108,34 @@ export class PresenceService
   }
 
   async changed(userId: bigint) {
+    if (this.unchanged(userId)) return this.forgetIfGone(userId);
+    const receivers = await this.repo.receivers(userId);
+    // Computed again after the await: a newer call may have sent meanwhile, and a stale event must not
+    // go out after it.
     const me = this.users.get(userId);
-    if (!me) return;
+    if (!me || this.unchanged(userId)) return this.forgetIfGone(userId);
     const event = this.event(userId);
-    const text = JSON.stringify(event);
-    if (text === me.sent) return;
-    me.sent = text;
-    for (const receiver of await this.repo.receivers(userId))
+    me.sent = JSON.stringify(event);
+    for (const receiver of receivers)
       await this.sessions.dispatchToUser(receiver, 'PRESENCE_UPDATE', event);
-    if (event.status === 'offline' && !me.activity) this.users.delete(userId);
+    this.forgetIfGone(userId);
+  }
+
+  private unchanged(userId: bigint) {
+    const me = this.users.get(userId);
+    return !me || JSON.stringify(this.event(userId)) === me.sent;
+  }
+
+  // No session left, no Solo, offline already announced: nothing to keep. Invisible but connected stays.
+  private forgetIfGone(userId: bigint) {
+    const me = this.users.get(userId);
+    if (
+      me &&
+      !me.activity &&
+      me.sent === JSON.stringify(OFFLINE(userId)) &&
+      !this.sessions.devicesOf(userId).length
+    )
+      this.users.delete(userId);
   }
 
   private event(userId: bigint): PresenceEvent {
@@ -129,6 +156,8 @@ export class PresenceService
     };
   }
 
+  // ponytail: after a backend restart a running Solo shows again at its next change (≤ one phase);
+  // read SoloSessionService.current() here if that gap matters.
   private async load(userId: bigint): Promise<UserPresence> {
     let me = this.users.get(userId);
     if (!me) {
@@ -145,6 +174,9 @@ export class PresenceService
   }
 
   private async sweepAll() {
-    for (const userId of [...this.users.keys()]) await this.changed(userId);
+    for (const userId of [...this.users.keys()])
+      await this.changed(userId).catch((err: unknown) =>
+        this.logger.error(`sweep ${userId}: ${String(err)}`),
+      );
   }
 }

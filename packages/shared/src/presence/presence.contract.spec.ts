@@ -29,6 +29,10 @@ describe('op 3 PRESENCE_UPDATE (REQ-AUTH-05)', () => {
     expect(f.d).toEqual({ status: 'online', afk: true });
   });
 
+  it('an afk-only frame carries no status, so it never overwrites the one picked on another device', () => {
+    expect(PresenceUpdate.parse({ afk: true })).toEqual({ afk: true });
+  });
+
   it('rejects an unknown status, and offline (only others see offline)', () => {
     expect(PresenceUpdate.safeParse({ status: 'busy' }).success).toBe(false);
     expect(PresenceUpdate.safeParse({ status: 'offline' }).success).toBe(false);

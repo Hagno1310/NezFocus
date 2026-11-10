@@ -378,35 +378,46 @@ describe('RemoteGatewayClient', () => {
   });
 
   describe('presence (REQ-AUTH-05)', () => {
-    it('sends op 3 once connected, and again after a RESUME', async () => {
+    it('sends op 3 at once when connected', async () => {
       const client = await connected();
       client.setPresence({ status: 'invisible', afk: false });
       expect(last().sent.at(-1)).toEqual({
         op: 3,
         d: { status: 'invisible', afk: false },
       });
+    });
+
+    it('a status picked while offline goes out after READY; a sent one is not resent', async () => {
+      const client = createGatewayClient(deps);
+      client.setPresence({ status: 'dnd', afk: false });
+      await connected(client);
+      expect(last().sent.filter((f) => f.op === 3)).toEqual([
+        { op: 3, d: { status: 'dnd', afk: false } },
+      ]);
       last().drop();
       await vi.advanceTimersByTimeAsync(1000);
       last().push({ op: 10, d: { heartbeat_interval: INTERVAL } });
       await flush();
       last().push({ op: 0, s: 2, t: 'RESUMED', d: {} });
-      expect(last().sent.at(-1)).toEqual({
-        op: 3,
-        d: { status: 'invisible', afk: false },
-      });
+      expect(last().ops()).not.toContain(3);
     });
 
-    it('waits for READY when set before connecting, then sends it', async () => {
+    it('afk is told again to a new session (it starts not afk)', async () => {
+      const client = await connected();
+      client.setPresence({ afk: true });
+      last().drop();
+      await vi.advanceTimersByTimeAsync(1000);
+      last().push({ op: 10, d: { heartbeat_interval: INTERVAL } });
+      await flush();
+      last().push({ op: 0, s: 2, t: 'RESUMED', d: {} });
+      expect(last().sent.at(-1)).toEqual({ op: 3, d: { afk: true } });
+    });
+
+    it('stop() forgets it: the next account never inherits the status', async () => {
       const client = createGatewayClient(deps);
-      client.setPresence({ status: 'online', afk: true });
+      client.setPresence({ status: 'invisible', afk: true });
+      client.stop();
       await connected(client);
-      expect(last().sent.filter((f) => f.op === 3)).toEqual([
-        { op: 3, d: { status: 'online', afk: true } },
-      ]);
-    });
-
-    it('sends nothing until the app sets a presence (the backend keeps the saved one)', async () => {
-      await connected();
       expect(last().ops()).not.toContain(3);
     });
   });

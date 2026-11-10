@@ -187,6 +187,41 @@ describe('PresenceService (REQ-AUTH-05)', () => {
     expect(lastSeenBy(2n)?.activity?.kind).toBe('solo');
   });
 
+  it('an afk-only frame from another device keeps the status picked elsewhere (Invisible stays)', async () => {
+    await connect(2n);
+    const a = await connect(1n);
+    const b = await connect(1n);
+    await presence.update(a.session, { status: 'invisible', afk: false });
+    await presence.update(b.session, { afk: true });
+    expect(lastSeenBy(2n)?.status).toBe('offline');
+    expect(saved).toEqual([[1n, 'invisible']]);
+  });
+
+  it('a slower, older change never lands after a newer one', async () => {
+    await connect(2n);
+    const { session } = await connect(1n);
+    let release!: () => void;
+    const slow = new Promise<void>((r) => (release = r));
+    const receivers = repo.receivers;
+    let first = true;
+    repo.receivers = async (u: bigint) => {
+      if (first) {
+        first = false;
+        await slow;
+      }
+      return receivers(u);
+    };
+    session.afk = true;
+    const older = presence.changed(1n); // computes idle, waits on the slow query
+    session.afk = false;
+    sessions.setAppState(session, 'foreground');
+    await presence.update(session, { afk: false }); // back to online, sent at once
+    release();
+    await older;
+    repo.receivers = receivers;
+    expect(lastSeenBy(2n)?.status).toBe('online');
+  });
+
   it('sends nothing when nothing visible changed', async () => {
     await connect(2n);
     const { session } = await connect(1n);

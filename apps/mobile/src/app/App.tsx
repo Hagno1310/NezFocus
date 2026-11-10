@@ -111,7 +111,8 @@ export default function App() {
       .catch(() => undefined);
   }, []);
   return (
-    // REQ-AUTH-05 AC1: any touch anywhere restarts the 10 idle minutes (capture, never claims it).
+    // REQ-AUTH-05 AC1: any touch anywhere restarts the 10 idle minutes (bubbles up, never claims it).
+    // ponytail: typing without touching (soft keyboard) is not seen; add a TextInput onChangeText hook if 10 min of pure typing matters.
     <GestureHandlerRootView
       style={{ flex: 1 }}
       onTouchStart={presenceSync.touch}

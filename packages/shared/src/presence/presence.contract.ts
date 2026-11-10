@@ -12,7 +12,7 @@ export type VisibleStatus = z.infer<typeof VisibleStatus>;
 
 // SRS 5.4 op 3 (chốt 10/11/2026): afk = no touch for 10 min (AUTH-05 AC1), so auto Vắng mặt never overwrites the manual status.
 export const PresenceUpdate = z.object({
-  status: PresenceStatus,
+  status: PresenceStatus.optional(), // only when the user picks one; the idle timer sends afk alone
   afk: z.boolean().default(false),
 });
 export type PresenceUpdate = z.infer<typeof PresenceUpdate>;

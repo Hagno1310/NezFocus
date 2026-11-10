@@ -114,14 +114,14 @@ describe('presence sync (op 3)', () => {
     expect(sent.at(-1)).toEqual({ status: 'invisible', afk: false });
   });
 
-  it('AC1: 10 minutes without a touch in the foreground → afk with my status kept', () => {
+  it('AC1: 10 minutes without a touch in the foreground → afk alone, never my status (another device may have changed it)', () => {
     const { sent, sync } = make();
     sync.setMine('dnd');
     sync.setForeground(true);
     vi.advanceTimersByTime(IDLE_AFTER_MS);
-    expect(sent.at(-1)).toEqual({ status: 'dnd', afk: true });
+    expect(sent.at(-1)).toEqual({ afk: true });
     sync.touch();
-    expect(sent.at(-1)).toEqual({ status: 'dnd', afk: false });
+    expect(sent.at(-1)).toEqual({ afk: false });
   });
 
   it('does not send for a touch that changes nothing', () => {

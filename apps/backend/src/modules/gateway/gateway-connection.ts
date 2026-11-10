@@ -3,6 +3,9 @@ import {
   GatewayCloseCode,
   GatewayOp,
   type CurrentUser,
+  type PresenceEvent,
+  type PresenceStatus,
+  type PresenceUpdate,
   type ServerSummary,
   type SessionEndReason,
 } from '@nezfocus/shared';
@@ -27,6 +30,21 @@ export type Authenticate = (token: string) => Promise<
 
 // READY's server list (REQ-SRV-01), read when IDENTIFY succeeds.
 export type LoadServers = (userId: bigint) => Promise<ServerSummary[]>;
+
+// REQ-AUTH-05, implemented by PresenceService; the default keeps a connection test free of it.
+export interface PresenceHooks {
+  ready(
+    userId: bigint,
+  ): Promise<{ preferred_status: PresenceStatus; presences: PresenceEvent[] }>;
+  update(session: GatewaySession, d: PresenceUpdate): Promise<void>;
+  changed(userId: bigint): Promise<void>;
+}
+
+const noPresence: PresenceHooks = {
+  ready: async () => ({ preferred_status: 'online', presences: [] }),
+  update: async () => {},
+  changed: async () => {},
+};
 
 export interface RawSocket {
   send(text: string): void;
@@ -56,6 +74,7 @@ export class GatewayConnection implements SessionSocket {
     private readonly sessions: GatewaySessions,
     private readonly authenticate: Authenticate,
     private readonly loadServers: LoadServers = async () => [],
+    private readonly presence: PresenceHooks = noPresence,
   ) {}
 
   open() {
@@ -107,6 +126,7 @@ export class GatewayConnection implements SessionSocket {
       );
     }
     const frame = parsed.data;
+    if (this.session) this.sessions.touch(this.session);
 
     if (frame.op === GatewayOp.HEARTBEAT) {
       this.armHeartbeat();
@@ -124,7 +144,8 @@ export class GatewayConnection implements SessionSocket {
             GatewayCloseCode.AUTHENTICATION_FAILED,
             auth.reason ?? '',
           );
-        if (frame.op === GatewayOp.IDENTIFY) await this.identify(auth);
+        if (frame.op === GatewayOp.IDENTIFY)
+          await this.identify(auth, frame.d.presence?.status);
         else this.resume(auth, BigInt(frame.d.session_id), frame.d.seq);
       } finally {
         this.identifying = false;
@@ -133,20 +154,30 @@ export class GatewayConnection implements SessionSocket {
     }
     if (!this.session) return this.close(GatewayCloseCode.NOT_AUTHENTICATED);
 
-    if (frame.op === GatewayOp.APP_STATE)
+    if (frame.op === GatewayOp.APP_STATE) {
       this.sessions.setAppState(this.session, frame.d.state);
-    // PRESENCE_UPDATE (P1-B4 #13), VOICE_STATE_UPDATE (P3), FOCUS_HEARTBEAT, SUBSCRIBE (P2-B1 #18): not yet.
+      return this.presence.changed(this.session.userId);
+    }
+    if (frame.op === GatewayOp.PRESENCE_UPDATE)
+      return this.presence.update(this.session, frame.d);
+    // VOICE_STATE_UPDATE (P3), FOCUS_HEARTBEAT, SUBSCRIBE (P2-B1 #18): not yet.
   }
 
-  private async identify(auth: Authenticated) {
+  private async identify(auth: Authenticated, status?: PresenceStatus) {
     const servers = await this.loadServers(auth.userId);
+    const presence = await this.presence.ready(auth.userId);
     if (this.isClosed) return;
     this.session = this.sessions.create(auth.userId, auth.authSessionId, this);
     this.sessions.dispatch(this.session, 'READY', {
       session_id: this.session.id.toString(),
       user: auth.user,
       servers,
+      ...presence,
     });
+    // SRS 5.4: IDENTIFY may carry the status the app wants (a new login keeps the saved one).
+    if (status)
+      await this.presence.update(this.session, { status, afk: false });
+    else await this.presence.changed(auth.userId);
   }
 
   private resume(auth: Authenticated, sessionId: bigint, seq: number) {
@@ -164,6 +195,8 @@ export class GatewayConnection implements SessionSocket {
     }
     this.session = result.session;
     this.sessions.dispatch(this.session, 'RESUMED', {});
+    // Presence is best effort: a failed read must not take the process down.
+    this.presence.changed(auth.userId).catch(() => undefined);
   }
 
   private send(frame: { op: number; d: unknown }) {

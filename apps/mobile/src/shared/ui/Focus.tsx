@@ -1,5 +1,5 @@
 import type { FocusPhase } from '@nezfocus/shared';
-import { Coffee, LampDesk, Moon, Pause } from 'lucide-react-native';
+import { Coffee, LampDesk, Pause } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
@@ -11,7 +11,7 @@ import {
   useTheme,
   type ColorToken,
 } from '../theme';
-import { Icon, type IconComponent } from './Icon';
+import { Moon, Icon, type IconComponent } from './Icon';
 import { arcDash, clockText } from './logic';
 import { Text } from './Text';
 
@@ -30,7 +30,7 @@ export const phaseRoomColor: Record<FocusPhase, ColorToken> = {
   long_break: 'phase-long-room',
 };
 
-const phaseIcon: Record<FocusPhase, IconComponent> = {
+export const phaseIcon: Record<FocusPhase, IconComponent> = {
   focus: LampDesk,
   short_break: Coffee,
   long_break: Moon,

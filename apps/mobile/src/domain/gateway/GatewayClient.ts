@@ -1,4 +1,4 @@
-import type { AppState } from '@nezfocus/shared';
+import type { AppState, PresenceUpdate } from '@nezfocus/shared';
 
 // SRS 7.3: the app keeps one Gateway connection; screens get events through gatewayStore hooks.
 export interface GatewayClient {
@@ -6,4 +6,5 @@ export interface GatewayClient {
   stop(): void; // also forgets the session: the next start() IDENTIFYs
   setAppState(state: AppState['state']): void; // DEC-34
   setOnline(online: boolean): void;
+  setPresence(presence: PresenceUpdate): void; // op 3, REQ-AUTH-05; resent after each READY / RESUMED
 }

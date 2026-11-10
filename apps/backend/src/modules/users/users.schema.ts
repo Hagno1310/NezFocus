@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   bigint,
+  boolean,
   check,
   pgTable,
   text,
@@ -45,5 +46,8 @@ export const userSettings = pgTable('user_settings', {
   timezone: varchar({ length: 64 }).notNull().default('Asia/Ho_Chi_Minh'), // IANA
   timezoneChangedAt: timestamp({ withTimezone: true }), // Complete account does not set it
   locale: varchar({ length: 8 }).notNull().default('vi'),
+  // REQ-AUTH-05 (SRS 8.2): written by the Gateway on op 3; online | idle | dnd | invisible.
+  preferredStatus: varchar({ length: 12 }).notNull().default('online'),
+  showStudyActivity: boolean().notNull().default(true), // CR-24 "Hiện hoạt động học"
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });

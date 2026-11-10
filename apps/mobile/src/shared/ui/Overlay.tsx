@@ -40,6 +40,7 @@ import { dialogLayout } from './logic';
 import { Text } from './Text';
 import { exitMs, fadeIn, fadeOut, sheetEnter, sheetExit } from './transitions';
 import { overlayClosed, overlayOpened } from './Toast';
+import { interacted } from '../interaction';
 
 // Drag distance / speed that closes a sheet on release.
 const DISMISS_DISTANCE = 80;
@@ -90,7 +91,8 @@ function Overlay({
       onRequestClose={close}
     >
       {/* Gotcha: a Modal is a separate native root, so gestures need their own root view. */}
-      <GestureHandlerRootView style={styles.flex}>
+      {/* A Modal is its own window: touches never reach App's root, so report them here too. */}
+      <GestureHandlerRootView style={styles.flex} onTouchStart={interacted}>
         <KeyboardAvoidingView behavior="padding" style={styles.flex}>
           {visible && (
             <Animated.View

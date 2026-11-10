@@ -6,6 +6,8 @@ import {
   SessionEndReason,
   parseDispatch,
   type AppState,
+  type PresenceStatus,
+  type PresenceUpdate,
   type ClientFrame,
   type Identify,
 } from '@nezfocus/shared';
@@ -47,6 +49,13 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
   let seq = 0;
   let attempt = 0;
   let appState: AppState['state'] = 'foreground';
+  // Op 3 the backend must still get: a status picked while offline, and afk (a new session starts not afk).
+  let pendingStatus: PresenceStatus | undefined;
+  let afk = false;
+  const sendPresence = () => {
+    send({ op: GatewayOp.PRESENCE_UPDATE, d: { status: pendingStatus, afk } });
+    pendingStatus = undefined;
+  };
   let paused = false; // closed on purpose in the background
   let identified = false;
   let awaitingAck = false;
@@ -173,6 +182,7 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
           setStatus('connected');
           if (appState === 'background')
             send({ op: GatewayOp.APP_STATE, d: { state: appState } });
+          if (pendingStatus || afk) sendPresence();
         }
         emitGatewayEvent(event);
       }
@@ -232,6 +242,8 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
     detach(NORMAL_CLOSURE);
     forgetSession();
     attempt = 0;
+    pendingStatus = undefined; // the next account must not inherit this one's status
+    afk = false;
     setStatus('idle');
   }
 
@@ -271,5 +283,11 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
     }
   }
 
-  return { start, stop, setAppState, setOnline };
+  function setPresence(next: PresenceUpdate) {
+    if (next.status) pendingStatus = next.status;
+    afk = next.afk;
+    if (identified) sendPresence();
+  }
+
+  return { start, stop, setAppState, setOnline, setPresence };
 }

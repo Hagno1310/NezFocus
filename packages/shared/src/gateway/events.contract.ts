@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { CurrentUser } from '../auth/auth.contract.js';
 import {
+  PresenceEvent,
+  PresenceStatus,
+} from '../presence/presence.contract.js';
+import {
   ChannelDeleted,
   ChannelResponse,
 } from '../servers/channel.contract.js';
@@ -19,6 +23,8 @@ export const Ready = z.object({
   session_id: SnowflakeId,
   user: CurrentUser,
   servers: z.array(ServerSummary), // REQ-SRV-01: oldest joined first (S-HOME-02 rail order)
+  preferred_status: PresenceStatus, // REQ-AUTH-05: my chosen status, Invisible included
+  presences: z.array(PresenceEvent), // people whose presence I receive (AUTH-05 AC1), as they see now
 });
 export type Ready = z.infer<typeof Ready>;
 
@@ -28,6 +34,7 @@ export const DispatchEvents = {
   RESUMED: z.object({}),
   USER_UPDATE: CurrentUser,
   SOLO_SESSION_UPDATE: SoloSessionResponse, // REQ-STUDY-10: every change, to every session of the user
+  PRESENCE_UPDATE: PresenceEvent, // REQ-AUTH-05: to the people who receive this user's presence, activity filtered per receiver
   STREAK_UPDATE: StreakState, // REQ-STUDY-03: when the streak or today's minutes change, to every session of the user
   SERVER_CREATE: ServerResponse, // REQ-SRV-01: to every session of the creator
   SERVER_UPDATE: ServerSummary, // to the members

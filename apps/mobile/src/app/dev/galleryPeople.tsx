@@ -8,6 +8,13 @@ import {
   PresenceDot,
   type AvatarSize,
 } from '../../shared/ui/People';
+import type { StudyActivity } from '@nezfocus/shared';
+import { ActivityLine } from '../../shared/ui/ActivityLine';
+import { Button } from '../../shared/ui/Button';
+import { Text } from '../../shared/ui/Text';
+import { useStore } from 'zustand';
+import { presenceStore } from '../../domain/presence/presence';
+import { useMyStatus } from '../../features/presence/hooks/usePresence';
 import { SettingsRow } from '../../shared/ui/SettingsRow';
 import { Caption, Row, Section } from './kit';
 
@@ -130,11 +137,145 @@ function Settings() {
   );
 }
 
+// C-40 board rows, at a fixed 21:47 so "còn N phút" reads as drawn.
+const AT = new Date('2026-10-18T14:47:00Z');
+const inMin = (m: number) => new Date(AT.getTime() + m * 60_000).toISOString();
+const room = (
+  phase: 'focus' | 'short_break' | 'long_break',
+  minutes: number,
+): StudyActivity => ({
+  kind: 'group_study',
+  room: {
+    channel_id: '9',
+    channel_name: 'Phòng học im lặng',
+    phase,
+    state: 'running',
+    phase_ends_at: inMin(minutes),
+  },
+});
+const ACTIVITIES: StudyActivity[] = [
+  room('focus', 18),
+  room('short_break', 4),
+  room('long_break', 12),
+  {
+    kind: 'group_study',
+    room: {
+      channel_id: '9',
+      channel_name: 'Phòng học im lặng',
+      phase: 'focus',
+      state: 'paused',
+      phase_ends_at: null,
+    },
+  },
+  {
+    kind: 'voice',
+    room: {
+      channel_id: '8',
+      channel_name: 'Phòng thảo luận nhóm',
+      study_room: true,
+    },
+  },
+  { kind: 'group_study', room: null },
+  { kind: 'voice', room: null },
+  { kind: 'solo', phase: 'focus', state: 'running', phase_ends_at: inMin(105) },
+  { kind: 'solo', phase: 'short_break', state: 'waiting', phase_ends_at: null },
+  { kind: 'solo', phase: 'focus', state: 'paused', phase_ends_at: null },
+];
+const longRoom: StudyActivity = {
+  kind: 'group_study',
+  room: {
+    channel_id: '9',
+    channel_name: 'Phòng ôn thi cuối kỳ Giải tích 2 của lớp D22',
+    phase: 'focus',
+    state: 'running',
+    phase_ends_at: inMin(105),
+  },
+};
+
+function Activities() {
+  return (
+    <>
+      <Caption>short · DMRow, MemberRow</Caption>
+      {ACTIVITIES.map((a, i) => (
+        <ActivityLine key={i} activity={a} form="short" now={AT} />
+      ))}
+      <Caption>full · FriendRow, header DM</Caption>
+      {ACTIVITIES.map((a, i) => (
+        <ActivityLine key={i} activity={a} form="full" now={AT} />
+      ))}
+      <Caption>block · S-HOME-10</Caption>
+      <ActivityLine activity={ACTIVITIES[0]!} form="block" now={AT} />
+      <ActivityLine activity={ACTIVITIES[7]!} form="block" now={AT} />
+      <Caption>
+        DMRow ở drawer 262 (máy 360): short; tên phòng cắt trước, "còn 105 phút"
+        đủ
+      </Caption>
+      <View style={{ width: 190 }}>
+        <ActivityLine activity={longRoom} form="short" now={AT} />
+        <ActivityLine
+          activity={{
+            kind: 'voice',
+            room: {
+              channel_id: '9',
+              channel_name: 'Phòng ôn thi cuối kỳ Giải tích 2 của lớp D22',
+              study_room: true,
+            },
+          }}
+          form="short"
+          now={AT}
+        />
+        <ActivityLine activity={ACTIVITIES[7]!} form="short" now={AT} />
+      </View>
+    </>
+  );
+}
+
+// P1-B4.3 debug (dev only): what this phone receives and sends, until S-ME-02 uses the hooks.
+function LivePresence() {
+  const others = useStore(presenceStore, (s) => s.others);
+  const [mine, setMine] = useMyStatus();
+  return (
+    <>
+      <Caption>{`Của mình: ${mine}`}</Caption>
+      <Row>
+        {(['online', 'idle', 'dnd', 'invisible'] as const).map((s) => (
+          <Button
+            key={s}
+            size="S"
+            variant={s === mine ? 'primary' : 'secondary'}
+            label={s}
+            onPress={() => setMine(s)}
+          />
+        ))}
+      </Row>
+      <Caption>Đang nhận (READY + PRESENCE_UPDATE)</Caption>
+      {Object.values(others).length === 0 && (
+        <Text color="text-secondary">Không ai trực tuyến</Text>
+      )}
+      {Object.values(others).map((p) => (
+        <View key={p.user_id} style={{ gap: 4 }}>
+          <Row>
+            <PresenceDot status={p.status} />
+            <Text>{`user ${p.user_id} · ${p.status}`}</Text>
+          </Row>
+          {p.activity && <ActivityLine activity={p.activity} form="full" />}
+        </View>
+      ))}
+    </>
+  );
+}
+
 export function PeopleSections() {
   return (
     <>
       <Section title="C-13 · Avatar, PresenceDot, Badge">
         <People />
+      </Section>
+      <Section title="Presence (dev)">
+        <LivePresence />
+      </Section>
+      <Section title="C-40 · ActivityLine">
+        <Activities />
       </Section>
       <Section title="C-15 · SettingsRow">
         <Settings />

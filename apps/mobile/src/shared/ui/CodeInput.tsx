@@ -11,6 +11,7 @@ import {
 } from '../theme';
 import { CODE_LENGTH, nextCode } from './logic';
 import { Text } from './Text';
+import { interacted } from '../interaction';
 
 // Digit (26) is capped so "8" still fits the 48-wide cell at 200% (C-24: cells stay on one row).
 const DIGIT_MAX_SCALE = 1.5;
@@ -93,6 +94,7 @@ export function CodeInput({
       <TextInput
         value={value}
         onChangeText={(raw) => {
+          interacted();
           const code = nextCode(value, raw, error);
           onChange(code);
           if (code.length === CODE_LENGTH) onComplete?.(code);

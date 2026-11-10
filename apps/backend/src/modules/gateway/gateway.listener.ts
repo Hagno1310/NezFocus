@@ -19,6 +19,7 @@ import { ServersService } from '../servers/servers.service.js';
 import { UsersRepository } from '../users/users.repository.js';
 import { GatewayConnection, type Authenticate } from './gateway-connection.js';
 import { GatewaySessions } from './gateway-sessions.js';
+import { PresenceService } from './presence.service.js';
 
 // SRS 7.1.1: the Gateway shares the HTTP server of the single backend process.
 @Injectable()
@@ -34,6 +35,7 @@ export class GatewayListener
     private readonly authSessions: SessionRepository,
     private readonly users: UsersRepository,
     private readonly servers: ServersService,
+    private readonly presence: PresenceService,
   ) {}
 
   onApplicationBootstrap() {
@@ -52,6 +54,7 @@ export class GatewayListener
         this.sessions,
         this.authenticate,
         (userId) => this.servers.summariesFor(userId),
+        this.presence,
       );
       ws.on('message', (data, isBinary) => {
         // A binary frame is not JSON text: receive('') closes with 4002.

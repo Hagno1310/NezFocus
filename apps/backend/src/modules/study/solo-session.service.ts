@@ -10,6 +10,7 @@ import { AppError } from '../../common/app-error.js';
 import { Clock } from '../../common/clock.js';
 import { SnowflakeGenerator } from '../../common/snowflake.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
+import { PresenceSink } from '../gateway/presence.service.js';
 import {
   advance,
   applyAction,
@@ -53,6 +54,7 @@ export class SoloSessionService {
     private readonly events: EventPublisher,
     private readonly scheduler: SoloScheduler,
     private readonly streaks: StreakService,
+    private readonly presence: PresenceSink,
   ) {}
 
   async start(userId: bigint, config: CycleConfig): Promise<SoloView> {
@@ -150,11 +152,10 @@ export class SoloSessionService {
 
   // SRS 7.3.6 step 3: every device of the user reschedules its notifications from this.
   private async announce(record: SoloRecord, now: Date) {
-    await this.events.toUser(
-      record.userId,
-      'SOLO_SESSION_UPDATE',
-      toSoloResponse({ record, now }),
-    );
+    const response = toSoloResponse({ record, now });
+    await this.events.toUser(record.userId, 'SOLO_SESSION_UPDATE', response);
+    // AUTH-05 CR-24: friends and server members see "Đang học một mình".
+    this.presence.soloChanged(record.userId, response.solo_session);
     const at = deadline(record.state);
     if (at)
       await this.scheduler.schedule(record.id, at).catch((err: unknown) =>

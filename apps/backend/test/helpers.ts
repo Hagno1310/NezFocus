@@ -165,5 +165,6 @@ export async function connectGateway(app: INestApplication, token: string) {
       };
       look();
     });
-  return { dispatches, next, close: () => ws.close() };
+  const send = (op: number, d: unknown) => ws.send(JSON.stringify({ op, d }));
+  return { dispatches, next, send, close: () => ws.close() };
 }

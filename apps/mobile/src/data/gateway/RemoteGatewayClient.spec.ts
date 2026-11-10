@@ -73,7 +73,13 @@ async function connected(client = createGatewayClient(deps)) {
     op: 0,
     s: 1,
     t: 'READY',
-    d: { session_id: '42', user, servers: [] },
+    d: {
+      session_id: '42',
+      user,
+      servers: [],
+      preferred_status: 'online',
+      presences: [],
+    },
   });
   return client;
 }
@@ -106,7 +112,13 @@ describe('RemoteGatewayClient', () => {
       op: 0,
       s: 1,
       t: 'READY',
-      d: { session_id: '42', user, servers: [] },
+      d: {
+        session_id: '42',
+        user,
+        servers: [],
+        preferred_status: 'online',
+        presences: [],
+      },
     });
     expect(gatewayStore.getState().status).toBe('connected');
   });
@@ -363,5 +375,50 @@ describe('RemoteGatewayClient', () => {
     last().push({ op: 10, d: { heartbeat_interval: INTERVAL } });
     await flush();
     expect(last().sent[0].op).toBe(2);
+  });
+
+  describe('presence (REQ-AUTH-05)', () => {
+    it('sends op 3 at once when connected', async () => {
+      const client = await connected();
+      client.setPresence({ status: 'invisible', afk: false });
+      expect(last().sent.at(-1)).toEqual({
+        op: 3,
+        d: { status: 'invisible', afk: false },
+      });
+    });
+
+    it('a status picked while offline goes out after READY; a sent one is not resent', async () => {
+      const client = createGatewayClient(deps);
+      client.setPresence({ status: 'dnd', afk: false });
+      await connected(client);
+      expect(last().sent.filter((f) => f.op === 3)).toEqual([
+        { op: 3, d: { status: 'dnd', afk: false } },
+      ]);
+      last().drop();
+      await vi.advanceTimersByTimeAsync(1000);
+      last().push({ op: 10, d: { heartbeat_interval: INTERVAL } });
+      await flush();
+      last().push({ op: 0, s: 2, t: 'RESUMED', d: {} });
+      expect(last().ops()).not.toContain(3);
+    });
+
+    it('afk is told again to a new session (it starts not afk)', async () => {
+      const client = await connected();
+      client.setPresence({ afk: true });
+      last().drop();
+      await vi.advanceTimersByTimeAsync(1000);
+      last().push({ op: 10, d: { heartbeat_interval: INTERVAL } });
+      await flush();
+      last().push({ op: 0, s: 2, t: 'RESUMED', d: {} });
+      expect(last().sent.at(-1)).toEqual({ op: 3, d: { afk: true } });
+    });
+
+    it('stop() forgets it: the next account never inherits the status', async () => {
+      const client = createGatewayClient(deps);
+      client.setPresence({ status: 'invisible', afk: true });
+      client.stop();
+      await connected(client);
+      expect(last().ops()).not.toContain(3);
+    });
   });
 });

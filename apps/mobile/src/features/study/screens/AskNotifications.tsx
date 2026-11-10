@@ -12,7 +12,7 @@ import { notificationPrompt } from '../hooks/useSoloAlerts';
 export function AskNotifications({ onStarted }: { onStarted: () => void }) {
   const { t } = useTranslation();
   const { top } = useSafeAreaInsets();
-  const cycle = useLastCycle((s) => s.cycle);
+  const cycle = useLastCycle((s) => s.pending ?? s.cycle);
   const start = useStartSolo();
   const go = async (allow: boolean) => {
     await notificationPrompt.answer(allow);

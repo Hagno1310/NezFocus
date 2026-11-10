@@ -2,6 +2,7 @@ import type { SoloAction } from '@nezfocus/shared';
 import { useNavigation } from '@react-navigation/native';
 import {
   BellOff,
+  Flame,
   Pause,
   Play,
   SkipForward,
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useStudyStats } from '../hooks/useStudyStats';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { useStore } from 'zustand';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
@@ -38,7 +40,7 @@ import {
   openExactAlarmSettings,
   useNotificationAccess,
 } from '../hooks/useSoloAlerts';
-import { cycleText, durationText, hhmm } from '../format';
+import { cycleText, hhmm, minutesText } from '../format';
 import {
   useCloseSolo,
   useNow,
@@ -247,6 +249,8 @@ function Ended({
 }) {
   const { t } = useTranslation();
   const { kind, minutes } = ending;
+  // STREAK_UPDATE after the last credit refreshes this (useStudyStatsSync).
+  const streak = useStudyStats('week').data?.current_streak_days;
   const tooShort = kind === 'too-short';
   const hours = Math.floor(minutes / 60);
   const title =
@@ -259,8 +263,8 @@ function Ended({
     tooShort && t('study.ended.tooShortNote'),
     ending.days &&
       t('study.ended.days', {
-        yesterday: durationText(t, ending.days.yesterday),
-        today: durationText(t, ending.days.today),
+        yesterday: minutesText(t, ending.days.yesterday),
+        today: minutesText(t, ending.days.today),
       }),
     ending.hitCap && t('study.ended.cap'),
     kind === 'expired' &&
@@ -320,7 +324,14 @@ function Ended({
             {n}
           </Text>
         ))}
-        {/* ponytail: "Chuỗi {N} ngày liên tiếp" hidden until streaks exist, P1-B3.2 (#85). */}
+        {!tooShort && !!streak && (
+          <View style={styles.row}>
+            <Icon as={Flame} size="sm" color="text-secondary" />
+            <Text variant="body-sm" color="text-secondary">
+              {t('study.summaryStreak', { days: streak })}
+            </Text>
+          </View>
+        )}
         {kind === 'stopped-other-device' && (
           <View style={styles.row}>
             <Icon as={Smartphone} size="sm" color="text-secondary" />

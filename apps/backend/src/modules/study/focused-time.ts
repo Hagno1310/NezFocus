@@ -11,7 +11,7 @@ export type DayCredit = { localDate: string; seconds: number; capped: boolean };
 
 const formatters = new Map<string, Intl.DateTimeFormat>();
 // en-CA formats as YYYY-MM-DD, the shape of a Postgres DATE.
-function localDate(t: number, timezone: string) {
+export function localDate(t: number, timezone: string) {
   let f = formatters.get(timezone);
   if (!f) {
     f = new Intl.DateTimeFormat('en-CA', { timeZone: timezone });

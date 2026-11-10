@@ -33,3 +33,13 @@ export const dailyStudyStats = pgTable(
 );
 
 export type DailyStudyStatsRow = typeof dailyStudyStats.$inferSelect;
+
+// SRS 8.2 `user_study_streaks` (REQ-STUDY-03): the run ending at last_qualified_date; read-time decides if it still counts.
+export const userStudyStreaks = pgTable('user_study_streaks', {
+  userId: bigint({ mode: 'bigint' })
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  currentStreakDays: integer().notNull().default(0),
+  longestStreakDays: integer().notNull().default(0),
+  lastQualifiedDate: date(),
+});

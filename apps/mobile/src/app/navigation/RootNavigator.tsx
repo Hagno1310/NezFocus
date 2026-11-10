@@ -4,7 +4,10 @@ import {
   type NativeStackNavigationProp,
   type NativeStackScreenProps,
 } from '@react-navigation/native-stack';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import type {
+  BottomTabBarProps,
+  BottomTabNavigationProp,
+} from '@react-navigation/bottom-tabs';
 import {
   getFocusedRouteNameFromRoute,
   useNavigation,
@@ -37,7 +40,9 @@ import {
 import { useSolo, useSoloSync } from '../../features/study/hooks/useSolo';
 import { AskNotifications } from '../../features/study/screens/AskNotifications';
 import { SoloScreen } from '../../features/study/screens/SoloScreen';
+import { StatsScreen } from '../../features/study/screens/StatsScreen';
 import { StudyHome } from '../../features/study/screens/StudyHome';
+import { useStudyStatsSync } from '../../features/study/hooks/useStudyStats';
 import { CreateServerScreen } from '../../features/servers/screens/CreateServerScreen';
 import { useKeyboardVisible } from '../../shared/hooks/useKeyboardVisible';
 import { TabBar } from '../../shared/ui/TabBar';
@@ -88,6 +93,7 @@ type StudyParamList = {
   StudyHome: undefined; // S-STUDY-01
   Solo: undefined; // S-STUDY-02
   AskNotifications: undefined; // S-ROOM-09 first-focus
+  Stats: { date?: string } | undefined; // S-STUDY-03
 };
 
 type HomeParamList = {
@@ -362,6 +368,23 @@ function StudyTab() {
           <StudyHome
             onOpenSolo={() => navigation.navigate('Solo')}
             onAskNotifications={() => navigation.navigate('AskNotifications')}
+            onOpenStats={(date) => navigation.navigate('Stats', { date })}
+            onCreateServer={() =>
+              (
+                navigation.getParent() as
+                  BottomTabNavigationProp<TabParamList> | undefined
+              )?.navigate('Home', { screen: 'CreateServer' })
+            }
+          />
+        )}
+      </StudyStack.Screen>
+      <StudyStack.Screen name="Stats">
+        {({ navigation, route }) => (
+          <StatsScreen
+            initialDate={route.params?.date}
+            onBack={navigation.goBack}
+            onOpenSolo={() => navigation.navigate('Solo')}
+            onAskNotifications={() => navigation.navigate('AskNotifications')}
           />
         )}
       </StudyStack.Screen>
@@ -470,6 +493,7 @@ function MainTabs() {
   // ponytail: sample badges for comparing with the C-03 board; real counts come with P2-A4.4 (#106).
   const [sampleBadges, setSampleBadges] = useState(false);
   useSoloSync();
+  useStudyStatsSync();
   const solo = useSolo();
   // C-03 / SRS 3.1: dot on Học while the user is in a Focus Session.
   const studying = !!solo && !endingOf(solo);

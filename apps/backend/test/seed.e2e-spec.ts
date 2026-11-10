@@ -6,6 +6,7 @@ import { SnowflakeGenerator } from '../src/common/snowflake.js';
 import { DB, type Db } from '../src/db/db.module.js';
 import { runSeeds } from '../src/db/seed.js';
 import { SAMPLE_SERVERS } from '../src/modules/servers/servers.seed.js';
+import { StudyStatsService } from '../src/modules/study/study-stats.service.js';
 import {
   channelPermissionOverwrites,
   channels,
@@ -195,5 +196,43 @@ describe('db:seed (e2e)', () => {
     expect(news).toEqual([
       { synced: false, target: study.id, deny: Permission.SEND_MESSAGES },
     ]);
+  });
+
+  it('gives An the sample minutes of 04 › Thống kê mẫu, once', async () => {
+    await seed();
+    await seed();
+    const [an] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.username, 'an.nguyen'));
+    const study = app.get(StudyStatsService);
+    const week = await study.stats(an!.id, {
+      view: 'week',
+      date: '2026-10-18',
+    });
+    expect(week).toMatchObject({
+      total_minutes: 275, // 4 giờ 35 phút
+      room_minutes: 200,
+      solo_minutes: 75,
+      longest_streak_days: 14,
+    });
+    expect(week.days.map((d) => d.focused_minutes)).toEqual([
+      0, 50, 40, 35, 60, 45, 45,
+    ]);
+    // ≥: the dev database may hold minutes An studied by hand; the seed never overwrites them.
+    expect(week.all_time_minutes).toBeGreaterThanOrEqual(86 * 60 + 12);
+    expect(week.first_date! < '2025-12-01').toBe(true);
+    const month = await study.stats(an!.id, {
+      view: 'month',
+      date: '2026-10-18',
+    });
+    expect(month).toMatchObject({ total_minutes: 505, solo_minutes: 135 });
+    const september = await study.stats(an!.id, {
+      view: 'month',
+      date: '2026-09-01',
+    });
+    expect(
+      september.days.slice(0, 18).reduce((n, d) => n + d.focused_minutes, 0),
+    ).toBe(550); // 9 giờ 10 phút
   });
 });

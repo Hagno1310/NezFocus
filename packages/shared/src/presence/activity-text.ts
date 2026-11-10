@@ -2,8 +2,9 @@ import type { FocusPhase } from '../study/solo.contract.js';
 import type { StudyActivity } from './presence.contract.js';
 
 // C-40: one place for the words, icon and cut rule of a study activity (REQ-AUTH-05 CR-24/25).
-// Segments join with " · "; only "còn N phút" has shrink false, it is never cut (C-40 › Cắt).
-export type ActivitySegment = { text: string; shrink: boolean };
+// Segments join with " · ". C-40 › Cắt: "còn N phút" never; the phase name last, so a narrow
+// row reads "Tập trung · còn 105 phút · Phò…" rather than "T… · còn 105 phút · Phò…".
+export type ActivitySegment = { text: string; cut: 'first' | 'last' | 'never' };
 export type ActivityForm = 'short' | 'full';
 
 const PHASE: Record<FocusPhase, string> = {
@@ -12,8 +13,9 @@ const PHASE: Record<FocusPhase, string> = {
   long_break: 'Nghỉ dài',
 };
 
-const cut = (text: string): ActivitySegment => ({ text, shrink: true });
-const keep = (text: string): ActivitySegment => ({ text, shrink: false });
+const cut = (text: string): ActivitySegment => ({ text, cut: 'first' });
+const phaseName = (text: string): ActivitySegment => ({ text, cut: 'last' });
+const keep = (text: string): ActivitySegment => ({ text, cut: 'never' });
 
 // Whole minutes like the timer rows (C-16), so under one minute reads "còn dưới 1 phút" (C-40).
 // A running phase without an end shows no time rather than a wrong one.
@@ -28,9 +30,9 @@ function phaseSegments(a: StudyActivity, now: Date): ActivitySegment[] {
   if (a.kind === 'voice') return [];
   const p = a.kind === 'solo' ? a : a.room;
   if (!p) return [];
-  if (p.state === 'paused') return [cut('Tạm dừng')];
-  if (p.state === 'waiting') return [cut('Hết giờ nghỉ')];
-  return [cut(PHASE[p.phase]), ...timeLeft(p.phase_ends_at, now)];
+  if (p.state === 'paused') return [phaseName('Tạm dừng')];
+  if (p.state === 'waiting') return [phaseName('Hết giờ nghỉ')];
+  return [phaseName(PHASE[p.phase]), ...timeLeft(p.phase_ends_at, now)];
 }
 
 export function activityText(

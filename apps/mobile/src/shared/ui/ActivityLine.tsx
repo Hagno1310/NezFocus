@@ -40,7 +40,7 @@ function iconOf(a: StudyActivity): { as: IconComponent; color: ColorToken } {
   return { as: phaseIcon[icon], color: phaseColor[icon] };
 }
 
-// C-40 › Cắt: one line; only "còn N phút" never shrinks, the rest cut "…" first.
+// C-40 › Cắt: one line. Flex shrinks by weight, so `first` gives way long before `last`.
 function Segments({
   segments,
   ...text
@@ -48,12 +48,7 @@ function Segments({
   return (
     <View style={styles.segments}>
       {segments.map((s, i) => (
-        <Text
-          key={i}
-          numberOfLines={1}
-          {...text}
-          style={s.shrink ? styles.shrink : styles.keep}
-        >
+        <Text key={i} numberOfLines={1} {...text} style={shrinkOf[s.cut]}>
           {i ? `· ${s.text}` : s.text}
         </Text>
       ))}
@@ -117,9 +112,17 @@ export function ActivityLine({
 const styles = StyleSheet.create({
   line: { flexDirection: 'row', alignItems: 'center', gap: space[1] },
   segments: { flexDirection: 'row', flexShrink: 1, gap: space[1] },
-  shrink: { flexShrink: 1 },
-  keep: { flexShrink: 0 },
+  // Room name or "Đang học một mình": cut first, but never down to a lone "·".
+  first: { flexShrink: 1000, minWidth: 40 },
+  last: { flexShrink: 1 },
+  never: { flexShrink: 0 },
   // Board C-40 · block: padding 12, lines 2 apart, icon 6 from the title.
   block: { padding: 12, gap: 2, borderRadius: radius.button },
   blockRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 });
+
+const shrinkOf = {
+  first: styles.first,
+  last: styles.last,
+  never: styles.never,
+};

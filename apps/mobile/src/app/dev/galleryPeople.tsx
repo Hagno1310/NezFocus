@@ -207,17 +207,24 @@ function Activities() {
       <ActivityLine activity={ACTIVITIES[0]!} form="block" now={AT} />
       <ActivityLine activity={ACTIVITIES[7]!} form="block" now={AT} />
       <Caption>
-        Khung hẹp (DMRow 360): tên phòng cắt trước, "còn 105 phút" đủ
+        DMRow ở drawer 262 (máy 360): short; tên phòng cắt trước, "còn 105 phút"
+        đủ
       </Caption>
-      <View style={{ width: 180 }}>
-        <ActivityLine activity={longRoom} form="full" now={AT} />
+      <View style={{ width: 190 }}>
+        <ActivityLine activity={longRoom} form="short" now={AT} />
         <ActivityLine
-          activity={
-            { ...ACTIVITIES[7]!, phase_ends_at: inMin(105) } as StudyActivity
-          }
-          form="full"
+          activity={{
+            kind: 'voice',
+            room: {
+              channel_id: '9',
+              channel_name: 'Phòng ôn thi cuối kỳ Giải tích 2 của lớp D22',
+              study_room: true,
+            },
+          }}
+          form="short"
           now={AT}
         />
+        <ActivityLine activity={ACTIVITIES[7]!} form="short" now={AT} />
       </View>
     </>
   );

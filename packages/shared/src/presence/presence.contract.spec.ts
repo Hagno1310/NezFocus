@@ -150,10 +150,28 @@ describe('activity text (REQ-AUTH-05 CR-24/25, C-40)', () => {
     );
   });
 
-  it('only "còn N phút" never shrinks; the phase, "Một mình" and the room cut first', () => {
+  it('"còn N phút" is never cut; the phase name is cut last, so a narrow row keeps "Tập trung"', () => {
     expect(activityText(solo('running'), 'short', NOW)).toEqual([
-      { text: 'Một mình', shrink: true },
-      { text: 'còn 12 phút', shrink: false },
+      { text: 'Một mình', cut: 'first' },
+      { text: 'còn 12 phút', cut: 'never' },
+    ]);
+    expect(
+      activityText(solo('running'), 'full', NOW).map((s) => s.cut),
+    ).toEqual(['first', 'last', 'never']);
+    const seen: StudyActivity = {
+      kind: 'group_study',
+      room: {
+        channel_id: '9',
+        channel_name: 'Phòng học im lặng',
+        phase: 'focus',
+        state: 'running',
+        phase_ends_at: inMin(18),
+      },
+    };
+    expect(activityText(seen, 'full', NOW).map((s) => s.cut)).toEqual([
+      'last',
+      'never',
+      'first',
     ]);
   });
 

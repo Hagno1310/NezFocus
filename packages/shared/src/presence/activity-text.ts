@@ -1,7 +1,8 @@
 import type { FocusPhase } from '../study/solo.contract.js';
 import type { StudyActivity } from './presence.contract.js';
 
-// C-40: "còn N phút" never shrinks; the phase, "Một mình" and the room name cut "…" first.
+// C-40: one place for the words, icon and cut rule of a study activity (REQ-AUTH-05 CR-24/25).
+// Segments join with " · "; only "còn N phút" has shrink false, it is never cut (C-40 › Cắt).
 export type ActivitySegment = { text: string; shrink: boolean };
 export type ActivityForm = 'short' | 'full';
 
@@ -11,51 +12,88 @@ const PHASE: Record<FocusPhase, string> = {
   long_break: 'Nghỉ dài',
 };
 
-// Whole minutes, like the timer rows (C-16); under one minute "còn dưới 1 phút" (C-40).
-const left = (endsAt: string | null, now: Date) => {
-  const minutes = Math.floor(
-    (Date.parse(endsAt ?? '') - now.getTime()) / 60_000,
-  );
-  return minutes >= 1 ? `còn ${minutes} phút` : 'còn dưới 1 phút';
-};
-
 const cut = (text: string): ActivitySegment => ({ text, shrink: true });
 const keep = (text: string): ActivitySegment => ({ text, shrink: false });
 
-// REQ-AUTH-05 dạng đủ / dạng ngắn, as segments joined by " · ".
+// Whole minutes like the timer rows (C-16), so under one minute reads "còn dưới 1 phút" (C-40).
+// A running phase without an end shows no time rather than a wrong one.
+const timeLeft = (endsAt: string | null, now: Date): ActivitySegment[] => {
+  if (!endsAt) return [];
+  const minutes = Math.floor((Date.parse(endsAt) - now.getTime()) / 60_000);
+  return [keep(minutes >= 1 ? `còn ${minutes} phút` : 'còn dưới 1 phút')];
+};
+
+// "Tập trung · còn 12 phút" / "Tạm dừng" / "Hết giờ nghỉ": line 1 of `block`, the phase part of the rest.
+function phaseSegments(a: StudyActivity, now: Date): ActivitySegment[] {
+  if (a.kind === 'voice') return [];
+  const p = a.kind === 'solo' ? a : a.room;
+  if (!p) return [];
+  if (p.state === 'paused') return [cut('Tạm dừng')];
+  if (p.state === 'waiting') return [cut('Hết giờ nghỉ')];
+  return [cut(PHASE[p.phase]), ...timeLeft(p.phase_ends_at, now)];
+}
+
 export function activityText(
-  a: StudyActivity,
+  activity: StudyActivity,
   form: ActivityForm,
   now: Date,
 ): ActivitySegment[] {
   const full = form === 'full';
-  switch (a.kind) {
+  switch (activity.kind) {
     case 'solo': {
-      const lead = full ? 'Đang học một mình · ' : '';
-      if (a.state === 'paused') return [cut(`${lead}Tạm dừng`)];
-      if (a.state === 'waiting')
-        return [cut(full ? `${lead}Hết giờ nghỉ` : 'Một mình · hết giờ nghỉ')];
-      return [
-        cut(full ? `${lead}${PHASE[a.phase]}` : 'Một mình'),
-        keep(left(a.phase_ends_at, now)),
-      ];
+      if (full)
+        return [cut('Đang học một mình'), ...phaseSegments(activity, now)];
+      if (activity.state === 'paused') return [cut('Tạm dừng')];
+      if (activity.state === 'waiting') return [cut('Một mình · hết giờ nghỉ')];
+      return [cut('Một mình'), ...timeLeft(activity.phase_ends_at, now)];
     }
     case 'group_study': {
-      const r = a.room;
-      if (!r) return [cut('Đang học cùng nhóm')];
-      const room = full ? [cut(r.channel_name)] : [];
-      if (r.state === 'paused') return [cut('Tạm dừng'), ...room];
-      return [cut(PHASE[r.phase]), keep(left(r.phase_ends_at, now)), ...room];
+      const room = activity.room;
+      if (!room) return [cut('Đang học cùng nhóm')];
+      const phase = phaseSegments(activity, now);
+      return full ? [...phase, cut(room.channel_name)] : phase;
     }
     case 'voice':
       return [
         cut(
-          a.room ? `Đang ở ${a.room.channel_name}` : 'Đang ở một phòng voice',
+          activity.room
+            ? `Đang ở ${activity.room.channel_name}`
+            : 'Đang ở một phòng voice',
         ),
       ];
   }
 }
 
-// The whole sentence, e.g. for accessibilityLabel.
+// C-40 › block (S-HOME-10): line 1 the phase and time, line 2 where; a room not seen has one line.
+export function activityBlock(
+  activity: StudyActivity,
+  now: Date,
+): { title: ActivitySegment[]; subtitle: string | null } {
+  if (activity.kind === 'solo')
+    return {
+      title: phaseSegments(activity, now),
+      subtitle: 'Đang học một mình',
+    };
+  if (activity.kind === 'group_study' && activity.room)
+    return {
+      title: phaseSegments(activity, now),
+      subtitle: activity.room.channel_name,
+    };
+  return { title: activityText(activity, 'short', now), subtitle: null };
+}
+
+// C-40 › Icon 14: a phase icon in its phase colour while running, otherwise pause / coffee / channel icon.
+export type ActivityIcon =
+  FocusPhase | 'paused' | 'waiting' | 'study_room' | 'voice';
+
+export function activityIcon(activity: StudyActivity): ActivityIcon {
+  if (activity.kind === 'voice')
+    return activity.room?.study_room ? 'study_room' : 'voice';
+  const p = activity.kind === 'solo' ? activity : activity.room;
+  if (!p) return 'study_room';
+  if (p.state === 'running') return p.phase;
+  return p.state;
+}
+
 export const activityLine = (segments: ActivitySegment[]) =>
   segments.map((s) => s.text).join(' · ');

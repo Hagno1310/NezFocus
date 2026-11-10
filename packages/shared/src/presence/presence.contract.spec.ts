@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ClientFrame, GatewayOp } from '../gateway/gateway.contract.js';
 import { parseDispatch } from '../gateway/events.contract.js';
-import { activityLine, activityText } from './activity-text.js';
+import {
+  activityBlock,
+  activityIcon,
+  activityLine,
+  activityText,
+} from './activity-text.js';
 import {
   PresenceEvent,
   PresenceUpdate,
@@ -190,5 +195,92 @@ describe('activity text (REQ-AUTH-05 CR-24/25, C-40)', () => {
     expect(text({ kind: 'voice', room: null }, 'full')).toBe(
       'Đang ở một phòng voice',
     );
+  });
+});
+
+describe('block form (C-40 › block, S-HOME-10)', () => {
+  const solo: StudyActivity = {
+    kind: 'solo',
+    phase: 'focus',
+    state: 'running',
+    phase_ends_at: inMin(12),
+  };
+  const room = {
+    channel_id: '9',
+    channel_name: 'Phòng học im lặng',
+    phase: 'focus' as const,
+    state: 'running' as const,
+    phase_ends_at: inMin(18),
+  };
+
+  it('line 1 phase + time, line 2 the room or "Đang học một mình"', () => {
+    const b = activityBlock(solo, NOW);
+    expect(activityLine(b.title)).toBe('Tập trung · còn 12 phút');
+    expect(b.subtitle).toBe('Đang học một mình');
+    const g = activityBlock({ kind: 'group_study', room }, NOW);
+    expect(activityLine(g.title)).toBe('Tập trung · còn 18 phút');
+    expect(g.subtitle).toBe('Phòng học im lặng');
+  });
+
+  it('a room not seen has no second line', () => {
+    const b = activityBlock({ kind: 'group_study', room: null }, NOW);
+    expect(activityLine(b.title)).toBe('Đang học cùng nhóm');
+    expect(b.subtitle).toBeNull();
+  });
+});
+
+describe('activity icon (C-40 › Icon 14)', () => {
+  it('phase icon while running; pause, coffee, lamp-desk, volume-2 otherwise', () => {
+    const at = { phase_ends_at: inMin(5) };
+    expect(
+      activityIcon({
+        kind: 'solo',
+        phase: 'short_break',
+        state: 'running',
+        ...at,
+      }),
+    ).toBe('short_break');
+    expect(
+      activityIcon({
+        kind: 'solo',
+        phase: 'focus',
+        state: 'paused',
+        phase_ends_at: null,
+      }),
+    ).toBe('paused');
+    expect(
+      activityIcon({
+        kind: 'solo',
+        phase: 'short_break',
+        state: 'waiting',
+        phase_ends_at: null,
+      }),
+    ).toBe('waiting');
+    expect(activityIcon({ kind: 'group_study', room: null })).toBe(
+      'study_room',
+    );
+    expect(activityIcon({ kind: 'voice', room: null })).toBe('voice');
+    expect(
+      activityIcon({
+        kind: 'voice',
+        room: {
+          channel_id: '9',
+          channel_name: 'Phòng thảo luận nhóm',
+          study_room: true,
+        },
+      }),
+    ).toBe('study_room');
+  });
+});
+
+describe('a running activity without an end time', () => {
+  it('shows no time rather than a wrong one', () => {
+    const a: StudyActivity = {
+      kind: 'solo',
+      phase: 'focus',
+      state: 'running',
+      phase_ends_at: null,
+    };
+    expect(text(a, 'short')).toBe('Một mình');
   });
 });

@@ -209,6 +209,8 @@ describe('server and channel events (SRS 5.4)', () => {
         created_at: '2026-10-01T08:00:00.000Z',
       },
       servers: [server],
+      preferred_status: 'online',
+      presences: [],
     };
     expect(DispatchEvents.READY.parse(d)).toEqual(d);
   });

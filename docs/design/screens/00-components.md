@@ -1384,6 +1384,7 @@ Không còn câu hỏi mở cho các component P0.
 | Không xem được kênh (khác server, kênh riêng tư) | "Đang học cùng nhóm" (có phiên) / "Đang ở một phòng voice" | như `short` — không tên, không thời gian | `lamp-desk` / `volume-2` `text-secondary` |
 | Học một mình | "Một mình · còn 105 phút" | "Đang học một mình · Tập trung · còn 12 phút" | icon pha, màu pha |
 | Học một mình, đang chờ | "Một mình · hết giờ nghỉ" | "Đang học một mình · Hết giờ nghỉ" | `coffee` như `PhaseBadge · waiting` |
+| Học một mình, tạm dừng (chốt 10/11/2026) | "Tạm dừng" | "Đang học một mình · Tạm dừng" (không số) | `pause` `text-secondary` |
 
 - Chữ `label` `text-secondary`, **cả dòng một kiểu chữ** (Be Vietnam Pro, kể cả số phút — DESIGN.md › Typography, chốt 31/10/2026: Unbounded chỉ cho đồng hồ đếm giây). Chỉ icon mang màu pha (DESIGN.md › Colors, quy tắc 1). "còn N phút" cập nhật **mỗi phút**, không đếm giây (DESIGN.md › Typography); < 1 phút "còn dưới 1 phút".
 - **Cắt (một dòng, cả ở 200%):** phần "còn N phút" (tới 3 chữ số) **không bao giờ bị cắt**; tên pha, "Một mình", tên phòng cắt `…` trước. Câu đầy đủ đọc qua `accessibilityLabel` của hàng.

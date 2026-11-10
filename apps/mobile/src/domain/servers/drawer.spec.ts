@@ -136,6 +136,8 @@ describe('reduceHome (Gateway events)', () => {
           session_id: '1',
           user: {} as never,
           servers: [summary('100', 'A'), summary('200', 'B')],
+          preferred_status: 'online',
+          presences: [],
         },
       }),
     );
@@ -150,7 +152,13 @@ describe('reduceHome (Gateway events)', () => {
       loaded,
       event({
         t: 'READY',
-        d: { session_id: '1', user: {} as never, servers: [] },
+        d: {
+          session_id: '1',
+          user: {} as never,
+          servers: [],
+          preferred_status: 'online',
+          presences: [],
+        },
       }),
     );
     expect(state).toMatchObject({

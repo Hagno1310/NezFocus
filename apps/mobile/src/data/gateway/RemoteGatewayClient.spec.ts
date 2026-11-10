@@ -73,7 +73,13 @@ async function connected(client = createGatewayClient(deps)) {
     op: 0,
     s: 1,
     t: 'READY',
-    d: { session_id: '42', user, servers: [] },
+    d: {
+      session_id: '42',
+      user,
+      servers: [],
+      preferred_status: 'online',
+      presences: [],
+    },
   });
   return client;
 }
@@ -106,7 +112,13 @@ describe('RemoteGatewayClient', () => {
       op: 0,
       s: 1,
       t: 'READY',
-      d: { session_id: '42', user, servers: [] },
+      d: {
+        session_id: '42',
+        user,
+        servers: [],
+        preferred_status: 'online',
+        presences: [],
+      },
     });
     expect(gatewayStore.getState().status).toBe('connected');
   });

@@ -146,6 +146,9 @@ export class GatewayConnection implements SessionSocket {
       session_id: this.session.id.toString(),
       user: auth.user,
       servers,
+      // ponytail: P1-B4.2 (#90) reads preferred_status and the presences of server members.
+      preferred_status: 'online',
+      presences: [],
     });
   }
 

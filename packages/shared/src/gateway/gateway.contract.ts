@@ -1,5 +1,9 @@
 import { z } from 'zod';
 import { ClientPlatform } from '../auth/auth.contract.js';
+import {
+  PresenceStatus,
+  PresenceUpdate,
+} from '../presence/presence.contract.js';
 import { SnowflakeId } from '../snowflake.js';
 
 // SRS 5.4: wss://<host>/gateway?v=1&encoding=json. Not under /api/v1.
@@ -44,10 +48,6 @@ export type GatewayCloseCode =
 const frame = <Op extends GatewayOp, D extends z.ZodType>(op: Op, d: D) =>
   z.object({ op: z.literal(op), d });
 
-// REQ-AUTH-05 manual status; P1-B4 (#13) may extend.
-export const PresenceStatus = z.enum(['online', 'idle', 'dnd', 'invisible']);
-export type PresenceStatus = z.infer<typeof PresenceStatus>;
-
 export const Identify = z.object({
   token: z.string().min(1), // access token
   device: z.object({
@@ -72,8 +72,6 @@ export const AppState = z.object({
 export type AppState = z.infer<typeof AppState>;
 
 // Payloads SRS 5.4 does not spell out; their owner tickets refine them.
-// P1-B4 (#13)
-export const PresenceUpdate = z.object({ status: PresenceStatus });
 // P3 voice; LiveKit token stays on REST (DEC-33)
 export const VoiceStateUpdate = z.object({
   channel_id: SnowflakeId.nullable(), // null = leave

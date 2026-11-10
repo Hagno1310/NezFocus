@@ -5,6 +5,8 @@ export * from './auth/credentials.js';
 export * from './auth/auth.contract.js';
 export * from './gateway/gateway.contract.js';
 export * from './gateway/events.contract.js';
+export * from './presence/presence.contract.js';
+export * from './presence/activity-text.js';
 export * from './study/focused-time.js';
 export * from './study/solo.contract.js';
 export * from './study/solo-rules.js';

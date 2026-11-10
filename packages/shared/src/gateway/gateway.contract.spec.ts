@@ -89,7 +89,13 @@ describe('gateway contract', () => {
     });
 
     it('parses READY of a user with no server yet', () => {
-      const d = { session_id: '42', user, servers: [] };
+      const d = {
+        session_id: '42',
+        user,
+        servers: [],
+        preferred_status: 'online',
+        presences: [],
+      };
       expect(DispatchEvents.READY.parse(d)).toEqual(d);
     });
 

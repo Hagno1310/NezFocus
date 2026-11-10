@@ -1028,7 +1028,7 @@ Xem Mục 3 (điều hướng, sitemap, trạng thái màn hình), `DESIGN.md`, 
 | 0   | DISPATCH           | Backend → Client | Sự kiện nghiệp vụ, có `s` và `t`.                                                                                   |
 | 1   | HEARTBEAT          | 2 chiều          | Client gửi `d = last_sequence` theo chu kỳ; backend có thể yêu cầu heartbeat ngay.                                  |
 | 2   | IDENTIFY           | Client → Backend | `{ token, device: { platform, app_version, device_id }, presence }` — mở session mới.                               |
-| 3   | PRESENCE_UPDATE    | Client → Backend | Đổi presence thủ công (REQ-AUTH-05).                                                                                |
+| 3   | PRESENCE_UPDATE    | Client → Backend | Đổi presence thủ công (REQ-AUTH-05). `{status, afk}`: `afk = true` khi app không tương tác 10 phút; `status` luôn là trạng thái thủ công (chốt 10/11/2026, P1-B4.1). |
 | 4   | VOICE_STATE_UPDATE | Client → Backend | Join/leave/đổi voice channel, self mute/deaf/camera. Token LiveKit lấy qua REST (DEC-33).                                                                |
 | 5   | FOCUS_HEARTBEAT    | Client → Backend | Xác nhận đang tham gia Room Session mỗi 60s (REQ-STUDY-15).                                                         |
 | 6   | RESUME             | Client → Backend | `{ token, session_id, seq }` — nối lại session, nhận lại event bị lỡ.                                               |

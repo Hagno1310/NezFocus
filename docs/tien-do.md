@@ -95,12 +95,12 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
   - Trong lúc làm: P1-B3.4 chờ P1-A1.1 (Hiếu)
   - [x] mốc **P1-B3.1** [#84](https://github.com/Hagno1310/NezFocus/issues/84) Hợp đồng thống kê và chuỗi ngày trong shared · hợp đồng · người kia chờ: P1-A4 (Hiếu)
   - [x] mốc **P1-B3.2** [#85](https://github.com/Hagno1310/NezFocus/issues/85) Backend chuỗi ngày học (STUDY-03) · người kia chờ: P4-A4 (Hiếu)
-- [ ] **P1-B4** [#13](https://github.com/Hagno1310/NezFocus/issues/13) Presence qua Gateway
+- [x] **P1-B4** [#13](https://github.com/Hagno1310/NezFocus/issues/13) Presence qua Gateway
   - Cần trước: P0-3b, P0-5, P1-B2
   - Trong lúc làm: P1-B4.2 chờ P1-A1.2 (Hiếu)
-  - [ ] mốc **P1-B4.1** [#89](https://github.com/Hagno1310/NezFocus/issues/89) Hợp đồng presence trong shared · hợp đồng · người kia chờ: P1-A4 (Hiếu), P1-A5 (Hiếu)
-  - [ ] mốc **P1-B4.2** [#90](https://github.com/Hagno1310/NezFocus/issues/90) Backend presence qua Gateway (AUTH-05) · người kia chờ: P1-A5 (Hiếu), P4-A4 (Hiếu)
-  - [ ] mốc **P1-B4.3** [#91](https://github.com/Hagno1310/NezFocus/issues/91) Presence trên app: gửi trạng thái, tự chuyển Vắng mặt, store / hook (AUTH-05) · người kia chờ: P2-A2 (Hiếu)
+  - [x] mốc **P1-B4.1** [#89](https://github.com/Hagno1310/NezFocus/issues/89) Hợp đồng presence trong shared · hợp đồng · người kia chờ: P1-A4 (Hiếu), P1-A5 (Hiếu)
+  - [x] mốc **P1-B4.2** [#90](https://github.com/Hagno1310/NezFocus/issues/90) Backend presence qua Gateway (AUTH-05) · người kia chờ: P1-A5 (Hiếu), P4-A4 (Hiếu)
+  - [x] mốc **P1-B4.3** [#91](https://github.com/Hagno1310/NezFocus/issues/91) Presence trên app: gửi trạng thái, tự chuyển Vắng mặt, store / hook (AUTH-05) · người kia chờ: P2-A2 (Hiếu)
 - [ ] **P1-B5** [#213](https://github.com/Hagno1310/NezFocus/issues/213) CI: kiểm tra phụ thuộc và ngưỡng coverage (NFR-SEC-10, NFR-MAINT-02) · thêm 09/11/2026 (rà lỗ hổng)
 
 ## P2 — Mời bạn qua link, chat real-time có phân quyền

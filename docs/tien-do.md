@@ -90,11 +90,11 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 - [x] **P1-B2** [#11](https://github.com/Hagno1310/NezFocus/issues/11) Học một mình (Solo Session)
   - Cần trước: P0-3b, P0-5, P1-B1
   - [x] mốc **P1-B2.3** [#83](https://github.com/Hagno1310/NezFocus/issues/83) Thông báo chuyển pha khi khóa máy cho Học một mình (STUDY-10 AC1) · người kia chờ: P1-A5 (Hiếu)
-- [ ] **P1-B3** [#12](https://github.com/Hagno1310/NezFocus/issues/12) Chuỗi ngày học, thống kê, tab Học
+- [x] **P1-B3** [#12](https://github.com/Hagno1310/NezFocus/issues/12) Chuỗi ngày học, thống kê, tab Học
   - Cần trước: P0-5, P1-B1, P1-B2
   - Trong lúc làm: P1-B3.4 chờ P1-A1.1 (Hiếu)
-  - [ ] mốc **P1-B3.1** [#84](https://github.com/Hagno1310/NezFocus/issues/84) Hợp đồng thống kê và chuỗi ngày trong shared · hợp đồng · người kia chờ: P1-A4 (Hiếu)
-  - [ ] mốc **P1-B3.2** [#85](https://github.com/Hagno1310/NezFocus/issues/85) Backend chuỗi ngày học (STUDY-03) · người kia chờ: P4-A4 (Hiếu)
+  - [x] mốc **P1-B3.1** [#84](https://github.com/Hagno1310/NezFocus/issues/84) Hợp đồng thống kê và chuỗi ngày trong shared · hợp đồng · người kia chờ: P1-A4 (Hiếu)
+  - [x] mốc **P1-B3.2** [#85](https://github.com/Hagno1310/NezFocus/issues/85) Backend chuỗi ngày học (STUDY-03) · người kia chờ: P4-A4 (Hiếu)
 - [ ] **P1-B4** [#13](https://github.com/Hagno1310/NezFocus/issues/13) Presence qua Gateway
   - Cần trước: P0-3b, P0-5, P1-B2
   - Trong lúc làm: P1-B4.2 chờ P1-A1.2 (Hiếu)

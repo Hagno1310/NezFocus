@@ -1,15 +1,8 @@
-import {
-  Coffee,
-  LampDesk,
-  Moon,
-  Pause,
-  Play,
-  Square,
-} from 'lucide-react-native';
+import { Coffee, LampDesk, Pause, Play, Square } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { timerOf } from '../../../domain/study/solo';
 import { Button, IconButton } from '../../../shared/ui/Button';
-import { Icon } from '../../../shared/ui/Icon';
+import { Moon, Icon } from '../../../shared/ui/Icon';
 import { MiniPlayer, PhaseBadge, phaseColor } from '../../../shared/ui/Focus';
 import { clockText } from '../../../shared/ui/logic';
 import { Text } from '../../../shared/ui/Text';

@@ -13,6 +13,7 @@ import { IconButton } from './Button';
 import { FormMessage } from './FormMessage';
 import { Icon, type IconComponent } from './Icon';
 import { Text } from './Text';
+import { interacted } from '../interaction';
 
 const MULTILINE_MAX_LINES = 5;
 
@@ -123,6 +124,11 @@ export function TextField({
             onBlur?.(e);
           }}
           {...rest}
+          // Typing counts as activity for presence (AUTH-05 AC1), touches alone miss it.
+          onChangeText={(text) => {
+            interacted();
+            rest.onChangeText?.(text);
+          }}
           style={[
             styles.input,
             {
@@ -171,7 +177,10 @@ export function SearchField({ value, onChangeText, ref, ...rest }: BaseProps) {
       <TextInput
         ref={ref}
         value={value}
-        onChangeText={onChangeText}
+        onChangeText={(text) => {
+          interacted();
+          onChangeText?.(text);
+        }}
         accessibilityRole="search"
         placeholderTextColor={colors['text-tertiary']}
         cursorColor={colors.primary}

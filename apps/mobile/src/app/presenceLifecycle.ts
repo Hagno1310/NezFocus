@@ -7,10 +7,12 @@ import {
   reducePresence,
 } from '../domain/presence/presence';
 import { sessionStore } from '../domain/session/sessionStore';
+import { onInteraction } from '../shared/interaction';
 
 // REQ-AUTH-05: keeps presenceStore in step with READY / PRESENCE_UPDATE and counts the 10 idle
-// minutes while signed in and in the foreground. Touches come from App's root view.
+// minutes while signed in and in the foreground. Touches and typing arrive through shared/interaction.
 export function startPresenceLifecycle() {
+  const stopTouches = onInteraction(presenceSync.touch);
   const stopEvents = onGatewayEvent((event) =>
     presenceStore.setState(reducePresence(presenceStore.getState(), event)),
   );
@@ -29,6 +31,7 @@ export function startPresenceLifecycle() {
   });
 
   return () => {
+    stopTouches();
     stopEvents();
     app.remove();
     stopSession();

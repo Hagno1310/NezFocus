@@ -31,7 +31,7 @@ import { ToastHost } from '../shared/ui/Toast';
 import { startGatewayLifecycle } from './gatewayLifecycle';
 import { startHomeLifecycle } from './homeLifecycle';
 import { startPresenceLifecycle } from './presenceLifecycle';
-import { presenceSync } from '../data/presence';
+import { interacted } from '../shared/interaction';
 import { linking } from './navigation/linking';
 import {
   RootNavigator,
@@ -112,11 +112,7 @@ export default function App() {
   }, []);
   return (
     // REQ-AUTH-05 AC1: any touch anywhere restarts the 10 idle minutes (bubbles up, never claims it).
-    // ponytail: typing without touching (soft keyboard) is not seen; add a TextInput onChangeText hook if 10 min of pure typing matters.
-    <GestureHandlerRootView
-      style={{ flex: 1 }}
-      onTouchStart={presenceSync.touch}
-    >
+    <GestureHandlerRootView style={{ flex: 1 }} onTouchStart={interacted}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <NavigationContainer

@@ -1,3 +1,4 @@
+import type { Device } from './presence.js';
 import {
   GatewayCloseCode,
   GatewayOp,
@@ -28,6 +29,10 @@ export type GatewaySession = {
   socket: SessionSocket | null;
   appState: AppState['state'];
   expiry?: ReturnType<typeof setTimeout>;
+  // REQ-AUTH-05: what presence reads of this device.
+  lastSeenAt: number;
+  afk: boolean;
+  backgroundSince: number | null;
 };
 
 export type ResumeResult =
@@ -50,6 +55,9 @@ export class GatewaySessions {
       buffer: [],
       socket,
       appState: 'foreground', // the app connects from the foreground
+      lastSeenAt: Date.now(),
+      afk: false,
+      backgroundSince: null,
     };
     this.sessions.set(session.id, session);
     return session;
@@ -70,6 +78,7 @@ export class GatewaySessions {
     if (seq + 1 < oldest) return { ok: false, error: 'invalid_session' };
 
     clearTimeout(session.expiry);
+    session.lastSeenAt = Date.now();
     const previous = session.socket;
     // Swap first: closing the old socket calls detach(), which must not start an expiry.
     session.socket = socket;
@@ -122,7 +131,28 @@ export class GatewaySessions {
   }
 
   setAppState(session: GatewaySession, state: AppState['state']) {
+    if (state === session.appState) return;
     session.appState = state;
+    session.backgroundSince = state === 'background' ? Date.now() : null;
+  }
+
+  // Any frame from the device, heartbeats included (AUTH-05 AC3).
+  touch(session: GatewaySession) {
+    session.lastSeenAt = Date.now();
+  }
+
+  devicesOf(userId: bigint): Device[] {
+    const devices: Device[] = [];
+    for (const s of this.sessions.values())
+      if (s.userId === userId)
+        devices.push({
+          connected: s.socket !== null,
+          lastSeenAt: s.lastSeenAt,
+          foreground: s.appState === 'foreground',
+          afk: s.afk,
+          backgroundSince: s.backgroundSince,
+        });
+    return devices;
   }
 
   // DEC-34: for push decisions (REQ-NOTIF-02/04) and Idle presence.

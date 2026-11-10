@@ -1,0 +1,2 @@
+ALTER TABLE "user_settings" ADD COLUMN "preferred_status" varchar(12) DEFAULT 'online' NOT NULL;--> statement-breakpoint
+ALTER TABLE "user_settings" ADD COLUMN "show_study_activity" boolean DEFAULT true NOT NULL;

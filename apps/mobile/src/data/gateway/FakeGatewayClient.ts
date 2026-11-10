@@ -1,4 +1,5 @@
 import type {
+  PresenceEvent,
   CurrentUser,
   ServerSummary,
   DispatchEvent,
@@ -30,6 +31,7 @@ export const AN: CurrentUser = {
 export function createFakeGatewayClient(
   scenario: ScenarioStep[],
   servers: () => ServerSummary[] = () => [],
+  presences: PresenceEvent[] = [],
 ): GatewayClient {
   let timers: ReturnType<typeof setTimeout>[] = [];
   let seq = 0;
@@ -48,7 +50,7 @@ export function createFakeGatewayClient(
           user: AN,
           servers: servers(),
           preferred_status: 'online',
-          presences: [],
+          presences,
         },
       });
       timers = scenario.map((step) => setTimeout(() => emit(step), step.after));
@@ -62,5 +64,6 @@ export function createFakeGatewayClient(
       gatewayStore.setState({ foreground: state === 'foreground' });
     },
     setOnline() {},
+    setPresence() {},
   };
 }

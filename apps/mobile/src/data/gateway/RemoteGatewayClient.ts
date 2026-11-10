@@ -6,6 +6,7 @@ import {
   SessionEndReason,
   parseDispatch,
   type AppState,
+  type PresenceUpdate,
   type ClientFrame,
   type Identify,
 } from '@nezfocus/shared';
@@ -47,6 +48,7 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
   let seq = 0;
   let attempt = 0;
   let appState: AppState['state'] = 'foreground';
+  let presence: PresenceUpdate | null = null; // sent again after every READY / RESUMED
   let paused = false; // closed on purpose in the background
   let identified = false;
   let awaitingAck = false;
@@ -173,6 +175,7 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
           setStatus('connected');
           if (appState === 'background')
             send({ op: GatewayOp.APP_STATE, d: { state: appState } });
+          if (presence) send({ op: GatewayOp.PRESENCE_UPDATE, d: presence });
         }
         emitGatewayEvent(event);
       }
@@ -271,5 +274,10 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
     }
   }
 
-  return { start, stop, setAppState, setOnline };
+  function setPresence(next: PresenceUpdate) {
+    presence = next;
+    if (identified) send({ op: GatewayOp.PRESENCE_UPDATE, d: next });
+  }
+
+  return { start, stop, setAppState, setOnline, setPresence };
 }

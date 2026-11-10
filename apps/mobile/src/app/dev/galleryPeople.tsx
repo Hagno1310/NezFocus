@@ -8,6 +8,8 @@ import {
   PresenceDot,
   type AvatarSize,
 } from '../../shared/ui/People';
+import type { StudyActivity } from '@nezfocus/shared';
+import { ActivityLine } from '../../shared/ui/ActivityLine';
 import { SettingsRow } from '../../shared/ui/SettingsRow';
 import { Caption, Row, Section } from './kit';
 
@@ -130,11 +132,100 @@ function Settings() {
   );
 }
 
+// C-40 board rows, at a fixed 21:47 so "còn N phút" reads as drawn.
+const AT = new Date('2026-10-18T14:47:00Z');
+const inMin = (m: number) => new Date(AT.getTime() + m * 60_000).toISOString();
+const room = (
+  phase: 'focus' | 'short_break' | 'long_break',
+  minutes: number,
+): StudyActivity => ({
+  kind: 'group_study',
+  room: {
+    channel_id: '9',
+    channel_name: 'Phòng học im lặng',
+    phase,
+    state: 'running',
+    phase_ends_at: inMin(minutes),
+  },
+});
+const ACTIVITIES: StudyActivity[] = [
+  room('focus', 18),
+  room('short_break', 4),
+  room('long_break', 12),
+  {
+    kind: 'group_study',
+    room: {
+      channel_id: '9',
+      channel_name: 'Phòng học im lặng',
+      phase: 'focus',
+      state: 'paused',
+      phase_ends_at: null,
+    },
+  },
+  {
+    kind: 'voice',
+    room: {
+      channel_id: '8',
+      channel_name: 'Phòng thảo luận nhóm',
+      study_room: true,
+    },
+  },
+  { kind: 'group_study', room: null },
+  { kind: 'voice', room: null },
+  { kind: 'solo', phase: 'focus', state: 'running', phase_ends_at: inMin(105) },
+  { kind: 'solo', phase: 'short_break', state: 'waiting', phase_ends_at: null },
+  { kind: 'solo', phase: 'focus', state: 'paused', phase_ends_at: null },
+];
+const longRoom: StudyActivity = {
+  kind: 'group_study',
+  room: {
+    channel_id: '9',
+    channel_name: 'Phòng ôn thi cuối kỳ Giải tích 2 của lớp D22',
+    phase: 'focus',
+    state: 'running',
+    phase_ends_at: inMin(105),
+  },
+};
+
+function Activities() {
+  return (
+    <>
+      <Caption>short · DMRow, MemberRow</Caption>
+      {ACTIVITIES.map((a, i) => (
+        <ActivityLine key={i} activity={a} form="short" now={AT} />
+      ))}
+      <Caption>full · FriendRow, header DM</Caption>
+      {ACTIVITIES.map((a, i) => (
+        <ActivityLine key={i} activity={a} form="full" now={AT} />
+      ))}
+      <Caption>block · S-HOME-10</Caption>
+      <ActivityLine activity={ACTIVITIES[0]!} form="block" now={AT} />
+      <ActivityLine activity={ACTIVITIES[7]!} form="block" now={AT} />
+      <Caption>
+        Khung hẹp (DMRow 360): tên phòng cắt trước, "còn 105 phút" đủ
+      </Caption>
+      <View style={{ width: 180 }}>
+        <ActivityLine activity={longRoom} form="full" now={AT} />
+        <ActivityLine
+          activity={
+            { ...ACTIVITIES[7]!, phase_ends_at: inMin(105) } as StudyActivity
+          }
+          form="full"
+          now={AT}
+        />
+      </View>
+    </>
+  );
+}
+
 export function PeopleSections() {
   return (
     <>
       <Section title="C-13 · Avatar, PresenceDot, Badge">
         <People />
+      </Section>
+      <Section title="C-40 · ActivityLine">
+        <Activities />
       </Section>
       <Section title="C-15 · SettingsRow">
         <Settings />

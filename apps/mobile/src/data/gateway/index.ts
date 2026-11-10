@@ -43,9 +43,55 @@ const remote = createGatewayClient({
 
 // EXPO_PUBLIC_FAKE=gateway: what plays after READY. Each area adds steps for its own events here.
 // With `servers` faked too, READY lists the fake servers; otherwise none (S-HOME-02 no-server).
+// P1-B4.3: presence of the sample friends (04 › Phòng & bạn bè mẫu) for S-ME-02 and the rows.
+const inMin = (m: number) => new Date(Date.now() + m * 60_000).toISOString();
 const fake = createFakeGatewayClient(
-  [{ after: 3000, t: 'USER_UPDATE', d: { ...AN, display_name: 'An Nguyễn' } }],
+  [
+    { after: 3000, t: 'USER_UPDATE', d: { ...AN, display_name: 'An Nguyễn' } },
+    {
+      after: 5000,
+      t: 'PRESENCE_UPDATE',
+      d: {
+        user_id: '6', // Minh, learning alone
+        status: 'online',
+        activity: {
+          kind: 'solo',
+          phase: 'focus',
+          state: 'running',
+          phase_ends_at: inMin(32),
+        },
+      },
+    },
+    {
+      after: 10_000,
+      t: 'PRESENCE_UPDATE',
+      d: { user_id: '2', status: 'idle', activity: null }, // Bình goes Vắng mặt
+    },
+    {
+      after: 15_000,
+      t: 'PRESENCE_UPDATE',
+      d: { user_id: '3', status: 'offline', activity: null }, // Chi goes offline
+    },
+    {
+      after: 20_000,
+      t: 'PRESENCE_UPDATE',
+      d: {
+        user_id: '6',
+        status: 'online',
+        activity: {
+          kind: 'solo',
+          phase: 'short_break',
+          state: 'waiting',
+          phase_ends_at: null,
+        },
+      },
+    },
+  ],
   () => (isFakeArea('servers') ? fakeServerRepository.summaries() : []),
+  [
+    { user_id: '2', status: 'online', activity: null },
+    { user_id: '3', status: 'dnd', activity: null },
+  ],
 );
 
 export const gatewayClient = pickRepository('gateway', { remote, fake });

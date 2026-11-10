@@ -30,6 +30,8 @@ import { fontFamily, useTheme, type Theme } from '../shared/theme';
 import { ToastHost } from '../shared/ui/Toast';
 import { startGatewayLifecycle } from './gatewayLifecycle';
 import { startHomeLifecycle } from './homeLifecycle';
+import { startPresenceLifecycle } from './presenceLifecycle';
+import { presenceSync } from '../data/presence';
 import { linking } from './navigation/linking';
 import {
   RootNavigator,
@@ -99,6 +101,7 @@ export default function App() {
   }, []);
   // Before the Gateway starts, so READY reaches the Home tab.
   useEffect(startHomeLifecycle, []);
+  useEffect(startPresenceLifecycle, []);
   useEffect(startGatewayLifecycle, []);
   useEffect(watchNavigationRestore, []);
   // REQ-STUDY-10 / SRS 7.3.5: the "Nhắc học tập" channel exists from launch.
@@ -108,7 +111,11 @@ export default function App() {
       .catch(() => undefined);
   }, []);
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    // REQ-AUTH-05 AC1: any touch anywhere restarts the 10 idle minutes (capture, never claims it).
+    <GestureHandlerRootView
+      style={{ flex: 1 }}
+      onTouchStart={presenceSync.touch}
+    >
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <NavigationContainer

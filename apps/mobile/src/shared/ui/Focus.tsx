@@ -30,7 +30,7 @@ export const phaseRoomColor: Record<FocusPhase, ColorToken> = {
   long_break: 'phase-long-room',
 };
 
-const phaseIcon: Record<FocusPhase, IconComponent> = {
+export const phaseIcon: Record<FocusPhase, IconComponent> = {
   focus: LampDesk,
   short_break: Coffee,
   long_break: Moon,

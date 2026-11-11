@@ -11,7 +11,6 @@ import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { apiBaseUrl } from '../../../data/api';
 import { MY_STATUSES, myDot } from '../../../domain/account/status';
 import {
   radius,
@@ -32,6 +31,7 @@ import { ConnectionBanner } from '../../gateway/components/ConnectionBanner';
 import { useOnline } from '../../gateway/hooks/useOnline';
 import { useMyStatus } from '../../presence/hooks/usePresence';
 import { useStudyStats } from '../../study/hooks/useStudyStats';
+import { avatarUri } from '../avatarUri';
 import { useMe } from '../hooks/useMe';
 
 const appVersion = Constants.expoConfig?.version ?? '0.0.0';
@@ -67,7 +67,7 @@ export function MeScreen({
   const logOut = useLogOut();
 
   const name = me?.display_name ?? me?.username ?? '';
-  const avatar = me?.avatar ? `${apiBaseUrl}${me.avatar['128']}` : null;
+  const avatar = avatarUri(me?.avatar, '128');
 
   return (
     <View style={[styles.screen, { paddingTop: top }]}>

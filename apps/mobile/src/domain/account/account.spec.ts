@@ -20,6 +20,10 @@ const repo = (over: Partial<AccountRepository>): AccountRepository => ({
   sessions: noCall,
   revokeSession: noCall,
   revokeOtherSessions: noCall,
+  updateProfile: noCall,
+  createAttachment: noCall,
+  uploadFile: noCall,
+  completeAttachment: noCall,
   ...over,
 });
 const byPassword: ChangePasswordForm = {

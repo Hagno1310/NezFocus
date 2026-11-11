@@ -56,6 +56,12 @@ import { ResetPasswordScreen } from '../../features/auth/screens/ResetPasswordSc
 import { EnterCodeScreen } from '../../features/auth/screens/EnterCodeScreen';
 import { WelcomeScreen } from '../../features/auth/screens/WelcomeScreen';
 import { MeScreen } from '../../features/me/screens/MeScreen';
+import {
+  EditProfileScreen,
+  type PickedPhoto,
+} from '../../features/me/screens/EditProfileScreen';
+import { CropAvatarScreen } from '../../features/me/screens/CropAvatarScreen';
+import type { AvatarFile } from '../../domain/account/profile';
 import { AccountScreen } from '../../features/me/screens/AccountScreen';
 import { ChangePasswordScreen } from '../../features/me/screens/ChangePasswordScreen';
 import { SessionsScreen } from '../../features/me/screens/SessionsScreen';
@@ -138,7 +144,8 @@ type TabParamList = {
 // Spec 07: S-ME-02 is the tab root; the others are child screens that keep the TabBar.
 type MeParamList = {
   MeRoot: undefined; // S-ME-02
-  EditProfile: undefined; // S-ME-01
+  EditProfile: { cropped?: AvatarFile } | undefined; // S-ME-01
+  CropAvatar: { photo: PickedPhoto }; // S-ME-01 crop
   Account: undefined; // S-ME-03
   ChangePassword: { mode?: 'code' } | undefined; // S-ME-03 password-form / password-code
   Sessions: undefined; // S-ME-03 sessions
@@ -424,7 +431,6 @@ type Action = { label: string; onPress: () => void };
 
 // Child screens not built yet: each names the ticket that replaces it.
 const meChildren = [
-  ['EditProfile', 'me.openProfile', 'P1-A4.6 (#75)'],
   ['DeleteAccount', 'me.deleteAccount', 'P3-A4 (#24)'],
   ['Privacy', 'me.privacy', 'P1-A5.2 (#77)'],
   ['Notifications', 'me.notifications', 'P1-A5.3 (#78)'],
@@ -464,6 +470,28 @@ function MeTab({ devActions }: { devActions: Action[] }) {
                 </View>
               )
             }
+          />
+        )}
+      </MeStack.Screen>
+      <MeStack.Screen name="EditProfile" options={{ headerShown: false }}>
+        {({ navigation, route }) => (
+          <EditProfileScreen
+            cropped={route.params?.cropped}
+            onCrop={(photo) => navigation.navigate('CropAvatar', { photo })}
+            onBack={navigation.goBack}
+            onSaved={() => navigation.goBack()}
+          />
+        )}
+      </MeStack.Screen>
+      <MeStack.Screen
+        name="CropAvatar"
+        options={{ headerShown: false, presentation: 'fullScreenModal' }}
+      >
+        {({ navigation, route }) => (
+          <CropAvatarScreen
+            photo={route.params.photo}
+            onCancel={navigation.goBack}
+            onDone={(cropped) => navigation.popTo('EditProfile', { cropped })}
           />
         )}
       </MeStack.Screen>

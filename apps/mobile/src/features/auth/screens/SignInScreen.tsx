@@ -234,7 +234,11 @@ export function SignInScreen({ navigation, route }: Props) {
           <View style={styles.forgot}>
             <InlineLink
               link={t('auth.signIn.forgot')}
-              onPress={() => navigation.navigate('ForgotPassword')}
+              onPress={() =>
+                navigation.navigate('ForgotPassword', {
+                  email: email.trim() || undefined,
+                })
+              }
             />
           </View>
         </View>

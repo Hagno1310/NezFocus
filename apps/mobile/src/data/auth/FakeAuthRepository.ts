@@ -1,4 +1,5 @@
 import {
+  checkPassword,
   EMAIL_CODE_RESEND_SECONDS,
   ErrorCode,
   type CurrentUser,
@@ -17,6 +18,8 @@ const MAX_SENDS_PER_DAY = 10;
 const MAX_WRONG_PASSWORDS = 5;
 const LOGIN_WAIT_SECONDS = 600;
 const DAY_SECONDS = 24 * 60 * 60;
+const MAX_RESETS_PER_HOUR = 3; // AUTH-08 AC5
+const HOUR_MS = 60 * 60 * 1000;
 
 const fail = (status: number, code: number, extra = {}) =>
   new ApiError(status, { code, message: `fake ${code}`, ...extra });
@@ -64,6 +67,10 @@ export function createFakeAuthRepository(
   let wrongPasswords = 0;
   let lockedUntil = 0;
   let current: CurrentUser | null = null;
+  let anPassword = FAKE_PASSWORD; // a reset changes it
+  // AUTH-08: a reset code of its own (AUTH-02 AC7), sent to every email, mailed only to An.
+  const resetCodes = new Map<string, { attemptsLeft: number }>();
+  const resetSends = new Map<string, number[]>(); // send times, newest last
 
   return {
     async sendEmailCode(raw) {
@@ -109,7 +116,7 @@ export function createFakeAuthRepository(
         throw fail(429, ErrorCode.RateLimited, {
           retry_after: Math.ceil((lockedUntil - now()) / 1000),
         });
-      if (norm(email) !== AN_EMAIL || password !== FAKE_PASSWORD) {
+      if (norm(email) !== AN_EMAIL || password !== anPassword) {
         wrongPasswords += 1;
         if (wrongPasswords >= MAX_WRONG_PASSWORDS) {
           wrongPasswords = 0;
@@ -144,6 +151,53 @@ export function createFakeAuthRepository(
     },
     async logout() {
       current = null;
+    },
+    async forgotPassword(raw) {
+      await wait();
+      const email = norm(raw);
+      const recent = (resetSends.get(email) ?? []).filter(
+        (t) => now() - t < HOUR_MS,
+      );
+      const sinceLast = (now() - (recent.at(-1) ?? -Infinity)) / 1000;
+      if (sinceLast < EMAIL_CODE_RESEND_SECONDS)
+        throw fail(429, ErrorCode.RateLimited, {
+          retry_after: Math.ceil(EMAIL_CODE_RESEND_SECONDS - sinceLast),
+        });
+      if (recent.length >= MAX_RESETS_PER_HOUR)
+        throw fail(429, ErrorCode.RateLimited, {
+          retry_after: Math.ceil((recent[0]! + HOUR_MS - now()) / 1000),
+        });
+      resetSends.set(email, [...recent, now()]);
+      resetCodes.set(email, { attemptsLeft: MAX_WRONG_CODES });
+      return { expires_in: 900, resend_in: EMAIL_CODE_RESEND_SECONDS };
+    },
+    // Like the backend: the code first, then the account and the password rules.
+    async resetPassword(raw, code, password) {
+      await wait();
+      const email = norm(raw);
+      const entry = resetCodes.get(email);
+      if (!entry || entry.attemptsLeft <= 0 || code === FAKE_EXPIRED_CODE)
+        throw fail(400, ErrorCode.TokenLinkInvalid);
+      if (code !== FAKE_CODE) {
+        entry.attemptsLeft -= 1;
+        throw fail(400, ErrorCode.VerificationCodeInvalid, {
+          attempts_left: entry.attemptsLeft,
+        });
+      }
+      if (email !== AN_EMAIL) {
+        resetCodes.delete(email);
+        throw fail(400, ErrorCode.TokenLinkInvalid);
+      }
+      const issues = checkPassword(password, { email, username: 'an.nguyen' });
+      if (issues.length)
+        throw fail(400, ErrorCode.ValidationError, {
+          errors: { password: issues.map((i) => ({ code: i, message: i })) },
+        });
+      resetCodes.delete(email);
+      anPassword = password;
+      wrongPasswords = 0;
+      current = userFor(AN_EMAIL);
+      return session(current);
     },
   };
 }

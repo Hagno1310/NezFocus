@@ -20,7 +20,7 @@ export type CompleteAccountForm = {
 export type CompleteAccountErrors = {
   displayName?: 'empty' | 'too-long';
   username?: 'length' | 'invalid-chars' | 'taken' | 'taken-on-submit';
-  password?: 'rules' | 'same-email' | 'same-username';
+  password?: PasswordError;
   age?: 'required';
   terms?: 'required';
 };
@@ -38,6 +38,35 @@ const ORDER: CompleteAccountField[] = [
 
 const fold = (s: string) => s.normalize('NFC').toLowerCase();
 
+export type PasswordError = 'rules' | 'same-email' | 'same-username';
+
+// AUTH-01 AC6 / CR-28 #9, for every form that sets a password (S-ONB-01, S-AUTH-05, S-ME-03).
+// The rules come first: a password that breaks one is not also blamed on the email.
+export function passwordError(
+  password: string,
+  personal: { email: string; username?: string | null },
+): PasswordError | undefined {
+  const issues = checkPassword(password, personal);
+  if (issues.some((i) => i !== 'SAME_AS_PERSONAL_INFO')) return 'rules';
+  if (!issues.length) return undefined;
+  return personal.username && fold(password) === fold(personal.username)
+    ? 'same-username'
+    : 'same-email';
+}
+
+// 40001 on a password field. The backend does not say which personal detail matched: the
+// phone knows the email, so a match it did not flag is the username.
+export function serverPasswordError(
+  issues: { code: string }[],
+  password: string,
+  email: string,
+): PasswordError {
+  if (!issues.some((e) => e.code === 'SAME_AS_PERSONAL_INFO')) return 'rules';
+  return passwordError(password, { email }) === 'same-email'
+    ? 'same-email'
+    : 'same-username';
+}
+
 export function completeAccountErrors(
   form: CompleteAccountForm,
   email: string,
@@ -53,12 +82,8 @@ export function completeAccountErrors(
     errors.username = 'invalid-chars';
   else if (usernameIssues.length) errors.username = 'length';
 
-  const issues = checkPassword(form.password, { username, email });
-  if (issues.some((i) => i !== 'SAME_AS_PERSONAL_INFO'))
-    errors.password = 'rules';
-  else if (issues.length)
-    errors.password =
-      fold(form.password) === fold(username) ? 'same-username' : 'same-email';
+  const password = passwordError(form.password, { username, email });
+  if (password) errors.password = password;
 
   if (!form.ageConfirmed) errors.age = 'required';
   if (!form.termsAccepted) errors.terms = 'required';

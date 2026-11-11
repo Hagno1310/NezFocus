@@ -37,6 +37,8 @@ const repo = (over: Partial<AuthRepository>): AuthRepository => ({
   usernameAvailable: async () => true,
   completeAccount: async () => user,
   logout: async () => {},
+  forgotPassword: async () => ({ expires_in: 900, resend_in: 60 }),
+  resetPassword: async () => session,
   ...over,
 });
 const body = {} as CompleteAccountRequest;

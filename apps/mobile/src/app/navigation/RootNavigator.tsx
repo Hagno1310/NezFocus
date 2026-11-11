@@ -51,6 +51,8 @@ import { CompleteAccountScreen } from '../../features/auth/screens/CompleteAccou
 import { SignInScreen } from '../../features/auth/screens/SignInScreen';
 import { UpdateRequiredScreen } from '../../features/auth/screens/UpdateRequiredScreen';
 import { CreateAccountScreen } from '../../features/auth/screens/CreateAccountScreen';
+import { ForgotPasswordScreen } from '../../features/auth/screens/ForgotPasswordScreen';
+import { ResetPasswordScreen } from '../../features/auth/screens/ResetPasswordScreen';
 import { EnterCodeScreen } from '../../features/auth/screens/EnterCodeScreen';
 import { WelcomeScreen } from '../../features/auth/screens/WelcomeScreen';
 import { Button } from '../../shared/ui/Button';
@@ -79,7 +81,8 @@ export type RootStackParamList = {
   CreateAccount: undefined; // S-AUTH-02
   EnterCode: { email: string; from: 'create' | 'signIn' }; // S-AUTH-03
   SignIn: { mode?: SignInMode; email?: string } | undefined; // S-AUTH-04
-  ForgotPassword: undefined; // S-AUTH-05
+  ForgotPassword: { email?: string } | undefined; // S-AUTH-05 request
+  ResetPassword: { email: string }; // S-AUTH-05 reset-form
   CompleteAccount: undefined; // S-ONB-01
   Main: undefined;
   // Replaces everything while sessionStore.upgradeRequired (42601 on any request, NFR-MOB-12).
@@ -608,10 +611,14 @@ export function RootNavigator() {
           {!sessionEnded && signInScreen}
           <Stack.Screen
             name="ForgotPassword"
-            options={{ title: t('screens.forgotPassword') }}
-          >
-            {() => <Placeholder title={t('screens.forgotPassword')} />}
-          </Stack.Screen>
+            component={ForgotPasswordScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ResetPassword"
+            component={ResetPasswordScreen}
+            options={{ headerShown: false }}
+          />
         </Stack.Group>
       )}
       {status === 'incomplete' && (

@@ -293,6 +293,23 @@ export const en: Strings = {
         'We’ve sent 10 OTP codes to this email today. Try again tomorrow, or log in with your password.',
       offline: 'You need a connection to log in',
     },
+    forgot: {
+      body: 'Enter the email you signed up with. We’ll send a 6-digit OTP code to set a new password.',
+      rateLimited:
+        'You’ve asked for OTP codes too many times. Try again in {{count}} minutes.',
+      offline: 'You need a connection to set a new password',
+      resetTitle: 'Set a new password',
+      sentTo:
+        'If {{email}} has a NezFocus account, a 6-digit OTP code will arrive in a few minutes. It works for 15 minutes.',
+      code: 'OTP code',
+      newPassword: 'New password',
+      othersSignedOut:
+        'Your other devices will be logged out, and you’ll stay logged in on this phone.',
+      submit: 'Set password',
+      resent:
+        'If {{email}} has a NezFocus account, a new OTP code will arrive in a few minutes.',
+      done: 'New password set · your other devices were logged out',
+    },
     ended: {
       password_reset:
         'Your password was just changed on another device · please log in again',

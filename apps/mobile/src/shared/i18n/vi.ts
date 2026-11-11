@@ -284,6 +284,23 @@ export const vi = {
         'Mình đã gửi 10 mã OTP tới email này hôm nay. Thử lại vào ngày mai, hoặc đăng nhập bằng mật khẩu.',
       offline: 'Cần kết nối mạng để đăng nhập',
     },
+    forgot: {
+      body: 'Nhập email bạn dùng để đăng ký. Mình sẽ gửi mã OTP 6 số để đặt mật khẩu mới.',
+      rateLimited:
+        'Bạn đã yêu cầu mã OTP nhiều lần. Thử lại sau {{count}} phút.',
+      offline: 'Cần kết nối mạng để đặt mật khẩu mới',
+      resetTitle: 'Đặt mật khẩu mới',
+      sentTo:
+        'Nếu {{email}} có tài khoản NezFocus, mã OTP 6 số sẽ tới trong vài phút. Mã có hiệu lực 15 phút.',
+      code: 'Mã OTP',
+      newPassword: 'Mật khẩu mới',
+      othersSignedOut:
+        'Các thiết bị khác sẽ bị đăng xuất, còn bạn đăng nhập luôn trên máy này.',
+      submit: 'Đặt mật khẩu',
+      resent:
+        'Nếu {{email}} có tài khoản NezFocus, mã OTP mới sẽ tới trong vài phút.',
+      done: 'Đã đặt mật khẩu mới · các thiết bị khác đã được đăng xuất',
+    },
     ended: {
       password_reset:
         'Mật khẩu vừa được đổi trên thiết bị khác · hãy đăng nhập lại',

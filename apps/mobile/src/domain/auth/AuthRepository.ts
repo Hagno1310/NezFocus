@@ -14,4 +14,11 @@ export interface AuthRepository {
   usernameAvailable(username: string): Promise<boolean>;
   completeAccount(body: CompleteAccountRequest): Promise<CurrentUser>;
   logout(): Promise<void>;
+  // AUTH-08: same answer for every email; resetPassword signs in like login.
+  forgotPassword(email: string): Promise<EmailCodeSentResponse>;
+  resetPassword(
+    email: string,
+    code: string,
+    password: string,
+  ): Promise<SessionResponse>;
 }

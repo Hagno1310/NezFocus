@@ -1,4 +1,5 @@
 import { Circle, CircleDot } from 'lucide-react-native';
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { size, space, useTheme } from '../theme';
 import { Icon, type IconComponent } from './Icon';
@@ -10,12 +11,15 @@ export function RadioRow({
   label,
   description,
   typeIcon,
+  leading,
   selected,
   onPress,
 }: {
   label: string;
   description?: string;
   typeIcon?: IconComponent;
+  // Same spot as typeIcon, for a non-icon marker (S-ME-02 status sheet: PresenceDot).
+  leading?: ReactNode;
   selected: boolean;
   onPress: () => void;
 }) {
@@ -37,6 +41,7 @@ export function RadioRow({
         color={selected ? 'primary' : 'text-tertiary'}
       />
       {typeIcon && <Icon as={typeIcon} size="md" color="text-secondary" />}
+      {leading}
       <View style={styles.text}>
         <Text numberOfLines={1}>{label}</Text>
         {description && (

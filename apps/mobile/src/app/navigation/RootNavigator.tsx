@@ -55,6 +55,8 @@ import { ForgotPasswordScreen } from '../../features/auth/screens/ForgotPassword
 import { ResetPasswordScreen } from '../../features/auth/screens/ResetPasswordScreen';
 import { EnterCodeScreen } from '../../features/auth/screens/EnterCodeScreen';
 import { WelcomeScreen } from '../../features/auth/screens/WelcomeScreen';
+import { MeScreen } from '../../features/me/screens/MeScreen';
+import { useMeSync } from '../../features/me/hooks/useMe';
 import { Button } from '../../shared/ui/Button';
 import { StyleSheet, View } from 'react-native';
 import { space } from '../../shared/theme';
@@ -127,12 +129,23 @@ type TabParamList = {
   Study: NavigatorScreenParams<StudyParamList> | undefined;
   Tasks: undefined;
   Inbox: undefined;
-  Me: undefined;
+  Me: NavigatorScreenParams<MeParamList> | undefined;
+};
+
+// Spec 07: S-ME-02 is the tab root; the others are child screens that keep the TabBar.
+type MeParamList = {
+  MeRoot: undefined; // S-ME-02
+  EditProfile: undefined; // S-ME-01
+  Account: undefined; // S-ME-03
+  Privacy: undefined; // S-ME-04
+  Notifications: undefined; // S-ME-05
+  Appearance: undefined; // S-ME-06
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 const StudyStack = createNativeStackNavigator<StudyParamList>();
+const MeStack = createNativeStackNavigator<MeParamList>();
 const HomeStack = createNativeStackNavigator<HomeParamList>();
 
 // CR-15: S-HOME-06 and other Home screens stack above the drawers; Back pops them first.
@@ -401,6 +414,62 @@ function StudyTab() {
   );
 }
 
+type Action = { label: string; onPress: () => void };
+
+// Child screens not built yet: each names the ticket that replaces it.
+const meChildren = [
+  ['EditProfile', 'me.openProfile', 'P1-A4.6 (#75)'],
+  ['Account', 'me.account', 'P1-A4.5 (#74)'],
+  ['Privacy', 'me.privacy', 'P1-A5.2 (#77)'],
+  ['Notifications', 'me.notifications', 'P1-A5.3 (#78)'],
+  ['Appearance', 'me.appearance', 'P1-A5.4 (#79)'],
+] as const;
+
+function MeTab({ devActions }: { devActions: Action[] }) {
+  const { t } = useTranslation();
+  return (
+    <MeStack.Navigator>
+      <MeStack.Screen name="MeRoot" options={{ headerShown: false }}>
+        {({ navigation }) => (
+          <MeScreen
+            onOpenProfile={() => navigation.navigate('EditProfile')}
+            onOpenStreak={() =>
+              (
+                navigation.getParent() as
+                  BottomTabNavigationProp<TabParamList> | undefined
+              )?.navigate('Study', { screen: 'Stats' })
+            }
+            onOpenAccount={() => navigation.navigate('Account')}
+            onOpenPrivacy={() => navigation.navigate('Privacy')}
+            onOpenNotifications={() => navigation.navigate('Notifications')}
+            onOpenAppearance={() => navigation.navigate('Appearance')}
+            devActions={
+              devActions.length > 0 && (
+                <View style={styles.dev}>
+                  {devActions.map((a) => (
+                    <Button
+                      key={a.label}
+                      variant="text"
+                      size="S"
+                      label={a.label}
+                      onPress={a.onPress}
+                    />
+                  ))}
+                </View>
+              )
+            }
+          />
+        )}
+      </MeStack.Screen>
+      {meChildren.map(([name, title, ticket]) => (
+        <MeStack.Screen key={name} name={name} options={{ title: t(title) }}>
+          {() => <Placeholder title={t(title)} ticket={ticket} />}
+        </MeStack.Screen>
+      ))}
+    </MeStack.Navigator>
+  );
+}
+
 const sampleUser = { id: '1', email: 'an.nguyen@gmail.com' };
 
 const toggleLanguage = () =>
@@ -497,6 +566,7 @@ function MainTabs() {
   const [sampleBadges, setSampleBadges] = useState(false);
   useSoloSync();
   useStudyStatsSync();
+  useMeSync();
   const solo = useSolo();
   // C-03 / SRS 3.1: dot on Học while the user is in a Focus Session.
   const studying = !!solo && !endingOf(solo);
@@ -544,17 +614,17 @@ function MainTabs() {
       <Tab.Screen name="Inbox" options={{ title: t('tabs.inbox') }}>
         {() => <Placeholder title={t('tabs.inbox')} />}
       </Tab.Screen>
-      <Tab.Screen name="Me" options={{ title: t('tabs.me') }}>
+      <Tab.Screen
+        name="Me"
+        options={{ title: t('tabs.me'), headerShown: false }}
+      >
         {() => (
-          <Placeholder
-            title={t('tabs.me')}
-            actions={[
-              dev.language,
-              dev.signOut,
-              ...gallery,
-              ...badgeToggle,
-              ...endedActions,
-            ]}
+          <MeTab
+            devActions={
+              __DEV__
+                ? [dev.language, ...gallery, ...badgeToggle, ...endedActions]
+                : []
+            }
           />
         )}
       </Tab.Screen>

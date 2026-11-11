@@ -23,6 +23,7 @@ import {
   UsernameTakenError,
   UsersRepository,
 } from '../users/users.repository.js';
+import { toCurrentUser } from '../users/users.dto.js';
 import type { UserRow } from '../users/users.schema.js';
 import { AuthMailer } from './auth-mailer.js';
 import { EmailCodeService } from './email-code.service.js';
@@ -56,15 +57,6 @@ const personalInfoError = (
       })
     : null;
 };
-
-export const toCurrentUser = (row: UserRow): CurrentUser => ({
-  id: row.id.toString(),
-  email: row.email ?? '',
-  username: row.username,
-  display_name: row.displayName,
-  account_completed: row.accountCompletedAt !== null,
-  created_at: row.createdAt.toISOString(),
-});
 
 @Injectable()
 export class AuthService {

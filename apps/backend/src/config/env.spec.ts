@@ -21,7 +21,20 @@ describe('Env', () => {
         ...base,
         NODE_ENV: 'production',
         JWT_SECRET: 'q'.repeat(48),
+        S3_SECRET_KEY: 's'.repeat(40),
       }).success,
     ).toBe(true);
+  });
+
+  it('refuses the dev S3 key in production', () => {
+    const prod = {
+      ...base,
+      NODE_ENV: 'production',
+      JWT_SECRET: 'q'.repeat(48),
+    };
+    expect(Env.safeParse(prod).success).toBe(false);
+    expect(Env.safeParse({ ...prod, NODE_ENV: 'development' }).success).toBe(
+      true,
+    );
   });
 });

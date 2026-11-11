@@ -43,6 +43,8 @@ const fakeUsers = () => {
         passwordHash: null,
         displayName: null,
         avatarKey: null,
+        bio: null,
+        profileUpdatedAt: null,
         accountStatus: 'active',
         emailVerifiedAt: now,
         termsVersion: null,
@@ -151,6 +153,8 @@ describe('AuthService.verifyEmailCode', () => {
     expect(res.user).toMatchObject({
       email: 'an.nguyen@gmail.com',
       username: null,
+      bio: null,
+      avatar: null,
       account_completed: false,
     });
     expect(res.suggested_username).toBe('an.nguyen');
@@ -207,6 +211,8 @@ describe('AuthService.completeAccount (AUTH-01)', () => {
     expect(user).toMatchObject({
       username: 'an.nguyen',
       display_name: 'An Nguyễn',
+      bio: null,
+      avatar: null,
       account_completed: true,
     });
     expect(s.users.rows.get(id)).toMatchObject({

@@ -28,6 +28,8 @@ const userFor = (email: string): CurrentUser =>
         email,
         username: 'an.nguyen',
         display_name: 'An',
+        bio: null,
+        avatar: null,
         account_completed: true,
         created_at: '2026-10-01T08:00:00.000Z',
       }
@@ -36,6 +38,8 @@ const userFor = (email: string): CurrentUser =>
         email,
         username: null,
         display_name: null,
+        bio: null,
+        avatar: null,
         account_completed: false,
         created_at: '2026-10-18T14:47:00.000Z',
       };
@@ -132,6 +136,8 @@ export function createFakeAuthRepository(
         ...current,
         username: body.username,
         display_name: body.display_name,
+        bio: null,
+        avatar: null,
         account_completed: true,
       };
       return current;

@@ -115,4 +115,18 @@ export class UsersRepository {
       .set({ passwordHash, updatedAt: now })
       .where(eq(users.id, id));
   }
+
+  // REQ-AUTH-06. `undefined` fields stay as they are.
+  async updateProfile(
+    id: bigint,
+    change: Partial<Pick<UserRow, 'displayName' | 'bio' | 'avatarKey'>>,
+    now: Date,
+  ): Promise<UserRow | undefined> {
+    const [row] = await this.db
+      .update(users)
+      .set({ ...change, profileUpdatedAt: now, updatedAt: now })
+      .where(eq(users.id, id))
+      .returning();
+    return row;
+  }
 }

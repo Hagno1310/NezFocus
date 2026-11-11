@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { LogPushTokens, PushTokens } from '../notifications/push-tokens.js';
 import { UsersModule } from '../users/users.module.js';
 import { AuthMailer, LogAuthMailer } from './auth-mailer.js';
 import { AuthController } from './auth.controller.js';
@@ -24,6 +25,7 @@ import { TokenService } from './token.service.js';
     TokenService,
     PasswordHasher,
     { provide: AuthMailer, useClass: LogAuthMailer },
+    { provide: PushTokens, useClass: LogPushTokens },
     { provide: APP_GUARD, useClass: AuthGuard },
   ],
   // The Gateway checks IDENTIFY / RESUME tokens the same way (P0-5.2).

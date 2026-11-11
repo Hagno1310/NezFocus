@@ -19,7 +19,9 @@ export const users = pgTable(
     email: varchar({ length: 255 }), // stored lowercase; NULL after purge
     passwordHash: varchar({ length: 255 }), // Argon2id; NULL until Complete account
     displayName: varchar({ length: 32 }),
-    avatarKey: text(),
+    avatarKey: text(), // prefix of the webp sizes (attachments/media.ts); NULL → initials
+    bio: varchar({ length: 200 }), // v1.7 (CR-09)
+    profileUpdatedAt: timestamp({ withTimezone: true }), // v1.10: last display name / avatar / bio change
     accountStatus: varchar({ length: 20 }).notNull().default('active'), // 8.4.6
     emailVerifiedAt: timestamp({ withTimezone: true }),
     termsVersion: varchar({ length: 20 }),

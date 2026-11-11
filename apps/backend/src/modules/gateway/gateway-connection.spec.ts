@@ -13,6 +13,8 @@ const user: CurrentUser = {
   email: 'an@gmail.com',
   username: 'an.nguyen',
   display_name: 'An Nguyễn',
+  bio: null,
+  avatar: null,
   account_completed: true,
   created_at: '2026-11-05T08:00:00.000Z',
 };

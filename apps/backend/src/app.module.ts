@@ -8,6 +8,7 @@ import { GatewayModule } from './modules/gateway/gateway.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { PermissionsModule } from './modules/permissions/permissions.module.js';
 import { ServersModule } from './modules/servers/servers.module.js';
+import { StorageModule } from './modules/storage/storage.module.js';
 import { StudyModule } from './modules/study/study.module.js';
 import { RedisModule } from './redis/redis.module.js';
 
@@ -17,6 +18,7 @@ import { RedisModule } from './redis/redis.module.js';
     CommonModule,
     DbModule,
     RedisModule,
+    StorageModule,
     GatewayModule,
     PermissionsModule,
     HealthModule,

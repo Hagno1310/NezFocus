@@ -1,4 +1,13 @@
-import { Body, Controller, Get, HttpCode, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   AccountRoutes,
   AuthRoutes,
@@ -10,6 +19,8 @@ import {
   RefreshTokenRequest,
   ResetPasswordRequest,
   SendEmailCodeRequest,
+  SnowflakeId,
+  type SessionInfo,
   VerifyEmailCodeRequest,
   type CurrentUser as CurrentUserJson,
   type EmailCodeSentResponse,
@@ -129,5 +140,33 @@ export class AuthController {
     @CurrentUser() user: AuthUser,
   ): Promise<void> {
     await this.auth.changePassword(user.userId, user.sessionId, body);
+  }
+
+  // Incomplete accounts may sign out too (they have a session to end).
+  @AllowIncomplete()
+  @Post(AuthRoutes.logout)
+  @HttpCode(204)
+  async logout(@CurrentUser() user: AuthUser): Promise<void> {
+    await this.sessions.logout(user.sessionId);
+  }
+
+  @Get(AccountRoutes.sessions)
+  listSessions(@CurrentUser() user: AuthUser): Promise<SessionInfo[]> {
+    return this.sessions.list(user.userId, user.sessionId);
+  }
+
+  @Delete(AccountRoutes.sessions)
+  @HttpCode(204)
+  async revokeOtherSessions(@CurrentUser() user: AuthUser): Promise<void> {
+    await this.sessions.revokeOthers(user.userId, user.sessionId, 'revoked');
+  }
+
+  @Delete(AccountRoutes.session)
+  @HttpCode(204)
+  async revokeSession(
+    @Param('id', new ZodValidationPipe(SnowflakeId)) id: string,
+    @CurrentUser() user: AuthUser,
+  ): Promise<void> {
+    await this.sessions.revokeOne(user.userId, user.sessionId, BigInt(id));
   }
 }

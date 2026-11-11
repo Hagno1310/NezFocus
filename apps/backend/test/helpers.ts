@@ -12,6 +12,10 @@ import WebSocket from 'ws';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/configure-app.js';
 import { AuthMailer } from '../src/modules/auth/auth-mailer.js';
+import {
+  MemoryObjectStorage,
+  ObjectStorage,
+} from '../src/modules/storage/object-storage.js';
 import { KeyValueStore } from '../src/redis/key-value-store.js';
 
 // Stands for "any other app API": no @AllowIncomplete, so incomplete accounts get 40309.
@@ -51,18 +55,22 @@ export async function createTestApp(
   override: (b: TestingModuleBuilder) => TestingModuleBuilder = (b) => b,
 ) {
   const mailer = new CapturingMailer();
+  // CI has no S3; tests "PUT" through storage.upload.
+  const storage = new MemoryObjectStorage();
   const moduleRef = await override(
     Test.createTestingModule({
       imports: [AppModule],
       controllers: [ProbeController],
     })
       .overrideProvider(AuthMailer)
-      .useValue(mailer),
+      .useValue(mailer)
+      .overrideProvider(ObjectStorage)
+      .useValue(storage),
   ).compile();
   const app = moduleRef.createNestApplication();
   configureApp(app);
   await app.init();
-  return { app, mailer };
+  return { app, mailer, storage };
 }
 
 export const uniqueEmail = (name = 'an') =>

@@ -19,6 +19,9 @@ export const asApiError = (err: unknown): ApiErrorLike | null =>
 
 export type SignInMode = 'otp' | 'password';
 
+// Spec 01 › Dữ liệu nhất quán: mã OTP 6 số.
+export const CODE_LENGTH = 6;
+
 export function checkEmail(
   raw: string,
 ): { email: string } | { error: 'empty' | 'invalid' } {

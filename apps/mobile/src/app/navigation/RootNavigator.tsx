@@ -56,6 +56,9 @@ import { ResetPasswordScreen } from '../../features/auth/screens/ResetPasswordSc
 import { EnterCodeScreen } from '../../features/auth/screens/EnterCodeScreen';
 import { WelcomeScreen } from '../../features/auth/screens/WelcomeScreen';
 import { MeScreen } from '../../features/me/screens/MeScreen';
+import { AccountScreen } from '../../features/me/screens/AccountScreen';
+import { ChangePasswordScreen } from '../../features/me/screens/ChangePasswordScreen';
+import { SessionsScreen } from '../../features/me/screens/SessionsScreen';
 import { useMeSync } from '../../features/me/hooks/useMe';
 import { Button } from '../../shared/ui/Button';
 import { StyleSheet, View } from 'react-native';
@@ -137,6 +140,9 @@ type MeParamList = {
   MeRoot: undefined; // S-ME-02
   EditProfile: undefined; // S-ME-01
   Account: undefined; // S-ME-03
+  ChangePassword: { mode?: 'code' } | undefined; // S-ME-03 password-form / password-code
+  Sessions: undefined; // S-ME-03 sessions
+  DeleteAccount: undefined; // S-ME-03 delete (P3-A4 #24)
   Privacy: undefined; // S-ME-04
   Notifications: undefined; // S-ME-05
   Appearance: undefined; // S-ME-06
@@ -419,7 +425,7 @@ type Action = { label: string; onPress: () => void };
 // Child screens not built yet: each names the ticket that replaces it.
 const meChildren = [
   ['EditProfile', 'me.openProfile', 'P1-A4.6 (#75)'],
-  ['Account', 'me.account', 'P1-A4.5 (#74)'],
+  ['DeleteAccount', 'me.deleteAccount', 'P3-A4 (#24)'],
   ['Privacy', 'me.privacy', 'P1-A5.2 (#77)'],
   ['Notifications', 'me.notifications', 'P1-A5.3 (#78)'],
   ['Appearance', 'me.appearance', 'P1-A5.4 (#79)'],
@@ -460,6 +466,28 @@ function MeTab({ devActions }: { devActions: Action[] }) {
             }
           />
         )}
+      </MeStack.Screen>
+      <MeStack.Screen name="Account" options={{ headerShown: false }}>
+        {({ navigation }) => (
+          <AccountScreen
+            onBack={navigation.goBack}
+            onChangePassword={() => navigation.navigate('ChangePassword')}
+            onSessions={() => navigation.navigate('Sessions')}
+            onDeleteAccount={() => navigation.navigate('DeleteAccount')}
+          />
+        )}
+      </MeStack.Screen>
+      <MeStack.Screen name="ChangePassword" options={{ headerShown: false }}>
+        {({ navigation, route }) => (
+          <ChangePasswordScreen
+            initialMode={route.params?.mode}
+            onBack={navigation.goBack}
+            onSaved={() => navigation.goBack()}
+          />
+        )}
+      </MeStack.Screen>
+      <MeStack.Screen name="Sessions" options={{ headerShown: false }}>
+        {({ navigation }) => <SessionsScreen onBack={navigation.goBack} />}
       </MeStack.Screen>
       {meChildren.map(([name, title, ticket]) => (
         <MeStack.Screen key={name} name={name} options={{ title: t(title) }}>

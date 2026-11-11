@@ -20,6 +20,7 @@ export function SettingsRow({
   onPress,
   disabled = false,
   danger = false,
+  chevron = true,
 }: {
   label: string;
   // Board SettingsRow has an optional leading 22 icon.
@@ -36,6 +37,8 @@ export function SettingsRow({
   disabled?: boolean;
   // An action rather than a place (S-ME-02 "Đăng xuất"): `danger` text and icon, no chevron.
   danger?: boolean;
+  // false: a value shown for reading only (S-ME-03 Email).
+  chevron?: boolean;
 }) {
   const { colors } = useTheme();
   const { fontScale } = useWindowDimensions();
@@ -117,7 +120,8 @@ export function SettingsRow({
           <Switch value={toggle.value} label={label} disabled={disabled} />
         </View>
       ) : (
-        !danger && <Icon as={ChevronRight} size="md" color="text-tertiary" />
+        !danger &&
+        chevron && <Icon as={ChevronRight} size="md" color="text-tertiary" />
       )}
     </Pressable>
   );

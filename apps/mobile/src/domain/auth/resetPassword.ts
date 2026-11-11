@@ -1,14 +1,16 @@
 import { ErrorCode, type SessionResponse } from '@nezfocus/shared';
 import type { AuthRepository } from './AuthRepository';
-import { asApiError, codeErrorState, type CodeErrorState } from './authFlow';
+import {
+  asApiError,
+  CODE_LENGTH,
+  codeErrorState,
+  type CodeErrorState,
+} from './authFlow';
 import {
   passwordError,
   serverPasswordError,
   type PasswordError,
 } from './completeAccount';
-
-// Spec 01 › Dữ liệu nhất quán: mã OTP 6 số (the CodeInput takes digits only).
-const CODE_LENGTH = 6;
 
 // S-AUTH-05 reset-form: the code and the new password on one screen (AUTH-08, CR-16).
 export type ResetForm = { email: string; code: string; password: string };

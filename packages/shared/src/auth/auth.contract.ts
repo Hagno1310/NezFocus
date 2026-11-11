@@ -85,6 +85,8 @@ export type ClientPlatform = z.infer<typeof ClientPlatform>;
 export const DeviceInfo = z.object({
   id: z.string().min(1).max(64),
   name: z.string().trim().min(1).max(100).optional(),
+  // S-ME-03 "Android 13" (11/11/2026): the OS release, `Build.VERSION.RELEASE` on Android.
+  os_version: z.string().trim().min(1).max(20).optional(),
 });
 export type DeviceInfo = z.infer<typeof DeviceInfo>;
 
@@ -262,6 +264,7 @@ export const SessionInfo = z.object({
   id: SnowflakeId,
   device_name: z.string().nullable(),
   platform: z.string(), // ios | android
+  os_version: z.string().nullable(), // "13"; null for sessions from before it was sent
   ip_prefix: z.string().nullable(),
   created_at: z.iso.datetime(),
   last_active_at: z.iso.datetime(),

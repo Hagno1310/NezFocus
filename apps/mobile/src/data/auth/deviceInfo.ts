@@ -9,14 +9,20 @@ const KEY = 'device.id';
 
 let id: string | undefined;
 
-// `name` (S-ME-03 sessions) from Build.MANUFACTURER / Build.MODEL, which RN already exposes.
+// `name` and `os_version` (S-ME-03 sessions) from Build.MANUFACTURER / Build.MODEL /
+// Build.VERSION.RELEASE, which RN already exposes.
 export async function getDeviceInfo(): Promise<DeviceInfo> {
   id ??= (await SecureStore.getItemAsync(KEY)) ?? undefined;
   if (!id) {
     id = randomUUID();
     await SecureStore.setItemAsync(KEY, id);
   }
-  const c = Platform.constants as { Manufacturer?: string; Model?: string };
+  const c = Platform.constants as {
+    Manufacturer?: string;
+    Model?: string;
+    Release?: string;
+  };
   const name = deviceLabel(c.Manufacturer, c.Model);
-  return name ? { id, name } : { id };
+  const os = c.Release?.trim().slice(0, 20);
+  return { id, ...(name && { name }), ...(os && { os_version: os }) };
 }

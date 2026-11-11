@@ -6,7 +6,7 @@ import {
   changePasswordErrors,
   type ChangePasswordForm,
 } from './changePassword';
-import { deviceLabel, lastActive, splitSessions } from './sessions';
+import { deviceLabel, lastActive, osLabel, splitSessions } from './sessions';
 
 const NOW = Date.parse('2026-10-18T13:12:00Z'); // 20:12 in Hồ Chí Minh (spec 07)
 const ZONE = 'Asia/Ho_Chi_Minh';
@@ -128,6 +128,7 @@ const session = (over: Partial<SessionInfo>): SessionInfo => ({
   id: '1',
   device_name: 'Samsung Galaxy A54',
   platform: 'android',
+  os_version: '13',
   ip_prefix: null,
   created_at: '2026-10-01T00:00:00Z',
   last_active_at: '2026-10-18T13:00:00Z',
@@ -168,5 +169,13 @@ describe('sessions (S-ME-03 sessions)', () => {
       'Xiaomi Redmi Note 12',
     );
     expect(deviceLabel('realme', '')).toBeUndefined();
+  });
+
+  it('the system line: "Android 13", just the platform for older sessions', () => {
+    expect(osLabel(session({}))).toBe('Android 13');
+    expect(osLabel(session({ os_version: null }))).toBe('Android');
+    expect(osLabel(session({ platform: 'ios', os_version: '18.1' }))).toBe(
+      'iOS 18.1',
+    );
   });
 });

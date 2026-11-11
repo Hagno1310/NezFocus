@@ -1670,6 +1670,7 @@ CREATE TABLE auth_sessions (                                  -- 1 dòng = 1 fam
     device_id           VARCHAR(64),                          -- từ IDENTIFY; nhận ra thiết bị mới (REQ-AUTH-02) (v1.3)
                                                               -- v1.11 (CR-28 #10): app gửi kèm khi nhập mã / đăng nhập
     platform            VARCHAR(10) NOT NULL,                 -- ios | android
+    os_version          VARCHAR(20),                          -- "13": dòng "Android 13" ở S-ME-03; app gửi `device.os_version` cùng `device.id` (thêm 11/11/2026 khi code P1-A4.4 (#74))
     app_version         VARCHAR(20),
     ip_prefix           VARCHAR(45),                          -- IP rút gọn (NFR-PRIV-02)
     trusted_until       TIMESTAMPTZ,                          -- thiết bị tin cậy cho 2FA (REQ-AUTH-03)

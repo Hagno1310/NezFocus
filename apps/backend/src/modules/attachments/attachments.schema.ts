@@ -15,9 +15,10 @@ export const attachments = pgTable(
   'attachments',
   {
     id: bigint({ mode: 'bigint' }).primaryKey(), // Snowflake
+    // SRS 8.2: no cascade — accounts are soft-deleted (SRS 8.1), files outlive them.
     uploaderId: bigint({ mode: 'bigint' })
       .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+      .references(() => users.id),
     purpose: varchar({ length: 20 }).notNull(), // avatar (server_icon, group_icon, message later)
     filename: varchar({ length: 255 }).notNull(),
     contentType: varchar({ length: 100 }).notNull(), // declared until complete, then from the bytes

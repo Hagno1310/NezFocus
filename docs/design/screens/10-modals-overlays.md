@@ -340,7 +340,7 @@ Mọi frame khác của app có Toast đổi hình theo master C-14 (đảo màu
 
 **Mục đích:** giải thích trước khi xin quyền mic / camera, và chỉ đường mở Cài đặt khi đã bị chặn; app vẫn dùng được khi bị từ chối.
 **REQ:** NFR-MOB-10, SRS 3.5 (Thiếu quyền hệ điều hành), VC-01, DMVC-01, NOTIF-02.
-**Mở từ:** (v1.9, CR-13 #1) chạm **Mic** lần đầu ở mọi phòng voice — vào phòng **không** xin quyền mic nữa (mic luôn tắt sẵn); (v1.9, CR-22 #4) chạm **Mic** / **Camera** lần đầu ở hàng nút của màn xem trước phòng (S-ROOM-01 / S-ROOM-02 `not-joined`); bật camera lần đầu trong phòng (S-ROOM-01/02) hoặc cuộc gọi (S-CALL-01); bấm 📞 / 🎥 / nghe máy lần đầu (09); chạm nút Mic / Camera `no-permission` (C-17); "Mở cài đặt" trên banner. **Đi tới:** `OS/PermissionDialog` (hộp thoại Android); Cài đặt ứng dụng của Android; màn gọi tiếp tục (nút Mic / Camera ở màn xem trước bật lên — Camera thì hiện ô xem trước của mình, 03 `camera-on-before-join`; gọi; xem trước camera trong phòng S-ROOM-01 `camera-self-preview`).
+**Mở từ:** (v1.9, CR-13 #1) chạm **Mic** lần đầu ở mọi phòng voice — vào phòng **không** xin quyền mic nữa (mic luôn tắt sẵn); (v1.9, CR-22 #4) chạm **Mic** / **Camera** lần đầu ở hàng nút của màn xem trước phòng (S-ROOM-01 / S-ROOM-02 `not-joined`); bật camera lần đầu trong phòng (S-ROOM-01/02) hoặc cuộc gọi (S-CALL-01); bấm 📞 / 🎥 / nghe máy lần đầu (09); chạm nút Mic / Camera `no-permission` (C-17); "Mở cài đặt" trên banner; (11/11/2026, P1-A4.6 (#75)) "Chụp ảnh" trong sheet đổi ảnh của 07 S-ME-01 và 08 S-SET-01 (quyền camera, câu riêng `camera` (ảnh) / `camera-blocked` (ảnh)) — từ chối thì sheet đóng, ảnh cũ giữ nguyên, "Chọn ảnh" vẫn dùng được. **Đi tới:** `OS/PermissionDialog` (hộp thoại Android); Cài đặt ứng dụng của Android; màn gọi tiếp tục (nút Mic / Camera ở màn xem trước bật lên — Camera thì hiện ô xem trước của mình, 03 `camera-on-before-join`; gọi; xem trước camera trong phòng S-ROOM-01 `camera-self-preview`).
 
 ### Luồng (một luật cho mic và camera)
 ```
@@ -374,6 +374,8 @@ Hộp thoại Android: Cho phép ─▶ tiếp tục bình thường
 | `mic-blocked` (phòng) | "Mic đang bị chặn" | "Bật quyền Mic cho NezFocus trong Cài đặt của máy để nói trong phòng. Bạn vẫn nghe được mọi người." | "Mở cài đặt" / "Để sau" |
 | `mic-blocked` (cuộc gọi) | "Cần quyền mic để gọi" | "Bật quyền Mic cho NezFocus trong Cài đặt của máy để Bình nghe thấy bạn." | "Mở cài đặt" / "Để sau" — **thay dialog tạm ở 09 S-CALL-01 `mic-denied`** |
 | `camera-blocked` | "Camera đang bị chặn" | "Bật quyền Camera cho NezFocus trong Cài đặt của máy để bật camera." | "Mở cài đặt" / "Để sau" |
+| `camera` (ảnh) | "Cho phép NezFocus dùng camera" | "Để chụp ảnh mới làm ảnh đại diện hoặc ảnh server." | "Tiếp tục" / "Để sau" |
+| `camera-blocked` (ảnh) | "Camera đang bị chặn" | "Bật quyền Camera cho NezFocus trong Cài đặt của máy để chụp ảnh. Bạn vẫn chọn được ảnh có sẵn trong máy." | "Mở cài đặt" / "Để sau" |
 
 ### Trạng thái
 | State | Khác gì so với default | Chữ / hành động riêng |

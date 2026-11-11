@@ -2,7 +2,12 @@ import type { SessionInfo } from '@nezfocus/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { lastActive, splitSessions } from '../../../domain/account/sessions';
+import {
+  lastActive,
+  osLabel,
+  platformLabel,
+  splitSessions,
+} from '../../../domain/account/sessions';
 import { size, space, useTheme } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import { Skeleton } from '../../../shared/ui/Feedback';
@@ -17,7 +22,6 @@ import {
   useSessions,
 } from '../hooks/useAccount';
 
-const platformName: Record<string, string> = { android: 'Android', ios: 'iOS' };
 const deviceZone = Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC';
 
 // S-ME-03 `sessions` / `sessions-single` (AUTH-07). Revoking one asks first
@@ -33,11 +37,9 @@ export function SessionsScreen({ onBack }: { onBack: () => void }) {
   const [openedAt] = useState(Date.now);
   const { current, others } = splitSessions(sessions.data ?? []);
 
-  const name = (s: SessionInfo) =>
-    s.device_name ?? platformName[s.platform] ?? s.platform;
+  const name = (s: SessionInfo) => s.device_name ?? platformLabel(s.platform);
 
-  // "Android · Hôm qua 22:15" / "IP 113.190.x.x": two lines, the name and time never split.
-  // ponytail: no OS version in SessionInfo yet ("Android 13" in spec 07); see the #9 report.
+  // "Android 13 · Hôm qua 22:15" / "IP 113.190.x.x": two lines, the name and time never split.
   const lines = (s: SessionInfo) => {
     const at = lastActive(s.last_active_at, openedAt, deviceZone);
     const when = s.current
@@ -47,9 +49,7 @@ export function SessionsScreen({ onBack }: { onBack: () => void }) {
         : at.kind === 'yesterday'
           ? t('me.yesterday', { time: at.time })
           : `${at.date} ${at.time}`;
-    const first = [platformName[s.platform] ?? s.platform, when]
-      .join(' · ')
-      .replace(/ (?=\d)/g, ' ');
+    const first = [osLabel(s), when].join(' · ').replace(/ (?=\d)/g, ' ');
     return s.ip_prefix ? [first, t('me.ip', { ip: s.ip_prefix })] : [first];
   };
 

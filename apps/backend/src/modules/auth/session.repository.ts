@@ -11,6 +11,7 @@ export type NewSession = {
   deviceId: string;
   deviceName: string | null;
   platform: string;
+  osVersion: string | null;
   ipPrefix: string | null;
 };
 
@@ -23,6 +24,7 @@ export type LiveSession = {
   id: bigint;
   deviceName: string | null;
   platform: string;
+  osVersion: string | null;
   ipPrefix: string | null;
   createdAt: Date;
   lastActiveAt: Date;
@@ -144,6 +146,7 @@ export class SessionRepository {
         id: authSessions.id,
         deviceName: authSessions.deviceName,
         platform: authSessions.platform,
+        osVersion: authSessions.osVersion,
         ipPrefix: authSessions.ipPrefix,
         createdAt: authSessions.createdAt,
         lastActiveAt: authSessions.lastActiveAt,

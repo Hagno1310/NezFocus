@@ -697,10 +697,10 @@ export const vi = {
     discardProfile: 'Hồ sơ mới chưa được lưu.',
     camera: {
       title: 'Cho phép NezFocus dùng camera',
-      body: 'Để bạn bè thấy bạn khi học cùng. Bạn sẽ xem trước hình của mình trước khi bật.',
+      body: 'Để chụp ảnh mới làm ảnh đại diện hoặc ảnh server.',
       blockedTitle: 'Camera đang bị chặn',
       blockedBody:
-        'Bật quyền Camera cho NezFocus trong Cài đặt của máy để bật camera.',
+        'Bật quyền Camera cho NezFocus trong Cài đặt của máy để chụp ảnh. Bạn vẫn chọn được ảnh có sẵn trong máy.',
       continue: 'Tiếp tục',
       later: 'Để sau',
       openSettings: 'Mở cài đặt',

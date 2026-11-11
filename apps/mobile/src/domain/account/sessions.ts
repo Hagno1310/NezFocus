@@ -30,6 +30,21 @@ export function deviceLabel(
   return name.slice(0, 100);
 }
 
+const PLATFORM_NAME: Record<string, string> = {
+  android: 'Android',
+  ios: 'iOS',
+};
+
+// The system part of a session row (S-ME-03 "Android 13 · Hôm qua 22:15"); sessions from
+// before the app sent `os_version` show only the platform.
+export function osLabel(s: Pick<SessionInfo, 'platform' | 'os_version'>) {
+  const platform = PLATFORM_NAME[s.platform] ?? s.platform;
+  return s.os_version ? `${platform} ${s.os_version}` : platform;
+}
+
+export const platformLabel = (platform: string) =>
+  PLATFORM_NAME[platform] ?? platform;
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Same three forms as message times (00-components › Giờ ở đầu tin): "20:02",

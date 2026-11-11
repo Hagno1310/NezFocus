@@ -704,10 +704,10 @@ export const en: Strings = {
     discardProfile: 'Your new profile hasn’t been saved.',
     camera: {
       title: 'Allow NezFocus to use the camera',
-      body: 'So friends can see you while you study together. You’ll preview yourself before it turns on.',
+      body: 'To take a new photo for your avatar or server icon.',
       blockedTitle: 'Camera is blocked',
       blockedBody:
-        'Turn on Camera for NezFocus in your phone’s Settings to use the camera.',
+        'Turn on Camera for NezFocus in your phone’s Settings to take photos. You can still pick a photo from your phone.',
       continue: 'Continue',
       later: 'Not now',
       openSettings: 'Open Settings',

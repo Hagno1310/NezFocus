@@ -58,7 +58,7 @@ describe('Account: sessions and profile (e2e)', () => {
       .send({
         email,
         password: PASSWORD,
-        device: { ...device(), name: 'iPad của An' },
+        device: { ...device(), name: 'iPad của An', os_version: '17' },
       })
       .expect(200);
     return {
@@ -91,6 +91,7 @@ describe('Account: sessions and profile (e2e)', () => {
       expect(list.find((s) => s.id === acc.tabletId)).toMatchObject({
         device_name: 'iPad của An',
         platform: 'android',
+        os_version: '17',
         ip_prefix: '198.18.0.0',
         current: false,
       });

@@ -41,6 +41,10 @@ export class S3ObjectStorage extends ObjectStorage implements OnModuleInit {
       endpoint: config.get('S3_ENDPOINT', { infer: true }),
       region: config.get('S3_REGION', { infer: true }),
       forcePathStyle: true, // SeaweedFS / MinIO
+      // SDK ≥ 3.729 signs a CRC32 of the (empty) body into presigned PUT URLs by default, so
+      // the phone's real bytes fail with BadDigest. Checksums only where S3 requires them.
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
       credentials: {
         accessKeyId: config.get('S3_ACCESS_KEY', { infer: true }),
         secretAccessKey: config.get('S3_SECRET_KEY', { infer: true }),

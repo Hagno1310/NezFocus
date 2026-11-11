@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AttachmentsModule } from '../attachments/attachments.module.js';
 import { ChannelEvents } from './channel-events.js';
 import { ChannelOverwritesService } from './channel-overwrites.service.js';
 import { ChannelsController } from './channels.controller.js';
@@ -12,6 +13,7 @@ import { ServersRepository } from './servers.repository.js';
 import { ServersService } from './servers.service.js';
 
 @Module({
+  imports: [AttachmentsModule],
   controllers: [ServersController, ChannelsController, RolesController],
   providers: [
     ServersRepository,

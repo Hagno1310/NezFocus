@@ -397,6 +397,10 @@ export const vi = {
       discardBody: 'Tên server mới chưa được lưu.',
       stay: 'Ở lại',
       discard: 'Bỏ thay đổi',
+      changeIcon: 'Đổi ảnh server',
+      pickIcon: 'Chọn ảnh',
+      takeIcon: 'Chụp ảnh',
+      removeIcon: 'Xóa ảnh',
       lostAccess: 'Bạn không còn quyền quản lý server này',
     },
     roles: {

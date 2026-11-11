@@ -13,6 +13,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  Image,
   KeyboardAvoidingView,
   Pressable,
   ScrollView,
@@ -30,6 +31,11 @@ import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { SettingsRow } from '../../../shared/ui/SettingsRow';
 import { Text } from '../../../shared/ui/Text';
 import { TextField } from '../../../shared/ui/TextField';
+import type { ImageFile } from '../../../domain/attachments/AttachmentRepository';
+import {
+  pickFromLibrary,
+  type PickedPhoto,
+} from '../../media/PhotoSourceSheet';
 import { useCreateServer } from '../hooks/useCreateServer';
 
 // ponytail: the Study Server template opens in P4-A2 (#168); until then its card stays hidden.
@@ -37,6 +43,8 @@ const STUDY_SERVER_TEMPLATE = false;
 const PICKER = 96; // S-HOME-06 name-server: round icon slot 96
 
 type Props = {
+  cropped?: ImageFile; // the icon, back from the crop screen
+  onCrop: (photo: PickedPhoto) => void;
   onClose: () => void;
   onJoinByCode: () => void;
   onCreated: () => void;
@@ -44,6 +52,8 @@ type Props = {
 
 // 02 › S-HOME-06 (create part): choose-template → name-server → creating / create-error.
 export function CreateServerScreen({
+  cropped,
+  onCrop,
   onClose,
   onJoinByCode,
   onCreated,
@@ -74,7 +84,15 @@ export function CreateServerScreen({
   };
   usePreventRemove((step === 'name' || create.pending) && !created, back);
 
-  const submit = () => void create.submit(template, name);
+  // The icon is optional and only uploaded with "Tạo server" (P1-A4.7 #211).
+  const icon = cropped ?? null;
+  const pickIcon = async () => {
+    const photo = await pickFromLibrary();
+    if (photo === 'type') return create.setIconError('type');
+    create.clearIconError();
+    if (photo) onCrop(photo);
+  };
+  const submit = () => void create.submit(template, name, icon ?? undefined);
   const failure = create.error && create.error !== 'name' && (
     <FormMessage
       tone="error"
@@ -145,19 +163,42 @@ export function CreateServerScreen({
           </>
         ) : (
           <>
-            {/* ponytail: server icons (POST /attachments server_icon) land with P1-A4.7 (#211); no picker yet. */}
             <View style={styles.pickerWrap}>
-              <View
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('servers.create.addPhoto')}
+                disabled={create.pending}
+                onPress={() => void pickIcon()}
                 style={[styles.picker, { borderColor: colors['border-input'] }]}
               >
-                <Icon as={Camera} />
-                <Text variant="label" color="text-secondary">
-                  {t('servers.create.addPhoto')}
+                {icon ? (
+                  <Image
+                    source={{ uri: icon.uri }}
+                    style={styles.pickerImage}
+                  />
+                ) : (
+                  <>
+                    <Icon as={Camera} />
+                    <Text variant="label" color="text-secondary">
+                      {t('servers.create.addPhoto')}
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+              {create.iconError === 'type' || create.iconError === 'too-big' ? (
+                <FormMessage
+                  tone="error"
+                  text={t(
+                    create.iconError === 'type'
+                      ? 'me.uploadType'
+                      : 'me.uploadTooBig',
+                  )}
+                />
+              ) : (
+                <Text variant="label" color="text-tertiary">
+                  {t('servers.create.optional')}
                 </Text>
-              </View>
-              <Text variant="label" color="text-tertiary">
-                {t('servers.create.optional')}
-              </Text>
+              )}
             </View>
             <TextField
               label={t('servers.create.nameLabel')}
@@ -289,6 +330,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: space[1],
+    overflow: 'hidden',
   },
+  pickerImage: { width: PICKER, height: PICKER },
   offline: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
 });

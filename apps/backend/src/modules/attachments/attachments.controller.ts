@@ -21,7 +21,12 @@ import { ZodValidationPipe } from '../../common/zod-validation.pipe.js';
 import { CurrentUser, Public, type AuthUser } from '../auth/auth.decorators.js';
 import { ObjectStorage } from '../storage/object-storage.js';
 import { AttachmentsService } from './attachments.service.js';
-import { avatarKey, MEDIA_ROUTE, PUBLIC_PREFIX } from './media.js';
+import {
+  avatarKey,
+  MEDIA_FOLDERS,
+  MEDIA_ROUTE,
+  PUBLIC_PREFIX,
+} from './media.js';
 
 const idParam = new ZodValidationPipe(SnowflakeId);
 
@@ -51,22 +56,25 @@ export class AttachmentsController {
     return this.attachments.complete(user.userId, BigInt(id));
   }
 
-  // Avatars are public like a CDN would serve them: no token, cached for good (the key
-  // changes with every new avatar).
+  // Avatars and server icons are public like a CDN would serve them: no token, cached for
+  // good (the key changes with every new image).
   @Public()
-  @Get(`${MEDIA_ROUTE}/avatars/:id/:file`)
+  @Get(`${MEDIA_ROUTE}/:folder/:id/:file`)
   @Header('Content-Type', 'image/webp')
   @Header('Cache-Control', 'public, max-age=31536000, immutable')
-  async avatar(
+  async media(
+    @Param('folder') folder: string,
     @Param('id', idParam) id: string,
     @Param('file') file: string,
   ): Promise<StreamableFile> {
     const size = /^(128|256|512)\.webp$/.exec(file)?.[1];
-    const body = size
-      ? await this.storage.get(
-          avatarKey(`${PUBLIC_PREFIX}avatars/${id}`, Number(size)),
-        )
-      : undefined;
+    const known = (Object.values(MEDIA_FOLDERS) as string[]).includes(folder);
+    const body =
+      size && known
+        ? await this.storage.get(
+            avatarKey(`${PUBLIC_PREFIX}${folder}/${id}`, Number(size)),
+          )
+        : undefined;
     if (!body) throw new AppError(ErrorCode.NotFound, 'Unknown file');
     return new StreamableFile(body);
   }

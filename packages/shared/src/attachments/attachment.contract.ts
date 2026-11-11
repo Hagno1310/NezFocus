@@ -12,8 +12,9 @@ export const AttachmentRoutes = {
   complete: '/attachments/:id/complete',
 } as const;
 
-// ponytail: `server_icon` with P1-A4.7 (#211), `message` with REQ-MSG-04 P3-A2.1 (#123).
-export const AttachmentPurpose = z.enum(['avatar']);
+// `server_icon` (REQ-SRV-01) takes the avatar rules below. ponytail: `message` with
+// REQ-MSG-04 P3-A2.1 (#123).
+export const AttachmentPurpose = z.enum(['avatar', 'server_icon']);
 export type AttachmentPurpose = z.infer<typeof AttachmentPurpose>;
 
 // REQ-AUTH-06: still images only (GIF avatars are Premium, Backlog), at most 8MB.

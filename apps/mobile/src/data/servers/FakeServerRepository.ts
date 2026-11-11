@@ -30,6 +30,7 @@ import {
 } from '@nezfocus/shared';
 import type { ServerRepository } from '../../domain/servers/ServerRepository';
 import { ApiError } from '../api/client';
+import { fakeUploadedUri } from '../attachments/FakeAttachmentRepository';
 
 // EXPO_PUBLIC_FAKE=servers (WORKFLOW 4.2): An (id 1) owns the three sample servers of
 // docs/design/screens/02-home-chat.md › Dữ liệu mẫu and creates servers from the general
@@ -573,10 +574,14 @@ export function createFakeServerRepository(
         !server.channels.some((c) => c.id === welcome && c.type === 'text')
       )
         throw fail(400, ErrorCode.ValidationError);
+      const icon = body.icon_attachment_id;
       const next = {
         ...server,
         ...(body.name !== undefined && { name: body.name.trim() }),
         ...(welcome !== undefined && { system_channel_id: welcome }),
+        ...(icon !== undefined && {
+          icon_url: icon === null ? null : (fakeUploadedUri(icon) ?? null),
+        }),
       };
       servers.set(serverId, next);
       return toSummary(next);
@@ -598,6 +603,8 @@ export function createFakeServerRepository(
         },
         id,
       );
+      if (body.icon_attachment_id)
+        server.icon_url = fakeUploadedUri(body.icon_attachment_id) ?? null;
       servers.set(server.id, server);
       return server;
     },

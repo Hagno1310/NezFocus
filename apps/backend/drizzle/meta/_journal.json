@@ -71,6 +71,13 @@
       "when": 1794395720716,
       "tag": "0009_solid_captain_midlands",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794402173265,
+      "tag": "0010_military_pestilence",
+      "breakpoints": true
     }
   ]
 }

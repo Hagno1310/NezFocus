@@ -9,6 +9,7 @@ import {
   pgTable,
   primaryKey,
   smallint,
+  text,
   timestamp,
   unique,
   varchar,
@@ -27,6 +28,7 @@ export const servers = pgTable('servers', {
     .notNull()
     .references(() => users.id),
   template: varchar({ length: 20 }).notNull().default('general'), // general | study_server
+  iconKey: text(), // prefix of the webp sizes (attachments/media.ts); NULL → initials
   // Kênh tin chào mừng (REQ-SRV-01 v1.9): a text channel of this server; NULL = "Không gửi".
   systemChannelId: id().references((): AnyPgColumn => channels.id, {
     onDelete: 'set null',

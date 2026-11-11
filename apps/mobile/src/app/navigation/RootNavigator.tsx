@@ -56,12 +56,10 @@ import { ResetPasswordScreen } from '../../features/auth/screens/ResetPasswordSc
 import { EnterCodeScreen } from '../../features/auth/screens/EnterCodeScreen';
 import { WelcomeScreen } from '../../features/auth/screens/WelcomeScreen';
 import { MeScreen } from '../../features/me/screens/MeScreen';
-import {
-  EditProfileScreen,
-  type PickedPhoto,
-} from '../../features/me/screens/EditProfileScreen';
-import { CropAvatarScreen } from '../../features/me/screens/CropAvatarScreen';
-import type { AvatarFile } from '../../domain/account/profile';
+import { EditProfileScreen } from '../../features/me/screens/EditProfileScreen';
+import { CropImageScreen } from '../../features/media/CropImageScreen';
+import type { PickedPhoto } from '../../features/media/PhotoSourceSheet';
+import type { ImageFile } from '../../domain/attachments/AttachmentRepository';
 import { AccountScreen } from '../../features/me/screens/AccountScreen';
 import { ChangePasswordScreen } from '../../features/me/screens/ChangePasswordScreen';
 import { SessionsScreen } from '../../features/me/screens/SessionsScreen';
@@ -112,13 +110,20 @@ type StudyParamList = {
 
 type HomeParamList = {
   HomeRoot: undefined; // drawers around the open channel (S-HOME-01/02/03)
-  CreateServer: undefined; // S-HOME-06
+  CreateServer: { cropped?: ImageFile } | undefined; // S-HOME-06
+  // 07 S-ME-01 crop for the server icon; goes back to the screen that asked.
+  CropImage: {
+    photo: PickedPhoto;
+    back:
+      | { screen: 'CreateServer' }
+      | { screen: 'ServerOverview'; serverId: string };
+  };
   JoinByCode: undefined; // ponytail: placeholder for S-HOME-06 join-by-code until P2-A1 (#14)
   // ponytail: where S-HOME-02 / S-HOME-09 / S-SET-01 lead before those screens exist —
   // voice room P3-B1 (#26), DMs P2-B3 (#20), invite P2-A1 (#14), and the rest per row.
   HomePlaceholder: { title: string; ticket?: string };
   ServerSettings: { serverId: string }; // S-SET-01
-  ServerOverview: { serverId: string }; // S-SET-01 overview
+  ServerOverview: { serverId: string; cropped?: ImageFile }; // S-SET-01 overview
   Roles: { serverId: string }; // S-SET-02
   RoleEdit: { serverId: string; roleId: string }; // S-SET-02 edit-role
   ChannelSettings: { serverId: string; channelId: string }; // S-SET-06
@@ -144,7 +149,7 @@ type TabParamList = {
 // Spec 07: S-ME-02 is the tab root; the others are child screens that keep the TabBar.
 type MeParamList = {
   MeRoot: undefined; // S-ME-02
-  EditProfile: { cropped?: AvatarFile } | undefined; // S-ME-01
+  EditProfile: { cropped?: ImageFile } | undefined; // S-ME-01
   CropAvatar: { photo: PickedPhoto }; // S-ME-01 crop
   Account: undefined; // S-ME-03
   ChangePassword: { mode?: 'code' } | undefined; // S-ME-03 password-form / password-code
@@ -211,8 +216,15 @@ function HomeTab() {
         }}
       </HomeStack.Screen>
       <HomeStack.Screen name="CreateServer">
-        {({ navigation }) => (
+        {({ navigation, route }) => (
           <CreateServerScreen
+            cropped={route.params?.cropped}
+            onCrop={(photo) =>
+              navigation.navigate('CropImage', {
+                photo,
+                back: { screen: 'CreateServer' },
+              })
+            }
             onClose={navigation.goBack}
             onJoinByCode={() => navigation.navigate('JoinByCode')}
             onCreated={() => navigation.popTo('HomeRoot')}
@@ -278,8 +290,39 @@ function HomeTab() {
         {({ navigation, route }) => (
           <ServerOverviewScreen
             serverId={route.params.serverId}
+            cropped={route.params.cropped}
+            onCrop={(photo) =>
+              navigation.navigate('CropImage', {
+                photo,
+                back: {
+                  screen: 'ServerOverview',
+                  serverId: route.params.serverId,
+                },
+              })
+            }
             onSaved={navigation.goBack}
             onLostAccess={() => navigation.popTo('HomeRoot')}
+          />
+        )}
+      </HomeStack.Screen>
+      <HomeStack.Screen
+        name="CropImage"
+        options={{ presentation: 'fullScreenModal' }}
+      >
+        {({ navigation, route }) => (
+          <CropImageScreen
+            photo={route.params.photo}
+            onCancel={navigation.goBack}
+            onDone={(cropped) => {
+              const { back } = route.params;
+              if (back.screen === 'CreateServer')
+                navigation.popTo('CreateServer', { cropped });
+              else
+                navigation.popTo('ServerOverview', {
+                  serverId: back.serverId,
+                  cropped,
+                });
+            }}
           />
         )}
       </HomeStack.Screen>
@@ -488,7 +531,7 @@ function MeTab({ devActions }: { devActions: Action[] }) {
         options={{ headerShown: false, presentation: 'fullScreenModal' }}
       >
         {({ navigation, route }) => (
-          <CropAvatarScreen
+          <CropImageScreen
             photo={route.params.photo}
             onCancel={navigation.goBack}
             onDone={(cropped) => navigation.popTo('EditProfile', { cropped })}

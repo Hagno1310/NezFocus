@@ -6,7 +6,7 @@ import { toServerResponse } from './servers.dto.js';
 const full: FullServer = {
   id: 100n,
   name: 'Ôn thi Giải tích 2',
-  iconUrl: null,
+  iconKey: null,
   ownerId: 1n,
   template: 'study_server',
   systemChannelId: null,

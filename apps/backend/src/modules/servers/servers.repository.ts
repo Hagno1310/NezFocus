@@ -164,7 +164,11 @@ export class ServersRepository {
 
   async update(
     serverId: bigint,
-    patch: { name?: string; systemChannelId?: bigint | null },
+    patch: {
+      name?: string;
+      systemChannelId?: bigint | null;
+      iconKey?: string | null;
+    },
   ) {
     await this.db.update(servers).set(patch).where(eq(servers.id, serverId));
   }

@@ -11,6 +11,7 @@ import {
 import { AppError } from '../../common/app-error.js';
 import { Clock } from '../../common/clock.js';
 import { SnowflakeGenerator } from '../../common/snowflake.js';
+import { AttachmentsService } from '../attachments/attachments.service.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
 import { PermissionService } from '../permissions/permission.service.js';
 import { buildServer } from './server-templates.js';
@@ -37,7 +38,24 @@ export class ServersService {
     private readonly clock: Clock,
     private readonly events: EventPublisher,
     private readonly permissions: PermissionService,
+    private readonly attachments: AttachmentsService,
   ) {}
+
+  // REQ-SRV-01 icon: the caller's own completed `server_icon` upload → its storage prefix.
+  private async iconKey(userId: bigint, attachmentId: string) {
+    const icon = await this.attachments.usable(
+      userId,
+      BigInt(attachmentId),
+      'server_icon',
+    );
+    if (!icon)
+      throw invalid(
+        'icon_attachment_id',
+        'NOT_A_COMPLETED_SERVER_ICON',
+        'Upload and complete a server icon first',
+      );
+    return icon.storageKey;
+  }
 
   async create(
     userId: bigint,
@@ -50,12 +68,16 @@ export class ServersService {
         'NOT_AVAILABLE',
         'The Study Server template is not available yet',
       );
+    const iconKey = body.icon_attachment_id
+      ? await this.iconKey(userId, body.icon_attachment_id)
+      : null;
     const rows = buildServer(body.template, {
       name: body.name,
       ownerId: userId,
       now: this.clock.now(),
       nextId: () => this.ids.next(),
     });
+    rows.server.iconKey = iconKey;
     if (!(await this.repo.create(rows, MAX_SERVERS_PER_USER)))
       throw new AppError(
         ErrorCode.MaxServersReached,
@@ -111,9 +133,11 @@ export class ServersService {
           'The welcome channel must be a text channel of this server',
         );
     }
+    const icon = body.icon_attachment_id;
     await this.repo.update(serverId, {
       name: body.name,
       systemChannelId: welcome == null ? welcome : BigInt(welcome),
+      iconKey: icon == null ? icon : await this.iconKey(userId, icon),
     });
     const server = toServerSummary((await this.repo.summary(serverId))!);
     await this.events.toServer(serverId, 'SERVER_UPDATE', server);

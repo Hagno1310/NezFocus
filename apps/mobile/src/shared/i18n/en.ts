@@ -403,6 +403,10 @@ export const en: Strings = {
       discardBody: "The new server name hasn't been saved.",
       stay: 'Stay',
       discard: 'Discard',
+      changeIcon: 'Change server picture',
+      pickIcon: 'Choose photo',
+      takeIcon: 'Take photo',
+      removeIcon: 'Remove photo',
       lostAccess: 'You can no longer manage this server',
     },
     roles: {

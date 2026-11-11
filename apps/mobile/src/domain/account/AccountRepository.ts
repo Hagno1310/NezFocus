@@ -1,8 +1,5 @@
 import type {
-  AttachmentResponse,
-  AttachmentUploadResponse,
   ChangePasswordRequest,
-  CreateAttachmentRequest,
   CurrentUser,
   SessionInfo,
   UpdateProfileRequest,
@@ -19,13 +16,4 @@ export interface AccountRepository {
   revokeOtherSessions(): Promise<void>;
   // AUTH-06: USER_UPDATE reaches the other devices.
   updateProfile(body: UpdateProfileRequest): Promise<CurrentUser>;
-  // SRS 5.3 upload: presigned URL → PUT the local file → complete.
-  createAttachment(
-    body: CreateAttachmentRequest,
-  ): Promise<AttachmentUploadResponse>;
-  uploadFile(
-    url: string,
-    file: { uri: string; size: number; type: string },
-  ): Promise<void>;
-  completeAttachment(id: string): Promise<AttachmentResponse>;
 }

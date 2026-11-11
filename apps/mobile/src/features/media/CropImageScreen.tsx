@@ -13,29 +13,26 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { prepareAvatar } from '../../../data/account/avatarImage';
-import {
-  clampOffset,
-  cropRect,
-  type AvatarFile,
-} from '../../../domain/account/profile';
-import { darkColors, size, space } from '../../../shared/theme';
-import { Button } from '../../../shared/ui/Button';
-import { Text } from '../../../shared/ui/Text';
-import { showErrorToast } from '../../auth/hooks/useAuthActions';
+import { prepareImage } from '../../data/attachments/prepareImage';
+import type { ImageFile } from '../../domain/attachments/AttachmentRepository';
+import { clampOffset, cropRect } from '../../domain/attachments/crop';
+import { darkColors, size, space } from '../../shared/theme';
+import { Button } from '../../shared/ui/Button';
+import { Text } from '../../shared/ui/Text';
+import { showErrorToast } from '../auth/hooks/useAuthActions';
 
 const MAX_ZOOM = 4;
 
-// S-ME-01 `crop`: always the dark theme. The photo covers the circle's box; drag and pinch
+// 07 S-ME-01 `crop` (also the server icon, 08 S-SET-01): always the dark theme. The photo covers the circle's box; drag and pinch
 // move it, never far enough to leave a gap inside the circle.
-export function CropAvatarScreen({
+export function CropImageScreen({
   photo,
   onCancel,
   onDone,
 }: {
   photo: { uri: string; width: number; height: number };
   onCancel: () => void;
-  onDone: (file: AvatarFile) => void;
+  onDone: (file: ImageFile) => void;
 }) {
   const { t } = useTranslation();
   const { width: screen } = useWindowDimensions();
@@ -96,7 +93,7 @@ export function CropAvatarScreen({
     setBusy(true);
     try {
       const rect = cropRect(img, side, scale.get(), x.get(), y.get());
-      onDone(await prepareAvatar(photo.uri, rect));
+      onDone(await prepareImage(photo.uri, rect));
     } catch {
       showErrorToast('other');
       setBusy(false);

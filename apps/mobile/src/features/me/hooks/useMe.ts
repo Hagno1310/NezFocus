@@ -2,10 +2,11 @@ import { ErrorCode, type CurrentUser } from '@nezfocus/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { accountRepository } from '../../../data/account';
 import { asApiError } from '../../../domain/auth/authFlow';
+import { attachmentRepository } from '../../../data/attachments';
+import type { ImageFile } from '../../../domain/attachments/AttachmentRepository';
 import {
   changeAvatar,
   saveProfile,
-  type AvatarFile,
   type ProfileForm,
 } from '../../../domain/account/profile';
 import { useGuardedMutation } from '../../../shared/hooks/useGuardedMutation';
@@ -53,8 +54,12 @@ export function useSaveProfile() {
 // AUTH-06 AC1: the cropped photo is uploaded and set right away (the form's text is not).
 export function useChangeAvatar() {
   const qc = useQueryClient();
-  return useGuardedMutation(async (file: AvatarFile) => {
-    const result = await changeAvatar(accountRepository, file);
+  return useGuardedMutation(async (file: ImageFile) => {
+    const result = await changeAvatar(
+      accountRepository,
+      attachmentRepository,
+      file,
+    );
     if (result.ok) qc.setQueryData(ME, result.user);
     return result;
   });

@@ -2,7 +2,8 @@ import type { ServerSummary } from '@nezfocus/shared';
 import { MessageCircle, Plus } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { mediaUri } from '../../../data/api/media';
 import { railInitials } from '../../../domain/servers/drawer';
 import { radius, size, space, useTheme } from '../../../shared/theme';
 import { Icon } from '../../../shared/ui/Icon';
@@ -119,14 +120,22 @@ export function ServerRail({
           selected={server.id === selectedId}
           onPress={() => onSelect(server.id)}
         >
-          <Text
-            variant="label"
-            weight="700"
-            allowFontScaling={false}
-            importantForAccessibility="no"
-          >
-            {railInitials(server.name)}
-          </Text>
+          {server.icon_url ? (
+            <Image
+              source={{ uri: mediaUri(server.icon_url)! }}
+              style={styles.picture}
+              importantForAccessibility="no"
+            />
+          ) : (
+            <Text
+              variant="label"
+              weight="700"
+              allowFontScaling={false}
+              importantForAccessibility="no"
+            >
+              {railInitials(server.name)}
+            </Text>
+          )}
         </RailItem>
       ))}
       <RailItem label={t('servers.drawer.add')} dashed onPress={onAdd}>
@@ -151,7 +160,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.server,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
+  picture: { width: ITEM.tile, height: ITEM.tile },
   pill: {
     position: 'absolute',
     left: 0,

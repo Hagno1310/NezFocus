@@ -3,6 +3,7 @@ import {
   AVATAR_MAX_BYTES,
   AVATAR_TYPES,
   ErrorCode,
+  type AttachmentPurpose,
   type AttachmentResponse,
   type AttachmentUploadResponse,
   type CreateAttachmentRequest,
@@ -14,7 +15,7 @@ import { ObjectStorage } from '../storage/object-storage.js';
 import { AttachmentsRepository } from './attachments.repository.js';
 import type { AttachmentRow } from './attachments.schema.js';
 import { avatarVariants, detectImageType } from './avatar-image.js';
-import { avatarKey, avatarPrefix } from './media.js';
+import { avatarKey, mediaPrefix } from './media.js';
 
 const UPLOAD_URL_SECONDS = 10 * 60;
 
@@ -32,8 +33,8 @@ const toResponse = (row: AttachmentRow): AttachmentResponse => ({
   height: row.height,
 });
 
-// SRS 5.3 Upload for `purpose = avatar` (REQ-AUTH-06): still images only, at most 8MB,
-// stored as webp at 128 / 256 / 512. The declared type and size are checked up front so the
+// SRS 5.3 Upload for `purpose = avatar` (REQ-AUTH-06) and `server_icon` (REQ-SRV-01): still
+// images only, at most 8MB, stored as webp at 128 / 256 / 512. The declared type and size are checked up front so the
 // app learns early; `complete` checks the real bytes again.
 @Injectable()
 export class AttachmentsService {
@@ -98,7 +99,7 @@ export class AttachmentsService {
 
     const image = await avatarVariants(bytes, type).catch(() => undefined);
     if (!image) throw await refuse(wrongType());
-    const prefix = avatarPrefix(id);
+    const prefix = mediaPrefix(row.purpose as AttachmentPurpose, id);
     for (const v of image.variants)
       await this.storage.put(avatarKey(prefix, v.size), v.body, 'image/webp');
     await this.storage.delete([row.storageKey]);
@@ -113,10 +114,11 @@ export class AttachmentsService {
     );
   }
 
-  // For PATCH /users/@me: the uploader's own, completed avatar, or undefined.
-  async usableAvatar(uploaderId: bigint, id: bigint) {
+  // For PATCH /users/@me and the server icon: the uploader's own, completed file of that
+  // purpose, or undefined.
+  async usable(uploaderId: bigint, id: bigint, purpose: AttachmentPurpose) {
     const row = await this.attachments.findOwn(id, uploaderId);
-    return row?.purpose === 'avatar' && row.scanStatus === 'clean'
+    return row?.purpose === purpose && row.scanStatus === 'clean'
       ? row
       : undefined;
   }

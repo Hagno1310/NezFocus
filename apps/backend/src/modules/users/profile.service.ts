@@ -37,9 +37,10 @@ export class ProfileService {
     let avatarKey: string | null | undefined;
     if (body.avatar_attachment_id === null) avatarKey = null;
     else if (body.avatar_attachment_id !== undefined) {
-      const avatar = await this.attachments.usableAvatar(
+      const avatar = await this.attachments.usable(
         userId,
         BigInt(body.avatar_attachment_id),
+        'avatar',
       );
       if (!avatar)
         throw new AppError(ErrorCode.ValidationError, 'Invalid request', {

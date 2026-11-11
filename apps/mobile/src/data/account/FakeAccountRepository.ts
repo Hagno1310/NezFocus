@@ -1,6 +1,4 @@
 import {
-  AVATAR_MAX_BYTES,
-  AVATAR_TYPES,
   checkPassword,
   ErrorCode,
   type CurrentUser,
@@ -8,6 +6,7 @@ import {
 } from '@nezfocus/shared';
 import type { AccountRepository } from '../../domain/account/AccountRepository';
 import { ApiError } from '../api/client';
+import { fakeUploadedUri } from '../attachments/FakeAttachmentRepository';
 import {
   FAKE_CODE,
   FAKE_EXPIRED_CODE,
@@ -42,8 +41,6 @@ export function createFakeAccountRepository(
   let wrongPasswords = 0;
   let lockedUntil = 0;
   let codeAttempts = MAX_WRONG;
-  let nextId = 900;
-  const uploaded = new Map<string, string>(); // attachment id → local file
   let sessions: SessionInfo[] = [
     {
       id: '100',
@@ -131,40 +128,12 @@ export function createFakeAccountRepository(
       if (body.bio !== undefined) me.bio = body.bio;
       if (body.avatar_attachment_id === null) me.avatar = null;
       else if (body.avatar_attachment_id !== undefined) {
-        // The fake keeps the local file: AvatarImage shows file:// URIs as they are.
-        const uri = uploaded.get(body.avatar_attachment_id);
+        // The fake keeps the local file; avatarUri shows file:// URIs as they are.
+        const uri = fakeUploadedUri(body.avatar_attachment_id);
         if (!uri) throw fail(400, ErrorCode.ValidationError);
         me.avatar = { '128': uri, '256': uri, '512': uri };
       }
       return { ...me };
-    },
-    async createAttachment(body) {
-      await wait();
-      if (body.size_bytes > AVATAR_MAX_BYTES)
-        throw fail(400, ErrorCode.FileTooLarge);
-      if (!(AVATAR_TYPES as readonly string[]).includes(body.content_type))
-        throw fail(400, ErrorCode.UnsupportedFileType);
-      nextId += 1;
-      return {
-        attachment_id: String(nextId),
-        upload_url: `fake://upload/${nextId}`,
-        expires_at: new Date(now() + 15 * 60_000).toISOString(),
-      };
-    },
-    async uploadFile(url, file) {
-      await wait();
-      uploaded.set(url.split('/').pop()!, file.uri);
-    },
-    async completeAttachment(id) {
-      await wait();
-      if (!uploaded.has(id)) throw fail(404, ErrorCode.NotFound);
-      return {
-        id,
-        purpose: 'avatar',
-        content_type: 'image/jpeg',
-        width: 512,
-        height: 512,
-      };
     },
   };
 }

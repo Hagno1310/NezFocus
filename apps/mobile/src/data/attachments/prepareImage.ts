@@ -1,15 +1,16 @@
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
-import type { AvatarFile } from '../../domain/account/profile';
+import type { ImageFile } from '../../domain/attachments/AttachmentRepository';
 
 // SRS 7.3.5: crop and compress on the phone before uploading. Always JPEG, so a HEIC photo
 // leaves the phone as JPEG; 512 is the largest size the backend keeps (AVATAR_SIZES).
+// Avatars and server icons alike.
 const SIDE = 512;
 const QUALITY = 0.85;
 
-export async function prepareAvatar(
+export async function prepareImage(
   uri: string,
   rect: { originX: number; originY: number; width: number; height: number },
-): Promise<AvatarFile> {
+): Promise<ImageFile> {
   const image = await ImageManipulator.manipulate(uri)
     .crop(rect)
     .resize({ width: SIDE, height: SIDE })

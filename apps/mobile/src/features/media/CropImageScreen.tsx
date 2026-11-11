@@ -22,6 +22,8 @@ import { Text } from '../../shared/ui/Text';
 import { showErrorToast } from '../auth/hooks/useAuthActions';
 
 const MAX_ZOOM = 4;
+// Frame `crop`: a 310 ring on the 390 frame, 40 from each edge; the photo shows past it.
+const RING_INSET = space[5] + space[2];
 
 // 07 S-ME-01 `crop` (also the server icon, 08 S-SET-01): always the dark theme. The photo covers the circle's box; drag and pinch
 // move it, never far enough to leave a gap inside the circle.
@@ -40,7 +42,7 @@ export function CropImageScreen({
   const { t } = useTranslation();
   const { width: screen } = useWindowDimensions();
   const { top, bottom } = useSafeAreaInsets();
-  const side = screen - space[3] * 2;
+  const side = screen - RING_INSET * 2;
   const img = { width: photo.width, height: photo.height };
   const fit = side / Math.min(img.width, img.height);
 
@@ -49,6 +51,7 @@ export function CropImageScreen({
   const y = useSharedValue(0);
   const start = useSharedValue({ scale: 1, x: 0, y: 0 });
   const [busy, setBusy] = useState(false);
+  const [stage, setStage] = useState({ width: 0, height: 0 });
 
   const pinch = usePinchGesture({
     onActivate: () => {
@@ -104,8 +107,18 @@ export function CropImageScreen({
   };
 
   const r = side / 2;
-  // Scrim everywhere but the circle (even-odd: the circle cuts a hole in the square).
-  const mask = `M0 0H${side}V${side}H0Z M${r} 0A${r} ${r} 0 1 0 ${r} ${side}A${r} ${r} 0 1 0 ${r} 0Z`;
+  // Scrim over the whole stage but the hole (frame `crop`: "phủ `scrim` ở cả bốn phía"),
+  // drawn at the stage's own size: a larger SVG crashed Android ("bitmap too large").
+  const w = stage.width;
+  const h = stage.height;
+  const cx = w / 2;
+  const cy = h / 2;
+  const hole =
+    shape === 'circle'
+      ? `M${cx} ${cy - r}A${r} ${r} 0 1 0 ${cx} ${cy + r}A${r} ${r} 0 1 0 ${cx} ${cy - r}Z`
+      : `M${cx - r} ${cy - r}H${cx + r}V${cy + r}H${cx - r}Z`;
+  const mask = `M0 0H${w}V${h}H0Z ${hole}`;
+  const ring = size.strokeThick;
 
   return (
     <View
@@ -114,31 +127,47 @@ export function CropImageScreen({
         {
           backgroundColor: darkColors.bg,
           paddingTop: top,
-          paddingBottom: bottom + space[3],
+          paddingBottom: bottom,
         },
       ]}
     >
       <View style={styles.bar}>
-        <Button
-          variant="text"
-          size="S"
-          label={t('me.cancel')}
-          disabled={busy}
-          onPress={onCancel}
-        />
         <Text
           variant="headline"
           style={[styles.title, { color: darkColors['text-primary'] }]}
+          pointerEvents="none"
           accessibilityRole="header"
         >
           {t('me.cropTitle')}
         </Text>
-        <View style={styles.barSpacer} />
+        <Button
+          variant="text"
+          size="S"
+          tone="neutral"
+          label={t('me.cancel')}
+          disabled={busy}
+          onPress={onCancel}
+        />
+        <Button
+          variant="text"
+          size="S"
+          label={t('me.cropUse')}
+          loading={busy}
+          onPress={() => void use()}
+        />
       </View>
 
-      <View style={styles.middle}>
-        <GestureDetector gesture={gesture}>
-          <View style={[styles.box, { width: side, height: side }]}>
+      <GestureDetector gesture={gesture}>
+        <View
+          style={styles.stage}
+          onLayout={(e) =>
+            setStage({
+              width: e.nativeEvent.layout.width,
+              height: e.nativeEvent.layout.height,
+            })
+          }
+        >
+          <View style={{ width: side, height: side }}>
             <Animated.View
               style={[
                 {
@@ -153,55 +182,46 @@ export function CropImageScreen({
             >
               <Image source={{ uri: photo.uri }} style={styles.fill} />
             </Animated.View>
+          </View>
+          {w > 0 && (
             <Svg
-              width={side}
-              height={side}
+              width={w}
+              height={h}
               style={StyleSheet.absoluteFill}
               pointerEvents="none"
             >
+              <Path d={mask} fill={darkColors.scrim} fillRule="evenodd" />
               {shape === 'circle' ? (
-                <>
-                  <Path d={mask} fill={darkColors.scrim} fillRule="evenodd" />
-                  <Circle
-                    cx={r}
-                    cy={r}
-                    r={r - size.strokeThick / 2}
-                    stroke={darkColors['text-primary']}
-                    strokeWidth={size.strokeThick}
-                    fill="none"
-                  />
-                </>
+                <Circle
+                  cx={cx}
+                  cy={cy}
+                  r={r - ring / 2}
+                  stroke={darkColors['text-primary']}
+                  strokeWidth={ring}
+                  fill="none"
+                />
               ) : (
                 <Rect
-                  x={size.strokeThick / 2}
-                  y={size.strokeThick / 2}
-                  width={side - size.strokeThick}
-                  height={side - size.strokeThick}
+                  x={cx - r + ring / 2}
+                  y={cy - r + ring / 2}
+                  width={side - ring}
+                  height={side - ring}
                   stroke={darkColors['text-primary']}
-                  strokeWidth={size.strokeThick}
+                  strokeWidth={ring}
                   fill="none"
                 />
               )}
             </Svg>
-          </View>
-        </GestureDetector>
-        <Text
-          variant="label"
-          style={[styles.hint, { color: darkColors['text-secondary'] }]}
-        >
-          {t('me.cropHint')}
-        </Text>
-      </View>
+          )}
+        </View>
+      </GestureDetector>
 
-      <View style={styles.footer}>
-        <Button
-          size="L"
-          fullWidth
-          label={t('me.cropUse')}
-          loading={busy}
-          onPress={() => void use()}
-        />
-      </View>
+      <Text
+        variant="label"
+        style={[styles.hint, { color: darkColors['text-secondary'] }]}
+      >
+        {t('me.cropHint')}
+      </Text>
     </View>
   );
 }
@@ -212,18 +232,17 @@ const styles = StyleSheet.create({
     height: size.header,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: space[1],
   },
-  title: { flex: 1, textAlign: 'center' },
-  barSpacer: { width: space[7] }, // keeps the title centred against "Hủy"
-  middle: {
+  // Centred on the screen whatever the two buttons' widths (frame `crop`).
+  title: { position: 'absolute', left: 0, right: 0, textAlign: 'center' },
+  stage: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: space[3],
+    overflow: 'hidden',
   },
-  box: { overflow: 'hidden' },
   fill: { width: '100%', height: '100%' },
-  hint: { textAlign: 'center' },
-  footer: { paddingHorizontal: space[3] },
+  hint: { textAlign: 'center', paddingVertical: space[3] },
 });

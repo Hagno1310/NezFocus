@@ -1,18 +1,20 @@
 import { Permission, SERVER_NAME_MAX, hasPermission } from '@nezfocus/shared';
 import { usePreventRemove, useNavigation } from '@react-navigation/native';
-import { Hash } from 'lucide-react-native';
+import { Camera, Hash } from 'lucide-react-native';
 import { useEffect, useEffectEvent, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useStore } from 'zustand';
 import { channelSections } from '../../../domain/servers/drawer';
 import { homeStore } from '../../../domain/servers/homeStore';
-import { space, useTheme } from '../../../shared/theme';
+import { size, space, useTheme } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
+import { Icon } from '../../../shared/ui/Icon';
 import { BottomSheet, Dialog } from '../../../shared/ui/Overlay';
 import { RadioRow } from '../../../shared/ui/RadioRow';
 import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { SettingsRow } from '../../../shared/ui/SettingsRow';
+import { Text } from '../../../shared/ui/Text';
 import { TextField } from '../../../shared/ui/TextField';
 import { showToast } from '../../../shared/ui/Toast';
 import type { ImageFile } from '../../../domain/attachments/AttachmentRepository';
@@ -86,9 +88,13 @@ export function ServerOverviewScreen({
   const icon = useServerIcon(serverId);
   const [iconMenu, setIconMenu] = useState(false);
   const [iconError, setIconError] = useState<ImageError | null>(null);
+  // 08 `overview-icon-uploading`: the new picture shows, dimmed, while it uploads.
+  const [preview, setPreview] = useState<string | null>(null);
   // 07 upload-error for type / size; offline keeps the old picture + Toast "Thử lại".
   const setIcon = async (file: ImageFile | null) => {
+    setPreview(file?.uri ?? null);
     const result = await icon.run(file);
+    setPreview(null);
     if (!result) return;
     setIconError(null);
     if (result.ok) return;
@@ -176,8 +182,42 @@ export function ServerOverviewScreen({
             error={iconError}
             disabled={!online || icon.pending}
             onPress={() => setIconMenu(true)}
+            action={
+              // Frame `overview`: "Đổi ảnh server" `label` `primary` under the icon.
+              <Pressable
+                accessibilityRole="button"
+                disabled={!online || icon.pending}
+                onPress={() => setIconMenu(true)}
+                hitSlop={space[2]}
+              >
+                <Text
+                  variant="label"
+                  color={!online || icon.pending ? 'text-tertiary' : 'primary'}
+                >
+                  {t('servers.settings.changeIcon')}
+                </Text>
+              </Pressable>
+            }
           >
-            <ServerIcon server={saved} size={96} />
+            <View>
+              <ServerIcon
+                server={saved}
+                size={96}
+                uri={icon.pending ? preview : undefined}
+              />
+              {/* Frame `overview`: camera badge 28, `surface-3` with a `bg` ring. */}
+              <View
+                style={[
+                  styles.badge,
+                  {
+                    backgroundColor: colors['surface-3'],
+                    borderColor: colors.bg,
+                  },
+                ]}
+              >
+                <Icon as={Camera} size="sm" color="text-primary" />
+              </View>
+            </View>
           </ImageSlot>
         </View>
         <TextField
@@ -193,18 +233,21 @@ export function ServerOverviewScreen({
           returnKeyType="done"
           onSubmitEditing={() => dirty && void saveName()}
         />
-        <SettingsRow
-          label={t('servers.settings.welcome')}
-          value={
-            welcome ? `# ${welcome.name}` : t('servers.settings.welcomeOff')
-          }
-          description={
-            welcome
+        <View>
+          <SettingsRow
+            label={t('servers.settings.welcome')}
+            value={
+              welcome ? `# ${welcome.name}` : t('servers.settings.welcomeOff')
+            }
+            onPress={() => setPicker(true)}
+          />
+          {/* Frame `overview`: the hint is its own line under the row. */}
+          <Text variant="label" color="text-secondary">
+            {welcome
               ? t('servers.settings.welcomeHint')
-              : t('servers.settings.welcomeOffHint')
-          }
-          onPress={() => setPicker(true)}
-        />
+              : t('servers.settings.welcomeOffHint')}
+          </Text>
+        </View>
       </ScrollView>
 
       <BottomSheet
@@ -273,4 +316,15 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   body: { padding: space[3], gap: space[3] },
   icon: { alignItems: 'center' },
+  badge: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: size.icon.hero - space[1],
+    height: size.icon.hero - space[1],
+    borderRadius: size.icon.hero,
+    borderWidth: size.strokeThick,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

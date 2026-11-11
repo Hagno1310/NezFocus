@@ -732,6 +732,7 @@ export const en: Strings = {
     codeSent:
       'We sent a 6-digit OTP code to {{email}}. It works for 15 minutes.',
     useCurrent: 'Enter current password',
+    passwordPlaceholder: 'Enter password',
     passwordSaved_zero: 'Password changed',
     passwordSaved_one: 'Password changed · {{count}} other device logged out',
     passwordSaved_other:

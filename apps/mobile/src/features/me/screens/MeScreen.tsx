@@ -25,6 +25,7 @@ import { Dialog, BottomSheet } from '../../../shared/ui/Overlay';
 import { Avatar, PresenceDot } from '../../../shared/ui/People';
 import { RadioRow } from '../../../shared/ui/RadioRow';
 import { SettingsRow } from '../../../shared/ui/SettingsRow';
+import { SectionLabel } from '../../../shared/ui/SectionLabel';
 import { Text } from '../../../shared/ui/Text';
 import { useLogOut } from '../../auth/hooks/useAuthActions';
 import { ConnectionBanner } from '../../gateway/components/ConnectionBanner';
@@ -135,15 +136,13 @@ export function MeScreen({
               ? t('me.invisibleRow')
               : t(`me.status.${status}`)
           }
-          leading={<PresenceDot status={myDot(status)} size="lg" />}
+          leading={<PresenceDot status={myDot(status)} />}
           disabled={!online}
           onPress={() => setPicking(true)}
         />
 
         <View>
-          <Text variant="label" color="text-secondary" style={styles.section}>
-            {t('me.settings')}
-          </Text>
+          <SectionLabel style={styles.section}>{t('me.settings')}</SectionLabel>
           <SettingsRow
             label={t('me.account')}
             icon={UserRound}
@@ -182,7 +181,7 @@ export function MeScreen({
         title={t('me.statusSheet')}
         onDismiss={() => setPicking(false)}
       >
-        <View accessibilityRole="radiogroup">
+        <View accessibilityRole="radiogroup" style={styles.statusList}>
           {MY_STATUSES.map((s) => (
             <RadioRow
               key={s}
@@ -217,6 +216,7 @@ export function MeScreen({
 }
 
 const styles = StyleSheet.create({
+  statusList: { gap: space[1] },
   screen: { flex: 1 },
   title: { paddingHorizontal: space[3], paddingVertical: space[2] },
   content: {

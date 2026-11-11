@@ -6,13 +6,15 @@ import { disabledOpacity, space, useTheme } from '../../shared/theme';
 import { FormMessage } from '../../shared/ui/FormMessage';
 
 // The 96 photo of 07 S-ME-01 / 08 S-SET-01: tap to change; `uploading` dims it under a
-// spinner; `upload-error` (type / size) sits underneath.
+// spinner. `action` (the "Đổi ảnh đại diện" button) sits under the photo, and
+// `upload-error` (type / size) under that, left-aligned (frame `upload-error`).
 export function ImageSlot({
   label,
   uploading,
   error,
   disabled,
   onPress,
+  action,
   children,
 }: {
   label: string;
@@ -20,6 +22,7 @@ export function ImageSlot({
   error: ImageError | null;
   disabled: boolean;
   onPress: () => void;
+  action?: ReactNode;
   children: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -40,18 +43,22 @@ export function ImageSlot({
           </View>
         )}
       </Pressable>
+      {action}
       {(error === 'type' || error === 'too-big') && (
-        <FormMessage
-          tone="error"
-          text={t(error === 'type' ? 'me.uploadType' : 'me.uploadTooBig')}
-        />
+        <View style={styles.error}>
+          <FormMessage
+            tone="error"
+            text={t(error === 'type' ? 'me.uploadType' : 'me.uploadTooBig')}
+          />
+        </View>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { alignItems: 'center', gap: space[2], alignSelf: 'stretch' },
+  wrap: { alignItems: 'center', gap: space[1], alignSelf: 'stretch' },
+  error: { alignSelf: 'stretch' },
   dim: { opacity: disabledOpacity },
   spinner: {
     ...StyleSheet.absoluteFill,

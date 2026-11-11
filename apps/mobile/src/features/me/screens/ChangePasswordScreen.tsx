@@ -1,6 +1,6 @@
 import { checkPassword } from '@nezfocus/shared';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
-import { Clock3 } from 'lucide-react-native';
+import { CircleCheck, Clock3 } from 'lucide-react-native';
 import {
   useEffect,
   useEffectEvent,
@@ -179,7 +179,10 @@ export function ChangePasswordScreen({
   // After the render that lifted the guard, so leaving is not asked about.
   const finish = useEffectEvent((others: number) => {
     onSaved(others);
-    showToast({ message: t('me.passwordSaved', { count: others }) });
+    showToast({
+      icon: CircleCheck,
+      message: t('me.passwordSaved', { count: others }),
+    });
   });
   useEffect(() => {
     if (savedOthers !== null) finish(savedOthers);
@@ -204,6 +207,7 @@ export function ChangePasswordScreen({
       <TextField
         ref={newInput}
         label={t('me.newPassword')}
+        placeholder={t('me.passwordPlaceholder')}
         value={password}
         onChangeText={(v) => {
           setPassword(v);
@@ -242,7 +246,10 @@ export function ChangePasswordScreen({
             size="S"
             label={t('me.save')}
             loading={busy}
-            disabled={!online || locked || (mode === 'code' && needsNewCode)}
+            // Frame `password-form`: dim until something is typed (as S-ME-01 "Lưu").
+            disabled={
+              !dirty || !online || locked || (mode === 'code' && needsNewCode)
+            }
             onPress={() => void save()}
           />
         }
@@ -258,6 +265,7 @@ export function ChangePasswordScreen({
               <TextField
                 ref={currentInput}
                 label={t('me.currentPassword')}
+                placeholder={t('me.passwordPlaceholder')}
                 value={current}
                 onChangeText={(v) => {
                   setCurrent(v);
@@ -274,7 +282,11 @@ export function ChangePasswordScreen({
                 onSubmitEditing={() => newInput.current?.focus()}
               />
               <View style={styles.right}>
-                <InlineLink link={t('me.forgot')} onPress={enterCodeMode} />
+                <InlineLink
+                  size="label"
+                  link={t('me.forgot')}
+                  onPress={enterCodeMode}
+                />
               </View>
             </View>
             {locked && (
@@ -341,9 +353,11 @@ export function ChangePasswordScreen({
             {newPassword}
           </>
         )}
-        <Text variant="label" color="text-tertiary">
-          {t('me.othersSignedOut')}
-        </Text>
+        <FormMessage
+          tone="info"
+          variant="field"
+          text={t('me.othersSignedOut')}
+        />
         {mode === 'code' && (
           <InlineLink
             center={false}

@@ -724,6 +724,7 @@ export const vi = {
       'Bạn đã nhập sai nhiều lần. Thử lại sau {{count}} phút, hoặc dùng Quên mật khẩu?',
     codeSent: 'Mình đã gửi mã OTP 6 số tới {{email}}. Mã có hiệu lực 15 phút.',
     useCurrent: 'Nhập mật khẩu hiện tại',
+    passwordPlaceholder: 'Nhập mật khẩu',
     passwordSaved_zero: 'Đã đổi mật khẩu',
     passwordSaved_one: 'Đã đổi mật khẩu · đã đăng xuất {{count}} thiết bị khác',
     passwordSaved_other:

@@ -23,7 +23,7 @@ const initialType: Record<AvatarSize, TypeVariant> = {
   32: 'label',
   40: 'body',
   56: 'title-2',
-  96: 'title-1',
+  96: 'display', // board C-13
 };
 
 // DESIGN.md › Presence: dot 10 on avatars 32–40, 14 on 56–96, cut out of the background by 2.

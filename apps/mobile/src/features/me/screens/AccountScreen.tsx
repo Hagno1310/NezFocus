@@ -1,9 +1,10 @@
-import { KeyRound, Smartphone, Trash2 } from 'lucide-react-native';
+import { KeyRound, Mail, Smartphone, Trash2 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { space, useTheme } from '../../../shared/theme';
 import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { SettingsRow } from '../../../shared/ui/SettingsRow';
+import { SectionLabel } from '../../../shared/ui/SectionLabel';
 import { Text } from '../../../shared/ui/Text';
 import { ConnectionBanner } from '../../gateway/components/ConnectionBanner';
 import { useOnline } from '../../gateway/hooks/useOnline';
@@ -35,6 +36,7 @@ export function AccountScreen({
       <ScrollView contentContainerStyle={styles.content}>
         <SettingsRow
           label={t('me.email')}
+          icon={Mail}
           value={me?.email ?? ''}
           chevron={false}
         />
@@ -53,9 +55,7 @@ export function AccountScreen({
           disabled={!online}
           onPress={onSessions}
         />
-        <Text variant="label" color="text-secondary" style={styles.section}>
-          {t('me.dangerZone')}
-        </Text>
+        <SectionLabel style={styles.section}>{t('me.dangerZone')}</SectionLabel>
         <SettingsRow
           label={t('me.deleteAccount')}
           icon={Trash2}

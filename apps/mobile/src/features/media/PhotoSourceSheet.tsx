@@ -2,7 +2,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Camera, ImageIcon, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Linking } from 'react-native';
+import { Linking, StyleSheet } from 'react-native';
 import { imageFileError } from '../../domain/attachments/upload';
 import { ActionSheet, BottomSheet } from '../../shared/ui/Overlay';
 import { Text } from '../../shared/ui/Text';
@@ -118,7 +118,7 @@ export function PhotoSourceSheet({
       />
       <BottomSheet
         visible={cameraSheet !== null}
-        icon={{ as: Camera, color: 'text-primary' }}
+        icon={{ as: Camera, color: 'text-primary', circle: true }}
         title={t(blocked ? 'me.camera.blockedTitle' : 'me.camera.title')}
         action={
           blocked
@@ -141,10 +141,12 @@ export function PhotoSourceSheet({
         }}
         onDismiss={() => setCameraSheet(null)}
       >
-        <Text color="text-secondary">
+        <Text color="text-secondary" style={styles.center}>
           {t(blocked ? 'me.camera.blockedBody' : 'me.camera.body')}
         </Text>
       </BottomSheet>
     </>
   );
 }
+
+const styles = StyleSheet.create({ center: { textAlign: 'center' } });

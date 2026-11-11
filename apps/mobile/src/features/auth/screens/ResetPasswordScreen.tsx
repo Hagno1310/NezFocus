@@ -13,7 +13,7 @@ import {
 } from '../../../domain/auth/authFlow';
 import type { PasswordError } from '../../../domain/auth/completeAccount';
 import { resetFormErrors } from '../../../domain/auth/resetPassword';
-import { size } from '../../../shared/theme';
+import { size, space } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import { CodeInput } from '../../../shared/ui/CodeInput';
 import { SystemBanner } from '../../../shared/ui/Feedback';
@@ -126,12 +126,13 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
       onBack={navigation.goBack}
       banner={!online && <SystemBanner kind="offline" />}
     >
-      <View>
+      <View style={styles.sentTo}>
         <Text color="text-secondary">
           {t('auth.forgot.sentTo', { email: breakableEmail(email) })}
         </Text>
         <InlineLink
           center={false}
+          size="label"
           link={t('auth.enterCode.changeEmail')}
           onPress={navigation.goBack}
         />
@@ -220,4 +221,7 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({ field: { gap: size.iconGap } });
+const styles = StyleSheet.create({
+  field: { gap: size.iconGap },
+  sentTo: { gap: space[2] },
+});

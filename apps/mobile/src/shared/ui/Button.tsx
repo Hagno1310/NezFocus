@@ -37,6 +37,9 @@ export type ButtonProps = Omit<PressableProps, 'children' | 'style'> & {
   loading?: boolean;
   fullWidth?: boolean;
   style?: StyleProp<ViewStyle>;
+  // Label colour of `secondary` / `text`: `danger` for a destructive step that still asks
+  // first (S-ME-03 "Đăng xuất" on a session row); `neutral` = `text-primary` ("Hủy" on crop).
+  tone?: 'danger' | 'neutral';
   // Cap on the label's text scale, for buttons pinned to the bottom (spec 01 large-text: ×1.3).
   labelMaxScale?: number;
 };
@@ -49,6 +52,7 @@ export function Button({
   loading = false,
   disabled = false,
   fullWidth = false,
+  tone,
   style,
   labelMaxScale,
   ...rest
@@ -64,7 +68,11 @@ export function Button({
       ? 'on-primary'
       : variant === 'danger'
         ? 'bg'
-        : 'primary';
+        : tone === 'danger'
+          ? 'danger'
+          : tone === 'neutral'
+            ? 'text-primary'
+            : 'primary';
   const bg = disabled
     ? filled
       ? colors['surface-3']

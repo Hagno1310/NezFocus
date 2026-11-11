@@ -416,13 +416,15 @@ function MainTabBar({
 }: BottomTabBarProps & { tabs: Parameters<typeof TabBar>[0]['tabs'] }) {
   const keyboard = useKeyboardVisible();
   const route = props.state.routes[props.state.index];
-  const onSolo =
-    route?.name === 'Study' && getFocusedRouteNameFromRoute(route) === 'Solo';
+  const focused = route && getFocusedRouteNameFromRoute(route);
+  const onSolo = route?.name === 'Study' && focused === 'Solo';
+  // 07 S-ME-01 `crop` (and the server icon crop) is a full-screen step: no TabBar.
+  const fullScreen = focused === 'CropAvatar' || focused === 'CropImage';
   const openSolo = () => props.navigation.navigate('Study', { screen: 'Solo' });
   return (
     <>
       <SoloNotificationOpener onOpen={openSolo} />
-      {!keyboard && (
+      {!keyboard && !fullScreen && (
         <>
           {/* Hidden on the Solo screen itself (C-08). */}
           {!onSolo && <SoloMiniPlayer onOpen={openSolo} />}

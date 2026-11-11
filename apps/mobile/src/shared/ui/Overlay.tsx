@@ -312,8 +312,10 @@ export function BottomSheet({
   error?: string | null;
   // Neutral FormMessage above the button (S-SET-09 `limit`).
   notice?: string | null;
-  // 32 above the title (S-MOD-03 `trash-2` danger).
-  icon?: { as: IconComponent; color: ColorToken };
+  // 32 above the title (S-MOD-03 `trash-2` danger). `circle`: the permission sheets
+  // (10 S-MOD-05) put it in a 64 `surface-2` circle and centre the title; the caller
+  // centres its own text.
+  icon?: { as: IconComponent; color: ColorToken; circle?: boolean };
   // `chevron-left` before the title: the same sheet showing a sub-list (S-SET-09 `category-picker`).
   onBack?: () => void;
   onDismiss: () => void;
@@ -342,7 +344,19 @@ export function BottomSheet({
           <>
             {handle}
             <View style={styles.sheetBody}>
-              {icon && <Icon as={icon.as} size="hero" color={icon.color} />}
+              {icon &&
+                (icon.circle ? (
+                  <View
+                    style={[
+                      styles.iconCircle,
+                      { backgroundColor: colors['surface-2'] },
+                    ]}
+                  >
+                    <Icon as={icon.as} size="hero" color={icon.color} />
+                  </View>
+                ) : (
+                  <Icon as={icon.as} size="hero" color={icon.color} />
+                ))}
               <View style={styles.sheetTitle}>
                 {onBack && (
                   <IconButton
@@ -354,7 +368,7 @@ export function BottomSheet({
                 <Text
                   variant="title-2"
                   accessibilityRole="header"
-                  style={styles.flex}
+                  style={[styles.flex, icon?.circle && styles.centerText]}
                 >
                   {title}
                 </Text>
@@ -439,8 +453,10 @@ export function ActionSheet({
               {handle}
               {(title || subtitle) && (
                 <View
+                  // Frames S-HOME-09 / S-HOME-02 menus: a hairline `border` under the head.
                   style={[
                     styles.actionHead,
+                    { borderBottomColor: colors.border },
                     !!(icon || leading) && styles.actionHeadRow,
                   ]}
                 >
@@ -455,7 +471,8 @@ export function ActionSheet({
                       <Icon as={icon} size="lg" color="text-secondary" />
                     </View>
                   )}
-                  <View style={styles.flex}>
+                  {/* flex only beside an icon: alone in a column it collapses to 0 high. */}
+                  <View style={icon || leading ? styles.flex : undefined}>
                     {title && (
                       <Text variant="headline" numberOfLines={1}>
                         {title}
@@ -591,6 +608,15 @@ const styles = StyleSheet.create({
   },
   sheetBody: { gap: space[3], flexShrink: 1 },
   sheetTitle: { flexDirection: 'row', alignItems: 'center', gap: space[1] },
+  iconCircle: {
+    width: size.icon.hero * 2,
+    height: size.icon.hero * 2,
+    borderRadius: size.icon.hero,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+  },
+  centerText: { textAlign: 'center' },
   // Board ActionSheet: outer padding 8 (24 at the bottom), cards radius 24, gap 8.
   actionSheet: {
     maxHeight: '90%',
@@ -604,6 +630,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[3],
     paddingVertical: space[2],
     gap: space[1] / 2,
+    borderBottomWidth: size.hairline,
   },
   actionHeadRow: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
   actionHeadIcon: {

@@ -2,12 +2,7 @@ import { BIO_MAX, DISPLAY_NAME_MAX } from '@nezfocus/shared';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { useEffect, useEffectEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  KeyboardAvoidingView,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, ScrollView, StyleSheet } from 'react-native';
 import { profileFormErrors } from '../../../domain/account/profile';
 import type { ImageFile } from '../../../domain/attachments/AttachmentRepository';
 import type { ImageError } from '../../../domain/attachments/upload';
@@ -92,9 +87,13 @@ export function EditProfileScreen({
     else showErrorToast(result.error);
   };
 
+  // 07 `uploading`: the new photo shows, dimmed, while it uploads.
+  const [preview, setPreview] = useState<string | null>(null);
   // AC1–AC4 and the offline rule: the old photo stays, the typed text stays.
   const upload = async (file: ImageFile) => {
+    setPreview(file.uri);
     const result = await uploader.run(file);
+    setPreview(null);
     if (!result) return;
     setAvatarError(null);
     if (result.ok) return showToast({ message: t('me.profileSaved') });
@@ -139,29 +138,29 @@ export function EditProfileScreen({
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.avatarBlock}>
-          <ImageSlot
-            label={t('me.changeAvatar')}
-            uploading={uploading}
-            error={avatarError}
-            disabled={!online || uploading}
-            onPress={() => setMenu(true)}
-          >
-            <Avatar
-              name={name}
-              uri={avatarUri(me?.avatar, '256')}
-              size={96}
-              self
+        <ImageSlot
+          label={t('me.changeAvatar')}
+          uploading={uploading}
+          error={avatarError}
+          disabled={!online || uploading}
+          onPress={() => setMenu(true)}
+          action={
+            <Button
+              variant="text"
+              size="S"
+              label={t('me.changeAvatar')}
+              disabled={!online || uploading}
+              onPress={() => setMenu(true)}
             />
-          </ImageSlot>
-          <Button
-            variant="text"
-            size="S"
-            label={t('me.changeAvatar')}
-            disabled={!online || uploading}
-            onPress={() => setMenu(true)}
+          }
+        >
+          <Avatar
+            name={name}
+            uri={(uploader.pending && preview) || avatarUri(me?.avatar, '256')}
+            size={96}
+            self
           />
-        </View>
+        </ImageSlot>
 
         <TextField
           label={t('auth.complete.displayName')}
@@ -194,6 +193,7 @@ export function EditProfileScreen({
           maxLength={BIO_MAX}
           counterMax={BIO_MAX}
           multiline
+          minLines={3}
           readonly={!online || saver.pending}
         />
       </ScrollView>
@@ -244,5 +244,4 @@ export function EditProfileScreen({
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   content: { padding: space[3], gap: space[3] },
-  avatarBlock: { alignItems: 'center', gap: space[1] },
 });

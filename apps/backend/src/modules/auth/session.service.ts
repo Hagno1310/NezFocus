@@ -138,6 +138,21 @@ export class SessionService {
     await this.revoker.disconnect(sessionId, reason);
   }
 
+  // REQ-AUTH-08/14: every other session of the user ends; each open Gateway gets 4004 + reason.
+  async revokeOthers(
+    userId: bigint,
+    keep: bigint | null,
+    reason: SessionEndReason,
+  ) {
+    const ended = await this.sessions.revokeAllOf(
+      userId,
+      keep,
+      reason,
+      this.clock.now(),
+    );
+    for (const id of ended) await this.revoker.disconnect(id, reason);
+  }
+
   private async reuseDetected(sessionId: bigint): Promise<never> {
     await this.revoke(sessionId, 'reuse_detected');
     throw refreshRejected('reuse_detected');

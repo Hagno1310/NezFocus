@@ -1,10 +1,14 @@
 import { Body, Controller, Get, HttpCode, Post, Query } from '@nestjs/common';
 import {
+  AccountRoutes,
   AuthRoutes,
+  ChangePasswordRequest,
   CheckUsernameRequest,
   CompleteAccountRequest,
+  ForgotPasswordRequest,
   LoginRequest,
   RefreshTokenRequest,
+  ResetPasswordRequest,
   SendEmailCodeRequest,
   VerifyEmailCodeRequest,
   type CurrentUser as CurrentUserJson,
@@ -94,5 +98,36 @@ export class AuthController {
     @CurrentUser() user: AuthUser,
   ): Promise<CurrentUserJson> {
     return this.auth.completeAccount(user.userId, body);
+  }
+
+  @Public()
+  @Post(AuthRoutes.forgotPassword)
+  @HttpCode(202)
+  forgotPassword(
+    @Body(new ZodValidationPipe(ForgotPasswordRequest))
+    body: ForgotPasswordRequest,
+  ): Promise<EmailCodeSentResponse> {
+    return this.auth.forgotPassword(body.email);
+  }
+
+  @Public()
+  @Post(AuthRoutes.resetPassword)
+  @HttpCode(200)
+  resetPassword(
+    @Body(new ZodValidationPipe(ResetPasswordRequest))
+    body: ResetPasswordRequest,
+    @Client() client: ClientInfo,
+  ): Promise<SessionResponse> {
+    return this.auth.resetPassword(body, client);
+  }
+
+  @Post(AccountRoutes.changePassword)
+  @HttpCode(204)
+  async changePassword(
+    @Body(new ZodValidationPipe(ChangePasswordRequest))
+    body: ChangePasswordRequest,
+    @CurrentUser() user: AuthUser,
+  ): Promise<void> {
+    await this.auth.changePassword(user.userId, user.sessionId, body);
   }
 }

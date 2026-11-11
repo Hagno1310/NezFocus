@@ -1,5 +1,7 @@
 import {
+  ChangePasswordRequest,
   CompleteAccountRequest,
+  ResetPasswordRequest,
   SendEmailCodeRequest,
   TERMS_VERSION,
   VerifyEmailCodeRequest,
@@ -103,5 +105,61 @@ describe('auth contract', () => {
         ),
       ).toEqual(['display_name']);
     });
+  });
+});
+
+describe('password contracts (AUTH-08, AUTH-14)', () => {
+  it('resets with a 6-digit code and a password that follows AUTH-01', () => {
+    const ok = ResetPasswordRequest.safeParse({
+      email: 'An.Nguyen@gmail.com',
+      code: '482931',
+      password: 'Ontap2026!',
+      device,
+    });
+    expect(ok.success && ok.data.email).toBe('an.nguyen@gmail.com');
+    expect(
+      ResetPasswordRequest.safeParse({
+        email: 'an.nguyen@gmail.com',
+        code: '48293',
+        password: 'ontap',
+        device,
+      }).error?.issues.map((i) => i.path.join('.')),
+    ).toEqual(expect.arrayContaining(['code', 'password']));
+  });
+
+  it('changes with the current password or a reset code, never both or neither', () => {
+    const pw = { new_password: 'Ontap2026!' };
+    expect(
+      ChangePasswordRequest.safeParse({ ...pw, current_password: 'x' }).success,
+    ).toBe(true);
+    expect(
+      ChangePasswordRequest.safeParse({ ...pw, code: '482931' }).success,
+    ).toBe(true);
+    expect(ChangePasswordRequest.safeParse(pw).success).toBe(false);
+    expect(
+      ChangePasswordRequest.safeParse({
+        ...pw,
+        current_password: 'x',
+        code: '482931',
+      }).success,
+    ).toBe(false);
+    expect(
+      ChangePasswordRequest.safeParse({
+        current_password: 'x',
+        new_password: 'weak',
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe('ChangePasswordRequest errors', () => {
+  it('reports a weak new password on new_password', () => {
+    const r = ChangePasswordRequest.safeParse({
+      current_password: 'x',
+      new_password: 'weak',
+    });
+    expect(r.error?.issues.every((i) => i.path[0] === 'new_password')).toBe(
+      true,
+    );
   });
 });

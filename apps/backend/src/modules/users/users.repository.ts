@@ -107,4 +107,12 @@ export class UsersRepository {
       throw err;
     }
   }
+
+  // REQ-AUTH-08/14. Leaves account_completed_at alone: an incomplete account stays incomplete.
+  async setPasswordHash(id: bigint, passwordHash: string, now: Date) {
+    await this.db
+      .update(users)
+      .set({ passwordHash, updatedAt: now })
+      .where(eq(users.id, id));
+  }
 }

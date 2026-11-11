@@ -22,6 +22,18 @@ export const AuthRoutes = {
   refresh: '/auth/refresh',
   // REQ-AUTH-07 (P1) · bearer · 204
   logout: '/auth/logout',
+  // REQ-AUTH-08/14 · public · 202 EmailCodeSentResponse · 40001, 40029 (3 an hour, every email).
+  // Same answer whether the email has an account or not; the code is mailed only when it has.
+  forgotPassword: '/auth/password/forgot',
+  // REQ-AUTH-08 · public, needs X-Client-Platform · SessionResponse · 40001 (errors.password),
+  // 40002, 40003 (attempts_left). Signs in here and ends every other session (4004 password_reset).
+  resetPassword: '/auth/password/reset',
+} as const;
+
+export const AccountRoutes = {
+  // REQ-AUTH-14 · bearer · 204 · 40001 (errors.new_password), 40102, 40029, 40002, 40003.
+  // Keeps the calling session, ends the others (4004 password_reset).
+  changePassword: '/users/@me/password',
 } as const;
 
 // Bump when the Terms / Privacy Policy text changes; the app sends the version it showed.
@@ -169,3 +181,35 @@ export const RefreshTokenRequest = z.object({
   refresh_token: z.string().min(1).max(512),
 });
 export type RefreshTokenRequest = z.infer<typeof RefreshTokenRequest>;
+
+const EmailCode = z.string().regex(/^\d{6}$/);
+
+// POST /auth/password/forgot → 202 EmailCodeSentResponse
+export const ForgotPasswordRequest = z.object({ email: Email });
+export type ForgotPasswordRequest = z.infer<typeof ForgotPasswordRequest>;
+
+// POST /auth/password/reset → SessionResponse. One step: the code and the new password.
+export const ResetPasswordRequest = z.object({
+  email: Email,
+  code: EmailCode,
+  password: Password,
+  device: DeviceInfo,
+});
+export type ResetPasswordRequest = z.infer<typeof ResetPasswordRequest>;
+
+// POST /users/@me/password → 204. Proves it is you with the current password, or with a
+// reset code from /auth/password/forgot ("Quên mật khẩu?").
+export const ChangePasswordRequest = z
+  .object({
+    current_password: z.string().min(1).max(512).optional(),
+    code: EmailCode.optional(),
+    new_password: Password,
+  })
+  .refine(
+    (b) => (b.current_password === undefined) !== (b.code === undefined),
+    {
+      message: 'Send current_password or code, not both',
+      path: ['current_password'],
+    },
+  );
+export type ChangePasswordRequest = z.infer<typeof ChangePasswordRequest>;

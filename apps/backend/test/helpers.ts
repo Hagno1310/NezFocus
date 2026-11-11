@@ -25,10 +25,20 @@ class ProbeController {
 
 export class CapturingMailer extends AuthMailer {
   readonly codes = new Map<string, string>();
+  readonly resetCodes = new Map<string, string>();
   readonly alerts: string[] = [];
+  readonly passwordChanged: string[] = [];
 
   async sendSignInCode(email: string, code: string) {
     this.codes.set(email, code);
+  }
+
+  async sendPasswordResetCode(email: string, code: string) {
+    this.resetCodes.set(email, code);
+  }
+
+  async sendPasswordChanged(email: string) {
+    this.passwordChanged.push(email);
   }
 
   async sendNewDeviceAlert(email: string) {
@@ -130,6 +140,11 @@ export async function connectGateway(app: INestApplication, token: string) {
   );
   const dispatches: { t: string; d: unknown; at: number }[] = [];
   const waiters: (() => void)[] = [];
+  const closed = new Promise<{ code: number; reason: string }>((resolve) =>
+    ws.on('close', (code, reason) =>
+      resolve({ code, reason: reason.toString() }),
+    ),
+  );
   await new Promise<void>((ready) => {
     ws.on('message', (data) => {
       const frame = JSON.parse(data.toString()) as ServerFrame;
@@ -166,5 +181,5 @@ export async function connectGateway(app: INestApplication, token: string) {
       look();
     });
   const send = (op: number, d: unknown) => ws.send(JSON.stringify({ op, d }));
-  return { dispatches, next, send, close: () => ws.close() };
+  return { dispatches, next, send, closed, close: () => ws.close() };
 }

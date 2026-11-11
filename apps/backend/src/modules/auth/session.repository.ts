@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { SessionEndReason } from '@nezfocus/shared';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, ne } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
 import { users } from '../users/users.schema.js';
 import { authSessions, refreshTokens } from './auth.schema.js';
@@ -102,6 +102,27 @@ export class SessionRepository {
       .where(
         and(eq(authSessions.id, sessionId), isNull(authSessions.revokedAt)),
       );
+  }
+
+  // Ends every live session of the user but `keep`; returns the ones it ended.
+  async revokeAllOf(
+    userId: bigint,
+    keep: bigint | null,
+    reason: SessionEndReason,
+    now: Date,
+  ): Promise<bigint[]> {
+    const rows = await this.db
+      .update(authSessions)
+      .set({ revokedAt: now, revokeReason: reason })
+      .where(
+        and(
+          eq(authSessions.userId, userId),
+          isNull(authSessions.revokedAt),
+          keep === null ? undefined : ne(authSessions.id, keep),
+        ),
+      )
+      .returning({ id: authSessions.id });
+    return rows.map((r) => r.id);
   }
 
   async hasDeviceSession(userId: bigint, deviceId: string): Promise<boolean> {

@@ -312,6 +312,7 @@ function HomeTab() {
         {({ navigation, route }) => (
           <CropImageScreen
             photo={route.params.photo}
+            shape="square"
             onCancel={navigation.goBack}
             onDone={(cropped) => {
               const { back } = route.params;

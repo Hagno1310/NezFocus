@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Keyboard, StyleSheet, View, type TextInput } from 'react-native';
 import type { RootStackParamList } from '../../../app/navigation/RootNavigator';
 import {
+  CODE_LENGTH,
   countdownText,
   secondsLeft,
   type CodeErrorState,
@@ -17,12 +18,16 @@ import { Button } from '../../../shared/ui/Button';
 import { CodeInput } from '../../../shared/ui/CodeInput';
 import { SystemBanner } from '../../../shared/ui/Feedback';
 import { FormMessage } from '../../../shared/ui/FormMessage';
-import { CODE_LENGTH } from '../../../shared/ui/logic';
 import { PasswordRules } from '../../../shared/ui/PasswordRules';
 import { Text } from '../../../shared/ui/Text';
 import { TextField } from '../../../shared/ui/TextField';
 import { showToast } from '../../../shared/ui/Toast';
 import { useAuthFlow } from '../authFlowStore';
+import {
+  codeErrorMessage,
+  needsNewCode as isCodeGone,
+  passwordErrorKey,
+} from '../codeMessages';
 import { AuthScreen, InlineLink } from '../components/AuthScreen';
 import { breakableEmail } from '../format';
 import {
@@ -35,12 +40,6 @@ import { useNow, useOnline } from '../hooks/useAuthForm';
 type Props = NativeStackScreenProps<RootStackParamList, 'ResetPassword'>;
 
 const HOUR_SECONDS = 60 * 60;
-
-const passwordErrorKey = {
-  rules: 'auth.complete.passwordRules',
-  'same-email': 'auth.complete.sameEmail',
-  'same-username': 'auth.complete.sameUsername',
-} as const satisfies Record<PasswordError, string>;
 
 // S-AUTH-05 `reset-form`: the code and the new password on one screen (CR-16). The code
 // does not send itself; the new password survives every code error (AUTH-08 AC3b).
@@ -67,9 +66,7 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
   );
   const [codeError, setCodeError] = useState<CodeErrorState | null>(null);
   // too-many-attempts / code-expired: the code is gone, only a new one helps.
-  const needsNewCode =
-    codeError?.kind === 'too-many-attempts' ||
-    codeError?.kind === 'code-expired';
+  const needsNewCode = isCodeGone(codeError);
 
   const resetter = useResetPassword();
   const busy = resetter.pending;
@@ -112,24 +109,16 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
 
   const message = !online
     ? { tone: 'info' as const, text: t('auth.forgot.offline') }
-    : codeError?.kind === 'code-wrong'
-      ? {
-          tone: 'error' as const,
-          text: t('auth.enterCode.wrong', { count: codeError.attemptsLeft }),
-        }
-      : codeError?.kind === 'too-many-attempts'
-        ? { tone: 'error' as const, text: t('auth.enterCode.tooMany') }
-        : codeError?.kind === 'code-expired'
-          ? { tone: 'error' as const, text: t('auth.enterCode.expired') }
-          : limitWait > 0
-            ? {
-                tone: 'info' as const,
-                icon: Clock3,
-                text: t('auth.forgot.rateLimited', {
-                  count: Math.ceil(limitWait / 60),
-                }),
-              }
-            : null;
+    : (codeErrorMessage(t, codeError) ??
+      (limitWait > 0
+        ? {
+            tone: 'info' as const,
+            icon: Clock3,
+            text: t('auth.forgot.rateLimited', {
+              count: Math.ceil(limitWait / 60),
+            }),
+          }
+        : null));
 
   return (
     <AuthScreen

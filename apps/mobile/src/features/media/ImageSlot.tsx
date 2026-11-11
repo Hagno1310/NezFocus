@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import type { ImageError } from '../../domain/attachments/upload';
-import { useTheme } from '../../shared/theme';
+import { disabledOpacity, space, useTheme } from '../../shared/theme';
 import { FormMessage } from '../../shared/ui/FormMessage';
 
 // The 96 photo of 07 S-ME-01 / 08 S-SET-01: tap to change; `uploading` dims it under a
@@ -51,8 +51,8 @@ export function ImageSlot({
 }
 
 const styles = StyleSheet.create({
-  wrap: { alignItems: 'center', gap: 8, alignSelf: 'stretch' },
-  dim: { opacity: 0.4 },
+  wrap: { alignItems: 'center', gap: space[2], alignSelf: 'stretch' },
+  dim: { opacity: disabledOpacity },
   spinner: {
     ...StyleSheet.absoluteFill,
     alignItems: 'center',

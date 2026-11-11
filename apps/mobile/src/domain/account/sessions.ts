@@ -1,4 +1,5 @@
 import type { SessionInfo } from '@nezfocus/shared';
+import { localTime } from '../study/stats';
 
 // S-ME-03 `sessions`: "THIẾT BỊ NÀY" apart from "THIẾT BỊ KHÁC" (backend order kept).
 export function splitSessions(list: SessionInfo[]) {
@@ -29,31 +30,6 @@ export function deviceLabel(
   return name.slice(0, 100);
 }
 
-const formatters = new Map<string, Intl.DateTimeFormat>();
-function wall(ms: number, timeZone: string) {
-  let f = formatters.get(timeZone);
-  if (!f) {
-    f = new Intl.DateTimeFormat('en-GB', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23',
-    });
-    formatters.set(timeZone, f);
-  }
-  const p = Object.fromEntries(
-    f.formatToParts(new Date(ms)).map((x) => [x.type, x.value]),
-  );
-  return {
-    day: `${p.year}-${p.month}-${p.day}`,
-    date: `${p.day}/${p.month}/${p.year}`,
-    time: `${p.hour}:${p.minute}`,
-  };
-}
-
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Same three forms as message times (00-components › Giờ ở đầu tin): "20:02",
@@ -63,10 +39,12 @@ export function lastActive(
   now: number,
   timeZone: string,
 ): LastActive {
-  const at = wall(Date.parse(iso), timeZone);
-  if (at.day === wall(now, timeZone).day)
-    return { kind: 'today', time: at.time };
-  if (at.day === wall(now - DAY_MS, timeZone).day)
+  const at = localTime(iso, timeZone);
+  const dayOf = (ms: number) =>
+    localTime(new Date(ms).toISOString(), timeZone).date;
+  if (at.date === dayOf(now)) return { kind: 'today', time: at.time };
+  if (at.date === dayOf(now - DAY_MS))
     return { kind: 'yesterday', time: at.time };
-  return { kind: 'date', date: at.date, time: at.time };
+  const [y, m, d] = at.date.split('-');
+  return { kind: 'date', date: `${d}/${m}/${y}`, time: at.time };
 }

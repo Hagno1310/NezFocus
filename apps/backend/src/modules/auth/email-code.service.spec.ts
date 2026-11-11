@@ -29,6 +29,10 @@ const fakeRepo = () => {
       row.attempts += 1;
       return { attempts: row.attempts, codeHash: row.codeHash };
     },
+    refundAttempt: async (email: string, purpose: string) => {
+      const row = rows.get(key(email, purpose));
+      if (row) row.attempts = Math.max(0, row.attempts - 1);
+    },
     delete: async (email: string, purpose: string) => {
       rows.delete(key(email, purpose));
     },

@@ -395,6 +395,7 @@ export function ActionSheet({
   title,
   subtitle,
   icon,
+  leading,
   groups,
   cancel = true,
   onDismiss,
@@ -404,6 +405,8 @@ export function ActionSheet({
   subtitle?: string;
   // Beside the title (08 `channel-menu`: the channel icon; 02 `category-menu`: folder).
   icon?: IconComponent;
+  // In place of the icon, e.g. the server tile of 02 S-HOME-09.
+  leading?: ReactNode;
   groups: ActionGroup[];
   // false: no Cancel card; drag down, the scrim or system Back close it (spec 02 S-HOME-09,
   // spec 08 `channel-menu`, 02 `category-menu`).
@@ -435,8 +438,14 @@ export function ActionSheet({
             <View style={[card, styles.actionGroups]}>
               {handle}
               {(title || subtitle) && (
-                <View style={[styles.actionHead, icon && styles.actionHeadRow]}>
-                  {icon && (
+                <View
+                  style={[
+                    styles.actionHead,
+                    !!(icon || leading) && styles.actionHeadRow,
+                  ]}
+                >
+                  {leading}
+                  {!leading && icon && (
                     <View
                       style={[
                         styles.actionHeadIcon,

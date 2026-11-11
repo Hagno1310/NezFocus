@@ -143,6 +143,14 @@ describe('Password reset and change (e2e)', () => {
         password: [expect.objectContaining({ code: 'SAME_AS_PERSONAL_INFO' })],
       });
     }
+    // A right code is not a wrong guess: after 6 of those, a wrong code still has 4 left.
+    for (let i = 0; i < 3; i++)
+      await reset(acc.email, code, capital(acc.username)).expect(400);
+    const wrong = await reset(
+      acc.email,
+      code === '000000' ? '111111' : '000000',
+    ).expect(400);
+    expect(wrong.body).toMatchObject({ code: 40003, attempts_left: 4 });
     await reset(acc.email, code).expect(200);
   });
 

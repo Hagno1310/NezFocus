@@ -129,7 +129,7 @@ export function EditProfileScreen({
             size="S"
             label={t('me.save')}
             disabled={!dirty || !online || uploading}
-            loading={saver.pending}
+            loading={saver.pending || uploading}
             onPress={() => void save()}
           />
         }

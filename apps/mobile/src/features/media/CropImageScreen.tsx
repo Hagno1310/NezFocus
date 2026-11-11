@@ -12,7 +12,7 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { prepareImage } from '../../data/attachments/prepareImage';
 import type { ImageFile } from '../../domain/attachments/AttachmentRepository';
 import { clampOffset, cropRect } from '../../domain/attachments/crop';
@@ -27,10 +27,13 @@ const MAX_ZOOM = 4;
 // move it, never far enough to leave a gap inside the circle.
 export function CropImageScreen({
   photo,
+  shape = 'circle',
   onCancel,
   onDone,
 }: {
   photo: { uri: string; width: number; height: number };
+  // circle: avatars (07 S-ME-01); square: server icons (08 S-SET-01 "crop vuông").
+  shape?: 'circle' | 'square';
   onCancel: () => void;
   onDone: (file: ImageFile) => void;
 }) {
@@ -156,15 +159,29 @@ export function CropImageScreen({
               style={StyleSheet.absoluteFill}
               pointerEvents="none"
             >
-              <Path d={mask} fill={darkColors.scrim} fillRule="evenodd" />
-              <Circle
-                cx={r}
-                cy={r}
-                r={r - size.strokeThick / 2}
-                stroke={darkColors['text-primary']}
-                strokeWidth={size.strokeThick}
-                fill="none"
-              />
+              {shape === 'circle' ? (
+                <>
+                  <Path d={mask} fill={darkColors.scrim} fillRule="evenodd" />
+                  <Circle
+                    cx={r}
+                    cy={r}
+                    r={r - size.strokeThick / 2}
+                    stroke={darkColors['text-primary']}
+                    strokeWidth={size.strokeThick}
+                    fill="none"
+                  />
+                </>
+              ) : (
+                <Rect
+                  x={size.strokeThick / 2}
+                  y={size.strokeThick / 2}
+                  width={side - size.strokeThick}
+                  height={side - size.strokeThick}
+                  stroke={darkColors['text-primary']}
+                  strokeWidth={size.strokeThick}
+                  fill="none"
+                />
+              )}
             </Svg>
           </View>
         </GestureDetector>
@@ -198,7 +215,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[1],
   },
   title: { flex: 1, textAlign: 'center' },
-  barSpacer: { width: 64 },
+  barSpacer: { width: space[7] }, // keeps the title centred against "Hủy"
   middle: {
     flex: 1,
     alignItems: 'center',

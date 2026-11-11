@@ -39,6 +39,11 @@ import { Text } from '../../../shared/ui/Text';
 import { TextField } from '../../../shared/ui/TextField';
 import { showToast } from '../../../shared/ui/Toast';
 import { useAuthFlow } from '../../auth/authFlowStore';
+import {
+  codeErrorMessage,
+  needsNewCode as isCodeGone,
+  passwordErrorKey,
+} from '../../auth/codeMessages';
 import { InlineLink } from '../../auth/components/AuthScreen';
 import { breakableEmail } from '../../auth/format';
 import { showErrorToast, useSendCode } from '../../auth/hooks/useAuthActions';
@@ -49,12 +54,6 @@ import { useChangePassword, useSessions } from '../hooks/useAccount';
 import { useMe } from '../hooks/useMe';
 
 const HOUR_SECONDS = 60 * 60;
-
-const passwordErrorKey = {
-  rules: 'auth.complete.passwordRules',
-  'same-email': 'auth.complete.sameEmail',
-  'same-username': 'auth.complete.sameUsername',
-} as const satisfies Record<PasswordError, string>;
 
 // S-ME-03 Đổi mật khẩu: `password-form`, or `password-code` after "Quên mật khẩu?" (the
 // AUTH-08 reset code, sent on entering). The new password survives every code error.
@@ -99,9 +98,7 @@ export function ChangePasswordScreen({
   const lockWait = secondsLeft(lockedUntil, now);
   const codeLimitWait = secondsLeft(codeLimitedUntil, now);
   const wait = secondsLeft(resendAt, now);
-  const needsNewCode =
-    codeError?.kind === 'too-many-attempts' ||
-    codeError?.kind === 'code-expired';
+  const needsNewCode = isCodeGone(codeError);
 
   const sender = useSendCode('reset_password');
   type SendResult = Awaited<ReturnType<typeof sender.run>>;
@@ -191,24 +188,16 @@ export function ChangePasswordScreen({
   const locked = mode === 'password' && lockWait > 0;
   const codeMessage = !online
     ? null
-    : codeError?.kind === 'code-wrong'
-      ? {
-          tone: 'error' as const,
-          text: t('auth.enterCode.wrong', { count: codeError.attemptsLeft }),
-        }
-      : codeError?.kind === 'too-many-attempts'
-        ? { tone: 'error' as const, text: t('auth.enterCode.tooMany') }
-        : codeError?.kind === 'code-expired'
-          ? { tone: 'error' as const, text: t('auth.enterCode.expired') }
-          : codeLimitWait > 0
-            ? {
-                tone: 'info' as const,
-                icon: Clock3,
-                text: t('auth.forgot.rateLimited', {
-                  count: Math.ceil(codeLimitWait / 60),
-                }),
-              }
-            : null;
+    : (codeErrorMessage(t, codeError) ??
+      (codeLimitWait > 0
+        ? {
+            tone: 'info' as const,
+            icon: Clock3,
+            text: t('auth.forgot.rateLimited', {
+              count: Math.ceil(codeLimitWait / 60),
+            }),
+          }
+        : null));
 
   const newPassword = (
     <View style={styles.field}>

@@ -56,7 +56,8 @@ export function SessionsScreen({ onBack }: { onBack: () => void }) {
   const row = (s: SessionInfo) => (
     <View key={s.id} style={styles.row}>
       <View style={styles.rowText}>
-        <Text variant="headline">{name(s)}</Text>
+        {/* Spec 07 › Ngắt dòng: the device name never splits. */}
+        <Text variant="headline">{name(s).replace(/ /g, ' ')}</Text>
         {lines(s).map((l) => (
           <Text key={l} variant="label" color="text-secondary">
             {l}

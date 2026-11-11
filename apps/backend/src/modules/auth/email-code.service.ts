@@ -108,7 +108,11 @@ export class EmailCodeService {
 
     const expected = Buffer.from(attempt.codeHash, 'hex');
     const actual = Buffer.from(hashEmailCode(email, code), 'hex');
-    if (timingSafeEqual(expected, actual)) return;
+    if (timingSafeEqual(expected, actual)) {
+      // Only wrong codes count: a reset refused for its password keeps every try.
+      await this.codes.refundAttempt(email, purpose);
+      return;
+    }
 
     const attemptsLeft = Math.max(0, MAX_WRONG_ATTEMPTS - attempt.attempts);
     if (attemptsLeft === 0) await this.codes.delete(email, purpose);

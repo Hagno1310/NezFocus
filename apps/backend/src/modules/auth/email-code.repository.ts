@@ -58,6 +58,14 @@ export class EmailCodeRepository {
     return row;
   }
 
+  // Gives back the guess `reserveAttempt` took: a right code is not a wrong try (AUTH-08 AC3b).
+  async refundAttempt(email: string, purpose: EmailCodePurpose) {
+    await this.db
+      .update(emailCodes)
+      .set({ attempts: sql`greatest(${emailCodes.attempts} - 1, 0)` })
+      .where(this.match(email, purpose));
+  }
+
   async delete(email: string, purpose: EmailCodePurpose) {
     await this.db.delete(emailCodes).where(this.match(email, purpose));
   }

@@ -160650,12 +160650,18 @@
                       "type": "ref",
                       "ref": "zEcs7",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1",
+                      "descendants": {
+                        "OKRC1": {
+                          "fill": "$surface-1"
+                        }
+                      }
                     }
                   ]
                 },
@@ -161254,12 +161260,13 @@
                       "type": "ref",
                       "ref": "pDNcf",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -161856,12 +161863,13 @@
                       "type": "ref",
                       "ref": "pDNcf",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -162491,12 +162499,13 @@
                       "type": "ref",
                       "ref": "pDNcf",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -163067,12 +163076,18 @@
                       "type": "ref",
                       "ref": "zEcs7",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1",
+                      "descendants": {
+                        "OKRC1": {
+                          "fill": "$surface-1"
+                        }
+                      }
                     }
                   ]
                 },
@@ -163772,12 +163787,13 @@
                       "type": "ref",
                       "ref": "pDNcf",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -223887,12 +223903,13 @@
                       "type": "ref",
                       "ref": "dhjeI",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -236703,12 +236720,18 @@
                       "type": "ref",
                       "ref": "zEcs7",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1",
+                      "descendants": {
+                        "OKRC1": {
+                          "fill": "$surface-1"
+                        }
+                      }
                     }
                   ]
                 },
@@ -312142,12 +312165,13 @@
                       "type": "ref",
                       "ref": "pDNcf",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -375308,12 +375332,13 @@
                       "type": "ref",
                       "ref": "pDNcf",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -375943,12 +375968,13 @@
                       "type": "ref",
                       "ref": "pDNcf",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -376706,12 +376732,13 @@
                       "type": "ref",
                       "ref": "dhjeI",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -377363,12 +377390,13 @@
                       "type": "ref",
                       "ref": "pDNcf",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -378142,12 +378170,13 @@
                       "type": "ref",
                       "ref": "dhjeI",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },

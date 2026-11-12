@@ -59,6 +59,24 @@ export const remoteAuthRepository: AuthRepository = {
     CurrentUser.parse(
       await api.request(AuthRoutes.completeAccount, { method: 'POST', body }),
     ),
+  forgotPassword: async (email) =>
+    EmailCodeSentResponse.parse(
+      await api.request(AuthRoutes.forgotPassword, {
+        method: 'POST',
+        auth: false,
+        body: { email },
+      }),
+    ),
+  resetPassword: async (email, code, password) =>
+    storeTokens(
+      SessionResponse.parse(
+        await api.request(AuthRoutes.resetPassword, {
+          method: 'POST',
+          auth: false,
+          body: { email, code, password, device: await getDeviceInfo() },
+        }),
+      ),
+    ),
   logout: async () => {
     try {
       await api.request(AuthRoutes.logout, { method: 'POST' });

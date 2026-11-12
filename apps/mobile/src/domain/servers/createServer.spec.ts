@@ -67,6 +67,19 @@ describe('createServer (S-HOME-06)', () => {
     expect(r).toEqual({ ok: true, server, channel: server.channels[2] });
   });
 
+  it('P1-A4.7 (#211): an uploaded icon goes along as icon_attachment_id', async () => {
+    const sent: unknown[] = [];
+    await createServer(
+      repo(async (body) => (sent.push(body), server)),
+      'general',
+      'CLB Guitar PTIT',
+      '9',
+    );
+    expect(sent).toEqual([
+      { name: 'CLB Guitar PTIT', template: 'general', icon_attachment_id: '9' },
+    ]);
+  });
+
   it('a too-short name never reaches the backend', async () => {
     const r = await createServer(
       repo(() => Promise.reject(new Error('no call'))),

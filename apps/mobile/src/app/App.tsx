@@ -56,6 +56,15 @@ function watchNavigationRestore() {
   });
 }
 
+// AUTH-07 AC2: nothing of the last account stays cached once signed out (log out or a session
+// that ended). The Gateway stops in gatewayLifecycle; the tokens go in the logout call.
+function clearCacheOnSignOut() {
+  return sessionStore.subscribe((s, prev) => {
+    if (s.status === 'signed-out' && prev.status !== 'signed-out')
+      queryClient.clear();
+  });
+}
+
 function navigationTheme({ scheme, colors }: Theme): NavigationTheme {
   const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
   const face = (fontWeight: '400' | '500' | '600' | '700') => ({
@@ -104,6 +113,7 @@ export default function App() {
   useEffect(startPresenceLifecycle, []);
   useEffect(startGatewayLifecycle, []);
   useEffect(watchNavigationRestore, []);
+  useEffect(clearCacheOnSignOut, []);
   // REQ-STUDY-10 / SRS 7.3.5: the "Nhắc học tập" channel exists from launch.
   useEffect(() => {
     void studyNotifications

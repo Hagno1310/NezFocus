@@ -85,7 +85,7 @@ Không áp dụng: `loading` (hồ sơ có trong cache từ `READY`), `empty`, `
 │ Tên hiển thị                       2/32  │  TextField
 │ [ An                                   ] │
 │ Hiện trong chat và phòng học.            │  help (v1.9: tên bắt buộc, CR-16)
-│ Username                                 │  readonly
+│ Username                                 │  disabled (C-02: không đổi được ở MVP)
 │ [ an.nguyen                            ] │
 │ Giới thiệu                        42/200 │  TextField · multiline
 │ [ Sinh viên năm 3 PTIT · đang ôn …     ] │
@@ -96,11 +96,11 @@ Không áp dụng: `loading` (hồ sơ có trong cache từ `READY`), `empty`, `
 |---|---|---|
 | `default` | Như bố cục; "Lưu" mờ | — |
 | `editing` | Đang sửa giới thiệu, bàn phím mở (ẩn `TabBar`), "Lưu" bật | — |
-| `avatar-sheet` | Chạm avatar → `ActionSheet` | "Chọn ảnh trong máy" · "Chụp ảnh mới" · "Xóa ảnh đại diện" (`danger`, chỉ khi có ảnh) |
+| `avatar-sheet` | Chạm avatar → `ActionSheet` **không có hàng "Hủy"** (theo frame, 12/11/2026): kéo xuống, chạm vùng tối hoặc Back hệ thống để đóng, như menu 02 S-HOME-09 | "Chọn ảnh trong máy" · "Chụp ảnh mới" · "Xóa ảnh đại diện" (`danger`, chỉ khi có ảnh) |
 | `crop` | Màn cắt ảnh (theme tối, nền `bg`, ảnh vừa chọn; mặt nạ tròn: vùng ngoài khung tròn phủ `scrim` ở cả bốn phía, viền khung tròn `text-primary` 2px; không dùng màu hex) | "Hủy" · "Cắt ảnh" · "Dùng ảnh này" · gợi ý "Kéo và chụm hai ngón để căn ảnh" (ảnh mẫu: ảnh chân dung stock) |
-| `uploading` | Avatar mờ + vòng tiến độ; "Lưu" `loading` | — |
+| `uploading` | Avatar mờ + vòng tiến độ; "Lưu" thành chữ "Đang lưu…" `text-tertiary`, không bấm được (C-01 `loading` › nút "Lưu" trên header, 12/11/2026) | "Đang lưu…" |
 | `upload-error` | `FormMessage` (lỗi) dưới avatar; "Lưu" vẫn mờ (`disabled`) vì chưa có thay đổi nào lưu được | `40014`: "Chỉ nhận ảnh JPG, PNG, WEBP hoặc HEIC" · `40013`: "Ảnh lớn hơn 8 MB sau khi nén. Chọn ảnh khác." |
-| `discard-confirm` | Back khi chưa lưu | "Bỏ thay đổi?" · "Hồ sơ mới chưa được lưu." · "Ở lại" / "Bỏ thay đổi" (`danger`) |
+| `discard-confirm` | Back khi chưa lưu; hai nút **xếp ngang** dù "Bỏ thay đổi" quá 2 từ (theo frame, ngoại lệ luật xếp dọc của C-09, 12/11/2026) | "Bỏ thay đổi?" · "Hồ sơ mới chưa được lưu." · "Ở lại" / "Bỏ thay đổi" (`danger`) |
 | `name-empty` (không vẽ riêng) | (v1.9, CR-16 #3, AUTH-06 AC6) Xóa hết tên rồi bấm "Lưu": ô Tên hiển thị `error` + dòng lỗi thay dòng gợi ý (`40001`); không lưu gì | "Nhập tên hiển thị" (quá 32 ký tự: không gõ thêm được, bộ đếm "32/32") |
 | `offline` | `Banner · offline`; ô `readonly`, "Lưu" và "Đổi ảnh" `disabled` | — |
 
@@ -135,7 +135,7 @@ Lưu thành công → S-ME-02 + `Toast` "Đã cập nhật hồ sơ".
 | `password-wrong` | `40102`: ô "Mật khẩu hiện tại" `error` | "Mật khẩu hiện tại không đúng" |
 | `password-code` 🆕 | (v1.9, CR-16 #10, AUTH-14) Chạm "Quên mật khẩu?" → **chế độ mã** trên cùng màn "Đổi mật khẩu": mã đặt lại (AUTH-08) tự gửi tới email lúc vào chế độ này. Ô "Mật khẩu hiện tại" thay bằng: câu + email, nhãn "Mã OTP" + `CodeInput` (không tự gửi — còn ô mật khẩu mới), "Gửi lại sau 0:59"; dưới đó "Mật khẩu mới" + `PasswordRules` như `password-form`; `Button · text` "Nhập mật khẩu hiện tại" để về `password-form`; "Lưu" trên header. Không có bàn phím (vừa vào) | "Mình đã gửi mã OTP 6 số tới an.nguyen@gmail.com. Mã có hiệu lực 15 phút." · "Mã OTP" · "Không nhận được mã OTP? Gửi lại sau 0:59" · "Mật khẩu mới" · "Các thiết bị khác sẽ bị đăng xuất." · "Nhập mật khẩu hiện tại" |
 | `password-code-wrong` 🆕 | Đã điền `482931` và mật khẩu mới đạt luật, bấm "Lưu": các ô mã viền `danger` + `FormMessage` (lỗi) dưới ô mã (`40003`); mật khẩu mới giữ nguyên | "Mã OTP không đúng. Còn 4 lần thử." |
-| `password-saved` | Về S-ME-03 + `Toast` (cả hai chế độ) | "Đã đổi mật khẩu · đã đăng xuất 1 thiết bị khác" |
+| `password-saved` | Về S-ME-03 + `Toast` (cả hai chế độ) | "Đã đổi mật khẩu · đã đăng xuất 1 thiết bị khác"; không có thiết bị khác, hoặc app chưa tải danh sách phiên nên không biết số máy: "Đã đổi mật khẩu" (thêm 11/11/2026 khi code P1-A4.5 (#74)) |
 | `sessions` | Màn con "Phiên đăng nhập": nhóm "THIẾT BỊ NÀY" (1 hàng, không nút) + "THIẾT BỊ KHÁC" (hàng có "Đăng xuất" `danger · S`) + nút "Đăng xuất mọi thiết bị khác" | Hàng: tên máy (headline) · "Android 13 · Hôm qua 22:15" / "IP 113.190.x.x" (hai dòng) |
 | `revoke-confirm` | Chạm "Đăng xuất" trên một hàng → `Dialog` | "Đăng xuất / Xiaomi Redmi Note 12?" (ngắt trước tên máy) · "Thiết bị đó cần đăng nhập lại." · "Hủy" / "Đăng xuất" (`danger`) |
 | `sessions-single` | Chỉ có thiết bị này: không nhóm "THIẾT BỊ KHÁC", không nút đăng xuất hàng loạt | "Chỉ có thiết bị này đang đăng nhập." |
@@ -143,7 +143,7 @@ Lưu thành công → S-ME-02 + `Toast` "Đã cập nhật hồ sơ".
 | `delete-confirm` | Không còn server nào chặn → 10 › S-MOD-03 `password`, chữ theo xóa tài khoản. (v1.9, CR-16 #12) Dưới mô tả: khối "server chỉ có bạn" (nhãn + mỗi server một hàng 48: icon server 32 + tên + "1 thành viên") và câu thu hồi link mời; không có server nào chỉ có mình thì khối này ẩn. Dưới ô mật khẩu: "Quên mật khẩu?" (S-MOD-03) | "Xóa tài khoản?" · "Tài khoản sẽ bị xóa vĩnh viễn vào 01/11/2026. Trong 14 ngày, đăng nhập lại để khôi phục. Sau đó hồ sơ, chuỗi ngày học và bạn bè bị xóa; tin nhắn hiện \"Tài khoản đã bị xóa\"." · nhãn "Server chỉ có bạn — sẽ bị xóa cùng tài khoản" · hàng "Góc tự học của An · 1 thành viên" · "Mọi link mời của các server này bị thu hồi ngay, kể cả khi bạn khôi phục tài khoản." · "Mật khẩu của bạn" · "Quên mật khẩu?" · "Xóa tài khoản" (`danger`) |
 | `offline` | `Banner · offline`; mọi hàng `disabled` trừ Email | — |
 
-**Chế độ mã của Đổi mật khẩu** (v1.9, CR-16 #10): lỗi mã như 01 S-AUTH-03 — sai 5 lần (`too-many-attempts`) / quá 15 phút (`40002`) → các ô mã `disabled`, `FormMessage` + `Button · secondary` "Gửi mã OTP mới"; gửi lại ≤ 1 lần/phút, ≤ 10 lần/ngày (`40029`: "Gửi lại" `disabled` + `FormMessage` trung tính "Bạn đã gửi lại 10 lần hôm nay. Thử lại vào ngày mai."). Mật khẩu mới giữ nguyên qua mọi lỗi mã. Xong: phiên hiện tại giữ, phiên khác bị đăng xuất (AUTH-14 AC5) → `password-saved`. **Mở từ S-MOD-03** (chuyển quyền Owner, xóa tài khoản): vào thẳng `password-code`; back hoặc xong → quay lại màn đã mở sheet, sheet mở lại ở 10 › S-MOD-03 `password-reset-done` (xong) hoặc `password` (back).
+**Chế độ mã của Đổi mật khẩu** (v1.9, CR-16 #10): lỗi mã như 01 S-AUTH-03 — sai 5 lần (`too-many-attempts`) / quá 15 phút (`40002`) → các ô mã `disabled`, `FormMessage` + `Button · secondary` "Gửi mã OTP mới"; gửi lại ≤ 1 lần/phút, ≤ 3 lần/giờ — giới hạn của mã đặt lại, REQ-AUTH-08 AC5 (`40029`: "Gửi lại" `disabled` + `FormMessage` trung tính như 01 S-AUTH-05 `rate-limited`: "Bạn đã yêu cầu mã OTP nhiều lần. Thử lại sau 42 phút."; sửa 11/11/2026 khi code P1-A4.5 (#74) — bản trước chép giới hạn 10 lần/ngày của mã đăng nhập). Mật khẩu mới giữ nguyên qua mọi lỗi mã. Xong: phiên hiện tại giữ, phiên khác bị đăng xuất (AUTH-14 AC5) → `password-saved`. **Mở từ S-MOD-03** (chuyển quyền Owner, xóa tài khoản): vào thẳng `password-code`; back hoặc xong → quay lại màn đã mở sheet, sheet mở lại ở 10 › S-MOD-03 `password-reset-done` (xong) hoặc `password` (back).
 
 **Luật chung của hai chế độ:** mật khẩu mới không được **là** email, phần trước @ hay username (CR-16 #6) → lỗi dưới ô "Mật khẩu mới": "Không dùng email làm mật khẩu" / "Không dùng username làm mật khẩu" (`40001`, không thêm vào lưới). Sai mật khẩu hiện tại 5 lần trong 10 phút (`40029`): "Lưu" `disabled` + `FormMessage` trung tính "Bạn đã nhập sai nhiều lần. Thử lại sau 10 phút, hoặc dùng Quên mật khẩu?"; "Quên mật khẩu?" vẫn bấm được.
 

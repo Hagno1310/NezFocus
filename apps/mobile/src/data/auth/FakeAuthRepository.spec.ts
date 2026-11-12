@@ -112,4 +112,57 @@ describe('FakeAuthRepository', () => {
       errors: { username: [{ code: 'TAKEN' }] },
     });
   });
+
+  it('AUTH-08 AC5: a reset code once a minute, three an hour, for any email', async () => {
+    let now = 0;
+    const repo = createFakeAuthRepository(0, () => now);
+    await repo.forgotPassword('khong.co@gmail.com');
+    await expect(
+      repo.forgotPassword('khong.co@gmail.com'),
+    ).rejects.toMatchObject({ code: ErrorCode.RateLimited, retry_after: 60 });
+    now += 60_000;
+    await repo.forgotPassword('khong.co@gmail.com');
+    now += 60_000;
+    await repo.forgotPassword('khong.co@gmail.com');
+    now += 60_000;
+    await expect(
+      repo.forgotPassword('khong.co@gmail.com'),
+    ).rejects.toMatchObject({
+      code: ErrorCode.RateLimited,
+      retry_after: 3_420,
+    });
+  });
+
+  it('AUTH-08 AC3, AC4, AC6: wrong code, rules, then the new password signs An in', async () => {
+    const repo = createFakeAuthRepository(0);
+    const email = 'an.nguyen@gmail.com';
+    await repo.forgotPassword(email);
+    await expect(
+      repo.resetPassword(email, '482931', 'Ontap@2026'),
+    ).rejects.toMatchObject({
+      code: ErrorCode.VerificationCodeInvalid,
+      attempts_left: 4,
+    });
+    await expect(
+      repo.resetPassword(email, FAKE_CODE, 'ontap2026'),
+    ).rejects.toMatchObject({
+      code: ErrorCode.ValidationError,
+      errors: { password: expect.any(Array) },
+    });
+    await expect(
+      repo.resetPassword(email, FAKE_CODE, 'Ontap@2026'),
+    ).resolves.toMatchObject({ user: { username: 'an.nguyen' } });
+    await expect(repo.login(email, 'Ontap@2026')).resolves.toBeTruthy();
+    await expect(
+      repo.resetPassword(email, FAKE_CODE, 'Ontap@2027'),
+    ).rejects.toMatchObject({ code: ErrorCode.TokenLinkInvalid });
+  });
+
+  it('an email without an account never gets past the code (40002)', async () => {
+    const repo = createFakeAuthRepository(0);
+    await repo.forgotPassword('khong.co@gmail.com');
+    await expect(
+      repo.resetPassword('khong.co@gmail.com', FAKE_CODE, 'Ontap@2026'),
+    ).rejects.toMatchObject({ code: ErrorCode.TokenLinkInvalid });
+  });
 });

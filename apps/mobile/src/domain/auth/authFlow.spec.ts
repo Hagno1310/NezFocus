@@ -37,12 +37,13 @@ describe('sendCodeErrorState', () => {
       sendCodeErrorState(
         apiError(ErrorCode.RateLimited, { retry_after: 20_000 }),
       ),
-    ).toEqual({ kind: 'rate-limited' });
+    ).toEqual({ kind: 'rate-limited', retryAfter: 20_000 });
   });
 
   it('40029 without Retry-After is treated as the daily limit', () => {
     expect(sendCodeErrorState(apiError(ErrorCode.RateLimited))).toEqual({
       kind: 'rate-limited',
+      retryAfter: null,
     });
   });
 

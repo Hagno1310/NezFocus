@@ -12,6 +12,10 @@ import WebSocket from 'ws';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/configure-app.js';
 import { AuthMailer } from '../src/modules/auth/auth-mailer.js';
+import {
+  MemoryObjectStorage,
+  ObjectStorage,
+} from '../src/modules/storage/object-storage.js';
 import { KeyValueStore } from '../src/redis/key-value-store.js';
 
 // Stands for "any other app API": no @AllowIncomplete, so incomplete accounts get 40309.
@@ -25,10 +29,20 @@ class ProbeController {
 
 export class CapturingMailer extends AuthMailer {
   readonly codes = new Map<string, string>();
+  readonly resetCodes = new Map<string, string>();
   readonly alerts: string[] = [];
+  readonly passwordChanged: string[] = [];
 
   async sendSignInCode(email: string, code: string) {
     this.codes.set(email, code);
+  }
+
+  async sendPasswordResetCode(email: string, code: string) {
+    this.resetCodes.set(email, code);
+  }
+
+  async sendPasswordChanged(email: string) {
+    this.passwordChanged.push(email);
   }
 
   async sendNewDeviceAlert(email: string) {
@@ -41,18 +55,22 @@ export async function createTestApp(
   override: (b: TestingModuleBuilder) => TestingModuleBuilder = (b) => b,
 ) {
   const mailer = new CapturingMailer();
+  // CI has no S3; tests "PUT" through storage.upload.
+  const storage = new MemoryObjectStorage();
   const moduleRef = await override(
     Test.createTestingModule({
       imports: [AppModule],
       controllers: [ProbeController],
     })
       .overrideProvider(AuthMailer)
-      .useValue(mailer),
+      .useValue(mailer)
+      .overrideProvider(ObjectStorage)
+      .useValue(storage),
   ).compile();
   const app = moduleRef.createNestApplication();
   configureApp(app);
   await app.init();
-  return { app, mailer };
+  return { app, mailer, storage };
 }
 
 export const uniqueEmail = (name = 'an') =>
@@ -130,6 +148,11 @@ export async function connectGateway(app: INestApplication, token: string) {
   );
   const dispatches: { t: string; d: unknown; at: number }[] = [];
   const waiters: (() => void)[] = [];
+  const closed = new Promise<{ code: number; reason: string }>((resolve) =>
+    ws.on('close', (code, reason) =>
+      resolve({ code, reason: reason.toString() }),
+    ),
+  );
   await new Promise<void>((ready) => {
     ws.on('message', (data) => {
       const frame = JSON.parse(data.toString()) as ServerFrame;
@@ -166,5 +189,5 @@ export async function connectGateway(app: INestApplication, token: string) {
       look();
     });
   const send = (op: number, d: unknown) => ws.send(JSON.stringify({ op, d }));
-  return { dispatches, next, send, close: () => ws.close() };
+  return { dispatches, next, send, closed, close: () => ws.close() };
 }

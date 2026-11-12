@@ -4,12 +4,14 @@ import {
   type ClientPlatform,
   type DeviceInfo,
   type SessionEndReason,
+  type SessionInfo,
   type TokenPairResponse,
 } from '@nezfocus/shared';
 import { AppError } from '../../common/app-error.js';
 import { Clock } from '../../common/clock.js';
 import { SnowflakeGenerator } from '../../common/snowflake.js';
 import { SessionRevoker } from '../gateway/session-revoker.js';
+import { PushTokens } from '../notifications/push-tokens.js';
 import { SessionRepository } from './session.repository.js';
 import {
   ACCESS_TOKEN_SECONDS,
@@ -68,6 +70,7 @@ export class SessionService {
     private readonly ids: SnowflakeGenerator,
     private readonly clock: Clock,
     private readonly revoker: SessionRevoker,
+    private readonly pushTokens: PushTokens,
   ) {}
 
   private refreshExpiry() {
@@ -93,6 +96,7 @@ export class SessionService {
         deviceId: device.id,
         deviceName: device.name ?? null,
         platform: client.platform,
+        osVersion: device.os_version ?? null,
         ipPrefix: ipPrefix(client.ip),
       },
       { tokenHash: refresh.hash, expiresAt: this.refreshExpiry() },
@@ -135,7 +139,60 @@ export class SessionService {
 
   async revoke(sessionId: bigint, reason: SessionEndReason) {
     await this.sessions.revoke(sessionId, reason, this.clock.now());
-    await this.revoker.disconnect(sessionId, reason);
+    await this.ended([sessionId], reason);
+  }
+
+  // REQ-AUTH-07: sign out here. The refresh token stops working; the device drops its own
+  // Gateway connection, so `revoked` on it is only a fallback.
+  async logout(sessionId: bigint) {
+    await this.sessions.revoke(sessionId, 'logout', this.clock.now());
+    await this.ended([sessionId], 'revoked');
+  }
+
+  async list(userId: bigint, currentId: bigint): Promise<SessionInfo[]> {
+    const rows = await this.sessions.listLive(userId);
+    return rows.map((r) => ({
+      id: r.id.toString(),
+      device_name: r.deviceName,
+      platform: r.platform,
+      os_version: r.osVersion,
+      ip_prefix: r.ipPrefix,
+      created_at: r.createdAt.toISOString(),
+      last_active_at: r.lastActiveAt.toISOString(),
+      current: r.id === currentId,
+    }));
+  }
+
+  // REQ-AUTH-07 AC1 "Thu hồi": that device gets 4004 revoked ("bị thu hồi từ thiết bị khác").
+  async revokeOne(userId: bigint, currentId: bigint, sessionId: bigint) {
+    if (sessionId === currentId)
+      throw new AppError(
+        ErrorCode.ValidationError,
+        'Use /auth/logout to end this session',
+      );
+    if (!(await this.sessions.findLive(sessionId, userId)))
+      throw new AppError(ErrorCode.NotFound, 'Unknown session');
+    await this.revoke(sessionId, 'revoked');
+  }
+
+  // REQ-AUTH-08/14: every other session of the user ends; each open Gateway gets 4004 + reason.
+  async revokeOthers(
+    userId: bigint,
+    keep: bigint | null,
+    reason: SessionEndReason,
+  ) {
+    const ended = await this.sessions.revokeAllOf(
+      userId,
+      keep,
+      reason,
+      this.clock.now(),
+    );
+    await this.ended(ended, reason);
+  }
+
+  private async ended(sessionIds: bigint[], reason: SessionEndReason) {
+    for (const id of sessionIds) await this.revoker.disconnect(id, reason);
+    await this.pushTokens.removeForSessions(sessionIds);
   }
 
   private async reuseDetected(sessionId: bigint): Promise<never> {

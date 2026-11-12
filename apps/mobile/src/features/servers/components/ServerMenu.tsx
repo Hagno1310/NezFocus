@@ -1,6 +1,7 @@
 import { Flag, LogOut, Plus, Settings, UserPlus } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import type { MenuRow } from '../../../domain/servers/serverAccess';
+import { ServerIcon } from './ServerIcon';
 import { ActionSheet, type ActionItem } from '../../../shared/ui/Overlay';
 import { useServerAccess } from '../hooks/useServerAccess';
 
@@ -44,6 +45,7 @@ export function ServerMenu({
     <ActionSheet
       visible={visible}
       title={server.name}
+      leading={<ServerIcon server={server} size={40} />}
       subtitle={
         server.template === 'study_server'
           ? t('servers.drawer.subtitleStudy', { count: server.member_count })

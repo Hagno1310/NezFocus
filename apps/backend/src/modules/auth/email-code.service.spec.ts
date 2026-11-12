@@ -29,6 +29,10 @@ const fakeRepo = () => {
       row.attempts += 1;
       return { attempts: row.attempts, codeHash: row.codeHash };
     },
+    refundAttempt: async (email: string, purpose: string) => {
+      const row = rows.get(key(email, purpose));
+      if (row) row.attempts = Math.max(0, row.attempts - 1);
+    },
     delete: async (email: string, purpose: string) => {
       rows.delete(key(email, purpose));
     },
@@ -40,9 +44,13 @@ const setup = () => {
   const clock = fixedClock();
   const { repo, rows } = fakeRepo();
   const sent: { email: string; code: string }[] = [];
+  const resets: { email: string; code: string }[] = [];
   const mailer = {
     sendSignInCode: async (email: string, code: string) => {
       sent.push({ email, code });
+    },
+    sendPasswordResetCode: async (email: string, code: string) => {
+      resets.push({ email, code });
     },
   } as unknown as AuthMailer;
   const service = new EmailCodeService(
@@ -52,7 +60,8 @@ const setup = () => {
     clock,
   );
   const lastCode = () => sent.at(-1)!.code;
-  return { service, clock, sent, rows, lastCode };
+  const lastReset = () => resets.at(-1)!.code;
+  return { service, clock, sent, resets, rows, lastCode, lastReset };
 };
 
 const errorOf = (p: Promise<unknown>) =>
@@ -202,5 +211,69 @@ describe('EmailCodeService under parallel guesses', () => {
         (e as { code?: number }).code === ErrorCode.VerificationCodeInvalid,
     );
     expect(compared).toHaveLength(5);
+  });
+});
+
+describe('EmailCodeService password-reset codes (AUTH-08)', () => {
+  it('mails a reset code only when asked to, with the same answer either way (AC1, AC2)', async () => {
+    const { service, resets } = setup();
+    const known = await service.sendReset(AN, true);
+    const unknown = await service.sendReset('ghost@gmail.com', false);
+    expect(unknown).toEqual(known);
+    expect(known).toEqual({ expires_in: 900, resend_in: 60 });
+    expect(resets.map((r) => r.email)).toEqual([AN]);
+  });
+
+  it('allows 3 sends an hour per email, for any email (AC5)', async () => {
+    const { service, clock } = setup();
+    for (const email of [AN, 'ghost@gmail.com'])
+      for (let i = 0; i < 3; i++) {
+        await service.sendReset(email, email === AN);
+        clock.advance(61);
+      }
+    const err = await errorOf(service.sendReset('ghost@gmail.com', false));
+    expect(err).toMatchObject({ code: ErrorCode.RateLimited });
+    clock.advance(60 * 60);
+    await expect(service.sendReset(AN, true)).resolves.toBeDefined();
+  });
+
+  it('allows one reset send per minute per email', async () => {
+    const { service, clock } = setup();
+    await service.sendReset(AN, true);
+    clock.advance(30);
+    const err = await errorOf(service.sendReset(AN, true));
+    expect(err).toMatchObject({
+      code: ErrorCode.RateLimited,
+      details: { retryAfter: 30 },
+    });
+  });
+
+  it('never lets a sign-in code and a reset code stand in for each other (AUTH-02 AC7)', async () => {
+    const { service, lastCode, lastReset } = setup();
+    await service.send(AN, PHONE);
+    await service.sendReset(AN, true);
+    const signIn = lastCode();
+    const reset = lastReset();
+    if (signIn !== reset) {
+      expect(
+        await errorOf(service.consume(AN, signIn, 'reset_password')),
+      ).toMatchObject({ code: ErrorCode.VerificationCodeInvalid });
+      expect(await errorOf(service.consume(AN, reset))).toMatchObject({
+        code: ErrorCode.VerificationCodeInvalid,
+      });
+    }
+    await expect(
+      service.consume(AN, reset, 'reset_password'),
+    ).resolves.toBeUndefined();
+  });
+
+  it('keeps a right code until discarded when only verified', async () => {
+    const { service, lastReset } = setup();
+    await service.sendReset(AN, true);
+    await service.verify(AN, lastReset(), 'reset_password');
+    await service.discard(AN, 'reset_password');
+    expect(
+      await errorOf(service.consume(AN, lastReset(), 'reset_password')),
+    ).toMatchObject({ code: ErrorCode.TokenLinkInvalid });
   });
 });

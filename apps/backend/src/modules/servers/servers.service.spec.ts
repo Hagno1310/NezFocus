@@ -5,6 +5,7 @@ import type { EventPublisher } from '../gateway/event-publisher.js';
 import type { PermissionService } from '../permissions/permission.service.js';
 import type { ServerRows } from './server-templates.js';
 import type { FullServer, ServersRepository } from './servers.repository.js';
+import type { AttachmentsService } from '../attachments/attachments.service.js';
 import { ServersService } from './servers.service.js';
 
 const AN = 1n;
@@ -78,6 +79,7 @@ function setup(o: { atLimit?: boolean; allowed?: boolean } = {}) {
         void events.push({ to: 'server', id, t, d }),
     } as unknown as EventPublisher,
     permissions,
+    { usable: async () => undefined } as unknown as AttachmentsService,
   );
   return { service, repo, events, asked };
 }

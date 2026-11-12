@@ -42,6 +42,7 @@ export const authSessions = pgTable(
     deviceName: varchar({ length: 100 }),
     deviceId: varchar({ length: 64 }), // CR-28 #10
     platform: varchar({ length: 10 }).notNull(), // ios | android
+    osVersion: varchar({ length: 20 }), // S-ME-03 "Android 13"
     appVersion: varchar({ length: 20 }),
     ipPrefix: varchar({ length: 45 }), // NFR-PRIV-02
     trustedUntil: timestamp({ withTimezone: true }),

@@ -10,11 +10,6 @@ import {
 } from '../../shared/ui/People';
 import type { StudyActivity } from '@nezfocus/shared';
 import { ActivityLine } from '../../shared/ui/ActivityLine';
-import { Button } from '../../shared/ui/Button';
-import { Text } from '../../shared/ui/Text';
-import { useStore } from 'zustand';
-import { presenceStore } from '../../domain/presence/presence';
-import { useMyStatus } from '../../features/presence/hooks/usePresence';
 import { SettingsRow } from '../../shared/ui/SettingsRow';
 import { Caption, Row, Section } from './kit';
 
@@ -54,13 +49,10 @@ function People() {
           <Avatar key={s} name="" size={s} deleted />
         ))}
       </Row>
-      <Caption>PresenceDot · Online / Idle / DND / Offline · 10 và 14</Caption>
+      <Caption>PresenceDot · Online / Idle / DND / Offline · 10</Caption>
       <Row>
         {(['online', 'idle', 'dnd', 'offline'] as const).map((p) => (
           <PresenceDot key={p} status={p} />
-        ))}
-        {(['online', 'idle', 'dnd', 'offline'] as const).map((p) => (
-          <PresenceDot key={`${p}14`} status={p} size="lg" />
         ))}
       </Row>
       <Row>
@@ -230,49 +222,11 @@ function Activities() {
   );
 }
 
-// P1-B4.3 debug (dev only): what this phone receives and sends, until S-ME-02 uses the hooks.
-function LivePresence() {
-  const others = useStore(presenceStore, (s) => s.others);
-  const [mine, setMine] = useMyStatus();
-  return (
-    <>
-      <Caption>{`Của mình: ${mine}`}</Caption>
-      <Row>
-        {(['online', 'idle', 'dnd', 'invisible'] as const).map((s) => (
-          <Button
-            key={s}
-            size="S"
-            variant={s === mine ? 'primary' : 'secondary'}
-            label={s}
-            onPress={() => setMine(s)}
-          />
-        ))}
-      </Row>
-      <Caption>Đang nhận (READY + PRESENCE_UPDATE)</Caption>
-      {Object.values(others).length === 0 && (
-        <Text color="text-secondary">Không ai trực tuyến</Text>
-      )}
-      {Object.values(others).map((p) => (
-        <View key={p.user_id} style={{ gap: 4 }}>
-          <Row>
-            <PresenceDot status={p.status} />
-            <Text>{`user ${p.user_id} · ${p.status}`}</Text>
-          </Row>
-          {p.activity && <ActivityLine activity={p.activity} form="full" />}
-        </View>
-      ))}
-    </>
-  );
-}
-
 export function PeopleSections() {
   return (
     <>
       <Section title="C-13 · Avatar, PresenceDot, Badge">
         <People />
-      </Section>
-      <Section title="Presence (dev)">
-        <LivePresence />
       </Section>
       <Section title="C-40 · ActivityLine">
         <Activities />

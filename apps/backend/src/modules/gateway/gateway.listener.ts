@@ -12,7 +12,7 @@ import {
 } from '@nezfocus/shared';
 import type { Server } from 'node:http';
 import { WebSocketServer } from 'ws';
-import { toCurrentUser } from '../auth/auth.service.js';
+import { toCurrentUser } from '../users/users.dto.js';
 import { SessionRepository } from '../auth/session.repository.js';
 import { TokenService } from '../auth/token.service.js';
 import { ServersService } from '../servers/servers.service.js';

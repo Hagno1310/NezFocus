@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { SessionEndReason } from '@nezfocus/shared';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq, isNull, ne } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
 import { users } from '../users/users.schema.js';
 import { authSessions, refreshTokens } from './auth.schema.js';
@@ -11,10 +11,24 @@ export type NewSession = {
   deviceId: string;
   deviceName: string | null;
   platform: string;
+  osVersion: string | null;
   ipPrefix: string | null;
 };
 
 export type NewRefreshToken = { tokenHash: Buffer; expiresAt: Date };
+
+// What ends a session: the Gateway's reasons, plus signing out on the device itself.
+export type RevokeReason = SessionEndReason | 'logout';
+
+export type LiveSession = {
+  id: bigint;
+  deviceName: string | null;
+  platform: string;
+  osVersion: string | null;
+  ipPrefix: string | null;
+  createdAt: Date;
+  lastActiveAt: Date;
+};
 
 export type RefreshTokenState = {
   sessionId: bigint;
@@ -94,14 +108,75 @@ export class SessionRepository {
     });
   }
 
-  // Keeps the first reason when called twice.
-  async revoke(sessionId: bigint, reason: SessionEndReason, now: Date) {
-    await this.db
+  // Keeps the first reason when called twice. False when it was already ended.
+  async revoke(
+    sessionId: bigint,
+    reason: RevokeReason,
+    now: Date,
+  ): Promise<boolean> {
+    const rows = await this.db
       .update(authSessions)
       .set({ revokedAt: now, revokeReason: reason })
       .where(
         and(eq(authSessions.id, sessionId), isNull(authSessions.revokedAt)),
+      )
+      .returning({ id: authSessions.id });
+    return rows.length > 0;
+  }
+
+  // REQ-AUTH-07: a live session of this user, or undefined (someone else's, or ended).
+  async findLive(sessionId: bigint, userId: bigint) {
+    const [row] = await this.db
+      .select({ id: authSessions.id })
+      .from(authSessions)
+      .where(
+        and(
+          eq(authSessions.id, sessionId),
+          eq(authSessions.userId, userId),
+          isNull(authSessions.revokedAt),
+        ),
       );
+    return row;
+  }
+
+  // REQ-AUTH-07 "Phiên đăng nhập": newest activity first.
+  listLive(userId: bigint): Promise<LiveSession[]> {
+    return this.db
+      .select({
+        id: authSessions.id,
+        deviceName: authSessions.deviceName,
+        platform: authSessions.platform,
+        osVersion: authSessions.osVersion,
+        ipPrefix: authSessions.ipPrefix,
+        createdAt: authSessions.createdAt,
+        lastActiveAt: authSessions.lastActiveAt,
+      })
+      .from(authSessions)
+      .where(
+        and(eq(authSessions.userId, userId), isNull(authSessions.revokedAt)),
+      )
+      .orderBy(desc(authSessions.lastActiveAt), desc(authSessions.id));
+  }
+
+  // Ends every live session of the user but `keep`; returns the ones it ended.
+  async revokeAllOf(
+    userId: bigint,
+    keep: bigint | null,
+    reason: SessionEndReason,
+    now: Date,
+  ): Promise<bigint[]> {
+    const rows = await this.db
+      .update(authSessions)
+      .set({ revokedAt: now, revokeReason: reason })
+      .where(
+        and(
+          eq(authSessions.userId, userId),
+          isNull(authSessions.revokedAt),
+          keep === null ? undefined : ne(authSessions.id, keep),
+        ),
+      )
+      .returning({ id: authSessions.id });
+    return rows.map((r) => r.id);
   }
 
   async hasDeviceSession(userId: bigint, deviceId: string): Promise<boolean> {

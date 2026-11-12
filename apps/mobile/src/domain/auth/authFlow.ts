@@ -19,6 +19,9 @@ export const asApiError = (err: unknown): ApiErrorLike | null =>
 
 export type SignInMode = 'otp' | 'password';
 
+// Spec 01 › Dữ liệu nhất quán: mã OTP 6 số.
+export const CODE_LENGTH = 6;
+
 export function checkEmail(
   raw: string,
 ): { email: string } | { error: 'empty' | 'invalid' } {
@@ -29,7 +32,8 @@ export function checkEmail(
 
 export type SendCodeErrorState =
   | { kind: 'invalid-email' }
-  | { kind: 'rate-limited' } // 10 codes today (AUTH-13 AC6)
+  // 10 codes today (AUTH-13 AC6); 3 resets an hour (AUTH-08 AC5)
+  | { kind: 'rate-limited'; retryAfter: number | null }
   | { kind: 'wait'; seconds: number } // the 1-minute limit: just restart the countdown
   | { kind: 'network' }
   | { kind: 'other' };
@@ -43,7 +47,7 @@ export function sendCodeErrorState(err: unknown): SendCodeErrorState {
     const seconds = e.retry_after;
     return seconds && seconds <= EMAIL_CODE_RESEND_SECONDS
       ? { kind: 'wait', seconds }
-      : { kind: 'rate-limited' };
+      : { kind: 'rate-limited', retryAfter: seconds ?? null };
   }
   return { kind: 'other' };
 }

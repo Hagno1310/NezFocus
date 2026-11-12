@@ -141,6 +141,7 @@ export function Dialog({
   cancel,
   error,
   children,
+  row = false,
   onDismiss,
 }: {
   visible: boolean;
@@ -148,15 +149,18 @@ export function Dialog({
   body?: string;
   confirm: DialogAction;
   cancel?: { label: string; onPress: () => void };
+  // Side by side whatever the label length, where a frame overrides C-09's stacking rule
+  // (07 S-ME-01 `discard-confirm`).
+  row?: boolean;
   error?: string | null;
   // One input under the text (08 S-SET-06 `category-rename`).
   children?: ReactNode;
   onDismiss: () => void;
 }) {
   const { colors } = useTheme();
-  const layout = dialogLayout(
-    cancel ? [cancel.label, confirm.label] : [confirm.label],
-  );
+  const layout = row
+    ? 'row'
+    : dialogLayout(cancel ? [cancel.label, confirm.label] : [confirm.label]);
   const busy = !!confirm.loading;
   const confirmButton = (
     <Button
@@ -312,8 +316,10 @@ export function BottomSheet({
   error?: string | null;
   // Neutral FormMessage above the button (S-SET-09 `limit`).
   notice?: string | null;
-  // 32 above the title (S-MOD-03 `trash-2` danger).
-  icon?: { as: IconComponent; color: ColorToken };
+  // 32 above the title (S-MOD-03 `trash-2` danger). `circle`: the permission sheets
+  // (10 S-MOD-05) put it in a 64 `surface-2` circle and centre the title; the caller
+  // centres its own text.
+  icon?: { as: IconComponent; color: ColorToken; circle?: boolean };
   // `chevron-left` before the title: the same sheet showing a sub-list (S-SET-09 `category-picker`).
   onBack?: () => void;
   onDismiss: () => void;
@@ -342,7 +348,19 @@ export function BottomSheet({
           <>
             {handle}
             <View style={styles.sheetBody}>
-              {icon && <Icon as={icon.as} size="hero" color={icon.color} />}
+              {icon &&
+                (icon.circle ? (
+                  <View
+                    style={[
+                      styles.iconCircle,
+                      { backgroundColor: colors['surface-2'] },
+                    ]}
+                  >
+                    <Icon as={icon.as} size="hero" color={icon.color} />
+                  </View>
+                ) : (
+                  <Icon as={icon.as} size="hero" color={icon.color} />
+                ))}
               <View style={styles.sheetTitle}>
                 {onBack && (
                   <IconButton
@@ -354,7 +372,7 @@ export function BottomSheet({
                 <Text
                   variant="title-2"
                   accessibilityRole="header"
-                  style={styles.flex}
+                  style={[styles.flex, icon?.circle && styles.centerText]}
                 >
                   {title}
                 </Text>
@@ -395,6 +413,7 @@ export function ActionSheet({
   title,
   subtitle,
   icon,
+  leading,
   groups,
   cancel = true,
   onDismiss,
@@ -404,6 +423,8 @@ export function ActionSheet({
   subtitle?: string;
   // Beside the title (08 `channel-menu`: the channel icon; 02 `category-menu`: folder).
   icon?: IconComponent;
+  // In place of the icon, e.g. the server tile of 02 S-HOME-09.
+  leading?: ReactNode;
   groups: ActionGroup[];
   // false: no Cancel card; drag down, the scrim or system Back close it (spec 02 S-HOME-09,
   // spec 08 `channel-menu`, 02 `category-menu`).
@@ -435,8 +456,16 @@ export function ActionSheet({
             <View style={[card, styles.actionGroups]}>
               {handle}
               {(title || subtitle) && (
-                <View style={[styles.actionHead, icon && styles.actionHeadRow]}>
-                  {icon && (
+                <View
+                  // Frames S-HOME-09 / S-HOME-02 menus: a hairline `border` under the head.
+                  style={[
+                    styles.actionHead,
+                    { borderBottomColor: colors.border },
+                    !!(icon || leading) && styles.actionHeadRow,
+                  ]}
+                >
+                  {leading}
+                  {!leading && icon && (
                     <View
                       style={[
                         styles.actionHeadIcon,
@@ -446,7 +475,8 @@ export function ActionSheet({
                       <Icon as={icon} size="lg" color="text-secondary" />
                     </View>
                   )}
-                  <View style={styles.flex}>
+                  {/* flex only beside an icon: alone in a column it collapses to 0 high. */}
+                  <View style={icon || leading ? styles.flex : undefined}>
                     {title && (
                       <Text variant="headline" numberOfLines={1}>
                         {title}
@@ -582,6 +612,15 @@ const styles = StyleSheet.create({
   },
   sheetBody: { gap: space[3], flexShrink: 1 },
   sheetTitle: { flexDirection: 'row', alignItems: 'center', gap: space[1] },
+  iconCircle: {
+    width: size.icon.hero * 2,
+    height: size.icon.hero * 2,
+    borderRadius: size.icon.hero,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+  },
+  centerText: { textAlign: 'center' },
   // Board ActionSheet: outer padding 8 (24 at the bottom), cards radius 24, gap 8.
   actionSheet: {
     maxHeight: '90%',
@@ -595,6 +634,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[3],
     paddingVertical: space[2],
     gap: space[1] / 2,
+    borderBottomWidth: size.hairline,
   },
   actionHeadRow: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
   actionHeadIcon: {

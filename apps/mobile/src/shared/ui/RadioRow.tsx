@@ -1,4 +1,5 @@
 import { Circle, CircleDot } from 'lucide-react-native';
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { size, space, useTheme } from '../theme';
 import { Icon, type IconComponent } from './Icon';
@@ -10,12 +11,15 @@ export function RadioRow({
   label,
   description,
   typeIcon,
+  leading,
   selected,
   onPress,
 }: {
   label: string;
   description?: string;
   typeIcon?: IconComponent;
+  // Same spot as typeIcon, for a non-icon marker (S-ME-02 status sheet: PresenceDot).
+  leading?: ReactNode;
   selected: boolean;
   onPress: () => void;
 }) {
@@ -28,6 +32,7 @@ export function RadioRow({
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,
+        description !== undefined && styles.withDescription,
         pressed && { backgroundColor: colors['overlay-pressed'] },
       ]}
     >
@@ -37,6 +42,7 @@ export function RadioRow({
         color={selected ? 'primary' : 'text-tertiary'}
       />
       {typeIcon && <Icon as={typeIcon} size="md" color="text-secondary" />}
+      {leading && <View style={styles.leading}>{leading}</View>}
       <View style={styles.text}>
         <Text numberOfLines={1}>{label}</Text>
         {description && (
@@ -55,6 +61,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space[2] + space[1],
+  },
+  // 00-components C-34: with a description the row grows with the text, icons on the first line.
+  withDescription: {
+    alignItems: 'flex-start',
+    paddingVertical: space[2] + space[1],
+  },
+  leading: {
+    width: size.icon.lg,
+    height: size.icon.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   text: { flex: 1, gap: space[1] / 2 },
 });

@@ -106242,7 +106242,7 @@
                 "I2coI": {
                   "fill": "$surface-2",
                   "stroke": "$border",
-                  "strokeWidth": 1
+                  "strokeWidth": 0
                 },
                 "hA4Pc": {
                   "content": "an.nguyen@gmail.com",
@@ -106263,7 +106263,7 @@
                 "I2coI": {
                   "fill": "$surface-2",
                   "stroke": "$border",
-                  "strokeWidth": 1
+                  "strokeWidth": 0
                 },
                 "hA4Pc": {
                   "content": "••••••••••",
@@ -160641,7 +160641,7 @@
                       "descendants": {
                         "L56hqK": {
                           "content": "K",
-                          "fontSize": 36
+                          "fontSize": "$type-display"
                         }
                       }
                     },
@@ -160650,12 +160650,18 @@
                       "type": "ref",
                       "ref": "zEcs7",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1",
+                      "descendants": {
+                        "OKRC1": {
+                          "fill": "$surface-1"
+                        }
+                      }
                     }
                   ]
                 },
@@ -161245,7 +161251,7 @@
                       "descendants": {
                         "L56hqK": {
                           "content": "B",
-                          "fontSize": 36
+                          "fontSize": "$type-display"
                         }
                       }
                     },
@@ -161254,12 +161260,13 @@
                       "type": "ref",
                       "ref": "pDNcf",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -161847,7 +161854,7 @@
                       "descendants": {
                         "L56hqK": {
                           "content": "H",
-                          "fontSize": 36
+                          "fontSize": "$type-display"
                         }
                       }
                     },
@@ -161856,12 +161863,13 @@
                       "type": "ref",
                       "ref": "pDNcf",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -162482,7 +162490,7 @@
                       "descendants": {
                         "L56hqK": {
                           "content": "A",
-                          "fontSize": 36
+                          "fontSize": "$type-display"
                         }
                       }
                     },
@@ -162491,12 +162499,13 @@
                       "type": "ref",
                       "ref": "pDNcf",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -163058,7 +163067,7 @@
                       "descendants": {
                         "L56hqK": {
                           "content": "K",
-                          "fontSize": 36
+                          "fontSize": "$type-display"
                         }
                       }
                     },
@@ -163067,12 +163076,18 @@
                       "type": "ref",
                       "ref": "zEcs7",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1",
+                      "descendants": {
+                        "OKRC1": {
+                          "fill": "$surface-1"
+                        }
+                      }
                     }
                   ]
                 },
@@ -163763,7 +163778,7 @@
                       "descendants": {
                         "L56hqK": {
                           "content": "Q",
-                          "fontSize": 36
+                          "fontSize": "$type-display"
                         }
                       }
                     },
@@ -163772,12 +163787,13 @@
                       "type": "ref",
                       "ref": "pDNcf",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -212607,7 +212623,7 @@
                   "descendants": {
                     "L56hqK": {
                       "content": "L",
-                      "fontSize": "$type-title-1"
+                      "fontSize": "$type-display"
                     }
                   }
                 },
@@ -218040,7 +218056,7 @@
               "descendants": {
                 "L56hqK": {
                   "content": "B",
-                  "fontSize": "$type-title-1"
+                  "fontSize": "$type-display"
                 }
               }
             },
@@ -218331,7 +218347,7 @@
               "descendants": {
                 "L56hqK": {
                   "content": "B",
-                  "fontSize": "$type-title-1"
+                  "fontSize": "$type-display"
                 }
               }
             },
@@ -218599,7 +218615,7 @@
               "descendants": {
                 "L56hqK": {
                   "content": "B",
-                  "fontSize": "$type-title-1"
+                  "fontSize": "$type-display"
                 }
               }
             },
@@ -218861,7 +218877,7 @@
                   "descendants": {
                     "L56hqK": {
                       "content": "B",
-                      "fontSize": "$type-title-1"
+                      "fontSize": "$type-display"
                     }
                   }
                 }
@@ -219505,7 +219521,7 @@
               "descendants": {
                 "L56hqK": {
                   "content": "B",
-                  "fontSize": "$type-title-1"
+                  "fontSize": "$type-display"
                 }
               }
             },
@@ -219839,7 +219855,7 @@
               "descendants": {
                 "L56hqK": {
                   "content": "B",
-                  "fontSize": "$type-title-1"
+                  "fontSize": "$type-display"
                 }
               }
             },
@@ -220090,7 +220106,7 @@
               "descendants": {
                 "L56hqK": {
                   "content": "B",
-                  "fontSize": "$type-title-1"
+                  "fontSize": "$type-display"
                 }
               }
             },
@@ -220429,7 +220445,7 @@
               "descendants": {
                 "L56hqK": {
                   "content": "B",
-                  "fontSize": "$type-title-1"
+                  "fontSize": "$type-display"
                 }
               }
             },
@@ -220666,7 +220682,7 @@
               "descendants": {
                 "L56hqK": {
                   "content": "B",
-                  "fontSize": "$type-title-1"
+                  "fontSize": "$type-display"
                 }
               }
             },
@@ -220872,7 +220888,7 @@
               "descendants": {
                 "L56hqK": {
                   "content": "B",
-                  "fontSize": "$type-title-1"
+                  "fontSize": "$type-display"
                 }
               }
             },
@@ -221078,7 +221094,7 @@
               "descendants": {
                 "L56hqK": {
                   "content": "B",
-                  "fontSize": "$type-title-1"
+                  "fontSize": "$type-display"
                 }
               }
             },
@@ -221243,7 +221259,7 @@
               "descendants": {
                 "L56hqK": {
                   "content": "B",
-                  "fontSize": "$type-title-1"
+                  "fontSize": "$type-display"
                 }
               }
             },
@@ -222102,7 +222118,7 @@
                   "descendants": {
                     "L56hqK": {
                       "content": "B",
-                      "fontSize": "$type-title-1"
+                      "fontSize": "$type-display"
                     }
                   }
                 }
@@ -222366,7 +222382,7 @@
                   "descendants": {
                     "L56hqK": {
                       "content": "B",
-                      "fontSize": "$type-title-1"
+                      "fontSize": "$type-display"
                     }
                   }
                 }
@@ -222626,7 +222642,7 @@
                   "descendants": {
                     "L56hqK": {
                       "content": "C",
-                      "fontSize": "$type-title-1"
+                      "fontSize": "$type-display"
                     }
                   }
                 }
@@ -222831,7 +222847,7 @@
                   "descendants": {
                     "L56hqK": {
                       "content": "C",
-                      "fontSize": "$type-title-1"
+                      "fontSize": "$type-display"
                     }
                   }
                 }
@@ -223878,7 +223894,7 @@
                       "descendants": {
                         "L56hqK": {
                           "content": "G",
-                          "fontSize": 36
+                          "fontSize": "$type-display"
                         }
                       }
                     },
@@ -223887,12 +223903,13 @@
                       "type": "ref",
                       "ref": "dhjeI",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -226227,7 +226244,7 @@
               "descendants": {
                 "L56hqK": {
                   "content": "B",
-                  "fontSize": "$type-title-1"
+                  "fontSize": "$type-display"
                 }
               }
             },
@@ -227534,7 +227551,7 @@
                   "descendants": {
                     "L56hqK": {
                       "content": "B",
-                      "fontSize": "$type-title-1"
+                      "fontSize": "$type-display"
                     }
                   }
                 }
@@ -236694,7 +236711,7 @@
                       "descendants": {
                         "L56hqK": {
                           "content": "K",
-                          "fontSize": 36
+                          "fontSize": "$type-display"
                         }
                       }
                     },
@@ -236703,12 +236720,18 @@
                       "type": "ref",
                       "ref": "zEcs7",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1",
+                      "descendants": {
+                        "OKRC1": {
+                          "fill": "$surface-1"
+                        }
+                      }
                     }
                   ]
                 },
@@ -263875,7 +263898,12 @@
                           "width": 56,
                           "height": 56,
                           "x": 0,
-                          "y": 0
+                          "y": 0,
+                          "descendants": {
+                            "DhLwC": {
+                              "fontSize": "$type-title-2"
+                            }
+                          }
                         },
                         {
                           "id": "xQEqc",
@@ -264291,7 +264319,12 @@
                           "width": 56,
                           "height": 56,
                           "x": 0,
-                          "y": 0
+                          "y": 0,
+                          "descendants": {
+                            "DhLwC": {
+                              "fontSize": "$type-title-2"
+                            }
+                          }
                         },
                         {
                           "id": "kXvG5",
@@ -265106,7 +265139,12 @@
                           "width": 56,
                           "height": 56,
                           "x": 0,
-                          "y": 0
+                          "y": 0,
+                          "descendants": {
+                            "DhLwC": {
+                              "fontSize": "$type-title-2"
+                            }
+                          }
                         },
                         {
                           "id": "Yhwpz",
@@ -265522,7 +265560,12 @@
                           "width": 56,
                           "height": 56,
                           "x": 0,
-                          "y": 0
+                          "y": 0,
+                          "descendants": {
+                            "DhLwC": {
+                              "fontSize": "$type-title-2"
+                            }
+                          }
                         },
                         {
                           "id": "bDY83",
@@ -266054,7 +266097,12 @@
                           "width": 56,
                           "height": 56,
                           "x": 0,
-                          "y": 0
+                          "y": 0,
+                          "descendants": {
+                            "DhLwC": {
+                              "fontSize": "$type-title-2"
+                            }
+                          }
                         },
                         {
                           "id": "eZJjH",
@@ -266471,7 +266519,12 @@
                           "width": 56,
                           "height": 56,
                           "x": 0,
-                          "y": 0
+                          "y": 0,
+                          "descendants": {
+                            "DhLwC": {
+                              "fontSize": "$type-title-2"
+                            }
+                          }
                         },
                         {
                           "id": "Tvsaf",
@@ -266887,7 +266940,12 @@
                           "width": 56,
                           "height": 56,
                           "x": 0,
-                          "y": 0
+                          "y": 0,
+                          "descendants": {
+                            "DhLwC": {
+                              "fontSize": "$type-title-2"
+                            }
+                          }
                         },
                         {
                           "id": "Y4yrr",
@@ -267314,7 +267372,12 @@
                   "ref": "lgt64",
                   "name": "Avatar self",
                   "width": 96,
-                  "height": 96
+                  "height": 96,
+                  "descendants": {
+                    "DhLwC": {
+                      "fontSize": "$type-display"
+                    }
+                  }
                 },
                 {
                   "id": "y5gMBj",
@@ -267504,7 +267567,12 @@
                   "ref": "lgt64",
                   "name": "Avatar self",
                   "width": 96,
-                  "height": 96
+                  "height": 96,
+                  "descendants": {
+                    "DhLwC": {
+                      "fontSize": "$type-display"
+                    }
+                  }
                 },
                 {
                   "id": "nfTGH",
@@ -267689,7 +267757,12 @@
                   "ref": "lgt64",
                   "name": "Avatar self",
                   "width": 96,
-                  "height": 96
+                  "height": 96,
+                  "descendants": {
+                    "DhLwC": {
+                      "fontSize": "$type-display"
+                    }
+                  }
                 },
                 {
                   "id": "g5AUhT",
@@ -268203,7 +268276,12 @@
                   "ref": "lgt64",
                   "name": "Avatar self",
                   "width": 96,
-                  "height": 96
+                  "height": 96,
+                  "descendants": {
+                    "DhLwC": {
+                      "fontSize": "$type-display"
+                    }
+                  }
                 },
                 {
                   "id": "XsA9R",
@@ -268399,7 +268477,12 @@
                   "ref": "lgt64",
                   "name": "Avatar self",
                   "width": 96,
-                  "height": 96
+                  "height": 96,
+                  "descendants": {
+                    "DhLwC": {
+                      "fontSize": "$type-display"
+                    }
+                  }
                 },
                 {
                   "id": "zcrl3",
@@ -268699,7 +268782,12 @@
                   "ref": "lgt64",
                   "name": "Avatar self",
                   "width": 96,
-                  "height": 96
+                  "height": 96,
+                  "descendants": {
+                    "DhLwC": {
+                      "fontSize": "$type-display"
+                    }
+                  }
                 },
                 {
                   "id": "jZHZD",
@@ -278557,7 +278645,12 @@
                           "width": 56,
                           "height": 56,
                           "x": 0,
-                          "y": 0
+                          "y": 0,
+                          "descendants": {
+                            "DhLwC": {
+                              "fontSize": "$type-title-2"
+                            }
+                          }
                         },
                         {
                           "id": "Q4F0qb",
@@ -278943,7 +279036,12 @@
                   "ref": "lgt64",
                   "name": "Avatar self",
                   "width": 96,
-                  "height": 96
+                  "height": 96,
+                  "descendants": {
+                    "DhLwC": {
+                      "fontSize": "$type-display"
+                    }
+                  }
                 },
                 {
                   "id": "O8aRc",
@@ -280279,7 +280377,7 @@
                           "y": 0,
                           "descendants": {
                             "DhLwC": {
-                              "fontSize": 32
+                              "fontSize": "$type-title-2"
                             }
                           }
                         },
@@ -290094,19 +290192,20 @@
                   "type": "frame",
                   "id": "N4YPVv",
                   "name": "Avatar wrap",
-                  "width": 64,
-                  "height": 64,
+                  "width": 56,
+                  "height": 56,
                   "children": [
                     {
                       "id": "jOqbb",
                       "type": "ref",
                       "ref": "kh2dM",
                       "name": "Avatar K",
-                      "width": 64,
-                      "height": 64,
+                      "width": 56,
+                      "height": 56,
                       "descendants": {
                         "L56hqK": {
-                          "content": "K"
+                          "content": "K",
+                          "fontSize": "$type-title-2"
                         }
                       }
                     },
@@ -290116,10 +290215,10 @@
                       "ref": "zEcs7",
                       "name": "Presence",
                       "layoutPosition": "absolute",
-                      "x": 48,
-                      "y": 48,
-                      "width": 16,
-                      "height": 16
+                      "x": 42,
+                      "y": 42,
+                      "width": 14,
+                      "height": 14
                     }
                   ]
                 },
@@ -290483,19 +290582,20 @@
                   "type": "frame",
                   "id": "NagF5",
                   "name": "Avatar wrap",
-                  "width": 64,
-                  "height": 64,
+                  "width": 56,
+                  "height": 56,
                   "children": [
                     {
                       "id": "eoYSH",
                       "type": "ref",
                       "ref": "kh2dM",
                       "name": "Avatar A",
-                      "width": 64,
-                      "height": 64,
+                      "width": 56,
+                      "height": 56,
                       "descendants": {
                         "L56hqK": {
-                          "content": "A"
+                          "content": "A",
+                          "fontSize": "$type-title-2"
                         }
                       }
                     },
@@ -290505,10 +290605,10 @@
                       "ref": "pDNcf",
                       "name": "Presence",
                       "layoutPosition": "absolute",
-                      "x": 48,
-                      "y": 48,
-                      "width": 16,
-                      "height": 16
+                      "x": 42,
+                      "y": 42,
+                      "width": 14,
+                      "height": 14
                     }
                   ]
                 },
@@ -290808,19 +290908,20 @@
                   "type": "frame",
                   "id": "CCoJM",
                   "name": "Avatar wrap",
-                  "width": 64,
-                  "height": 64,
+                  "width": 56,
+                  "height": 56,
                   "children": [
                     {
                       "id": "aXFKx",
                       "type": "ref",
                       "ref": "kh2dM",
                       "name": "Avatar Q",
-                      "width": 64,
-                      "height": 64,
+                      "width": 56,
+                      "height": 56,
                       "descendants": {
                         "L56hqK": {
-                          "content": "Q"
+                          "content": "Q",
+                          "fontSize": "$type-title-2"
                         }
                       }
                     },
@@ -290830,10 +290931,10 @@
                       "ref": "dhjeI",
                       "name": "Presence",
                       "layoutPosition": "absolute",
-                      "x": 48,
-                      "y": 48,
-                      "width": 16,
-                      "height": 16
+                      "x": 42,
+                      "y": 42,
+                      "width": 14,
+                      "height": 14
                     }
                   ]
                 },
@@ -291254,19 +291355,20 @@
                   "type": "frame",
                   "id": "ZpqpP",
                   "name": "Avatar wrap",
-                  "width": 64,
-                  "height": 64,
+                  "width": 56,
+                  "height": 56,
                   "children": [
                     {
                       "id": "KsoPc",
                       "type": "ref",
                       "ref": "kh2dM",
                       "name": "Avatar K",
-                      "width": 64,
-                      "height": 64,
+                      "width": 56,
+                      "height": 56,
                       "descendants": {
                         "L56hqK": {
-                          "content": "K"
+                          "content": "K",
+                          "fontSize": "$type-title-2"
                         }
                       }
                     },
@@ -291276,10 +291378,10 @@
                       "ref": "zEcs7",
                       "name": "Presence",
                       "layoutPosition": "absolute",
-                      "x": 48,
-                      "y": 48,
-                      "width": 16,
-                      "height": 16
+                      "x": 42,
+                      "y": 42,
+                      "width": 14,
+                      "height": 14
                     }
                   ]
                 },
@@ -291917,19 +292019,20 @@
                   "type": "frame",
                   "id": "sIq4i",
                   "name": "Avatar wrap",
-                  "width": 64,
-                  "height": 64,
+                  "width": 56,
+                  "height": 56,
                   "children": [
                     {
                       "id": "tGWxn",
                       "type": "ref",
                       "ref": "kh2dM",
                       "name": "Avatar K",
-                      "width": 64,
-                      "height": 64,
+                      "width": 56,
+                      "height": 56,
                       "descendants": {
                         "L56hqK": {
-                          "content": "K"
+                          "content": "K",
+                          "fontSize": "$type-title-2"
                         }
                       }
                     },
@@ -291939,10 +292042,10 @@
                       "ref": "zEcs7",
                       "name": "Presence",
                       "layoutPosition": "absolute",
-                      "x": 48,
-                      "y": 48,
-                      "width": 16,
-                      "height": 16
+                      "x": 42,
+                      "y": 42,
+                      "width": 14,
+                      "height": 14
                     }
                   ]
                 },
@@ -292417,19 +292520,20 @@
                   "type": "frame",
                   "id": "Hxlbc",
                   "name": "Avatar wrap",
-                  "width": 64,
-                  "height": 64,
+                  "width": 56,
+                  "height": 56,
                   "children": [
                     {
                       "id": "K6tCJ",
                       "type": "ref",
                       "ref": "kh2dM",
                       "name": "Avatar K",
-                      "width": 64,
-                      "height": 64,
+                      "width": 56,
+                      "height": 56,
                       "descendants": {
                         "L56hqK": {
-                          "content": "K"
+                          "content": "K",
+                          "fontSize": "$type-title-2"
                         }
                       }
                     },
@@ -292439,10 +292543,10 @@
                       "ref": "zEcs7",
                       "name": "Presence",
                       "layoutPosition": "absolute",
-                      "x": 48,
-                      "y": 48,
-                      "width": 16,
-                      "height": 16
+                      "x": 42,
+                      "y": 42,
+                      "width": 14,
+                      "height": 14
                     }
                   ]
                 },
@@ -292982,19 +293086,20 @@
                   "type": "frame",
                   "id": "MDMMz",
                   "name": "Avatar wrap",
-                  "width": 64,
-                  "height": 64,
+                  "width": 56,
+                  "height": 56,
                   "children": [
                     {
                       "id": "DEixZ",
                       "type": "ref",
                       "ref": "kh2dM",
                       "name": "Avatar K",
-                      "width": 64,
-                      "height": 64,
+                      "width": 56,
+                      "height": 56,
                       "descendants": {
                         "L56hqK": {
-                          "content": "K"
+                          "content": "K",
+                          "fontSize": "$type-title-2"
                         }
                       }
                     },
@@ -293004,10 +293109,10 @@
                       "ref": "zEcs7",
                       "name": "Presence",
                       "layoutPosition": "absolute",
-                      "x": 48,
-                      "y": 48,
-                      "width": 16,
-                      "height": 16
+                      "x": 42,
+                      "y": 42,
+                      "width": 14,
+                      "height": 14
                     }
                   ]
                 },
@@ -294091,19 +294196,20 @@
                   "type": "frame",
                   "id": "uBfAy",
                   "name": "Avatar wrap",
-                  "width": 64,
-                  "height": 64,
+                  "width": 56,
+                  "height": 56,
                   "children": [
                     {
                       "id": "yAIiN",
                       "type": "ref",
                       "ref": "kh2dM",
                       "name": "Avatar K",
-                      "width": 64,
-                      "height": 64,
+                      "width": 56,
+                      "height": 56,
                       "descendants": {
                         "L56hqK": {
-                          "content": "K"
+                          "content": "K",
+                          "fontSize": "$type-title-2"
                         }
                       }
                     },
@@ -294113,10 +294219,10 @@
                       "ref": "zEcs7",
                       "name": "Presence",
                       "layoutPosition": "absolute",
-                      "x": 48,
-                      "y": 48,
-                      "width": 16,
-                      "height": 16
+                      "x": 42,
+                      "y": 42,
+                      "width": 14,
+                      "height": 14
                     }
                   ]
                 },
@@ -294514,19 +294620,20 @@
                   "type": "frame",
                   "id": "MrGuV",
                   "name": "Avatar wrap",
-                  "width": 64,
-                  "height": 64,
+                  "width": 56,
+                  "height": 56,
                   "children": [
                     {
                       "id": "R3jAXs",
                       "type": "ref",
                       "ref": "kh2dM",
                       "name": "Avatar K",
-                      "width": 64,
-                      "height": 64,
+                      "width": 56,
+                      "height": 56,
                       "descendants": {
                         "L56hqK": {
-                          "content": "K"
+                          "content": "K",
+                          "fontSize": "$type-title-2"
                         }
                       }
                     },
@@ -294536,10 +294643,10 @@
                       "ref": "zEcs7",
                       "name": "Presence",
                       "layoutPosition": "absolute",
-                      "x": 48,
-                      "y": 48,
-                      "width": 16,
-                      "height": 16
+                      "x": 42,
+                      "y": 42,
+                      "width": 14,
+                      "height": 14
                     }
                   ]
                 },
@@ -296121,7 +296228,8 @@
                       "height": 56,
                       "descendants": {
                         "L56hqK": {
-                          "content": "V"
+                          "content": "V",
+                          "fontSize": "$type-title-2"
                         }
                       }
                     },
@@ -298477,11 +298585,12 @@
                       "type": "ref",
                       "ref": "kh2dM",
                       "name": "Avatar N",
-                      "width": 64,
-                      "height": 64,
+                      "width": 56,
+                      "height": 56,
                       "descendants": {
                         "L56hqK": {
-                          "content": "N"
+                          "content": "N",
+                          "fontSize": "$type-title-2"
                         }
                       }
                     },
@@ -312047,7 +312156,7 @@
                       "descendants": {
                         "L56hqK": {
                           "content": "D",
-                          "fontSize": 36
+                          "fontSize": "$type-display"
                         }
                       }
                     },
@@ -312056,12 +312165,13 @@
                       "type": "ref",
                       "ref": "pDNcf",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -312879,11 +312989,12 @@
                       "type": "ref",
                       "ref": "kh2dM",
                       "name": "Avatar N",
-                      "width": 64,
-                      "height": 64,
+                      "width": 56,
+                      "height": 56,
                       "descendants": {
                         "L56hqK": {
-                          "content": "N"
+                          "content": "N",
+                          "fontSize": "$type-title-2"
                         }
                       }
                     },
@@ -316749,7 +316860,8 @@
                       "height": 56,
                       "descendants": {
                         "L56hqK": {
-                          "content": "V"
+                          "content": "V",
+                          "fontSize": "$type-title-2"
                         }
                       }
                     },
@@ -320365,7 +320477,7 @@
                   "descendants": {
                     "L56hqK": {
                       "content": "N",
-                      "fontSize": "$type-title-1"
+                      "fontSize": "$type-display"
                     }
                   }
                 }
@@ -364122,19 +364234,20 @@
                   "type": "frame",
                   "id": "N5Hrv3",
                   "name": "Avatar wrap",
-                  "width": 64,
-                  "height": 64,
+                  "width": 56,
+                  "height": 56,
                   "children": [
                     {
                       "id": "faRKH",
                       "type": "ref",
                       "ref": "kh2dM",
                       "name": "Avatar K",
-                      "width": 64,
-                      "height": 64,
+                      "width": 56,
+                      "height": 56,
                       "descendants": {
                         "L56hqK": {
-                          "content": "K"
+                          "content": "K",
+                          "fontSize": "$type-title-2"
                         }
                       }
                     },
@@ -364144,10 +364257,10 @@
                       "ref": "zEcs7",
                       "name": "Presence",
                       "layoutPosition": "absolute",
-                      "x": 48,
-                      "y": 48,
-                      "width": 16,
-                      "height": 16
+                      "x": 42,
+                      "y": 42,
+                      "width": 14,
+                      "height": 14
                     }
                   ]
                 },
@@ -365932,19 +366045,20 @@
                   "type": "frame",
                   "id": "OXlF3",
                   "name": "Avatar wrap",
-                  "width": 64,
-                  "height": 64,
+                  "width": 56,
+                  "height": 56,
                   "children": [
                     {
                       "id": "HHva1",
                       "type": "ref",
                       "ref": "kh2dM",
                       "name": "Avatar Q",
-                      "width": 64,
-                      "height": 64,
+                      "width": 56,
+                      "height": 56,
                       "descendants": {
                         "L56hqK": {
-                          "content": "Q"
+                          "content": "Q",
+                          "fontSize": "$type-title-2"
                         }
                       }
                     },
@@ -365954,10 +366068,10 @@
                       "ref": "dhjeI",
                       "name": "Presence",
                       "layoutPosition": "absolute",
-                      "x": 48,
-                      "y": 48,
-                      "width": 16,
-                      "height": 16
+                      "x": 42,
+                      "y": 42,
+                      "width": 14,
+                      "height": 14
                     }
                   ]
                 },
@@ -375209,7 +375323,7 @@
                       "descendants": {
                         "L56hqK": {
                           "content": "D",
-                          "fontSize": 36
+                          "fontSize": "$type-display"
                         }
                       }
                     },
@@ -375218,12 +375332,13 @@
                       "type": "ref",
                       "ref": "pDNcf",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -375844,7 +375959,7 @@
                       "descendants": {
                         "L56hqK": {
                           "content": "B",
-                          "fontSize": 36
+                          "fontSize": "$type-display"
                         }
                       }
                     },
@@ -375853,12 +375968,13 @@
                       "type": "ref",
                       "ref": "pDNcf",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -376607,7 +376723,7 @@
                       "descendants": {
                         "L56hqK": {
                           "content": "P",
-                          "fontSize": 36
+                          "fontSize": "$type-display"
                         }
                       }
                     },
@@ -376616,12 +376732,13 @@
                       "type": "ref",
                       "ref": "dhjeI",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -377264,7 +377381,7 @@
                       "descendants": {
                         "L56hqK": {
                           "content": "B",
-                          "fontSize": 36
+                          "fontSize": "$type-display"
                         }
                       }
                     },
@@ -377273,12 +377390,13 @@
                       "type": "ref",
                       "ref": "pDNcf",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -378043,7 +378161,7 @@
                       "descendants": {
                         "L56hqK": {
                           "content": "M",
-                          "fontSize": 36
+                          "fontSize": "$type-display"
                         }
                       }
                     },
@@ -378052,12 +378170,13 @@
                       "type": "ref",
                       "ref": "dhjeI",
                       "name": "Presence",
-                      "x": 72,
-                      "y": 72,
-                      "width": 18,
-                      "height": 18,
+                      "x": 76,
+                      "y": 76,
+                      "width": 14,
+                      "height": 14,
                       "stroke": "$surface-1",
-                      "strokeWidth": 3
+                      "strokeWidth": 0,
+                      "fill": "$surface-1"
                     }
                   ]
                 },
@@ -443477,7 +443596,7 @@
               "descendants": {
                 "L56hqK": {
                   "content": "B",
-                  "fontSize": "$type-title-1"
+                  "fontSize": "$type-display"
                 }
               }
             },
@@ -446977,7 +447096,12 @@
                           "width": 56,
                           "height": 56,
                           "x": 0,
-                          "y": 0
+                          "y": 0,
+                          "descendants": {
+                            "DhLwC": {
+                              "fontSize": "$type-title-2"
+                            }
+                          }
                         },
                         {
                           "id": "fvlSv",

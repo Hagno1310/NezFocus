@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ComponentRef, type Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 import {
@@ -26,6 +26,7 @@ export function CodeInput({
   verifying = false,
   disabled = false,
   autoFocus = true,
+  ref,
 }: {
   value: string;
   onChange: (code: string) => void;
@@ -35,6 +36,7 @@ export function CodeInput({
   verifying?: boolean;
   disabled?: boolean;
   autoFocus?: boolean;
+  ref?: Ref<ComponentRef<typeof TextInput>>; // focus() from a form that checks the code on submit
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -92,6 +94,7 @@ export function CodeInput({
         );
       })}
       <TextInput
+        ref={ref}
         value={value}
         onChangeText={(raw) => {
           interacted();

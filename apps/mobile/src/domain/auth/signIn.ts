@@ -24,22 +24,30 @@ import { serverErrors, type CompleteAccountErrors } from './completeAccount';
 // Spec 01 use cases: call the repository, turn errors into screen states. Screens reach them
 // through features/auth/hooks (TanStack Query mutations).
 
+export type CodePurpose = 'sign_in' | 'reset_password';
+
 export type SendCodeResult =
   { ok: true; reused: boolean } | { ok: false; error: SendCodeErrorState };
 
-// S-AUTH-02 › Tương tác: the same email again before the minute is up reuses the code.
+// S-AUTH-02 › Tương tác: the same email again before the minute is up reuses the code
+// (S-AUTH-05 request too, with the reset code).
 // `sent` is the code this phone now waits on (unchanged when nothing new was sent).
 export async function requestCode(
   repo: AuthRepository,
   last: SentCode | null,
   email: string,
   now: () => number,
-  { force = false } = {},
+  {
+    force = false,
+    purpose = 'sign_in',
+  }: { force?: boolean; purpose?: CodePurpose } = {},
 ): Promise<{ result: SendCodeResult; sent: SentCode | null }> {
   if (!force && canReuseCode(last, email, now()))
     return { result: { ok: true, reused: true }, sent: last };
   try {
-    const { resend_in } = await repo.sendEmailCode(email);
+    const { resend_in } = await (purpose === 'reset_password'
+      ? repo.forgotPassword(email)
+      : repo.sendEmailCode(email));
     return {
       result: { ok: true, reused: false },
       sent: { email, resendAt: now() + resend_in * 1000 },

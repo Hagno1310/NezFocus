@@ -60,12 +60,14 @@ export function InlineLink({
   onPress,
   disabled = false,
   center = true,
+  size = 'body',
 }: {
   prefix?: string;
   link: string;
   onPress: () => void;
   disabled?: boolean;
   center?: boolean;
+  size?: 'body' | 'label'; // `label`: "Đổi email" under the address (S-AUTH-03 / S-AUTH-05)
 }) {
   return (
     <Pressable
@@ -75,14 +77,18 @@ export function InlineLink({
       disabled={disabled}
       onPress={onPress}
       hitSlop={{
-        top: touchSlop(typography.body.lineHeight),
-        bottom: touchSlop(typography.body.lineHeight),
+        top: touchSlop(typography[size].lineHeight),
+        bottom: touchSlop(typography[size].lineHeight),
       }}
       style={[styles.link, center && styles.center]}
     >
-      <Text color="text-secondary">
+      <Text variant={size} color="text-secondary">
         {prefix}
-        <Text weight="600" color={disabled ? 'text-tertiary' : 'primary'}>
+        <Text
+          variant={size}
+          weight="600"
+          color={disabled ? 'text-tertiary' : 'primary'}
+        >
           {link}
         </Text>
       </Text>

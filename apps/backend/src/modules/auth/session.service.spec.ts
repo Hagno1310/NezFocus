@@ -2,6 +2,7 @@ import { ErrorCode } from '@nezfocus/shared';
 import { fixedClock } from '../../common/clock.js';
 import { SnowflakeGenerator } from '../../common/snowflake.js';
 import type { SessionRevoker } from '../gateway/session-revoker.js';
+import type { PushTokens } from '../notifications/push-tokens.js';
 import type {
   NewRefreshToken,
   NewSession,
@@ -82,6 +83,7 @@ const setup = () => {
     new SnowflakeGenerator(0, () => clock.now().getTime()),
     clock,
     revoker,
+    { removeForSessions: async () => {} } as unknown as PushTokens,
   );
   return { service, clock, sessions, disconnected, tokens };
 };

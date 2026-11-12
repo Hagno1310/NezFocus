@@ -46,16 +46,22 @@ const errorOf = (err: unknown): CreateServerError => {
   return 'other';
 };
 
-// SRV-01: create, then open the first text channel the creator can view (#general).
+// SRV-01: create (with an icon already uploaded, P1-A4.7 #211), then open the first text
+// channel the creator can view (#general).
 export async function createServer(
   repo: Pick<ServerRepository, 'createServer'>,
   template: ServerTemplate,
   rawName: string,
+  iconId?: string,
 ): Promise<CreateServerResult> {
   const name = ServerName.safeParse(rawName);
   if (!name.success) return { ok: false, error: 'name' };
   try {
-    const server = await repo.createServer({ name: name.data, template });
+    const server = await repo.createServer({
+      name: name.data,
+      template,
+      ...(iconId && { icon_attachment_id: iconId }),
+    });
     return { ok: true, server, channel: firstTextChannel(server.channels) };
   } catch (err) {
     return { ok: false, error: errorOf(err) };

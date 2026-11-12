@@ -31,6 +31,7 @@ export type TextFieldProps = BaseProps & {
   readonly?: boolean;
   password?: boolean;
   trailing?: ReactNode; // status icon at the end of the field (S-ONB-01 username ✓)
+  minLines?: number; // multiline: height kept for this many lines (S-ME-01 bio: 3)
 };
 
 // C-02: the label sits above the field, never floating inside (floating labels clip Vietnamese marks).
@@ -45,6 +46,7 @@ export function TextField({
   password = false,
   trailing,
   multiline,
+  minLines = 1,
   value,
   onFocus,
   onBlur,
@@ -62,11 +64,14 @@ export function TextField({
     : focused || error
       ? size.strokeThick
       : size.hairline;
+  // Board C-02 `TF disabled`: stroke `border`, not `border-input`.
   const borderColor = error
     ? colors.danger
     : focused
       ? colors.primary
-      : colors['border-input'];
+      : disabled
+        ? colors.border
+        : colors['border-input'];
   // Keep the text still when the border thickens from 1 to 2.
   const inset = space[3] - borderWidth;
 
@@ -98,6 +103,12 @@ export function TextField({
               disabled || readonly ? colors['surface-2'] : colors['surface-1'],
           },
           multiline && styles.multiline,
+          multiline && {
+            minHeight: Math.max(
+              size.field,
+              typography.body.lineHeight * minLines + space[3],
+            ),
+          },
         ]}
       >
         {icon && <Icon as={icon} size="base" color="text-tertiary" />}

@@ -89,6 +89,8 @@ describe('READY presence', () => {
           email: 'an@example.com',
           username: 'an',
           display_name: 'An',
+          bio: null,
+          avatar: null,
           account_completed: true,
           created_at: NOW.toISOString(),
         },

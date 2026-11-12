@@ -178,9 +178,9 @@ export const size = {
   strokeThick: 2,
   // Boards (TextField help, PasswordRules, Segment/item): icon–text gap 6 in small rows.
   iconGap: 6,
-  // C-13 Avatar sizes; DESIGN.md › Presence: dot 10 on 32–40, 14 on 56–96, cut 2.
+  // C-13 Avatar sizes; DESIGN.md › Presence: dot 10 on every avatar size, cut 2.
   avatar: [20, 24, 32, 40, 56, 96] as const,
-  presence: { sm: 10, lg: 14, cut: 2 },
+  presence: { dot: 10, cut: 2 },
   avatarStackOverlap: -6,
   // DESIGN.md › Mascot: empty state 96–120; board EmptyState draws 112.
   mascotEmpty: 112,

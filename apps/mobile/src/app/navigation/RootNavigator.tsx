@@ -51,8 +51,19 @@ import { CompleteAccountScreen } from '../../features/auth/screens/CompleteAccou
 import { SignInScreen } from '../../features/auth/screens/SignInScreen';
 import { UpdateRequiredScreen } from '../../features/auth/screens/UpdateRequiredScreen';
 import { CreateAccountScreen } from '../../features/auth/screens/CreateAccountScreen';
+import { ForgotPasswordScreen } from '../../features/auth/screens/ForgotPasswordScreen';
+import { ResetPasswordScreen } from '../../features/auth/screens/ResetPasswordScreen';
 import { EnterCodeScreen } from '../../features/auth/screens/EnterCodeScreen';
 import { WelcomeScreen } from '../../features/auth/screens/WelcomeScreen';
+import { MeScreen } from '../../features/me/screens/MeScreen';
+import { EditProfileScreen } from '../../features/me/screens/EditProfileScreen';
+import { CropImageScreen } from '../../features/media/CropImageScreen';
+import type { PickedPhoto } from '../../features/media/PhotoSourceSheet';
+import type { ImageFile } from '../../domain/attachments/AttachmentRepository';
+import { AccountScreen } from '../../features/me/screens/AccountScreen';
+import { ChangePasswordScreen } from '../../features/me/screens/ChangePasswordScreen';
+import { SessionsScreen } from '../../features/me/screens/SessionsScreen';
+import { useMeSync } from '../../features/me/hooks/useMe';
 import { Button } from '../../shared/ui/Button';
 import { StyleSheet, View } from 'react-native';
 import { space } from '../../shared/theme';
@@ -79,7 +90,8 @@ export type RootStackParamList = {
   CreateAccount: undefined; // S-AUTH-02
   EnterCode: { email: string; from: 'create' | 'signIn' }; // S-AUTH-03
   SignIn: { mode?: SignInMode; email?: string } | undefined; // S-AUTH-04
-  ForgotPassword: undefined; // S-AUTH-05
+  ForgotPassword: { email?: string } | undefined; // S-AUTH-05 request
+  ResetPassword: { email: string }; // S-AUTH-05 reset-form
   CompleteAccount: undefined; // S-ONB-01
   Main: undefined;
   // Replaces everything while sessionStore.upgradeRequired (42601 on any request, NFR-MOB-12).
@@ -98,13 +110,20 @@ type StudyParamList = {
 
 type HomeParamList = {
   HomeRoot: undefined; // drawers around the open channel (S-HOME-01/02/03)
-  CreateServer: undefined; // S-HOME-06
+  CreateServer: { cropped?: ImageFile } | undefined; // S-HOME-06
+  // 07 S-ME-01 crop for the server icon; goes back to the screen that asked.
+  CropImage: {
+    photo: PickedPhoto;
+    back:
+      | { screen: 'CreateServer' }
+      | { screen: 'ServerOverview'; serverId: string };
+  };
   JoinByCode: undefined; // ponytail: placeholder for S-HOME-06 join-by-code until P2-A1 (#14)
   // ponytail: where S-HOME-02 / S-HOME-09 / S-SET-01 lead before those screens exist —
   // voice room P3-B1 (#26), DMs P2-B3 (#20), invite P2-A1 (#14), and the rest per row.
   HomePlaceholder: { title: string; ticket?: string };
   ServerSettings: { serverId: string }; // S-SET-01
-  ServerOverview: { serverId: string }; // S-SET-01 overview
+  ServerOverview: { serverId: string; cropped?: ImageFile }; // S-SET-01 overview
   Roles: { serverId: string }; // S-SET-02
   RoleEdit: { serverId: string; roleId: string }; // S-SET-02 edit-role
   ChannelSettings: { serverId: string; channelId: string }; // S-SET-06
@@ -124,12 +143,27 @@ type TabParamList = {
   Study: NavigatorScreenParams<StudyParamList> | undefined;
   Tasks: undefined;
   Inbox: undefined;
-  Me: undefined;
+  Me: NavigatorScreenParams<MeParamList> | undefined;
+};
+
+// Spec 07: S-ME-02 is the tab root; the others are child screens that keep the TabBar.
+type MeParamList = {
+  MeRoot: undefined; // S-ME-02
+  EditProfile: { cropped?: ImageFile } | undefined; // S-ME-01
+  CropAvatar: { photo: PickedPhoto }; // S-ME-01 crop
+  Account: undefined; // S-ME-03
+  ChangePassword: { mode?: 'code' } | undefined; // S-ME-03 password-form / password-code
+  Sessions: undefined; // S-ME-03 sessions
+  DeleteAccount: undefined; // S-ME-03 delete (P3-A4 #24)
+  Privacy: undefined; // S-ME-04
+  Notifications: undefined; // S-ME-05
+  Appearance: undefined; // S-ME-06
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 const StudyStack = createNativeStackNavigator<StudyParamList>();
+const MeStack = createNativeStackNavigator<MeParamList>();
 const HomeStack = createNativeStackNavigator<HomeParamList>();
 
 // CR-15: S-HOME-06 and other Home screens stack above the drawers; Back pops them first.
@@ -182,8 +216,15 @@ function HomeTab() {
         }}
       </HomeStack.Screen>
       <HomeStack.Screen name="CreateServer">
-        {({ navigation }) => (
+        {({ navigation, route }) => (
           <CreateServerScreen
+            cropped={route.params?.cropped}
+            onCrop={(photo) =>
+              navigation.navigate('CropImage', {
+                photo,
+                back: { screen: 'CreateServer' },
+              })
+            }
             onClose={navigation.goBack}
             onJoinByCode={() => navigation.navigate('JoinByCode')}
             onCreated={() => navigation.popTo('HomeRoot')}
@@ -249,8 +290,40 @@ function HomeTab() {
         {({ navigation, route }) => (
           <ServerOverviewScreen
             serverId={route.params.serverId}
+            cropped={route.params.cropped}
+            onCrop={(photo) =>
+              navigation.navigate('CropImage', {
+                photo,
+                back: {
+                  screen: 'ServerOverview',
+                  serverId: route.params.serverId,
+                },
+              })
+            }
             onSaved={navigation.goBack}
             onLostAccess={() => navigation.popTo('HomeRoot')}
+          />
+        )}
+      </HomeStack.Screen>
+      <HomeStack.Screen
+        name="CropImage"
+        options={{ presentation: 'fullScreenModal' }}
+      >
+        {({ navigation, route }) => (
+          <CropImageScreen
+            photo={route.params.photo}
+            shape="square"
+            onCancel={navigation.goBack}
+            onDone={(cropped) => {
+              const { back } = route.params;
+              if (back.screen === 'CreateServer')
+                navigation.popTo('CreateServer', { cropped });
+              else
+                navigation.popTo('ServerOverview', {
+                  serverId: back.serverId,
+                  cropped,
+                });
+            }}
           />
         )}
       </HomeStack.Screen>
@@ -343,13 +416,15 @@ function MainTabBar({
 }: BottomTabBarProps & { tabs: Parameters<typeof TabBar>[0]['tabs'] }) {
   const keyboard = useKeyboardVisible();
   const route = props.state.routes[props.state.index];
-  const onSolo =
-    route?.name === 'Study' && getFocusedRouteNameFromRoute(route) === 'Solo';
+  const focused = route && getFocusedRouteNameFromRoute(route);
+  const onSolo = route?.name === 'Study' && focused === 'Solo';
+  // 07 S-ME-01 `crop` (and the server icon crop) is a full-screen step: no TabBar.
+  const fullScreen = focused === 'CropAvatar' || focused === 'CropImage';
   const openSolo = () => props.navigation.navigate('Study', { screen: 'Solo' });
   return (
     <>
       <SoloNotificationOpener onOpen={openSolo} />
-      {!keyboard && (
+      {!keyboard && !fullScreen && (
         <>
           {/* Hidden on the Solo screen itself (C-08). */}
           {!onSolo && <SoloMiniPlayer onOpen={openSolo} />}
@@ -395,6 +470,105 @@ function StudyTab() {
         )}
       </StudyStack.Screen>
     </StudyStack.Navigator>
+  );
+}
+
+type Action = { label: string; onPress: () => void };
+
+// Child screens not built yet: each names the ticket that replaces it.
+const meChildren = [
+  ['DeleteAccount', 'me.deleteAccount', 'P3-A4 (#24)'],
+  ['Privacy', 'me.privacy', 'P1-A5.2 (#77)'],
+  ['Notifications', 'me.notifications', 'P1-A5.3 (#78)'],
+  ['Appearance', 'me.appearance', 'P1-A5.4 (#79)'],
+] as const;
+
+function MeTab({ devActions }: { devActions: Action[] }) {
+  const { t } = useTranslation();
+  return (
+    <MeStack.Navigator>
+      <MeStack.Screen name="MeRoot" options={{ headerShown: false }}>
+        {({ navigation }) => (
+          <MeScreen
+            onOpenProfile={() => navigation.navigate('EditProfile')}
+            onOpenStreak={() =>
+              (
+                navigation.getParent() as
+                  BottomTabNavigationProp<TabParamList> | undefined
+              )?.navigate('Study', { screen: 'Stats' })
+            }
+            onOpenAccount={() => navigation.navigate('Account')}
+            onOpenPrivacy={() => navigation.navigate('Privacy')}
+            onOpenNotifications={() => navigation.navigate('Notifications')}
+            onOpenAppearance={() => navigation.navigate('Appearance')}
+            devActions={
+              devActions.length > 0 && (
+                <View style={styles.dev}>
+                  {devActions.map((a) => (
+                    <Button
+                      key={a.label}
+                      variant="text"
+                      size="S"
+                      label={a.label}
+                      onPress={a.onPress}
+                    />
+                  ))}
+                </View>
+              )
+            }
+          />
+        )}
+      </MeStack.Screen>
+      <MeStack.Screen name="EditProfile" options={{ headerShown: false }}>
+        {({ navigation, route }) => (
+          <EditProfileScreen
+            cropped={route.params?.cropped}
+            onCrop={(photo) => navigation.navigate('CropAvatar', { photo })}
+            onBack={navigation.goBack}
+            onSaved={() => navigation.goBack()}
+          />
+        )}
+      </MeStack.Screen>
+      <MeStack.Screen
+        name="CropAvatar"
+        options={{ headerShown: false, presentation: 'fullScreenModal' }}
+      >
+        {({ navigation, route }) => (
+          <CropImageScreen
+            photo={route.params.photo}
+            onCancel={navigation.goBack}
+            onDone={(cropped) => navigation.popTo('EditProfile', { cropped })}
+          />
+        )}
+      </MeStack.Screen>
+      <MeStack.Screen name="Account" options={{ headerShown: false }}>
+        {({ navigation }) => (
+          <AccountScreen
+            onBack={navigation.goBack}
+            onChangePassword={() => navigation.navigate('ChangePassword')}
+            onSessions={() => navigation.navigate('Sessions')}
+            onDeleteAccount={() => navigation.navigate('DeleteAccount')}
+          />
+        )}
+      </MeStack.Screen>
+      <MeStack.Screen name="ChangePassword" options={{ headerShown: false }}>
+        {({ navigation, route }) => (
+          <ChangePasswordScreen
+            initialMode={route.params?.mode}
+            onBack={navigation.goBack}
+            onSaved={() => navigation.goBack()}
+          />
+        )}
+      </MeStack.Screen>
+      <MeStack.Screen name="Sessions" options={{ headerShown: false }}>
+        {({ navigation }) => <SessionsScreen onBack={navigation.goBack} />}
+      </MeStack.Screen>
+      {meChildren.map(([name, title, ticket]) => (
+        <MeStack.Screen key={name} name={name} options={{ title: t(title) }}>
+          {() => <Placeholder title={t(title)} ticket={ticket} />}
+        </MeStack.Screen>
+      ))}
+    </MeStack.Navigator>
   );
 }
 
@@ -494,6 +668,7 @@ function MainTabs() {
   const [sampleBadges, setSampleBadges] = useState(false);
   useSoloSync();
   useStudyStatsSync();
+  useMeSync();
   const solo = useSolo();
   // C-03 / SRS 3.1: dot on Học while the user is in a Focus Session.
   const studying = !!solo && !endingOf(solo);
@@ -541,17 +716,17 @@ function MainTabs() {
       <Tab.Screen name="Inbox" options={{ title: t('tabs.inbox') }}>
         {() => <Placeholder title={t('tabs.inbox')} />}
       </Tab.Screen>
-      <Tab.Screen name="Me" options={{ title: t('tabs.me') }}>
+      <Tab.Screen
+        name="Me"
+        options={{ title: t('tabs.me'), headerShown: false }}
+      >
         {() => (
-          <Placeholder
-            title={t('tabs.me')}
-            actions={[
-              dev.language,
-              dev.signOut,
-              ...gallery,
-              ...badgeToggle,
-              ...endedActions,
-            ]}
+          <MeTab
+            devActions={
+              __DEV__
+                ? [dev.language, ...gallery, ...badgeToggle, ...endedActions]
+                : []
+            }
           />
         )}
       </Tab.Screen>
@@ -608,10 +783,14 @@ export function RootNavigator() {
           {!sessionEnded && signInScreen}
           <Stack.Screen
             name="ForgotPassword"
-            options={{ title: t('screens.forgotPassword') }}
-          >
-            {() => <Placeholder title={t('screens.forgotPassword')} />}
-          </Stack.Screen>
+            component={ForgotPasswordScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ResetPassword"
+            component={ResetPasswordScreen}
+            options={{ headerShown: false }}
+          />
         </Stack.Group>
       )}
       {status === 'incomplete' && (

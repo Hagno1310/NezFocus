@@ -117,11 +117,14 @@ export function EnterCodeScreen({ navigation, route }: Props) {
       onBack={navigation.goBack}
       banner={!online && <SystemBanner kind="offline" />}
     >
-      <View>
-        <Text color="text-secondary">{t('auth.enterCode.sentTo')}</Text>
-        <Text weight="600">{breakableEmail(email)}</Text>
+      <View style={styles.sentTo}>
+        <View>
+          <Text color="text-secondary">{t('auth.enterCode.sentTo')}</Text>
+          <Text weight="600">{breakableEmail(email)}</Text>
+        </View>
         <InlineLink
           center={false}
+          size="label"
           link={t('auth.enterCode.changeEmail')}
           onPress={navigation.goBack}
         />
@@ -189,4 +192,7 @@ export function EnterCodeScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({ gapTop: { marginTop: space[2] } });
+const styles = StyleSheet.create({
+  gapTop: { marginTop: space[2] },
+  sentTo: { gap: space[2] },
+});

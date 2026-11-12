@@ -300,7 +300,7 @@ Ba quy tắc cứng (rút ra từ chỗ các màu trùng nhau khi mô phỏng m�
 
 Hai nền phòng Nghỉ ngắn / Nghỉ dài gần như trùng nhau với người mù màu — có chủ đích: "Nghỉ" là một họ; hai pha nghỉ phân biệt bằng nhãn, icon và kiểu nét.
 
-**Presence** (REQ-AUTH-05): **hình dạng là tín hiệu chính**, màu là phụ — Online = chấm đặc `success`; Idle = trăng khuyết `warning`; DND = tròn có gạch ngang `danger`; Offline/Invisible = vòng rỗng `text-tertiary`. Chấm 10 (avatar 32–40) hoặc 14 (avatar 56–96), góc dưới phải, viền cắt 2 màu nền. Không hiện presence quanh vòng nhịp hay trong Study Room (quy tắc 2) — chỉ ở danh sách thành viên, DM, bạn bè.
+**Presence** (REQ-AUTH-05): **hình dạng là tín hiệu chính**, màu là phụ — Online = chấm đặc `success`; Idle = trăng khuyết `warning`; DND = tròn có gạch ngang `danger`; Offline/Invisible = vòng rỗng `text-tertiary`. Chấm 10 ở mọi cỡ avatar, góc dưới phải, viền cắt 2 màu nền. Không hiện presence quanh vòng nhịp hay trong Study Room (quy tắc 2) — chỉ ở danh sách thành viên, DM, bạn bè.
 
 **Tương phản** (WCAG 2.2, tính bằng công thức, không ước lượng; sáng · tối):
 
@@ -544,3 +544,4 @@ Thêm 01/11/2026 (SRS v1.10, CR-27, Mục 4.11; chế độ cập nhật của `
 | 02/11/2026 | Người dùng mới và người hoạt động tách thành hai biểu đồ nhỏ; người dùng mới thành cột đặc `primary` (bỏ đường đứt `text-secondary`) | W3 Q2 (`ui-feature-spec-vi`): 0–3 người mới / ngày so với ~130 người hoạt động — chung một thang thì đường người mới nằm sát đáy; hai trục là lỗi kinh điển |
 | 06/11/2026 | Nhãn nút (`button-primary`, `button-secondary`, `button-danger`) đậm 600, cỡ 16 ở mọi cỡ nút; `button-secondary` cao 44 như master (S 40 vẫn dùng trên hàng danh sách) | Dựng component P0-3b (#3): board `C-01 · Button` vẽ mọi biến thể và cả ba cỡ 48 / 44 / 40 bằng 16/600, token cũ ghi 400 (và 14 cho nút phụ) nên code theo token sẽ lệch board. Sửa token theo board, không đổi frame |
 | 07/11/2026 | Học một mình tạm dừng trong pha Nghỉ: không mascot, giữ nền và nét vòng của pha | Thử trên máy thật: mascot đẩy dòng "Đồng hồ đứng yên, không tính phút" đè lên vòng 280; mascot "được nghỉ" cũng không hợp lúc đồng hồ đứng yên. Frame `S-STUDY-02 · paused` chỉ vẽ pha Tập trung |
+| 12/11/2026 | Chấm presence 10 ở mọi cỡ avatar (bỏ chấm 14 cho avatar 56–96) | Frame S-ME-02 và master `PresenceDot` chỉ có một cỡ (chấm 10, viền cắt 2); user chọn theo frame khi thử P1-A4 trên máy. Token `presence-dot.size` vốn đã là 10 |

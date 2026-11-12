@@ -55,10 +55,11 @@ export const ServerResponse = ServerSummary.extend({
 });
 export type ServerResponse = z.infer<typeof ServerResponse>;
 
-// ponytail: icon via POST /attachments `server_icon` lands with P1-A4.7 (#211).
+// icon_attachment_id: a completed `server_icon` upload of the caller (else 40001).
 export const CreateServerRequest = z.object({
   name: ServerName,
   template: ServerTemplate,
+  icon_attachment_id: SnowflakeId.optional(),
 });
 export type CreateServerRequest = z.infer<typeof CreateServerRequest>;
 
@@ -66,6 +67,7 @@ export const UpdateServerRequest = z
   .object({
     name: ServerName.optional(),
     system_channel_id: SnowflakeId.nullable().optional(),
+    icon_attachment_id: SnowflakeId.nullable().optional(), // null = back to the initials
   })
   .refine((body) => Object.keys(body).length > 0, 'nothing to update');
 export type UpdateServerRequest = z.infer<typeof UpdateServerRequest>;

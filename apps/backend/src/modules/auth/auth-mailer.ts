@@ -10,6 +10,10 @@ export abstract class AuthMailer {
     email: string,
     device: { name?: string; platform: string },
   ): Promise<void>;
+  // REQ-AUTH-08: the reset code, only to an email that has an account.
+  abstract sendPasswordResetCode(email: string, code: string): Promise<void>;
+  // REQ-AUTH-08 AC4, AUTH-14 AC1: the password was reset or changed.
+  abstract sendPasswordChanged(email: string): Promise<void>;
 }
 
 // ponytail: dev prints the code to the backend log; real mail (SMTP, queue) comes with P1-A6 (#196).
@@ -30,6 +34,19 @@ export class LogAuthMailer extends AuthMailer {
       this.logger.warn(
         `no mail provider: sign-in code for ${email} was not delivered`,
       );
+  }
+
+  async sendPasswordResetCode(email: string, code: string) {
+    if (this.showCodes)
+      this.logger.log(`password-reset code for ${email}: ${code}`);
+    else
+      this.logger.warn(
+        `no mail provider: password-reset code for ${email} was not delivered`,
+      );
+  }
+
+  async sendPasswordChanged(email: string) {
+    this.logger.log(`password-changed notice for ${email}`);
   }
 
   async sendNewDeviceAlert(

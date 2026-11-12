@@ -11,7 +11,12 @@ import {
   requestCode,
   usernameStatus,
   verifyCode,
+  type CodePurpose,
 } from '../../../domain/auth/signIn';
+import {
+  resetPassword,
+  type ResetForm,
+} from '../../../domain/auth/resetPassword';
 import { signIn, signOut } from '../../../domain/session/sessionStore';
 import { i18n } from '../../../shared/i18n';
 import { useGuardedMutation } from '../../../shared/hooks/useGuardedMutation';
@@ -30,7 +35,7 @@ function startSession(
   { fromCreateAccount = false, suggestedUsername = null as string | null } = {},
 ) {
   rememberMethod(method);
-  useAuthFlow.setState({ sentCode: null, suggestedUsername });
+  useAuthFlow.setState({ sentCode: null, resetCode: null, suggestedUsername });
   signIn(
     { id: user.id, email: user.email },
     { completed: user.account_completed },
@@ -43,28 +48,36 @@ function startSession(
     });
 }
 
-export function useSendCode() {
+// Each purpose waits on its own code (AUTH-02 AC7): S-AUTH-03 and S-AUTH-05 count down apart.
+const codeSlot = { sign_in: 'sentCode', reset_password: 'resetCode' } as const;
+
+export function useSendCode(purpose: CodePurpose = 'sign_in') {
   return useGuardedMutation(async (email: string, force?: boolean) => {
+    const slot = codeSlot[purpose];
     const { result, sent } = await requestCode(
       authRepository,
-      useAuthFlow.getState().sentCode,
+      useAuthFlow.getState()[slot],
       email,
       Date.now,
-      { force },
+      { force, purpose },
     );
-    useAuthFlow.setState({ sentCode: sent });
+    useAuthFlow.setState({ [slot]: sent });
     return result;
   });
 }
 
-// "Tiếp tục" (S-AUTH-02) and "Gửi mã OTP" (S-AUTH-04): check the email, send (or reuse)
-// the code, then open S-AUTH-03. The screens only differ in how they show the errors.
-export function useEmailCodeStep(on: {
-  sent: (email: string) => void;
-  fieldError: (error: 'empty' | 'invalid') => void;
-  rateLimited: () => void;
-}) {
-  const send = useSendCode();
+// "Tiếp tục" (S-AUTH-02), "Gửi mã OTP" (S-AUTH-04, S-AUTH-05 request): check the email,
+// send (or reuse) the code, then open the code screen. The screens only differ in how they
+// show the errors.
+export function useEmailCodeStep(
+  on: {
+    sent: (email: string) => void;
+    fieldError: (error: 'empty' | 'invalid') => void;
+    rateLimited: (retryAfter: number | null) => void;
+  },
+  purpose: CodePurpose = 'sign_in',
+) {
+  const send = useSendCode(purpose);
   const { run } = send;
   const start = useCallback(
     async (raw: string) => {
@@ -78,7 +91,8 @@ export function useEmailCodeStep(on: {
       if (!result) return;
       if (result.ok || result.error.kind === 'wait') on.sent(checked.email);
       else if (result.error.kind === 'invalid-email') on.fieldError('invalid');
-      else if (result.error.kind === 'rate-limited') on.rateLimited();
+      else if (result.error.kind === 'rate-limited')
+        on.rateLimited(result.error.retryAfter);
       else showErrorToast(result.error.kind);
     },
     [run, on],
@@ -108,6 +122,18 @@ export function useLogIn() {
   return useGuardedMutation(async (email: string, password: string) => {
     const result = await logIn(authRepository, email, password, Date.now);
     if (result.ok) startSession(result.session.user, 'password');
+    return result;
+  });
+}
+
+// AUTH-08 AC4: signed in here (password remembered as the way in), the others signed out.
+export function useResetPassword() {
+  return useGuardedMutation(async (form: ResetForm) => {
+    const result = await resetPassword(authRepository, form);
+    if (result.ok) {
+      startSession(result.session.user, 'password');
+      showToast({ message: i18n.t('auth.forgot.done') });
+    }
     return result;
   });
 }

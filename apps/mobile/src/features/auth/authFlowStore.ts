@@ -6,12 +6,14 @@ import type { SentCode, SignInMode } from '../../domain/auth/authFlow';
 // app reopens on S-AUTH-01 (AUTH-13, spec › S-AUTH-03 Tương tác).
 type AuthFlowState = {
   sentCode: SentCode | null;
+  resetCode: SentCode | null; // S-AUTH-05: its own code and countdown (AUTH-02 AC7)
   lastMethod: SignInMode | null; // AUTH-02 AC6
   suggestedUsername: string | null; // from the OTP sign-in, prefills S-ONB-01
 };
 
 export const useAuthFlow = create<AuthFlowState>(() => ({
   sentCode: null,
+  resetCode: null,
   lastMethod: null,
   suggestedUsername: null,
 }));

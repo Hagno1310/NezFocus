@@ -64,6 +64,13 @@
       "when": 1794280735749,
       "tag": "0008_elite_reptil",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794452814329,
+      "tag": "0009_skinny_leopardon",
+      "breakpoints": true
     }
   ]
 }

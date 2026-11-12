@@ -18,6 +18,8 @@ const user = {
   email: 'an.nguyen@gmail.com',
   username: 'an.nguyen',
   display_name: 'An',
+  bio: null,
+  avatar: null,
   account_completed: true,
   created_at: '2026-10-01T08:00:00.000Z',
 };
@@ -35,6 +37,8 @@ const repo = (over: Partial<AuthRepository>): AuthRepository => ({
   usernameAvailable: async () => true,
   completeAccount: async () => user,
   logout: async () => {},
+  forgotPassword: async () => ({ expires_in: 900, resend_in: 60 }),
+  resetPassword: async () => session,
   ...over,
 });
 const body = {} as CompleteAccountRequest;

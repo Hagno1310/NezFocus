@@ -11,6 +11,7 @@ import {
   type ServerSummary,
   type ServerTemplate,
 } from '@nezfocus/shared';
+import { serverIconUrl } from '../attachments/media.js';
 import type { ChannelWithOverwrites } from './channels.repository.js';
 import type { FullServer, ServerWithCount } from './servers.repository.js';
 import {
@@ -29,7 +30,7 @@ export const CHANNEL_TYPES: readonly ChannelType[] = [
 export const toServerSummary = (s: ServerWithCount): ServerSummary => ({
   id: s.id.toString(),
   name: s.name,
-  icon_url: null, // ponytail: server icons land with P1-A4.7 (#211)
+  icon_url: serverIconUrl(s.iconKey),
   owner_id: s.ownerId.toString(),
   template: s.template as ServerTemplate,
   system_channel_id: s.systemChannelId?.toString() ?? null,

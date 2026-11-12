@@ -1,4 +1,5 @@
 import { ChevronRight } from 'lucide-react-native';
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { fontScale as textScale, size, space, useTheme } from '../theme';
 import { Icon, type IconComponent } from './Icon';
@@ -11,16 +12,21 @@ import { Text } from './Text';
 export function SettingsRow({
   label,
   icon,
+  leading,
   description,
   value,
   people,
   toggle,
   onPress,
   disabled = false,
+  danger = false,
+  chevron = true,
 }: {
   label: string;
   // Board SettingsRow has an optional leading 22 icon.
   icon?: IconComponent;
+  // In place of the icon, e.g. the PresenceDot of the status row (S-ME-02).
+  leading?: ReactNode;
   // Also the reason line when `disabled`.
   description?: string;
   value?: string;
@@ -29,14 +35,22 @@ export function SettingsRow({
   toggle?: { value: boolean; onChange: (next: boolean) => void };
   onPress?: () => void;
   disabled?: boolean;
+  // An action rather than a place (S-ME-02 "Đăng xuất"): `danger` text and icon, no chevron.
+  danger?: boolean;
+  // false: a value shown for reading only (S-ME-03 Email).
+  chevron?: boolean;
 }) {
   const { colors } = useTheme();
   const { fontScale } = useWindowDimensions();
   // C-15: at 200% the value moves under the label.
   const stacked = fontScale >= textScale.large;
   const valueText = people ? people.map((p) => p.name).join(', ') : value;
-  const fg = disabled ? 'text-tertiary' : 'text-primary';
-  const secondaryFg = disabled ? 'text-tertiary' : 'text-secondary';
+  const fg = disabled ? 'text-tertiary' : danger ? 'danger' : 'text-primary';
+  const secondaryFg = disabled
+    ? 'text-tertiary'
+    : danger
+      ? 'danger'
+      : 'text-secondary';
 
   const valueNode = (people || value) && (
     <View style={[styles.value, !description && !stacked && styles.valueFill]}>
@@ -72,7 +86,7 @@ export function SettingsRow({
         pressed && { backgroundColor: colors['overlay-pressed'] },
       ]}
     >
-      {icon && <Icon as={icon} size="lg" color={secondaryFg} />}
+      {leading ?? (icon && <Icon as={icon} size="lg" color={secondaryFg} />)}
       {/* C-15: a one-line row keeps the label whole; the value takes the rest and truncates. */}
       <View
         style={[
@@ -106,7 +120,8 @@ export function SettingsRow({
           <Switch value={toggle.value} label={label} disabled={disabled} />
         </View>
       ) : (
-        <Icon as={ChevronRight} size="md" color="text-tertiary" />
+        !danger &&
+        chevron && <Icon as={ChevronRight} size="md" color="text-tertiary" />
       )}
     </Pressable>
   );

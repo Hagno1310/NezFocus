@@ -40,7 +40,8 @@ export const users = pgTable(
 
 export type UserRow = typeof users.$inferSelect;
 
-// SRS 8.2 `user_settings`; the other columns come with the settings tickets (P1-A5).
+// SRS 8.2 `user_settings`. The v1.x columns (show_on_leaderboard, share_study_stats,
+// analytics_opt_out, study_mode_schedule) come with their features.
 export const userSettings = pgTable('user_settings', {
   userId: bigint({ mode: 'bigint' })
     .primaryKey()
@@ -48,8 +49,12 @@ export const userSettings = pgTable('user_settings', {
   timezone: varchar({ length: 64 }).notNull().default('Asia/Ho_Chi_Minh'), // IANA
   timezoneChangedAt: timestamp({ withTimezone: true }), // Complete account does not set it
   locale: varchar({ length: 8 }).notNull().default('vi'),
+  theme: varchar({ length: 8 }).notNull().default('system'), // system | dark | light (SRS 3.3)
   // REQ-AUTH-05 (SRS 8.2): written by the Gateway on op 3; online | idle | dnd | invisible.
   preferredStatus: varchar({ length: 12 }).notNull().default('online'),
+  allowDmFromServerMembers: boolean().notNull().default(true), // REQ-DM-02
+  hidePushContent: boolean().notNull().default(false), // REQ-NOTIF-02
   showStudyActivity: boolean().notNull().default(true), // CR-24 "Hiện hoạt động học"
+  focusSoundAlways: boolean().notNull().default(false), // SRS 3.3, foreground only (CR-28 #22)
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });

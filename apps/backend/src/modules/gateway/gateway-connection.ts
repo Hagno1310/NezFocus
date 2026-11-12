@@ -1,5 +1,6 @@
 import {
   ClientFrame,
+  DEFAULT_USER_SETTINGS,
   GatewayCloseCode,
   GatewayOp,
   type CurrentUser,
@@ -8,6 +9,7 @@ import {
   type PresenceUpdate,
   type ServerSummary,
   type SessionEndReason,
+  type UserSettings,
 } from '@nezfocus/shared';
 import {
   HEARTBEAT_INTERVAL_MS,
@@ -30,6 +32,8 @@ export type Authenticate = (token: string) => Promise<
 
 // READY's server list (REQ-SRV-01), read when IDENTIFY succeeds.
 export type LoadServers = (userId: bigint) => Promise<ServerSummary[]>;
+// READY's settings (SRS 5.4, CR-28), read with the servers.
+export type LoadSettings = (userId: bigint) => Promise<UserSettings>;
 
 // REQ-AUTH-05, implemented by PresenceService; the default keeps a connection test free of it.
 export interface PresenceHooks {
@@ -75,6 +79,8 @@ export class GatewayConnection implements SessionSocket {
     private readonly authenticate: Authenticate,
     private readonly loadServers: LoadServers = async () => [],
     private readonly presence: PresenceHooks = noPresence,
+    private readonly loadSettings: LoadSettings = async () =>
+      DEFAULT_USER_SETTINGS,
   ) {}
 
   open() {
@@ -165,6 +171,7 @@ export class GatewayConnection implements SessionSocket {
 
   private async identify(auth: Authenticated, status?: PresenceStatus) {
     const servers = await this.loadServers(auth.userId);
+    const settings = await this.loadSettings(auth.userId);
     const presence = await this.presence.ready(auth.userId);
     if (this.isClosed) return;
     this.session = this.sessions.create(auth.userId, auth.authSessionId, this);
@@ -173,6 +180,7 @@ export class GatewayConnection implements SessionSocket {
       user: auth.user,
       servers,
       ...presence,
+      settings,
     });
     // SRS 5.4: IDENTIFY may carry the status the app wants (a new login keeps the saved one).
     if (status)

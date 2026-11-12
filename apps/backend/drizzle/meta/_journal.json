@@ -71,6 +71,13 @@
       "when": 1794452814329,
       "tag": "0009_skinny_leopardon",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794455879777,
+      "tag": "0010_open_the_leader",
+      "breakpoints": true
     }
   ]
 }

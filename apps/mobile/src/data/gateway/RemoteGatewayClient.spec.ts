@@ -1,3 +1,4 @@
+import { DEFAULT_USER_SETTINGS } from '@nezfocus/shared';
 import type { CurrentUser, DispatchEvent } from '@nezfocus/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -80,6 +81,7 @@ async function connected(client = createGatewayClient(deps)) {
       user,
       servers: [],
       preferred_status: 'online',
+      settings: DEFAULT_USER_SETTINGS,
       presences: [],
     },
   });
@@ -119,6 +121,7 @@ describe('RemoteGatewayClient', () => {
         user,
         servers: [],
         preferred_status: 'online',
+        settings: DEFAULT_USER_SETTINGS,
         presences: [],
       },
     });

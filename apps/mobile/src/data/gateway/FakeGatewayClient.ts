@@ -1,3 +1,4 @@
+import { DEFAULT_USER_SETTINGS } from '@nezfocus/shared';
 import type {
   PresenceEvent,
   CurrentUser,
@@ -52,6 +53,7 @@ export function createFakeGatewayClient(
           user: AN,
           servers: servers(),
           preferred_status: 'online',
+          settings: DEFAULT_USER_SETTINGS,
           presences,
         },
       });

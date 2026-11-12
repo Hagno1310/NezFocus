@@ -44,6 +44,10 @@ export const AccountRoutes = {
   // REQ-AUTH-07 · bearer · DELETE → 204, ends that session (4004 revoked) · 40401 when it is
   // not one of yours or already ended. The calling session itself: use /auth/logout.
   session: '/users/@me/sessions/:id',
+  // SRS 5.3 · bearer · PATCH UpdateSettingsRequest → UserSettings · 40001 (field errors; a
+  // server_allow_dm key of a server you are not in), 40029 + retry_after (second time zone
+  // change within 24 hours, STUDY-03 AC4). Sends USER_SETTINGS_UPDATE to the user's sessions.
+  settings: '/users/@me/settings',
 } as const;
 
 // Bump when the Terms / Privacy Policy text changes; the app sends the version it showed.
@@ -181,13 +185,21 @@ const isTimeZone = (tz: string) => {
   }
 };
 
+// REQ-STUDY-03: an IANA id the platform knows (user_settings.timezone).
+export const IanaTimeZone = z
+  .string()
+  .max(64)
+  .refine(isTimeZone, 'invalid IANA time zone');
+export const Locale = z.enum(['vi', 'en']);
+export type Locale = z.infer<typeof Locale>;
+
 // POST /auth/complete-account → CurrentUser
 export const CompleteAccountRequest = z.object({
   display_name: z.string().trim().min(1).max(DISPLAY_NAME_MAX),
   username: Username,
   password: Password,
-  timezone: z.string().max(64).refine(isTimeZone, 'invalid IANA time zone'),
-  locale: z.enum(['vi', 'en']),
+  timezone: IanaTimeZone,
+  locale: Locale,
   age_confirmed: z.literal(true), // DEC-18
   terms_accepted: z.literal(true),
   terms_version: z.literal(TERMS_VERSION),

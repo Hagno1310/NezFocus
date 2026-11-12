@@ -16,6 +16,7 @@ import { toCurrentUser } from '../users/users.dto.js';
 import { SessionRepository } from '../auth/session.repository.js';
 import { TokenService } from '../auth/token.service.js';
 import { ServersService } from '../servers/servers.service.js';
+import { SettingsService } from '../users/settings.service.js';
 import { UsersRepository } from '../users/users.repository.js';
 import { GatewayConnection, type Authenticate } from './gateway-connection.js';
 import { GatewaySessions } from './gateway-sessions.js';
@@ -36,6 +37,7 @@ export class GatewayListener
     private readonly users: UsersRepository,
     private readonly servers: ServersService,
     private readonly presence: PresenceService,
+    private readonly settings: SettingsService,
   ) {}
 
   onApplicationBootstrap() {
@@ -55,6 +57,7 @@ export class GatewayListener
         this.authenticate,
         (userId) => this.servers.summariesFor(userId),
         this.presence,
+        (userId) => this.settings.get(userId),
       );
       ws.on('message', (data, isBinary) => {
         // A binary frame is not JSON text: receive('') closes with 4002.

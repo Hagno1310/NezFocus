@@ -148,6 +148,7 @@ export async function connectGateway(app: INestApplication, token: string) {
   );
   const dispatches: { t: string; d: unknown; at: number }[] = [];
   const waiters: (() => void)[] = [];
+  let readyData: unknown;
   const closed = new Promise<{ code: number; reason: string }>((resolve) =>
     ws.on('close', (code, reason) =>
       resolve({ code, reason: reason.toString() }),
@@ -171,7 +172,10 @@ export async function connectGateway(app: INestApplication, token: string) {
           }),
         );
       if (frame.op !== 0) return;
-      if (frame.t === 'READY') return ready();
+      if (frame.t === 'READY') {
+        readyData = frame.d;
+        return ready();
+      }
       dispatches.push({ t: frame.t, d: frame.d, at: Date.now() });
       waiters.splice(0).forEach((w) => w());
     });
@@ -189,5 +193,12 @@ export async function connectGateway(app: INestApplication, token: string) {
       look();
     });
   const send = (op: number, d: unknown) => ws.send(JSON.stringify({ op, d }));
-  return { dispatches, next, send, closed, close: () => ws.close() };
+  return {
+    dispatches,
+    next,
+    send,
+    closed,
+    close: () => ws.close(),
+    ready: () => readyData,
+  };
 }

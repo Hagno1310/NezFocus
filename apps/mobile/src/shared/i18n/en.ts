@@ -686,6 +686,22 @@ export const en: Strings = {
     privacy: 'Privacy',
     notifications: 'Notifications',
     appearance: 'Appearance & language',
+    dmSection: 'MESSAGES',
+    dmFromMembers: 'Messages from server members',
+    dmFromMembersHint:
+      'People who are not your friends but share a server with you',
+    perServer: 'ALLOW IN EACH SERVER',
+    perServerHint:
+      'Turn it off in a server so people there cannot message you privately.',
+    friendsOnly: 'Only friends can message you.',
+    activitySection: 'ACTIVITY',
+    showActivity: 'Show study activity',
+    showActivityOn:
+      'Friends and people in your servers see which room you are in or that you are studying alone. People in a room still see you in its list.',
+    showActivityOff:
+      'Nobody sees that you are studying or which room you are in. People in a room still see you in its list.',
+    blockSection: 'BLOCKED',
+    blocked: 'Blocked people',
     logout: 'Log out',
     logoutTitle: 'Log out of this device?',
     cancel: 'Cancel',

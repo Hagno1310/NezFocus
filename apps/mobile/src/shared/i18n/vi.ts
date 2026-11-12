@@ -679,6 +679,21 @@ export const vi = {
     privacy: 'Quyền riêng tư',
     notifications: 'Thông báo',
     appearance: 'Giao diện & ngôn ngữ',
+    dmSection: 'TIN NHẮN',
+    dmFromMembers: 'Tin nhắn từ thành viên server',
+    dmFromMembersHint: 'Người chưa là bạn nhưng chung server với bạn',
+    perServer: 'CHO PHÉP Ở TỪNG SERVER',
+    perServerHint:
+      'Tắt ở một server để người trong server đó không nhắn tin riêng được cho bạn.',
+    friendsOnly: 'Chỉ bạn bè nhắn tin được cho bạn.',
+    activitySection: 'HOẠT ĐỘNG',
+    showActivity: 'Hiện hoạt động học',
+    showActivityOn:
+      'Bạn bè và người cùng server thấy bạn đang ở phòng nào hoặc đang học một mình. Người trong phòng vẫn thấy bạn trong danh sách của phòng.',
+    showActivityOff:
+      'Không ai thấy bạn đang học hay đang ở phòng nào. Người trong phòng vẫn thấy bạn trong danh sách của phòng.',
+    blockSection: 'CHẶN',
+    blocked: 'Danh sách chặn',
     logout: 'Đăng xuất',
     logoutTitle: 'Đăng xuất khỏi thiết bị này?',
     cancel: 'Hủy',

@@ -62,6 +62,7 @@ import type { PickedPhoto } from '../../features/media/PhotoSourceSheet';
 import type { ImageFile } from '../../domain/attachments/AttachmentRepository';
 import { AccountScreen } from '../../features/me/screens/AccountScreen';
 import { ChangePasswordScreen } from '../../features/me/screens/ChangePasswordScreen';
+import { PrivacyScreen } from '../../features/me/screens/PrivacyScreen';
 import { SessionsScreen } from '../../features/me/screens/SessionsScreen';
 import { useMeSync } from '../../features/me/hooks/useMe';
 import { Button } from '../../shared/ui/Button';
@@ -156,6 +157,7 @@ type MeParamList = {
   Sessions: undefined; // S-ME-03 sessions
   DeleteAccount: undefined; // S-ME-03 delete (P3-A4 #24)
   Privacy: undefined; // S-ME-04
+  Blocked: undefined; // S-DM-04 `blocked` (P2-B2.3 #112), placeholder until then
   Notifications: undefined; // S-ME-05
   Appearance: undefined; // S-ME-06
 };
@@ -478,7 +480,7 @@ type Action = { label: string; onPress: () => void };
 // Child screens not built yet: each names the ticket that replaces it.
 const meChildren = [
   ['DeleteAccount', 'me.deleteAccount', 'P3-A4 (#24)'],
-  ['Privacy', 'me.privacy', 'P1-A5.2 (#77)'],
+  ['Blocked', 'me.blocked', 'P2-B2.3 (#112)'],
   ['Notifications', 'me.notifications', 'P1-A5.3 (#78)'],
   ['Appearance', 'me.appearance', 'P1-A5.4 (#79)'],
 ] as const;
@@ -557,6 +559,14 @@ function MeTab({ devActions }: { devActions: Action[] }) {
             initialMode={route.params?.mode}
             onBack={navigation.goBack}
             onSaved={() => navigation.goBack()}
+          />
+        )}
+      </MeStack.Screen>
+      <MeStack.Screen name="Privacy" options={{ headerShown: false }}>
+        {({ navigation }) => (
+          <PrivacyScreen
+            onBack={navigation.goBack}
+            onOpenBlocked={() => navigation.navigate('Blocked')}
           />
         )}
       </MeStack.Screen>

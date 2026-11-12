@@ -6,9 +6,11 @@ import {
   useQueryClient,
   type QueryClient,
 } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 import { useStore } from 'zustand';
 import { create } from 'zustand';
+import { playPhaseAlert } from '../../../data/phaseAlert';
 import { cycleMemory, soloMemory, soloRepository } from '../../../data/study';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
 import { sessionStore } from '../../../domain/session/sessionStore';
@@ -22,6 +24,7 @@ import {
   type SoloSnapshot,
 } from '../../../domain/study/solo';
 import { useGatewayEvent } from '../../gateway/hooks/useGatewayEvent';
+import { phaseRanOut } from '../../../domain/study/soloAlerts';
 import { useSoloAlertSchedule } from './useSoloAlerts';
 
 const SOLO = ['solo'] as const;
@@ -67,6 +70,7 @@ export function useSoloSync() {
   const qc = useQueryClient();
   const snap = useSolo();
   useSoloAlertSchedule(snap);
+  usePhaseSound(snap);
   // Events missed while the Gateway was away (a stop during a reconnect) arrive as a refetch.
   useEffect(
     () =>
@@ -199,3 +203,20 @@ export const useLastCycle = create<{
   },
 }));
 void cycleMemory.load().then((c) => c && useLastCycle.setState({ cycle: c }));
+
+// SRS 3.3: a phase running out while the app is in the foreground plays the alert (sound +
+// vibration, "Luôn phát âm báo chuyển pha" respected); in the background the notification does.
+function usePhaseSound(snap: SoloSnapshot | null) {
+  const prev = useRef(snap);
+  useEffect(() => {
+    const before = prev.current;
+    prev.current = snap;
+    if (
+      before &&
+      snap &&
+      AppState.currentState === 'active' &&
+      phaseRanOut(before.session, snap.session, Date.now() + snap.offsetMs)
+    )
+      playPhaseAlert();
+  }, [snap]);
+}

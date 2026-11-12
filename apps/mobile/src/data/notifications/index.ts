@@ -1,4 +1,6 @@
+import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
+import { Linking } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 // SRS 7.3.5: Android channel "Nhắc học tập" for phase changes.
@@ -58,4 +60,14 @@ export const studyNotifications = {
     (await Notifications.getExactAlarmPermissionsAsync()).granted,
   openExactAlarmSettings: () =>
     Notifications.requestExactAlarmPermissionsAsync().catch(() => undefined),
+
+  // S-ME-05 "Mở cài đặt" / "Âm thanh và rung": the app's notification page (its channels);
+  // the app's details page if this Android has no such page.
+  openAppSettings: () =>
+    Linking.sendIntent('android.settings.APP_NOTIFICATION_SETTINGS', [
+      {
+        key: 'android.provider.extra.APP_PACKAGE',
+        value: Constants.expoConfig?.android?.package ?? 'app.nezfocus',
+      },
+    ]).catch(() => Linking.openSettings()),
 };

@@ -62,6 +62,7 @@ import type { PickedPhoto } from '../../features/media/PhotoSourceSheet';
 import type { ImageFile } from '../../domain/attachments/AttachmentRepository';
 import { AccountScreen } from '../../features/me/screens/AccountScreen';
 import { ChangePasswordScreen } from '../../features/me/screens/ChangePasswordScreen';
+import { NotificationsScreen } from '../../features/me/screens/NotificationsScreen';
 import { PrivacyScreen } from '../../features/me/screens/PrivacyScreen';
 import { SessionsScreen } from '../../features/me/screens/SessionsScreen';
 import { useMeSync } from '../../features/me/hooks/useMe';
@@ -481,7 +482,6 @@ type Action = { label: string; onPress: () => void };
 const meChildren = [
   ['DeleteAccount', 'me.deleteAccount', 'P3-A4 (#24)'],
   ['Blocked', 'me.blocked', 'P2-B2.3 (#112)'],
-  ['Notifications', 'me.notifications', 'P1-A5.3 (#78)'],
   ['Appearance', 'me.appearance', 'P1-A5.4 (#79)'],
 ] as const;
 
@@ -569,6 +569,9 @@ function MeTab({ devActions }: { devActions: Action[] }) {
             onOpenBlocked={() => navigation.navigate('Blocked')}
           />
         )}
+      </MeStack.Screen>
+      <MeStack.Screen name="Notifications" options={{ headerShown: false }}>
+        {({ navigation }) => <NotificationsScreen onBack={navigation.goBack} />}
       </MeStack.Screen>
       <MeStack.Screen name="Sessions" options={{ headerShown: false }}>
         {({ navigation }) => <SessionsScreen onBack={navigation.goBack} />}

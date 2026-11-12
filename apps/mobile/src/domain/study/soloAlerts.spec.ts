@@ -1,7 +1,7 @@
 import type { SoloSession } from '@nezfocus/shared';
 import { describe, expect, it } from 'vitest';
 import type { SoloSnapshot } from './solo';
-import { soloAlerts } from './soloAlerts';
+import { phaseRanOut, soloAlerts } from './soloAlerts';
 
 const at = (h: number, m: number) => new Date(2026, 9, 18, h, m);
 const iso = (d: Date) => d.toISOString();
@@ -84,5 +84,33 @@ describe('soloAlerts (SRS 7.3.6: Solo schedules up to the end of the current bre
   it('backend times become phone times through the clock offset', () => {
     const fast = snap({}, -2 * 60_000); // phone 2 minutes ahead of the backend
     expect(soloAlerts(fast, at(21, 20))[0]?.at).toEqual(at(21, 38));
+  });
+});
+
+describe('phaseRanOut (SRS 3.3: the foreground phase-change sound)', () => {
+  const end = Date.parse(iso(at(21, 36)));
+  const s = (over: Partial<SoloSession> = {}) => snap(over).session;
+
+  it('focus ran out into the break → sound', () => {
+    expect(phaseRanOut(s(), s({ phase: 'short_break' }), end)).toBe(true);
+  });
+
+  it('the break ran out into waiting for "Học tiếp" → sound', () => {
+    const brk = s({ phase: 'short_break' });
+    expect(
+      phaseRanOut(brk, s({ phase: 'short_break', status: 'waiting' }), end),
+    ).toBe(true);
+  });
+
+  it('"Bỏ qua pha" before the end → no sound (the user did it)', () => {
+    expect(
+      phaseRanOut(s(), s({ phase: 'short_break' }), end - 5 * 60_000),
+    ).toBe(false);
+  });
+
+  it('paused, stopped, or nothing moved → no sound', () => {
+    expect(phaseRanOut(s(), s({ status: 'paused' }), end)).toBe(false);
+    expect(phaseRanOut(s(), s({ status: 'ended' }), end)).toBe(false);
+    expect(phaseRanOut(s(), s(), end)).toBe(false);
   });
 });

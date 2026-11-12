@@ -221,9 +221,9 @@ Trong frame không còn hàng v1.x nào (kể cả hàng ẩn): analytics và t�
 | `phase-sound-on` | Bật "Luôn phát âm báo chuyển pha" (vị trí bật; lưu ngay) | — |
 | `test-sound-silent` 🆕 | (v1.9, CR-24 #2) Máy đang im lặng / Không làm phiền **và** công tắc "Luôn phát âm báo chuyển pha" tắt, chạm "Nghe thử": không phát; `Toast` icon `volume-x` trên `TabBar`, không có hành động (công tắc ở ngay trên) | "Máy đang im lặng nên âm báo sẽ không kêu" |
 | `android-settings` | **Frame hệ thống** (không phải UI của app, như các frame `OS/`): trang thông báo của NezFocus trong Cài đặt Android — công tắc "Tất cả thông báo của NezFocus" + 3 nhóm "Tin nhắn" · "Cuộc gọi" · "Nhắc học tập" (NOTIF-02), mỗi nhóm một công tắc. Frame không có chữ ghi chú thiết kế; ghi chú ở đây: trang hệ thống của Android — app chỉ mở tới đây, không vẽ lại trong app | Back của Android → S-ME-05 |
-| `offline` | `Banner · offline`; công tắc `disabled`; "Nghe thử" **vẫn bấm được** (không cần mạng) | — |
+| `offline` | `Banner · offline`; công tắc `disabled`; "Nghe thử" và hàng "Âm thanh và rung" **vẫn bấm được** (không cần mạng; dòng trạng thái quyền giữ màu thường, 12/11/2026) | — |
 
-**"Nghe thử"** (v1.9, CR-24 #2): phát một lần âm báo + nhịp rung **đúng như lần chuyển pha thật** khi app ở foreground với cài đặt hiện tại (âm lượng thông báo của máy, rung theo cài đặt rung của máy; công tắc bật thì kêu cả khi máy im lặng). Không có trạng thái "đang phát" riêng (âm ngắn). Trường hợp không kêu duy nhất có phản hồi: `test-sound-silent`.
+**"Nghe thử"** (v1.9, CR-24 #2): phát một lần âm báo + nhịp rung **đúng như lần chuyển pha thật** khi app ở foreground với cài đặt hiện tại (âm lượng thông báo của máy, rung theo cài đặt rung của máy; công tắc bật thì kêu cả khi máy im lặng). Không có trạng thái "đang phát" riêng (âm ngắn). Trường hợp không kêu duy nhất có phản hồi: `test-sound-silent`. Công tắc "Luôn phát âm báo chuyển pha" chỉ áp khi app ở foreground; ở nền / khóa máy, thông báo chuyển pha theo cài đặt kênh "Nhắc học tập" của Android (SRS 3.3, CR-28 #22, 12/11/2026).
 
 ---
 
@@ -253,7 +253,7 @@ Trong frame không còn hàng v1.x nào (kể cả hàng ẩn): analytics và t�
 | `light` | Chọn "Sáng": cả màn đổi theme ngay (frame theme sáng) | — |
 | `english` | Chọn English: cả app đổi sang tiếng Anh ngay, kể cả `TabBar`. (v1.9, CR-24 #4, NFR-I18N-04) Frame có `MiniPlayer · room-session` trên `TabBar` để minh họa **dữ liệu không dịch**: tên phòng giữ tiếng Việt, nhãn pha dịch; giá trị múi giờ là chữ app nên dịch | "Appearance & language" · "THEME" · "System / Dark / Light" · "LANGUAGE" · "TIME ZONE" · "Time zone" · "GMT+7 · Ho Chi Minh City" · "Used to count your study days and streak. / You can change it once every 24 hours." · TabBar "Home · Study · Tasks · Inbox · Me" · MiniPlayer "Phòng học im lặng" · "Focus 18:42" |
 | `timezone-picker` | Sheet chọn múi giờ (như S-ONB-01) | "Chọn múi giờ" |
-| `timezone-confirm` | Chọn múi giờ khác → `Dialog` | "Đổi múi giờ sang / GMT+9 · Tokyo?" (ngắt trước tên múi giờ) · "Ngày học và chuỗi tính theo múi giờ mới từ bây giờ. Bạn chỉ đổi được 1 lần mỗi 24 giờ." · "Hủy" / "Đổi múi giờ" |
+| `timezone-confirm` | Chọn múi giờ khác → `Dialog`; hai nút **xếp ngang** dù "Đổi múi giờ" quá 2 từ (theo frame, ngoại lệ luật xếp dọc của C-09, 12/11/2026) | "Đổi múi giờ sang / GMT+9 · Tokyo?" (ngắt trước tên múi giờ) · "Ngày học và chuỗi tính theo múi giờ mới từ bây giờ. Bạn chỉ đổi được 1 lần mỗi 24 giờ." · "Hủy" / "Đổi múi giờ" |
 | `timezone-rate-limited` | Vừa đổi sang GMT+9 · Tokyo lúc 20:12 (giờ máy, GMT+7): hàng Múi giờ `disabled` + dòng lý do (`40029`). Mốc ghi theo **múi giờ mới** của tài khoản, kèm mã múi giờ để không nhầm với đồng hồ máy | "Đổi lại được sau 22:12 ngày 19/10 (GMT+9)" |
 | `offline` | `Banner · offline`; theme và ngôn ngữ vẫn đổi được (lưu cục bộ); hàng Múi giờ `disabled` | — |
 

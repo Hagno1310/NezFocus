@@ -34,7 +34,7 @@ describe('time zones (S-ONB-01 › timezone-picker)', () => {
       'GMT+9 · Tokyo',
     ]);
     expect(timeZoneOptions(['Asia/Ho_Chi_Minh'], NOW, 'en')[0]?.label).toBe(
-      'GMT+7 · Ho Chi Minh',
+      'GMT+7 · Ho Chi Minh City',
     );
   });
 

@@ -694,6 +694,18 @@ export const vi = {
       'Không ai thấy bạn đang học hay đang ở phòng nào. Người trong phòng vẫn thấy bạn trong danh sách của phòng.',
     blockSection: 'CHẶN',
     blocked: 'Danh sách chặn',
+    themeSection: 'GIAO DIỆN',
+    theme: { system: 'Theo hệ thống', dark: 'Tối', light: 'Sáng' },
+    languageSection: 'NGÔN NGỮ',
+    timezoneSection: 'MÚI GIỜ',
+    timezone: 'Múi giờ',
+    timezoneHint:
+      'Dùng để tính ngày học và chuỗi.\nĐổi tối đa 1 lần mỗi 24 giờ.',
+    timezoneLocked: 'Đổi lại được sau {{time}} ngày {{date}} ({{zone}})',
+    timezoneConfirm: 'Đổi múi giờ sang\n{{zone}}?',
+    timezoneConfirmBody:
+      'Ngày học và chuỗi tính theo múi giờ mới từ bây giờ. Bạn chỉ đổi được 1 lần mỗi 24 giờ.',
+    timezoneChange: 'Đổi múi giờ',
     notificationsOn: 'Thông báo đang bật',
     hidePreview: 'Ẩn nội dung xem trước',
     hidePreviewHint: 'Thông báo chỉ hiện "Bạn có tin nhắn mới"',
@@ -778,7 +790,6 @@ export const vi = {
     fakeSignIn: 'Giả lập đã đăng nhập',
     fakeIncomplete: 'Giả lập chưa hoàn tất',
     signOut: 'Đăng xuất',
-    switchLanguage: 'English',
     createServer: 'Tạo hoặc tham gia server',
   },
 };

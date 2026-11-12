@@ -1,9 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { ThemePreference, UserSettings } from '@nezfocus/shared';
+import {
+  timezoneLockedUntil,
+  type ThemePreference,
+  type UserSettings,
+} from '@nezfocus/shared';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
 import { serverMembers } from '../servers/servers.schema.js';
-import { timezoneLockedUntil } from './settings.rules.js';
 import { userServerSettings } from './user-server-settings.schema.js';
 import { userSettings } from './users.schema.js';
 

@@ -31,7 +31,6 @@ import {
   signOut,
 } from '../../domain/session/sessionStore';
 import { authRepository } from '../../data/auth';
-import { currentLanguage, setLanguage } from '../../shared/i18n';
 import { endingOf } from '../../domain/study/solo';
 import {
   SoloMiniPlayer,
@@ -62,6 +61,7 @@ import type { PickedPhoto } from '../../features/media/PhotoSourceSheet';
 import type { ImageFile } from '../../domain/attachments/AttachmentRepository';
 import { AccountScreen } from '../../features/me/screens/AccountScreen';
 import { ChangePasswordScreen } from '../../features/me/screens/ChangePasswordScreen';
+import { AppearanceScreen } from '../../features/me/screens/AppearanceScreen';
 import { NotificationsScreen } from '../../features/me/screens/NotificationsScreen';
 import { PrivacyScreen } from '../../features/me/screens/PrivacyScreen';
 import { SessionsScreen } from '../../features/me/screens/SessionsScreen';
@@ -482,7 +482,6 @@ type Action = { label: string; onPress: () => void };
 const meChildren = [
   ['DeleteAccount', 'me.deleteAccount', 'P3-A4 (#24)'],
   ['Blocked', 'me.blocked', 'P2-B2.3 (#112)'],
-  ['Appearance', 'me.appearance', 'P1-A5.4 (#79)'],
 ] as const;
 
 function MeTab({ devActions }: { devActions: Action[] }) {
@@ -573,6 +572,9 @@ function MeTab({ devActions }: { devActions: Action[] }) {
       <MeStack.Screen name="Notifications" options={{ headerShown: false }}>
         {({ navigation }) => <NotificationsScreen onBack={navigation.goBack} />}
       </MeStack.Screen>
+      <MeStack.Screen name="Appearance" options={{ headerShown: false }}>
+        {({ navigation }) => <AppearanceScreen onBack={navigation.goBack} />}
+      </MeStack.Screen>
       <MeStack.Screen name="Sessions" options={{ headerShown: false }}>
         {({ navigation }) => <SessionsScreen onBack={navigation.goBack} />}
       </MeStack.Screen>
@@ -586,9 +588,6 @@ function MeTab({ devActions }: { devActions: Action[] }) {
 }
 
 const sampleUser = { id: '1', email: 'an.nguyen@gmail.com' };
-
-const toggleLanguage = () =>
-  setLanguage(currentLanguage() === 'vi' ? 'en' : 'vi');
 
 function useDevActions() {
   const { t } = useTranslation();
@@ -604,10 +603,6 @@ function useDevActions() {
     signOut: {
       label: t('placeholder.signOut'),
       onPress: signOut,
-    },
-    language: {
-      label: t('placeholder.switchLanguage'),
-      onPress: toggleLanguage,
     },
     upgrade: {
       label: t('screens.updateRequired'),
@@ -650,7 +645,6 @@ function Welcome({
         dev.signIn,
         dev.seedSignIn,
         dev.incomplete,
-        dev.language,
         dev.upgrade,
         ...gallery,
       ].map((a) => (
@@ -675,7 +669,6 @@ function Welcome({
 
 function MainTabs() {
   const { t } = useTranslation();
-  const dev = useDevActions();
   const gallery = useGalleryAction();
   // ponytail: sample badges for comparing with the C-03 board; real counts come with P2-A4.4 (#106).
   const [sampleBadges, setSampleBadges] = useState(false);
@@ -736,9 +729,7 @@ function MainTabs() {
         {() => (
           <MeTab
             devActions={
-              __DEV__
-                ? [dev.language, ...gallery, ...badgeToggle, ...endedActions]
-                : []
+              __DEV__ ? [...gallery, ...badgeToggle, ...endedActions] : []
             }
           />
         )}

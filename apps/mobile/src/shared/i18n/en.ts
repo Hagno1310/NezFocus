@@ -702,6 +702,19 @@ export const en: Strings = {
       'Nobody sees that you are studying or which room you are in. People in a room still see you in its list.',
     blockSection: 'BLOCKED',
     blocked: 'Blocked people',
+    themeSection: 'THEME',
+    theme: { system: 'System', dark: 'Dark', light: 'Light' },
+    languageSection: 'LANGUAGE',
+    timezoneSection: 'TIME ZONE',
+    timezone: 'Time zone',
+    timezoneHint:
+      'Used to count your study days and streak.\nYou can change it once every 24 hours.',
+    timezoneLocked:
+      'You can change it again after {{time}} on {{date}} ({{zone}})',
+    timezoneConfirm: 'Change time zone to\n{{zone}}?',
+    timezoneConfirmBody:
+      'Study days and your streak follow the new time zone from now on. You can change it once every 24 hours.',
+    timezoneChange: 'Change time zone',
     notificationsOn: 'Notifications are on',
     hidePreview: 'Hide message preview',
     hidePreviewHint: 'Notifications only say "You have a new message"',
@@ -787,7 +800,6 @@ export const en: Strings = {
     fakeSignIn: 'Pretend signed in',
     fakeIncomplete: 'Pretend account incomplete',
     signOut: 'Sign out',
-    switchLanguage: 'Tiếng Việt',
     createServer: 'Create or join a server',
   },
 };

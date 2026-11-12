@@ -122,7 +122,7 @@
 |---|---|
 | `pressed` | Nền tối đi 8% (`primary`, `danger`); `secondary`/`text`/`IconButton`: nền `surface-2` |
 | `disabled` | Nền `surface-3`, chữ `text-tertiary`; `secondary` viền `border`. Không đổi kích thước. Nếu lý do không hiển nhiên, có dòng giải thích cạnh nút (SRS 3.5) |
-| `loading` | Giữ nguyên chiều rộng; chữ thay bằng vòng xoay nhỏ màu chữ của biến thể; không bấm lại được |
+| `loading` | Giữ nguyên chiều rộng; chữ thay bằng vòng xoay nhỏ màu chữ của biến thể; không bấm lại được. **Ngoại lệ:** nút chữ "Lưu" trên `ScreenHeader` đổi thành chữ "Đang lưu…" `text-tertiary` thay vòng xoay (theo frame 07 S-ME-01 `uploading`, 12/11/2026) |
 | `focused` | Viền 2 `primary` cách 2 |
 
 ### Nội dung & chữ dài

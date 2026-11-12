@@ -123,6 +123,7 @@ export function ChannelOverviewScreen({
             label={t('servers.channels.save')}
             disabled={!dirty || offline}
             loading={saving}
+            loadingLabel={t('ui.saving')}
             onPress={() => void save()}
           />
         }

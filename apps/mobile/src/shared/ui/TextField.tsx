@@ -64,11 +64,14 @@ export function TextField({
     : focused || error
       ? size.strokeThick
       : size.hairline;
+  // Board C-02 `TF disabled`: stroke `border`, not `border-input`.
   const borderColor = error
     ? colors.danger
     : focused
       ? colors.primary
-      : colors['border-input'];
+      : disabled
+        ? colors.border
+        : colors['border-input'];
   // Keep the text still when the border thickens from 1 to 2.
   const inset = space[3] - borderWidth;
 

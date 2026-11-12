@@ -129,6 +129,7 @@ export function EditProfileScreen({
             label={t('me.save')}
             disabled={!dirty || !online || uploading}
             loading={saver.pending || uploading}
+            loadingLabel={t('ui.saving')}
             onPress={() => void save()}
           />
         }
@@ -184,7 +185,8 @@ export function EditProfileScreen({
         <TextField
           label={t('auth.complete.username')}
           value={me?.username ?? ''}
-          readonly
+          // Frame S-ME-01: C-02 `disabled` (border, surface-2, tertiary text): fixed in MVP.
+          disabled
         />
         <TextField
           label={t('me.bio')}
@@ -224,6 +226,7 @@ export function EditProfileScreen({
       <Dialog
         visible={!!leaving}
         title={t('me.discardTitle')}
+        row
         body={t('me.discardProfile')}
         cancel={{ label: t('me.stay'), onPress: () => setLeaving(null) }}
         confirm={{

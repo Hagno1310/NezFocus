@@ -82,6 +82,8 @@ export function PhotoSourceSheet({
       <ActionSheet
         visible={visible}
         title={title}
+        // Frame 07 S-ME-01 `avatar-sheet` (08 S-SET-01 reuses it): no "Hủy" row.
+        cancel={false}
         groups={[
           {
             items: [

@@ -246,6 +246,7 @@ export function ChangePasswordScreen({
             size="S"
             label={t('me.save')}
             loading={busy}
+            loadingLabel={t('ui.saving')}
             // Frame `password-form`: dim until something is typed (as S-ME-01 "Lưu").
             disabled={
               !dirty || !online || locked || (mode === 'code' && needsNewCode)

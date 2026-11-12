@@ -26,13 +26,12 @@ const initialType: Record<AvatarSize, TypeVariant> = {
   96: 'display', // board C-13
 };
 
-// DESIGN.md › Presence: dot 10 on avatars 32–40, 14 on 56–96, cut out of the background by 2.
-const dotSize = (s: AvatarSize): 'sm' | 'lg' => (s >= 56 ? 'lg' : 'sm');
+// DESIGN.md › Presence: dot 10 on every avatar size, cut out of the background by 2.
 const RING = size.presence.cut;
+const DOT_BOX = size.presence.dot + RING * 2;
 // The dot sits on the circle's edge at 45° (bottom-right), so it touches the avatar at any size.
-const dotSpot = (s: AvatarSize, dot: 'sm' | 'lg') => {
-  const box = size.presence[dot] + RING * 2;
-  const at = (s / 2) * (1 + Math.SQRT1_2) - box / 2;
+const dotSpot = (s: AvatarSize) => {
+  const at = (s / 2) * (1 + Math.SQRT1_2) - DOT_BOX / 2;
   return { left: at, top: at };
 };
 
@@ -92,8 +91,8 @@ export function Avatar({
         )}
       </View>
       {presence && (
-        <View style={[styles.dotCorner, dotSpot(s, dotSize(s))]}>
-          <PresenceDot status={presence} size={dotSize(s)} ring={ring} />
+        <View style={[styles.dotCorner, dotSpot(s)]}>
+          <PresenceDot status={presence} ring={ring} />
         </View>
       )}
     </View>
@@ -103,16 +102,14 @@ export function Avatar({
 // Shape is the primary signal, colour secondary (DESIGN.md › Presence): solid · crescent · bar · hollow.
 export function PresenceDot({
   status,
-  size: dot = 'sm',
   ring = 'bg',
 }: {
   status: Presence;
-  size?: keyof Omit<typeof size.presence, 'cut'>;
   ring?: ColorToken;
 }) {
   const { colors } = useTheme();
-  const d = size.presence[dot];
-  const box = d + RING * 2;
+  const d = size.presence.dot;
+  const box = DOT_BOX;
   const c = box / 2;
   const r = d / 2;
   const cut = colors[ring];

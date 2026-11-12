@@ -35,6 +35,9 @@ export type ButtonProps = Omit<PressableProps, 'children' | 'style'> & {
   size?: ButtonSize;
   icon?: IconComponent;
   loading?: boolean;
+  // C-01 `loading` exception: the header "Lưu" shows this text (`text-tertiary`) instead of
+  // the spinner (frame 07 S-ME-01 `uploading`).
+  loadingLabel?: string;
   fullWidth?: boolean;
   style?: StyleProp<ViewStyle>;
   // Label colour of `secondary` / `text`: `danger` for a destructive step that still asks
@@ -50,6 +53,7 @@ export function Button({
   size: s = 'M',
   icon,
   loading = false,
+  loadingLabel,
   disabled = false,
   fullWidth = false,
   tone,
@@ -61,18 +65,21 @@ export function Button({
   const ring = useFocusRing();
   const filled = variant === 'primary' || variant === 'danger';
   const inactive = disabled || loading;
+  const textLoading = loading && loadingLabel !== undefined;
+  const spinner = loading && !textLoading;
 
-  const fg: ColorToken = disabled
-    ? 'text-tertiary'
-    : variant === 'primary'
-      ? 'on-primary'
-      : variant === 'danger'
-        ? 'bg'
-        : tone === 'danger'
-          ? 'danger'
-          : tone === 'neutral'
-            ? 'text-primary'
-            : 'primary';
+  const fg: ColorToken =
+    disabled || textLoading
+      ? 'text-tertiary'
+      : variant === 'primary'
+        ? 'on-primary'
+        : variant === 'danger'
+          ? 'bg'
+          : tone === 'danger'
+            ? 'danger'
+            : tone === 'neutral'
+              ? 'text-primary'
+              : 'primary';
   const bg = disabled
     ? filled
       ? colors['surface-3']
@@ -88,7 +95,7 @@ export function Button({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={textLoading ? loadingLabel : label}
       accessibilityState={{ disabled: inactive, busy: loading }}
       disabled={inactive}
       hitSlop={{ top: slop, bottom: slop }}
@@ -129,7 +136,7 @@ export function Button({
               crashes: "addViewAt … The specified child already has a parent". */}
           <View
             collapsable={false}
-            style={[styles.content, loading && styles.hidden]}
+            style={[styles.content, spinner && styles.hidden]}
           >
             {icon && <Icon as={icon} size="base" color={fg} />}
             {/* Board C-01: every variant and size (48 / 44 / 40) is 16/600. */}
@@ -141,11 +148,11 @@ export function Button({
               maxFontSizeMultiplier={labelMaxScale}
               style={styles.label}
             >
-              {label}
+              {textLoading ? loadingLabel : label}
             </Text>
           </View>
           {/* Gotcha: absoluteFill on ActivityIndicator itself shrinks it to a dot on Android. */}
-          {loading && (
+          {spinner && (
             <View style={[StyleSheet.absoluteFill, styles.center]}>
               <ActivityIndicator size="small" color={colors[fg]} />
             </View>

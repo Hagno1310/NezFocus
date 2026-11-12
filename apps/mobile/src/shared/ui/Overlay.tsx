@@ -141,6 +141,7 @@ export function Dialog({
   cancel,
   error,
   children,
+  row = false,
   onDismiss,
 }: {
   visible: boolean;
@@ -148,15 +149,18 @@ export function Dialog({
   body?: string;
   confirm: DialogAction;
   cancel?: { label: string; onPress: () => void };
+  // Side by side whatever the label length, where a frame overrides C-09's stacking rule
+  // (07 S-ME-01 `discard-confirm`).
+  row?: boolean;
   error?: string | null;
   // One input under the text (08 S-SET-06 `category-rename`).
   children?: ReactNode;
   onDismiss: () => void;
 }) {
   const { colors } = useTheme();
-  const layout = dialogLayout(
-    cancel ? [cancel.label, confirm.label] : [confirm.label],
-  );
+  const layout = row
+    ? 'row'
+    : dialogLayout(cancel ? [cancel.label, confirm.label] : [confirm.label]);
   const busy = !!confirm.loading;
   const confirmButton = (
     <Button

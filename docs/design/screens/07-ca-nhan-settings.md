@@ -85,7 +85,7 @@ Không áp dụng: `loading` (hồ sơ có trong cache từ `READY`), `empty`, `
 │ Tên hiển thị                       2/32  │  TextField
 │ [ An                                   ] │
 │ Hiện trong chat và phòng học.            │  help (v1.9: tên bắt buộc, CR-16)
-│ Username                                 │  readonly
+│ Username                                 │  disabled (C-02: không đổi được ở MVP)
 │ [ an.nguyen                            ] │
 │ Giới thiệu                        42/200 │  TextField · multiline
 │ [ Sinh viên năm 3 PTIT · đang ôn …     ] │
@@ -96,11 +96,11 @@ Không áp dụng: `loading` (hồ sơ có trong cache từ `READY`), `empty`, `
 |---|---|---|
 | `default` | Như bố cục; "Lưu" mờ | — |
 | `editing` | Đang sửa giới thiệu, bàn phím mở (ẩn `TabBar`), "Lưu" bật | — |
-| `avatar-sheet` | Chạm avatar → `ActionSheet` | "Chọn ảnh trong máy" · "Chụp ảnh mới" · "Xóa ảnh đại diện" (`danger`, chỉ khi có ảnh) |
+| `avatar-sheet` | Chạm avatar → `ActionSheet` **không có hàng "Hủy"** (theo frame, 12/11/2026): kéo xuống, chạm vùng tối hoặc Back hệ thống để đóng, như menu 02 S-HOME-09 | "Chọn ảnh trong máy" · "Chụp ảnh mới" · "Xóa ảnh đại diện" (`danger`, chỉ khi có ảnh) |
 | `crop` | Màn cắt ảnh (theme tối, nền `bg`, ảnh vừa chọn; mặt nạ tròn: vùng ngoài khung tròn phủ `scrim` ở cả bốn phía, viền khung tròn `text-primary` 2px; không dùng màu hex) | "Hủy" · "Cắt ảnh" · "Dùng ảnh này" · gợi ý "Kéo và chụm hai ngón để căn ảnh" (ảnh mẫu: ảnh chân dung stock) |
-| `uploading` | Avatar mờ + vòng tiến độ; "Lưu" `loading` | — |
+| `uploading` | Avatar mờ + vòng tiến độ; "Lưu" thành chữ "Đang lưu…" `text-tertiary`, không bấm được (C-01 `loading` › nút "Lưu" trên header, 12/11/2026) | "Đang lưu…" |
 | `upload-error` | `FormMessage` (lỗi) dưới avatar; "Lưu" vẫn mờ (`disabled`) vì chưa có thay đổi nào lưu được | `40014`: "Chỉ nhận ảnh JPG, PNG, WEBP hoặc HEIC" · `40013`: "Ảnh lớn hơn 8 MB sau khi nén. Chọn ảnh khác." |
-| `discard-confirm` | Back khi chưa lưu | "Bỏ thay đổi?" · "Hồ sơ mới chưa được lưu." · "Ở lại" / "Bỏ thay đổi" (`danger`) |
+| `discard-confirm` | Back khi chưa lưu; hai nút **xếp ngang** dù "Bỏ thay đổi" quá 2 từ (theo frame, ngoại lệ luật xếp dọc của C-09, 12/11/2026) | "Bỏ thay đổi?" · "Hồ sơ mới chưa được lưu." · "Ở lại" / "Bỏ thay đổi" (`danger`) |
 | `name-empty` (không vẽ riêng) | (v1.9, CR-16 #3, AUTH-06 AC6) Xóa hết tên rồi bấm "Lưu": ô Tên hiển thị `error` + dòng lỗi thay dòng gợi ý (`40001`); không lưu gì | "Nhập tên hiển thị" (quá 32 ký tự: không gõ thêm được, bộ đếm "32/32") |
 | `offline` | `Banner · offline`; ô `readonly`, "Lưu" và "Đổi ảnh" `disabled` | — |
 

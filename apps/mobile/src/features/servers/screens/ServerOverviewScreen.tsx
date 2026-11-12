@@ -174,6 +174,7 @@ export function ServerOverviewScreen({
             label={t('servers.settings.save')}
             disabled={!dirty}
             loading={saving}
+            loadingLabel={t('ui.saving')}
             onPress={saveName}
           />
         }
@@ -197,11 +198,22 @@ export function ServerOverviewScreen({
                 onPress={() => setIconMenu(true)}
                 hitSlop={space[2]}
               >
+                {/* Frame `overview-icon-uploading`: "Đang tải ảnh lên…" `text-secondary`. */}
                 <Text
                   variant="label"
-                  color={!online || icon.pending ? 'text-tertiary' : 'primary'}
+                  color={
+                    icon.pending
+                      ? 'text-secondary'
+                      : !online
+                        ? 'text-tertiary'
+                        : 'primary'
+                  }
                 >
-                  {t('servers.settings.changeIcon')}
+                  {t(
+                    icon.pending
+                      ? 'servers.settings.uploadingIcon'
+                      : 'servers.settings.changeIcon',
+                  )}
                 </Text>
               </Pressable>
             }

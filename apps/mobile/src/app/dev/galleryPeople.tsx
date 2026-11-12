@@ -49,13 +49,10 @@ function People() {
           <Avatar key={s} name="" size={s} deleted />
         ))}
       </Row>
-      <Caption>PresenceDot · Online / Idle / DND / Offline · 10 và 14</Caption>
+      <Caption>PresenceDot · Online / Idle / DND / Offline · 10</Caption>
       <Row>
         {(['online', 'idle', 'dnd', 'offline'] as const).map((p) => (
           <PresenceDot key={p} status={p} />
-        ))}
-        {(['online', 'idle', 'dnd', 'offline'] as const).map((p) => (
-          <PresenceDot key={`${p}14`} status={p} size="lg" />
         ))}
       </Row>
       <Row>

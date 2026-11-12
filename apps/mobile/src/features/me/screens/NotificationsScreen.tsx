@@ -95,5 +95,10 @@ const styles = StyleSheet.create({
     gap: space[2],
     paddingVertical: space[3],
   },
-  test: { alignItems: 'flex-start', paddingVertical: space[2] },
+  // Frame: "▶ Nghe thử" lines up with the row labels; the button's own padding sits outside.
+  test: {
+    alignItems: 'flex-start',
+    paddingVertical: space[2],
+    marginLeft: -space[3],
+  },
 });

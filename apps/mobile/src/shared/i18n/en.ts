@@ -5,7 +5,7 @@ export const en: Strings = {
     home: 'Home',
     study: 'Study',
     tasks: 'Tasks',
-    inbox: 'Notifications',
+    inbox: 'Inbox', // spec 07 S-ME-06 `english` TabBar
     me: 'Me',
   },
   screens: {

@@ -2,6 +2,13 @@ import { z } from 'zod';
 import { IanaTimeZone, Locale } from '../auth/auth.contract.js';
 import { SnowflakeId } from '../snowflake.js';
 
+export const SettingsRoutes = {
+  // SRS 5.3 · bearer · PATCH UpdateSettingsRequest → UserSettings · 40001 (field errors; a
+  // server_allow_dm key of a server you are not in), 40029 + retry_after (second time zone
+  // change within 24 hours, STUDY-03 AC4). Sends USER_SETTINGS_UPDATE to the user's sessions.
+  settings: '/users/@me/settings',
+} as const;
+
 // SRS 3.3: "Theo hệ thống" follows the phone's Appearance.
 export const ThemePreference = z.enum(['system', 'dark', 'light']);
 export type ThemePreference = z.infer<typeof ThemePreference>;

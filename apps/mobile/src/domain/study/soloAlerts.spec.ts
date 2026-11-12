@@ -108,6 +108,12 @@ describe('phaseRanOut (SRS 3.3: the foreground phase-change sound)', () => {
     ).toBe(false);
   });
 
+  it('back in the app minutes after the end → no late sound (the notification told)', () => {
+    expect(
+      phaseRanOut(s(), s({ phase: 'short_break' }), end + 3 * 60_000),
+    ).toBe(false);
+  });
+
   it('paused, stopped, or nothing moved → no sound', () => {
     expect(phaseRanOut(s(), s({ status: 'paused' }), end)).toBe(false);
     expect(phaseRanOut(s(), s({ status: 'ended' }), end)).toBe(false);

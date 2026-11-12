@@ -5,6 +5,7 @@ import { requireOptionalNativeModule } from 'expo';
 export type PhaseAlertNative = {
   isSilenced(): boolean;
   play(force: boolean): void;
+  vibrate(): void;
 };
 
 export default requireOptionalNativeModule<PhaseAlertNative>('PhaseAlert');

@@ -84,3 +84,63 @@ describe('saveSettings', () => {
     expect(update).not.toHaveBeenCalled();
   });
 });
+
+describe('saveSettings, two quick taps', () => {
+  const deferred = () => {
+    let resolve!: (s: UserSettings) => void;
+    let reject!: (e: unknown) => void;
+    const promise = new Promise<UserSettings>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  };
+
+  it('the first answer does not flip back a second switch still being sent', async () => {
+    const store = createSettingsStore(base);
+    const first = deferred();
+    const second = deferred();
+    const calls = [first, second];
+    const repo = { update: () => calls.shift()!.promise };
+    const a = saveSettings(store, repo, { hide_push_content: true });
+    const b = saveSettings(store, repo, { focus_sound_always: true });
+    first.resolve({ ...base, hide_push_content: true });
+    await a;
+    expect(store.getState().settings?.focus_sound_always).toBe(true);
+    second.resolve({
+      ...base,
+      hide_push_content: true,
+      focus_sound_always: true,
+    });
+    await b;
+    expect(store.getState().settings).toMatchObject({
+      hide_push_content: true,
+      focus_sound_always: true,
+    });
+  });
+
+  it('a failed first save does not undo a later change of the same switch', async () => {
+    const store = createSettingsStore(base);
+    const first = deferred();
+    const second = deferred();
+    const calls = [first, second];
+    const repo = { update: () => calls.shift()!.promise };
+    const a = saveSettings(store, repo, { show_study_activity: false });
+    const b = saveSettings(store, repo, { show_study_activity: true });
+    first.reject(new Error('offline'));
+    expect(await a).toBe(false);
+    expect(store.getState().settings?.show_study_activity).toBe(true);
+    second.resolve(base);
+    await b;
+  });
+
+  it('keeps the theme / language this phone shows (owned by appearance)', async () => {
+    const store = createSettingsStore({ ...base, theme: 'light' });
+    await saveSettings(
+      store,
+      { update: async () => ({ ...base, hide_push_content: true }) },
+      { hide_push_content: true },
+    );
+    expect(store.getState().settings?.theme).toBe('light');
+  });
+});

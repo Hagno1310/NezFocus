@@ -1,4 +1,3 @@
-import { DEFAULT_USER_SETTINGS } from '@nezfocus/shared';
 import { Ban, Info } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -26,12 +25,11 @@ export function PrivacyScreen({
   const { t } = useTranslation();
   const { colors } = useTheme();
   const online = useOnline();
-  const settings = useSettings();
-  const s = settings ?? DEFAULT_USER_SETTINGS;
+  const { settings: s, canSave } = useSettings();
   // The rail's order: oldest joined first (READY).
   const servers = useStore(homeStore, (h) => h.servers) ?? [];
   const save = useSaveSetting();
-  const disabled = !online || !settings;
+  const disabled = !canSave;
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.bg }]}>

@@ -1,6 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import {
-  AccountRoutes,
+  SettingsRoutes,
   DEFAULT_USER_SETTINGS,
   ErrorCode,
   SoloRoutes,
@@ -53,7 +53,7 @@ describe('User settings (e2e)', () => {
   };
   const patch = (token: string, body: object) =>
     http(app)
-      .patch(AccountRoutes.settings)
+      .patch(SettingsRoutes.settings)
       .auth(token, { type: 'bearer' })
       .send(body);
 

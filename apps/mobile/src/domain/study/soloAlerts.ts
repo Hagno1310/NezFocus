@@ -31,6 +31,8 @@ export function soloAlerts(snap: SoloSnapshot, localNow: Date): SoloAlert[] {
 
 // A press moves the phase early; only the clock running out lands this close to the end.
 const RAN_OUT_SLACK_MS = 2000;
+// Back in the app long after the end: the notification already told, no late sound.
+const RAN_OUT_LATE_MS = 30_000;
 
 // SRS 3.3 / STUDY-10: the update that `next` brings is the phase running out (focus → break,
 // break → waiting for "Học tiếp"), not "Bỏ qua pha", "Tạm dừng" or "Dừng". backendNow: the
@@ -45,7 +47,10 @@ export function phaseRanOut(
   const moved =
     (next.status === 'running' && next.phase !== prev.phase) ||
     next.status === 'waiting';
+  const end = Date.parse(prev.phase_ends_at);
   return (
-    moved && backendNow >= Date.parse(prev.phase_ends_at) - RAN_OUT_SLACK_MS
+    moved &&
+    backendNow >= end - RAN_OUT_SLACK_MS &&
+    backendNow <= end + RAN_OUT_LATE_MS
   );
 }

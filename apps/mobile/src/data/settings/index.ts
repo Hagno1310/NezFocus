@@ -1,49 +1,19 @@
-import {
-  AccountRoutes,
-  DEFAULT_USER_SETTINGS,
-  UserSettings,
-} from '@nezfocus/shared';
 import * as SecureStore from 'expo-secure-store';
-import type { SettingsRepository } from '../../domain/settings/SettingsRepository';
 import {
   createAppearance,
   type LocalPrefs,
   type LocalPrefsStorage,
 } from '../../domain/settings/appearance';
-import { mergeSettings } from '../../domain/settings/settings';
 import { settingsStore } from '../../domain/settings/settingsStore';
 import { setLanguage } from '../../shared/i18n';
 import { useThemePreference } from '../../shared/theme';
-import { api } from '../api';
 import { pickRepository } from '../fake';
-
-const remote: SettingsRepository = {
-  update: async (change) =>
-    UserSettings.parse(
-      await api.request(AccountRoutes.settings, {
-        method: 'PATCH',
-        body: change,
-      }),
-    ),
-};
-
-// EXPO_PUBLIC_FAKE=settings (WORKFLOW 4.2): saves in memory, as the backend would answer.
-export function createFakeSettingsRepository(
-  delayMs = 300,
-): SettingsRepository {
-  let settings = DEFAULT_USER_SETTINGS;
-  return {
-    update: async (change) => {
-      await new Promise((r) => setTimeout(r, delayMs));
-      settings = mergeSettings(settings, change);
-      return settings;
-    },
-  };
-}
+import { fakeSettingsRepository } from './FakeSettingsRepository';
+import { remoteSettingsRepository } from './RemoteSettingsRepository';
 
 export const settingsRepository = pickRepository('settings', {
-  remote,
-  fake: createFakeSettingsRepository(),
+  remote: remoteSettingsRepository,
+  fake: fakeSettingsRepository,
 });
 
 const PREFS_KEY = 'settings.appearance';

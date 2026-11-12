@@ -1,16 +1,10 @@
-import { DEFAULT_USER_SETTINGS, type ThemePreference } from '@nezfocus/shared';
+import type { ThemePreference } from '@nezfocus/shared';
 import { Lock } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { appearance, settingsRepository } from '../../../data/settings';
 import { timeZoneOptions, zoneLabel } from '../../../domain/auth/timeZones';
-import {
-  changeTimezone,
-  lockedNote,
-  timezoneLock,
-} from '../../../domain/settings/timezone';
-import { settingsStore } from '../../../domain/settings/settingsStore';
+import { lockedNote, timezoneLock } from '../../../domain/settings/timezone';
 import { currentLanguage, type Language } from '../../../shared/i18n';
 import { space, useTheme, useThemePreference } from '../../../shared/theme';
 import { NoteLine } from '../../../shared/ui/NoteLine';
@@ -21,12 +15,14 @@ import { SegmentedControl } from '../../../shared/ui/SegmentedControl';
 import { SettingsRow } from '../../../shared/ui/SettingsRow';
 import { SectionLabel } from '../../../shared/ui/SectionLabel';
 import { Text } from '../../../shared/ui/Text';
-import { showToast } from '../../../shared/ui/Toast';
 import { TimeZoneSheet } from '../../auth/components/TimeZoneSheet';
 import { availableTimeZones, deviceTimeZone } from '../../auth/timeZoneList';
 import { ConnectionBanner } from '../../gateway/components/ConnectionBanner';
-import { useOnline } from '../../gateway/hooks/useOnline';
-import { useSettings } from '../hooks/useSettings';
+import {
+  changeAppearance,
+  useChangeTimezone,
+  useSettings,
+} from '../hooks/useSettings';
 
 const THEMES: ThemePreference[] = ['system', 'dark', 'light'];
 const DEVICE_ZONE = deviceTimeZone();
@@ -37,8 +33,7 @@ const clock = () => new Date();
 export function AppearanceScreen({ onBack }: { onBack: () => void }) {
   const { t, i18n } = useTranslation();
   const { colors } = useTheme();
-  const online = useOnline();
-  const settings = useSettings();
+  const { settings: s, canSave } = useSettings();
   const theme = useThemePreference((s) => s.preference);
   const lang = (i18n.language as Language) ?? currentLanguage();
   const [openedAt] = useState(clock);
@@ -50,10 +45,9 @@ export function AppearanceScreen({ onBack }: { onBack: () => void }) {
   );
   const [picking, setPicking] = useState(false);
   const [confirming, setConfirming] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
   const [refusedUntil, setRefusedUntil] = useState<Date | null>(null);
+  const timezone = useChangeTimezone();
 
-  const s = settings ?? DEFAULT_USER_SETTINGS;
   const locked = timezoneLock(s, refusedUntil, now);
   const note = locked && lockedNote(locked, s.timezone);
   const lockedAt = locked?.getTime() ?? null;
@@ -69,26 +63,13 @@ export function AppearanceScreen({ onBack }: { onBack: () => void }) {
     if (next !== s.timezone) setConfirming(next);
   };
 
+  // STUDY-03 AC4 (also a change made on another device): the dialog closes into
+  // `timezone-rate-limited`.
   const confirm = async (zone: string) => {
-    setSaving(true);
-    const r = await changeTimezone(settingsRepository, zone, clock());
+    const until = await timezone.change(zone);
     setNow(clock());
-    setSaving(false);
     setConfirming(null);
-    // Theme and language stay as this phone shows them (they may still be pending).
-    if (r.ok)
-      return settingsStore.setState({
-        settings: { ...r.settings, theme: s.theme, locale: s.locale },
-      });
-    // STUDY-03 AC4 (also a change made on another device): `timezone-rate-limited`.
-    if (r.error === 'rate-limited') return setRefusedUntil(r.until);
-    showToast({
-      message: t('servers.settings.saveFailed'),
-      action: {
-        label: t('servers.settings.retry'),
-        onPress: () => void confirm(zone),
-      },
-    });
+    if (until) setRefusedUntil(until);
   };
 
   return (
@@ -102,7 +83,7 @@ export function AppearanceScreen({ onBack }: { onBack: () => void }) {
             key={key}
             label={t(`me.theme.${key}`)}
             selected={theme === key}
-            onPress={() => appearance.change({ theme: key })}
+            onPress={() => changeAppearance({ theme: key })}
           />
         ))}
         <SectionLabel style={styles.section}>
@@ -114,7 +95,7 @@ export function AppearanceScreen({ onBack }: { onBack: () => void }) {
             { key: 'en', label: t('auth.complete.en') },
           ]}
           value={lang}
-          onChange={(locale) => appearance.change({ locale })}
+          onChange={(locale) => changeAppearance({ locale })}
         />
         <SectionLabel style={styles.section}>
           {t('me.timezoneSection')}
@@ -122,7 +103,7 @@ export function AppearanceScreen({ onBack }: { onBack: () => void }) {
         <SettingsRow
           label={t('me.timezone')}
           value={zoneLabel(s.timezone, openedAt, lang)}
-          disabled={!online || !settings || !!locked}
+          disabled={!canSave || !!locked}
           onPress={() => setPicking(true)}
         />
         <Text variant="label" color="text-secondary">
@@ -150,10 +131,10 @@ export function AppearanceScreen({ onBack }: { onBack: () => void }) {
         cancel={{ label: t('me.cancel'), onPress: () => setConfirming(null) }}
         confirm={{
           label: t('me.timezoneChange'),
-          loading: saving,
+          loading: timezone.saving,
           onPress: () => confirming && void confirm(confirming),
         }}
-        onDismiss={() => !saving && setConfirming(null)}
+        onDismiss={() => !timezone.saving && setConfirming(null)}
       />
     </View>
   );

@@ -30,20 +30,24 @@ export function createAppearance(deps: {
     void storage.save(prefs).catch(() => undefined);
   };
 
-  // Only while signed in (settings known); a failure keeps it pending for the next READY.
+  // Only while signed in (settings known); a failure keeps it pending for the next READY. A
+  // change made while one is being sent goes right after it.
   const send = async () => {
-    const sent = prefs.pending;
-    if (sending || isEmpty(sent) || !store.getState().settings) return;
+    if (sending) return;
     sending = true;
     try {
-      const s = await repo.update(sent);
-      const pending = Object.fromEntries(
-        Object.entries(prefs.pending).filter(
-          ([k, v]) => sent[k as keyof Appearance] !== v,
-        ),
-      );
-      keep({ ...prefs, pending });
-      store.setState({ settings: { ...s, ...prefs.pending } });
+      for (;;) {
+        const sent = prefs.pending;
+        if (isEmpty(sent) || !store.getState().settings) return;
+        const s = await repo.update(sent);
+        const pending = Object.fromEntries(
+          Object.entries(prefs.pending).filter(
+            ([k, v]) => sent[k as keyof Appearance] !== v,
+          ),
+        );
+        keep({ ...prefs, pending });
+        store.setState({ settings: { ...s, ...prefs.values } });
+      }
     } catch {
       // Offline or refused: stays pending, no error shown.
     } finally {
@@ -92,5 +96,9 @@ export function createAppearance(deps: {
 
     // READY / USER_SETTINGS_UPDATE: the backend's values, except what is still pending here.
     fromServer: (s: UserSettings) => afterLoad(() => fromServer(s)),
+
+    // Sign-out: an unsent change belongs to that account, not the next one; the phone keeps
+    // showing its theme and language.
+    signedOut: () => afterLoad(() => keep({ ...prefs, pending: {} })),
   };
 }

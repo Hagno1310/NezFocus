@@ -1,9 +1,6 @@
-import { DEFAULT_USER_SETTINGS } from '@nezfocus/shared';
-import { CircleCheck, Play, Volume2, VolumeX } from 'lucide-react-native';
+import { CircleCheck, Play, Volume2 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { studyNotifications } from '../../../data/notifications';
-import { playPhaseAlert } from '../../../data/phaseAlert';
 import { space, useTheme } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import { SystemBanner } from '../../../shared/ui/Feedback';
@@ -11,14 +8,14 @@ import { Icon } from '../../../shared/ui/Icon';
 import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { SettingsRow } from '../../../shared/ui/SettingsRow';
 import { Text } from '../../../shared/ui/Text';
-import { showToast } from '../../../shared/ui/Toast';
 import { ConnectionBanner } from '../../gateway/components/ConnectionBanner';
-import { useOnline } from '../../gateway/hooks/useOnline';
 import { useNotificationAccess } from '../../study/hooks/useSoloAlerts';
-import { useSaveSetting, useSettings } from '../hooks/useSettings';
-
-const openNotificationSettings = () =>
-  void studyNotifications.openAppSettings();
+import {
+  openNotificationSettings,
+  useSaveSetting,
+  useSettings,
+  useTestSound,
+} from '../hooks/useSettings';
 
 // S-ME-05 (REQ-NOTIF-02, SRS 3.3): permission state, two switches, "Nghe thử", and the
 // Android notification page of the app. Offline: the switches are disabled; "Nghe thử" and
@@ -26,18 +23,12 @@ const openNotificationSettings = () =>
 export function NotificationsScreen({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const online = useOnline();
-  const settings = useSettings();
-  const s = settings ?? DEFAULT_USER_SETTINGS;
+  const { settings: s, canSave } = useSettings();
   const save = useSaveSetting();
+  const testSound = useTestSound();
   // Re-read on return from Android settings (Edge case: allowed there → banner goes).
   const access = useNotificationAccess()?.access;
-  const disabled = !online || !settings;
-
-  const testSound = () => {
-    if (playPhaseAlert() === 'silenced')
-      showToast({ message: t('me.testSoundSilent'), icon: VolumeX });
-  };
+  const disabled = !canSave;
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.bg }]}>

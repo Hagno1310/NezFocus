@@ -1,6 +1,6 @@
 import { Body, Controller, Patch } from '@nestjs/common';
 import {
-  AccountRoutes,
+  SettingsRoutes,
   UpdateSettingsRequest,
   type UserSettings,
 } from '@nezfocus/shared';
@@ -12,7 +12,7 @@ import { SettingsService } from './settings.service.js';
 export class SettingsController {
   constructor(private readonly settings: SettingsService) {}
 
-  @Patch(AccountRoutes.settings)
+  @Patch(SettingsRoutes.settings)
   update(
     @Body(new ZodValidationPipe(UpdateSettingsRequest))
     body: UpdateSettingsRequest,

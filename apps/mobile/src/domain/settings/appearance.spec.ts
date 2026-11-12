@@ -107,3 +107,43 @@ describe('appearance start-up race', () => {
     expect(t.update).toHaveBeenCalledWith({ locale: 'en' });
   });
 });
+
+describe('appearance, back-to-back changes and sign-out', () => {
+  it('a second change made while the first is being sent is sent right after', async () => {
+    let release!: () => void;
+    const t = setup({
+      settings: DEFAULT_USER_SETTINGS,
+      update: (c) =>
+        new Promise((resolve) => {
+          release = () => resolve({ ...DEFAULT_USER_SETTINGS, ...c });
+        }),
+    });
+    t.appearance.change({ theme: 'dark' });
+    t.appearance.change({ locale: 'en' });
+    release();
+    await flush();
+    release();
+    await flush();
+    expect(t.update).toHaveBeenCalledTimes(2);
+    expect(t.update).toHaveBeenLastCalledWith({ locale: 'en' });
+    expect(t.saved()?.pending).toEqual({});
+  });
+
+  it("sign-out drops the unsent change; the next account's READY is not overridden", async () => {
+    const t = setup({
+      settings: DEFAULT_USER_SETTINGS,
+      update: () => Promise.reject(new Error('offline')),
+    });
+    t.appearance.change({ locale: 'en' });
+    await flush();
+    t.appearance.signedOut();
+    t.update.mockImplementation(async (c) => ({
+      ...DEFAULT_USER_SETTINGS,
+      ...c,
+    }));
+    t.appearance.fromServer(DEFAULT_USER_SETTINGS);
+    await flush();
+    expect(t.store.getState().settings?.locale).toBe('vi');
+    expect(t.update).toHaveBeenCalledTimes(1);
+  });
+});

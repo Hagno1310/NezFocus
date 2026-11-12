@@ -14,10 +14,7 @@ export function timezoneLock(
   refusedUntil: Date | null,
   now: Date,
 ): Date | null {
-  const changedAt = s.timezone_changed_at
-    ? new Date(s.timezone_changed_at)
-    : null;
-  const fromSettings = timezoneLockedUntil(changedAt, now);
+  const fromSettings = timezoneLockedUntil(s.timezone_changed_at, now);
   const fromRefusal = refusedUntil && refusedUntil > now ? refusedUntil : null;
   if (!fromSettings) return fromRefusal;
   if (!fromRefusal) return fromSettings;

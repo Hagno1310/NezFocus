@@ -51,6 +51,9 @@ class PhaseAlertModule : Module() {
       }
       vibrate()
     }
+
+    // Silenced and the switch off: no sound, but the vibration the phone allows (SRS 3.3 Haptics).
+    Function("vibrate") { vibrate() }
   }
 
   // The phone's vibration setting: none on silent, otherwise one short double pulse.

@@ -13,8 +13,10 @@ export function startSettingsLifecycle() {
     if (event.t === 'USER_SETTINGS_UPDATE') appearance.fromServer(event.d);
   });
   const stopSession = sessionStore.subscribe((s, prev) => {
-    if (prev.status === 'signed-in' && s.status !== 'signed-in')
+    if (prev.status === 'signed-in' && s.status !== 'signed-in') {
       settingsStore.setState({ settings: null });
+      appearance.signedOut();
+    }
   });
   return () => {
     stopEvents();

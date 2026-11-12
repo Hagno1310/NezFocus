@@ -75,10 +75,10 @@ export class SettingsRepository {
       const timezoneChanged =
         change.timezone !== undefined && change.timezone !== before.timezone;
       if (timezoneChanged) {
-        const changedAt = before.timezone_changed_at
-          ? new Date(before.timezone_changed_at)
-          : null;
-        const lockedUntil = timezoneLockedUntil(changedAt, now);
+        const lockedUntil = timezoneLockedUntil(
+          before.timezone_changed_at,
+          now,
+        );
         if (lockedUntil) return { ok: false, lockedUntil };
       }
       await tx

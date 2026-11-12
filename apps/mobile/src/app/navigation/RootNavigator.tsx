@@ -423,7 +423,10 @@ function MainTabBar({
   const onSolo = route?.name === 'Study' && focused === 'Solo';
   // 07 S-ME-01 `crop` (and the server icon crop) is a full-screen step: no TabBar.
   const fullScreen = focused === 'CropAvatar' || focused === 'CropImage';
-  const openSolo = () => props.navigation.navigate('Study', { screen: 'Solo' });
+  // initial: false keeps S-STUDY-01 under Solo even when the Study tab was never opened
+  // (MiniPlayer on another tab, a notification on cold start), so closing goes back to it.
+  const openSolo = () =>
+    props.navigation.navigate('Study', { screen: 'Solo', initial: false });
   return (
     <>
       <SoloNotificationOpener onOpen={openSolo} />

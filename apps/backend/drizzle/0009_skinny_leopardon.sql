@@ -14,5 +14,7 @@ CREATE TABLE "attachments" (
 --> statement-breakpoint
 ALTER TABLE "users" ADD COLUMN "bio" varchar(200);--> statement-breakpoint
 ALTER TABLE "users" ADD COLUMN "profile_updated_at" timestamp with time zone;--> statement-breakpoint
-ALTER TABLE "attachments" ADD CONSTRAINT "attachments_uploader_id_users_id_fk" FOREIGN KEY ("uploader_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "auth_sessions" ADD COLUMN "os_version" varchar(20);--> statement-breakpoint
+ALTER TABLE "servers" ADD COLUMN "icon_key" text;--> statement-breakpoint
+ALTER TABLE "attachments" ADD CONSTRAINT "attachments_uploader_id_users_id_fk" FOREIGN KEY ("uploader_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "idx_attachments_uploader" ON "attachments" USING btree ("uploader_id");

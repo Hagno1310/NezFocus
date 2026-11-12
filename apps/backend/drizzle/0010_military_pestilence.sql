@@ -1,1 +1,0 @@
-ALTER TABLE "servers" ADD COLUMN "icon_key" text;

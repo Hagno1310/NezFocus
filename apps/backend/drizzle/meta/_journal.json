@@ -68,22 +68,8 @@
     {
       "idx": 9,
       "version": "7",
-      "when": 1794395720716,
-      "tag": "0009_solid_captain_midlands",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1794402173265,
-      "tag": "0010_military_pestilence",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1794411989584,
-      "tag": "0011_wooden_freak",
+      "when": 1794452814329,
+      "tag": "0009_skinny_leopardon",
       "breakpoints": true
     }
   ]

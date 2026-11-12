@@ -1,5 +1,5 @@
 {
-  "id": "b70bdd09-4b47-4b8f-b22f-9ad0b0c7abf1",
+  "id": "f82551bc-b18a-4512-94de-c7c4ab4bdefd",
   "prevId": "90c40c01-c0c9-483f-9e97-03c305de4ac0",
   "version": "7",
   "dialect": "postgresql",
@@ -241,6 +241,12 @@
           "type": "varchar(10)",
           "primaryKey": false,
           "notNull": true
+        },
+        "os_version": {
+          "name": "os_version",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
         },
         "app_version": {
           "name": "app_version",
@@ -1397,6 +1403,12 @@
           "notNull": true,
           "default": "'general'"
         },
+        "icon_key": {
+          "name": "icon_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "system_channel_id": {
           "name": "system_channel_id",
           "type": "bigint",
@@ -1535,7 +1547,7 @@
           "tableTo": "users",
           "columnsFrom": ["uploader_id"],
           "columnsTo": ["id"],
-          "onDelete": "cascade",
+          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },

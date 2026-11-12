@@ -6,7 +6,7 @@ import { darkColors, lightColors, type Colors } from './tokens';
 export * from './tokens';
 export type { Scheme, ThemePreference };
 
-// ponytail: not persisted yet; Cá nhân › Giao diện, P1-A5.4 (#79), saves it to user_settings.
+// SRS 3.3: kept on the phone and in user_settings.theme by data/settings `appearance` (S-ME-06).
 export const useThemePreference = create<{
   preference: ThemePreference;
   setPreference: (p: ThemePreference) => void;

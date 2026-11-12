@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_USER_SETTINGS } from '@nezfocus/shared';
 import type { DispatchEvent, PresenceEvent } from '@nezfocus/shared';
 import {
   createIdleTimer,
@@ -24,6 +25,7 @@ describe('presence store (REQ-AUTH-05)', () => {
           user: {} as never,
           servers: [],
           preferred_status: 'invisible',
+          settings: DEFAULT_USER_SETTINGS,
           presences: [binh],
         },
       }),

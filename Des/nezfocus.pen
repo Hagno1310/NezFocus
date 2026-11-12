@@ -274767,7 +274767,7 @@
                   "type": "text",
                   "id": "grFfc",
                   "name": "Text",
-                  "fill": "$text-tertiary",
+                  "fill": "$text-primary",
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
                   "content": "Thông báo đang bật",
@@ -274905,7 +274905,7 @@
                 },
                 "byjht": {
                   "content": "Âm thanh và rung",
-                  "fill": "$text-tertiary"
+                  "fill": "$text-primary"
                 },
                 "K6eJZ2": {
                   "enabled": true,

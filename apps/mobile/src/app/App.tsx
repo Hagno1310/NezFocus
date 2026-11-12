@@ -31,6 +31,7 @@ import { ToastHost } from '../shared/ui/Toast';
 import { startGatewayLifecycle } from './gatewayLifecycle';
 import { startHomeLifecycle } from './homeLifecycle';
 import { startPresenceLifecycle } from './presenceLifecycle';
+import { startSettingsLifecycle } from './settingsLifecycle';
 import { interacted } from '../shared/interaction';
 import { linking } from './navigation/linking';
 import {
@@ -111,6 +112,7 @@ export default function App() {
   // Before the Gateway starts, so READY reaches the Home tab.
   useEffect(startHomeLifecycle, []);
   useEffect(startPresenceLifecycle, []);
+  useEffect(startSettingsLifecycle, []);
   useEffect(startGatewayLifecycle, []);
   useEffect(watchNavigationRestore, []);
   useEffect(clearCacheOnSignOut, []);

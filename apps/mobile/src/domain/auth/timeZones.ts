@@ -11,6 +11,10 @@ export type TimeZoneOption = {
 const VI_CITIES: Record<string, string> = {
   'Asia/Ho_Chi_Minh': 'Hồ Chí Minh',
 };
+// Spec 07 S-ME-06 `english`: "GMT+7 · Ho Chi Minh City".
+const EN_CITIES: Record<string, string> = {
+  'Asia/Ho_Chi_Minh': 'Ho Chi Minh City',
+};
 
 export function zoneOffsetMinutes(timeZone: string, at: Date): number {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -43,7 +47,7 @@ export function gmtLabel(offset: number): string {
 }
 
 export const cityName = (id: string, lang: 'vi' | 'en') =>
-  (lang === 'vi' && VI_CITIES[id]) ||
+  (lang === 'vi' ? VI_CITIES[id] : EN_CITIES[id]) ||
   (id.split('/').pop() ?? id).replace(/_/g, ' ');
 
 export const zoneLabel = (id: string, at: Date, lang: 'vi' | 'en') =>

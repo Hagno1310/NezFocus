@@ -1,3 +1,4 @@
+import { DEFAULT_USER_SETTINGS } from '../account/settings.contract.js';
 import { DispatchEvents, parseDispatch } from '../gateway/events.contract.js';
 import {
   ChannelResponse,
@@ -212,6 +213,7 @@ describe('server and channel events (SRS 5.4)', () => {
       },
       servers: [server],
       preferred_status: 'online',
+      settings: DEFAULT_USER_SETTINGS,
       presences: [],
     };
     expect(DispatchEvents.READY.parse(d)).toEqual(d);

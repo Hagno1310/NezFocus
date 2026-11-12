@@ -1,3 +1,4 @@
+import { DEFAULT_USER_SETTINGS } from '../account/settings.contract.js';
 import {
   ClientFrame,
   GatewayCloseCode,
@@ -96,6 +97,7 @@ describe('gateway contract', () => {
         user,
         servers: [],
         preferred_status: 'online',
+        settings: DEFAULT_USER_SETTINGS,
         presences: [],
       };
       expect(DispatchEvents.READY.parse(d)).toEqual(d);

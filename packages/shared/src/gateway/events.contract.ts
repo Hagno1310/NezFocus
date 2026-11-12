@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { UserSettings } from '../account/settings.contract.js';
 import { CurrentUser } from '../auth/auth.contract.js';
 import {
   PresenceEvent,
@@ -25,6 +26,7 @@ export const Ready = z.object({
   servers: z.array(ServerSummary), // REQ-SRV-01: oldest joined first (S-HOME-02 rail order)
   preferred_status: PresenceStatus, // REQ-AUTH-05: my chosen status, Invisible included
   presences: z.array(PresenceEvent), // people whose presence I receive (AUTH-05 AC1), as they see now
+  settings: UserSettings, // SRS 5.4: my settings (the app reads them cache-first)
 });
 export type Ready = z.infer<typeof Ready>;
 
@@ -33,6 +35,7 @@ export const DispatchEvents = {
   READY: Ready,
   RESUMED: z.object({}),
   USER_UPDATE: CurrentUser,
+  USER_SETTINGS_UPDATE: UserSettings, // SRS 5.4: after every PATCH /users/@me/settings, to every session of the user
   SOLO_SESSION_UPDATE: SoloSessionResponse, // REQ-STUDY-10: every change, to every session of the user
   PRESENCE_UPDATE: PresenceEvent, // REQ-AUTH-05: to the people who receive this user's presence, activity filtered per receiver
   STREAK_UPDATE: StreakState, // REQ-STUDY-03: when the streak or today's minutes change, to every session of the user

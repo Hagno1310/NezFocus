@@ -1,5 +1,5 @@
 import type { SoloAction } from '@nezfocus/shared';
-import { useNavigation } from '@react-navigation/native';
+import { StackActions, useNavigation } from '@react-navigation/native';
 import {
   BellOff,
   Flame,
@@ -61,9 +61,12 @@ export function SoloScreen() {
   const timer = snap && timerOf(snap, now);
   const ending = snap && endingOf(snap);
 
-  // Nothing to show (closed, or gone on restore): back to the tab.
+  // Nothing to show (closed, or gone on restore): back to the tab's root, also when Solo is
+  // the only screen of the stack (otherwise an empty screen stays).
   useEffect(() => {
-    if (!snap && navigation.canGoBack()) navigation.goBack();
+    if (snap) return;
+    if (navigation.canGoBack()) navigation.goBack();
+    else navigation.dispatch(StackActions.replace('StudyHome'));
   }, [snap, navigation]);
 
   const background = timer ? colors[phaseRoomColor[timer.phase]] : colors.bg;

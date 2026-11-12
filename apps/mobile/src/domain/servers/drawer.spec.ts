@@ -1,3 +1,4 @@
+import { DEFAULT_USER_SETTINGS } from '@nezfocus/shared';
 import type {
   ChannelResponse,
   DispatchEvent,
@@ -137,6 +138,7 @@ describe('reduceHome (Gateway events)', () => {
           user: {} as never,
           servers: [summary('100', 'A'), summary('200', 'B')],
           preferred_status: 'online',
+          settings: DEFAULT_USER_SETTINGS,
           presences: [],
         },
       }),
@@ -157,6 +159,7 @@ describe('reduceHome (Gateway events)', () => {
           user: {} as never,
           servers: [],
           preferred_status: 'online',
+          settings: DEFAULT_USER_SETTINGS,
           presences: [],
         },
       }),

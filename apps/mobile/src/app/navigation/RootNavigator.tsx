@@ -31,7 +31,6 @@ import {
   signOut,
 } from '../../domain/session/sessionStore';
 import { authRepository } from '../../data/auth';
-import { currentLanguage, setLanguage } from '../../shared/i18n';
 import { endingOf } from '../../domain/study/solo';
 import {
   SoloMiniPlayer,
@@ -62,6 +61,9 @@ import type { PickedPhoto } from '../../features/media/PhotoSourceSheet';
 import type { ImageFile } from '../../domain/attachments/AttachmentRepository';
 import { AccountScreen } from '../../features/me/screens/AccountScreen';
 import { ChangePasswordScreen } from '../../features/me/screens/ChangePasswordScreen';
+import { AppearanceScreen } from '../../features/me/screens/AppearanceScreen';
+import { NotificationsScreen } from '../../features/me/screens/NotificationsScreen';
+import { PrivacyScreen } from '../../features/me/screens/PrivacyScreen';
 import { SessionsScreen } from '../../features/me/screens/SessionsScreen';
 import { useMeSync } from '../../features/me/hooks/useMe';
 import { Button } from '../../shared/ui/Button';
@@ -156,6 +158,7 @@ type MeParamList = {
   Sessions: undefined; // S-ME-03 sessions
   DeleteAccount: undefined; // S-ME-03 delete (P3-A4 #24)
   Privacy: undefined; // S-ME-04
+  Blocked: undefined; // S-DM-04 `blocked` (P2-B2.3 #112), placeholder until then
   Notifications: undefined; // S-ME-05
   Appearance: undefined; // S-ME-06
 };
@@ -420,7 +423,10 @@ function MainTabBar({
   const onSolo = route?.name === 'Study' && focused === 'Solo';
   // 07 S-ME-01 `crop` (and the server icon crop) is a full-screen step: no TabBar.
   const fullScreen = focused === 'CropAvatar' || focused === 'CropImage';
-  const openSolo = () => props.navigation.navigate('Study', { screen: 'Solo' });
+  // initial: false keeps S-STUDY-01 under Solo even when the Study tab was never opened
+  // (MiniPlayer on another tab, a notification on cold start), so closing goes back to it.
+  const openSolo = () =>
+    props.navigation.navigate('Study', { screen: 'Solo', initial: false });
   return (
     <>
       <SoloNotificationOpener onOpen={openSolo} />
@@ -478,9 +484,7 @@ type Action = { label: string; onPress: () => void };
 // Child screens not built yet: each names the ticket that replaces it.
 const meChildren = [
   ['DeleteAccount', 'me.deleteAccount', 'P3-A4 (#24)'],
-  ['Privacy', 'me.privacy', 'P1-A5.2 (#77)'],
-  ['Notifications', 'me.notifications', 'P1-A5.3 (#78)'],
-  ['Appearance', 'me.appearance', 'P1-A5.4 (#79)'],
+  ['Blocked', 'me.blocked', 'P2-B2.3 (#112)'],
 ] as const;
 
 function MeTab({ devActions }: { devActions: Action[] }) {
@@ -560,6 +564,20 @@ function MeTab({ devActions }: { devActions: Action[] }) {
           />
         )}
       </MeStack.Screen>
+      <MeStack.Screen name="Privacy" options={{ headerShown: false }}>
+        {({ navigation }) => (
+          <PrivacyScreen
+            onBack={navigation.goBack}
+            onOpenBlocked={() => navigation.navigate('Blocked')}
+          />
+        )}
+      </MeStack.Screen>
+      <MeStack.Screen name="Notifications" options={{ headerShown: false }}>
+        {({ navigation }) => <NotificationsScreen onBack={navigation.goBack} />}
+      </MeStack.Screen>
+      <MeStack.Screen name="Appearance" options={{ headerShown: false }}>
+        {({ navigation }) => <AppearanceScreen onBack={navigation.goBack} />}
+      </MeStack.Screen>
       <MeStack.Screen name="Sessions" options={{ headerShown: false }}>
         {({ navigation }) => <SessionsScreen onBack={navigation.goBack} />}
       </MeStack.Screen>
@@ -573,9 +591,6 @@ function MeTab({ devActions }: { devActions: Action[] }) {
 }
 
 const sampleUser = { id: '1', email: 'an.nguyen@gmail.com' };
-
-const toggleLanguage = () =>
-  setLanguage(currentLanguage() === 'vi' ? 'en' : 'vi');
 
 function useDevActions() {
   const { t } = useTranslation();
@@ -591,10 +606,6 @@ function useDevActions() {
     signOut: {
       label: t('placeholder.signOut'),
       onPress: signOut,
-    },
-    language: {
-      label: t('placeholder.switchLanguage'),
-      onPress: toggleLanguage,
     },
     upgrade: {
       label: t('screens.updateRequired'),
@@ -637,7 +648,6 @@ function Welcome({
         dev.signIn,
         dev.seedSignIn,
         dev.incomplete,
-        dev.language,
         dev.upgrade,
         ...gallery,
       ].map((a) => (
@@ -662,7 +672,6 @@ function Welcome({
 
 function MainTabs() {
   const { t } = useTranslation();
-  const dev = useDevActions();
   const gallery = useGalleryAction();
   // ponytail: sample badges for comparing with the C-03 board; real counts come with P2-A4.4 (#106).
   const [sampleBadges, setSampleBadges] = useState(false);
@@ -723,9 +732,7 @@ function MainTabs() {
         {() => (
           <MeTab
             devActions={
-              __DEV__
-                ? [dev.language, ...gallery, ...badgeToggle, ...endedActions]
-                : []
+              __DEV__ ? [...gallery, ...badgeToggle, ...endedActions] : []
             }
           />
         )}

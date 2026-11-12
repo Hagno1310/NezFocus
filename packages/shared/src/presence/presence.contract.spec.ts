@@ -1,3 +1,4 @@
+import { DEFAULT_USER_SETTINGS } from '../account/settings.contract.js';
 import { describe, expect, it } from 'vitest';
 import { ClientFrame, GatewayOp } from '../gateway/gateway.contract.js';
 import { parseDispatch } from '../gateway/events.contract.js';
@@ -96,6 +97,7 @@ describe('READY presence', () => {
         },
         servers: [],
         preferred_status: 'invisible',
+        settings: DEFAULT_USER_SETTINGS,
         presences: [{ user_id: '2', status: 'idle', activity: null }],
       },
     });

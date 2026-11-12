@@ -77,7 +77,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 - [x] **P1-A4** [#9](https://github.com/Hagno1310/NezFocus/issues/9) Tài khoản: đăng xuất và phiên, quên / đổi mật khẩu, hồ sơ
   - Cần trước: P0-2, P0-4, P0-5.2 (Hoàng)
   - Trong lúc làm: P1-A4.4 chờ P1-B4.1 (Hoàng); P1-A4.4 chờ P1-B3.1 (Hoàng); P1-A4.4 chờ P0-3b.3 (Hoàng)
-- [ ] **P1-A5** [#10](https://github.com/Hagno1310/NezFocus/issues/10) Cài đặt cá nhân còn lại: quyền riêng tư, thông báo, giao diện / ngôn ngữ / múi giờ · **Thùy chạy phiên**
+- [x] **P1-A5** [#10](https://github.com/Hagno1310/NezFocus/issues/10) Cài đặt cá nhân còn lại: quyền riêng tư, thông báo, giao diện / ngôn ngữ / múi giờ · **Thùy chạy phiên**
   - Cần trước: P0-4, P1-A1, P1-A4, P1-B4.1 (Hoàng)
   - Trong lúc làm: P1-A5.2 chờ P1-B4.2 (Hoàng); P1-A5.3 chờ P1-B2.3 (Hoàng)
 - [ ] **P1-A6** [#196](https://github.com/Hagno1310/NezFocus/issues/196) Gửi email thật: SMTP qua hàng đợi, mẫu song ngữ, Mailpit cho dev

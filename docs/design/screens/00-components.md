@@ -482,7 +482,7 @@ Chung: scrim `bg` 60%; bóng sheet/dialog theo DESIGN.md › Elevation; nút Bac
 
 **Nhấn giữ một hàng** (tin nhắn S-HOME-04; hàng việc C-12, v1.9 CR-20 #10): hàng được **nhấc lên** trên scrim (giữ nguyên hình, nằm trên scrim), `ActionSheet` mở bên dưới; rung nhẹ khi mở. Chỉ hiện mục người xem làm được; các mục cũng là `accessibilityActions` của hàng. Dialog phá hủy: nút hành động là động từ cụ thể ("Dừng phiên", không phải "Đồng ý").
 
-**Nút của Dialog** (chốt 17/10/2026): hai nút ngắn (≤ 2 từ mỗi nút, vd "Hủy" · "Vào phòng") xếp ngang, căn phải. Nhãn dài hơn, hoặc chỉ có một nút, thì **xếp dọc, rộng hết dialog**: nút chính trên (`primary`/`danger`), nút phụ dưới (`secondary`). Nút phụ không dùng chữ gợi ý hành động nguy hiểm khi bấm vào chỉ là thoát (vd "Để sau" thay vì "Không khôi phục").
+**Nút của Dialog** (chốt 17/10/2026): hai nút ngắn (≤ 2 từ mỗi nút, vd "Hủy" · "Vào phòng") xếp ngang, căn phải. Nhãn dài hơn, hoặc chỉ có một nút, thì **xếp dọc, rộng hết dialog**: nút chính trên (`primary`/`danger`), nút phụ dưới (`secondary`). Nút phụ không dùng chữ gợi ý hành động nguy hiểm khi bấm vào chỉ là thoát (vd "Để sau" thay vì "Không khôi phục"). **Ngoại lệ theo frame (12/11/2026):** 07 S-ME-01 `discard-confirm` ("Ở lại" · "Bỏ thay đổi") và S-ME-06 `timezone-confirm` ("Hủy" · "Đổi múi giờ") xếp ngang.
 
 ### Trạng thái
 `default` · `loading` (nút hành động `loading`, không đóng được khi đang gửi) · `error` (dòng lỗi icon + chữ trên hàng nút) · `keyboard-open` (BottomSheet có ô nhập đẩy lên trên bàn phím, NFR-MOB-14).

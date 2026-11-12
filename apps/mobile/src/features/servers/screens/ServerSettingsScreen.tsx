@@ -14,7 +14,10 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from 'zustand';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
-import type { SettingsRow as Row } from '../../../domain/servers/serverAccess';
+import {
+  managementLost,
+  type SettingsRow as Row,
+} from '../../../domain/servers/serverAccess';
 import { disabledOpacity, size, space, useTheme } from '../../../shared/theme';
 import { SystemBanner } from '../../../shared/ui/Feedback';
 import { Icon } from '../../../shared/ui/Icon';
@@ -23,7 +26,7 @@ import { SettingsRow } from '../../../shared/ui/SettingsRow';
 import { Text } from '../../../shared/ui/Text';
 import { showToast } from '../../../shared/ui/Toast';
 import { ServerIcon } from '../components/ServerIcon';
-import { useServerAccess } from '../hooks/useServerAccess';
+import { useServerAccess, useServerListLoaded } from '../hooks/useServerAccess';
 
 // Where each placeholder row gets its real screen.
 const TICKETS: Record<Exclude<Row, 'overview' | 'roles'>, string> = {
@@ -67,12 +70,17 @@ export function ServerSettingsScreen({
   const { colors } = useTheme();
   const { bottom } = useSafeAreaInsets();
   const access = useServerAccess(serverId);
+  const listLoaded = useServerListLoaded();
   const offline = useStore(gatewayStore, (s) => s.banner === 'offline');
   const rows = access?.settingsRows ?? [];
 
-  // Spec 08 › Edge case: losing every management permission closes the screen. Roles are
-  // refetched after a reconnect; wait for them instead of closing on the gap.
-  const lost = !access || (access.roles !== undefined && rows.length === 0);
+  // Spec 08 › Edge case: losing every management permission closes the screen.
+  const lost = managementLost({
+    listLoaded,
+    found: !!access,
+    rolesLoaded: access?.roles !== undefined,
+    allowed: rows.length > 0,
+  });
   const close = useEffectEvent(() => {
     showToast({ message: t('servers.settings.lostAccess') });
     onLostAccess();

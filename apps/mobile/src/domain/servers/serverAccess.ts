@@ -122,3 +122,17 @@ export function channelSettingsRows(
     rows.push('studyRoom');
   return rows;
 }
+
+// Spec 08 › Edge case: a management screen closes with "Bạn không còn quyền…" once the caller
+// loses access. Judge only on loaded data: the list is empty while signed out or before READY,
+// and roles are refetched after a reconnect; neither gap means the access is gone.
+export function managementLost(a: {
+  listLoaded: boolean;
+  found: boolean; // the server is in the list
+  rolesLoaded: boolean;
+  allowed: boolean;
+}): boolean {
+  if (!a.listLoaded) return false;
+  if (!a.found) return true;
+  return a.rolesLoaded && !a.allowed;
+}

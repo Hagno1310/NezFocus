@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import {
   channelMenuRows,
   channelSettingsRows,
+  managementLost,
   myServerPermissions,
   serverMenuRows,
   serverSettingsRows,
@@ -147,5 +148,59 @@ describe('S-HOME-02 `channel-menu` / S-SET-06: rows by permission', () => {
     expect(
       channelSettingsRows(permissionBits('MANAGE_CHANNELS'), 'text'),
     ).toContain('permissions');
+  });
+});
+
+describe('managementLost', () => {
+  it('waits while the server list is not loaded (signed out, before READY)', () => {
+    expect(
+      managementLost({
+        listLoaded: false,
+        found: false,
+        rolesLoaded: false,
+        allowed: false,
+      }),
+    ).toBe(false);
+  });
+
+  it('closes when the loaded list no longer has the server (kicked, deleted)', () => {
+    expect(
+      managementLost({
+        listLoaded: true,
+        found: false,
+        rolesLoaded: false,
+        allowed: false,
+      }),
+    ).toBe(true);
+  });
+
+  it('waits for the roles before judging permission (refetched after a reconnect)', () => {
+    expect(
+      managementLost({
+        listLoaded: true,
+        found: true,
+        rolesLoaded: false,
+        allowed: false,
+      }),
+    ).toBe(false);
+  });
+
+  it('closes when the roles are in and the permission is gone', () => {
+    expect(
+      managementLost({
+        listLoaded: true,
+        found: true,
+        rolesLoaded: true,
+        allowed: false,
+      }),
+    ).toBe(true);
+    expect(
+      managementLost({
+        listLoaded: true,
+        found: true,
+        rolesLoaded: true,
+        allowed: true,
+      }),
+    ).toBe(false);
   });
 });

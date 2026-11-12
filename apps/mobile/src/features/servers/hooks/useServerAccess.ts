@@ -9,6 +9,10 @@ import {
 import { homeStore } from '../../../domain/servers/homeStore';
 import { sessionStore } from '../../../domain/session/sessionStore';
 
+// False while signed out and until READY: no server is known yet, none is lost.
+export const useServerListLoaded = () =>
+  useStore(homeStore, (s) => s.servers !== null);
+
 // The server as the drawer knows it, and the rows the caller may see (Q17).
 export function useServerAccess(serverId: string | null) {
   const server = useStore(homeStore, (s) =>

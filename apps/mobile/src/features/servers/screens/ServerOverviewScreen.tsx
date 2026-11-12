@@ -28,7 +28,8 @@ import {
 import { ServerIcon } from '../components/ServerIcon';
 import { useServerIcon } from '../hooks/useServerIcon';
 import { useSaveServer } from '../hooks/useSaveServer';
-import { useServerAccess } from '../hooks/useServerAccess';
+import { useServerAccess, useServerListLoaded } from '../hooks/useServerAccess';
+import { managementLost } from '../../../domain/servers/serverAccess';
 
 // S-SET-01 `overview`, `overview-editing`, `overview-name-error`, `welcome-picker`,
 // `welcome-off`. The name saves with "Lưu"; the kênh tin chào mừng saves on tap.
@@ -50,6 +51,7 @@ export function ServerOverviewScreen({
   const { colors } = useTheme();
   const navigation = useNavigation();
   const access = useServerAccess(serverId);
+  const listLoaded = useServerListLoaded();
   const channels = useStore(homeStore, (s) => s.channels[serverId]);
   const saved = access?.server;
   const [name, setName] = useState(saved?.name ?? '');
@@ -68,7 +70,12 @@ export function ServerOverviewScreen({
   };
   const canManage =
     !!access && hasPermission(access.perms, Permission.MANAGE_SERVER);
-  const lost = !access || (access.roles !== undefined && !canManage);
+  const lost = managementLost({
+    listLoaded,
+    found: !!access,
+    rolesLoaded: access?.roles !== undefined,
+    allowed: canManage,
+  });
   const onLost = useEffectEvent(lostAccess);
   useEffect(() => {
     if (lost) onLost();

@@ -24,7 +24,8 @@ import {
   type RoleError,
 } from '../../../domain/servers/roles';
 import { showToast } from '../../../shared/ui/Toast';
-import { useServerAccess } from './useServerAccess';
+import { managementLost } from '../../../domain/servers/serverAccess';
+import { useServerAccess, useServerListLoaded } from './useServerAccess';
 
 export type RoleResult<T = void> =
   { ok: true; value: T } | { ok: false; error: RoleError };
@@ -44,6 +45,7 @@ export function useRoles(serverId: string, onLostAccess: () => void) {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const access = useServerAccess(serverId);
+  const listLoaded = useServerListLoaded();
   const offline = useStore(gatewayStore, (s) => s.banner === 'offline');
   const key = ['servers', serverId, 'roles'];
   const listed = useQuery({
@@ -60,8 +62,12 @@ export function useRoles(serverId: string, onLostAccess: () => void) {
 
   const canManage =
     !!access && hasPermission(access.perms, Permission.MANAGE_ROLES);
-  // Roles come back after a reconnect: wait for them instead of closing on the gap.
-  const lost = !access || (access.roles !== undefined && !canManage);
+  const lost = managementLost({
+    listLoaded,
+    found: !!access,
+    rolesLoaded: access?.roles !== undefined,
+    allowed: canManage,
+  });
   const lose = () => {
     showToast({ message: t('servers.roles.lostAccess') });
     onLostAccess();

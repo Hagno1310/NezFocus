@@ -29,10 +29,10 @@ export const notifications = pgTable(
     index('idx_notifications_task')
       .on(t.taskId)
       .where(sql`${t.taskId} IS NOT NULL`),
-    // REQ-MSG-03 (CR-12): one item per message per person; also finds a deleted message's items.
+    // REQ-MSG-03 (CR-12): one mention / reply per message per person; report_reviewed may hold a message_id too.
     uniqueIndex('uq_notifications_message')
       .on(sql`(${t.data}->>'message_id')`, t.userId)
-      .where(sql`${t.data}->>'message_id' IS NOT NULL`),
+      .where(sql`${t.type} IN ('mention', 'reply')`),
   ],
 );
 

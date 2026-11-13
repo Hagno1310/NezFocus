@@ -1,6 +1,7 @@
 import type { NotificationRow } from './notifications.schema.js';
 import type { NotificationsRepository } from './notifications.repository.js';
 import type { EventPublisher } from '../gateway/event-publisher.js';
+import type { SnowflakeGenerator } from '../../common/snowflake.js';
 import { DbNotificationService } from './notification-service.js';
 
 const NOW = new Date('2026-11-13T10:00:00.000Z');
@@ -43,7 +44,7 @@ function setup(existing: NotificationRow[] = []) {
   const service = new DbNotificationService(
     repo,
     events,
-    { next: () => id++ },
+    { next: () => id++ } as SnowflakeGenerator,
     { now: () => NOW },
   );
   return { service, rows, sent };

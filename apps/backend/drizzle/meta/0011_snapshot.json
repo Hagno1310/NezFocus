@@ -1,5 +1,5 @@
 {
-  "id": "e253e55f-1540-43a2-be4b-497212575964",
+  "id": "eb1034ab-652e-476c-a721-f17d1df3ab5f",
   "prevId": "e0a36405-9931-43a4-9afe-014ba5bd53e2",
   "version": "7",
   "dialect": "postgresql",
@@ -1743,7 +1743,7 @@
             }
           ],
           "isUnique": true,
-          "where": "\"notifications\".\"data\"->>'message_id' IS NOT NULL",
+          "where": "\"notifications\".\"type\" IN ('mention', 'reply')",
           "concurrently": false,
           "method": "btree",
           "with": {}

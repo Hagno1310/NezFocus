@@ -108,6 +108,21 @@ describe('NotificationService (e2e)', () => {
     phone.close();
   });
 
+  it('other types holding the message_id are neither deduped nor removed with the message', async () => {
+    const [an, binh] = [await signedIn(), await signedIn()];
+    const data = message(binh.id);
+    await service.create(an.userId, 'mention', { ...data, via: 'user' });
+    expect(
+      await service.create(an.userId, 'report_reviewed', { ...data }),
+    ).not.toBeNull();
+
+    await service.deleteBySource({ message_id: BigInt(data.message_id) });
+
+    expect(await itemsOf(an.userId)).toEqual([
+      expect.objectContaining({ type: 'report_reviewed' }),
+    ]);
+  });
+
   it('a declined / cancelled friend request removes only that request item', async () => {
     const [an, binh, chi] = [
       await signedIn(),

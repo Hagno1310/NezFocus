@@ -2,7 +2,12 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, sql, type SQL } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
 import { notifications, type NotificationRow } from './notifications.schema.js';
-import type { NotificationSource } from './notification-service.js';
+
+// A friend request has no id of its own (SRS 8.2 friendships: one row per pair).
+export type NotificationSource =
+  | { message_id: bigint }
+  | { task_id: bigint }
+  | { friend_request: { from_user_id: bigint; to_user_id: bigint } };
 
 @Injectable()
 export class NotificationsRepository {
@@ -30,7 +35,8 @@ export class NotificationsRepository {
 
 const where = (source: NotificationSource): SQL | undefined => {
   if ('message_id' in source)
-    return sql`${notifications.data}->>'message_id' = ${String(source.message_id)}`;
+    // Literal IN, matching the partial index uq_notifications_message.
+    return sql`${notifications.type} IN ('mention', 'reply') AND ${notifications.data}->>'message_id' = ${String(source.message_id)}`;
   if ('task_id' in source) return eq(notifications.taskId, source.task_id);
   const { from_user_id, to_user_id } = source.friend_request;
   return and(

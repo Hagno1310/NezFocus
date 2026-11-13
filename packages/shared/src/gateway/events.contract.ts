@@ -1,5 +1,9 @@
 import { z } from 'zod';
 import { UserSettings } from '../account/settings.contract.js';
+import {
+  Notification,
+  NotificationDeleted,
+} from '../notifications/notification.contract.js';
 import { CurrentUser } from '../auth/auth.contract.js';
 import {
   PresenceEvent,
@@ -47,6 +51,8 @@ export const DispatchEvents = {
   CHANNEL_CREATE: ChannelResponse, // REQ-SRV-02: only to members who can view it
   CHANNEL_UPDATE: ChannelResponse, // also when its overwrites or sync change (REQ-ROLE-03)
   CHANNEL_DELETE: ChannelDeleted,
+  NOTIFICATION_CREATE: Notification, // REQ-NOTIF-05: to every session of the recipient
+  NOTIFICATION_DELETE: NotificationDeleted, // REQ-NOTIF-05: its source is gone (message, task, friend request)
 } satisfies Record<string, z.ZodType>;
 
 export type DispatchEventName = keyof typeof DispatchEvents;

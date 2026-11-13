@@ -6,6 +6,7 @@ import { DbModule } from './db/db.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { GatewayModule } from './modules/gateway/gateway.module.js';
 import { HealthModule } from './modules/health/health.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { PermissionsModule } from './modules/permissions/permissions.module.js';
 import { ServersModule } from './modules/servers/servers.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
@@ -25,6 +26,7 @@ import { RedisModule } from './redis/redis.module.js';
     AuthModule,
     StudyModule,
     ServersModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

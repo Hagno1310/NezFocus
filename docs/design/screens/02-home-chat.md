@@ -473,7 +473,7 @@ Không áp dụng: `empty`, `loading`, `forbidden` (không có `ATTACH_FILES` th
 | `create-error` | `FormMessage` trên nút | 40011: "Bạn đã ở 100 server, mức tối đa. Rời bớt một server để tạo server mới." · mạng: "Không tạo được server. Kiểm tra kết nối rồi thử lại." |
 | `created` | Không có màn chúc mừng riêng: vào thẳng S-HOME-01 `#chao-mung` của server mới (`empty`; v1.9, CR-17 #2 — kênh text đầu tiên xem được; server thường: `#general`), S-HOME-07 mở sẵn | Tiêu đề sheet S-HOME-07: "Mời bạn vào Ôn thi Giải tích 2" |
 | `join-by-code` | `ScreenHeader` "Nhập mã mời"; dòng mô tả "Dán link hoặc nhập mã bạn bè gửi cho bạn."; `TextField` "Mã hoặc link mời" placeholder "Dán hoặc nhập mã" (JetBrains Mono khi có chữ) + nút "Dán" bên trong ô; gợi ý dưới ô; nút "Tiếp tục" (dòng mô tả và placeholder theo frame, 19/11/2026) | Gợi ý: "VD: k7Qm2xPa hoặc https://nezfocus.app/invite/k7Qm2xPa". Dán link → app tự tách mã |
-| `join-error` | Lỗi dưới ô, giữ user ở màn này | Sai định dạng: "Mã mời gồm 8–10 chữ và số, hoặc dán cả link". 40041: "Lời mời không tồn tại hoặc đã hết hạn. Xin bạn bè gửi lời mời mới." 40306: "Bạn không thể tham gia server này". 40029: "Bạn thử quá nhiều mã. Thử lại sau 1 phút." |
+| `join-error` | Lỗi dưới ô, giữ user ở màn này | Sai định dạng: "Mã mời gồm 8–10 chữ và số, hoặc dán cả link". 40041: "Lời mời không tồn tại hoặc đã hết hạn. Xin bạn bè gửi lời mời mới." 40029: "Bạn thử quá nhiều mã. Thử lại sau 1 phút." (19/11/2026) Bị cấm (40306) và đủ 100 server (40011) không báo ở đây: "Tiếp tục" chỉ xem lời mời, hai lỗi này báo ở S-MOD-01 khi bấm "Tham gia". |
 | `keyboard-open` | `OS/Keyboard · text` ở `name-server` (phím "Xong") và `join-by-code` (phím "Tiếp"); nút chính nằm ngay trên bàn phím (C-02). Hai frame: `keyboard-open · name`, `keyboard-open · code` | |
 | `offline` | Nút chính `disabled` kèm dòng "Cần kết nối mạng để tạo hoặc tham gia server" (`wifi-off`) | |
 | `restore` 🆕 | (21/10/2026, area 08 Q16) An có server đã xóa trong 30 ngày: dưới "Nhập mã mời" thêm `SettingsRow` "Server đã xóa" (icon `archive-restore`, giá trị "1") | Chỉ hiện khi có |
@@ -761,7 +761,7 @@ Frame nằm trong nhóm "02 · Home & Chat — Edge case", tên `S-HOME-EDGE · 
 | Hai người cùng ghim tin thứ 50 | Người bấm sau nhận `Toast` 40904 như S-HOME-04 |
 | Hai người cùng xóa một tin | Người bấm sau không thấy lỗi: tin đã biến mất là kết quả mong muốn (xóa là idempotent phía app) |
 | Qua nửa đêm | Vạch ngày tính lại khi qua 00:00 theo timezone của user ("Hôm nay" thành "Hôm qua"; giờ đầu tin "20:02" thành "Hôm qua 20:02"); hai tin ở hai bên vạch ngày không gộp nhóm dù cách nhau ≤ 5 phút |
-| Đã ở đủ 100 server | Tham gia bằng mã / link cũng báo 40011: ở S-HOME-06 `join-error` "Bạn đã ở 100 server, mức tối đa. Rời bớt một server để tham gia server mới."; ở S-MOD-01 cùng chữ, nút "Tham gia" `disabled`; thẻ lời mời trong chat: S-HOME-01 `invite-cards · max` |
+| Đã ở đủ 100 server | Tham gia bằng mã / link cũng báo 40011, khi bấm "Tham gia" ở S-MOD-01 (19/11/2026: không báo ở S-HOME-06): "Bạn đã ở 100 server, mức tối đa. Rời bớt một server để tham gia server mới.", nút "Tham gia" `disabled`; thẻ lời mời trong chat: S-HOME-01 `invite-cards · max` |
 | Chip link tên dài | (v1.9, CR-19 #11) Chip rộng tối đa cột nội dung tin (306 ở khung 390); tên server co trước, tối thiểu 80, rồi "…", sau đó tới tên kênh / phòng; "› Tin nhắn" không cắt. Ví dụ "Câu lạc bộ Ôn thi Giả… › #hoi-dap-bai-tap-chuong-4" |
 
 ## Câu hỏi còn mở

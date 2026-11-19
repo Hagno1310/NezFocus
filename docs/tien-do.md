@@ -109,7 +109,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 
 ### P2 · Hiếu
 
-- [ ] **P2-A1** [#14](https://github.com/Hagno1310/NezFocus/issues/14) Lời mời, tham gia server và deep link
+- [x] **P2-A1** [#14](https://github.com/Hagno1310/NezFocus/issues/14) Lời mời, tham gia server và deep link
   - Cần trước: P0-4, P1-A1, P1-A2, P1-A3
 - [ ] **P2-A3** [#16](https://github.com/Hagno1310/NezFocus/issues/16) Chat trong kênh: gửi tin, idempotency, lịch sử, màn chat
   - Cần trước: P1-A1, P1-A2, P1-A3

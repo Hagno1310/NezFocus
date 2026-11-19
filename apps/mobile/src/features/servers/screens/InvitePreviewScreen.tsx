@@ -266,7 +266,11 @@ export function InvitePreviewScreen({
           // Until READY lists my servers, "already a member" cannot be told apart.
           loading={join.joining || !serversKnown}
           disabled={join.error === 'max-servers' || isMember}
-          onPress={() => void join.join(preview)}
+          onPress={() => {
+            // Spec 10: a join makes me a member too, but joining shows no toast.
+            handled.current = true;
+            void join.join(preview);
+          }}
         />
       </>
     );

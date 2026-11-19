@@ -1,6 +1,6 @@
 import { ErrorCode, type InvitePreview } from '@nezfocus/shared';
 import { Volume2, X } from 'lucide-react-native';
-import { useEffect, useEffectEvent, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -103,6 +103,11 @@ export function InvitePreviewScreen({
     homeStore,
     (s) => !!preview && !!s.servers?.some((x) => x.id === preview.server.id),
   );
+  const [joinPressed, setJoinPressed] = useState(false);
+  // already-member shows no preview; until READY lists my servers it cannot be told apart.
+  const settling =
+    !guest && !joinPressed && !!preview && (!serversKnown || isMember);
+  const shown = settling ? null : preview;
 
   // Once per loaded preview, whatever the parent's callback identity.
   const previewed = useEffectEvent((p: InvitePreview) => onPreview?.(p));
@@ -179,14 +184,14 @@ export function InvitePreviewScreen({
   // offline: still nothing loaded (Banner + still skeleton). A preview already loaded stays.
   const offline = !preview && !online;
   const failed = !preview && !!query.error && !offline;
-  const title = preview
-    ? preview.inviter
-      ? t('invites.invitedBy', { name: preview.inviter.display_name })
+  const title = shown
+    ? shown.inviter
+      ? t('invites.invitedBy', { name: shown.inviter.display_name })
       : t('invites.invited')
     : null;
 
   const footer = (() => {
-    if (!preview)
+    if (!shown)
       return (
         <>
           {offline && (
@@ -220,14 +225,14 @@ export function InvitePreviewScreen({
             size="L"
             fullWidth
             label={t('invites.guestCreate')}
-            onPress={() => guest.onCreateAccount(preview)}
+            onPress={() => guest.onCreateAccount(shown)}
           />
           <Button
             variant="secondary"
             size="L"
             fullWidth
             label={t('invites.guestSignIn')}
-            onPress={() => guest.onSignIn(preview)}
+            onPress={() => guest.onSignIn(shown)}
           />
         </>
       );
@@ -236,7 +241,7 @@ export function InvitePreviewScreen({
         <>
           <FormMessage
             tone="error"
-            text={t('invites.banned', { server: preview.server.name })}
+            text={t('invites.banned', { server: shown.server.name })}
           />
           <Button
             variant="secondary"
@@ -263,13 +268,13 @@ export function InvitePreviewScreen({
           size="L"
           fullWidth
           label={t('invites.join')}
-          // Until READY lists my servers, "already a member" cannot be told apart.
-          loading={join.joining || !serversKnown}
-          disabled={join.error === 'max-servers' || isMember}
+          loading={join.joining}
+          disabled={join.error === 'max-servers'}
           onPress={() => {
-            // Spec 10: a join makes me a member too, but joining shows no toast.
+            // Spec 10: a join makes me a member too, but joining shows no toast or skeleton.
             handled.current = true;
-            void join.join(preview);
+            setJoinPressed(true);
+            void join.join(shown);
           }}
         />
       </>
@@ -302,12 +307,12 @@ export function InvitePreviewScreen({
         ) : (
           <Skeleton width={200} height={30} />
         )}
-        <InviteCard preview={preview} />
-        {preview?.channel && (
+        <InviteCard preview={shown} />
+        {shown?.channel && (
           <View style={styles.room}>
             <Icon as={Volume2} size="sm" color="text-secondary" />
             <Text variant="label" color="text-secondary" style={styles.flex}>
-              {t('invites.roomLine', { room: preview.channel.name })}
+              {t('invites.roomLine', { room: shown.channel.name })}
             </Text>
           </View>
         )}

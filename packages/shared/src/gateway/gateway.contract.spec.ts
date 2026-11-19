@@ -99,6 +99,7 @@ describe('gateway contract', () => {
         preferred_status: 'online',
         settings: DEFAULT_USER_SETTINGS,
         presences: [],
+        read_states: [],
       };
       expect(DispatchEvents.READY.parse(d)).toEqual(d);
     });

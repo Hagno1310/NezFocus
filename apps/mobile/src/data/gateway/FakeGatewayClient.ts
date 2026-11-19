@@ -55,6 +55,7 @@ export function createFakeGatewayClient(
           preferred_status: 'online',
           settings: DEFAULT_USER_SETTINGS,
           presences,
+          read_states: [],
         },
       });
       timers = scenario.map((step) => setTimeout(() => emit(step), step.after));

@@ -22,6 +22,7 @@ const ch = (
   focus_control: 'off',
   permissions_synced,
   permission_overwrites: [],
+  last_message_id: null,
 });
 
 const EVERYONE_DENY_SEND = {

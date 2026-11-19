@@ -80,6 +80,8 @@ export const ChannelResponse = z.object({
   permissions_synced: z.boolean(), // REQ-ROLE-03: follows the category's overwrites
   // The channel's own; while synced the category's apply (computeChannelPermissions).
   permission_overwrites: z.array(PermissionOverwrite),
+  // Newest message, null if none; the app fetches after= its cache (7.3.2) and acks it (NOTIF-01).
+  last_message_id: SnowflakeId.nullable(),
 });
 export type ChannelResponse = z.infer<typeof ChannelResponse>;
 

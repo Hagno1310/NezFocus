@@ -28,6 +28,7 @@ const ch = (
   focus_control: type === 'voice' ? 'everyone' : 'off',
   permissions_synced: parent_id !== null,
   permission_overwrites: [],
+  last_message_id: null,
 });
 
 // "Ôn thi Giải tích 2" (02 › Dữ liệu mẫu), with a `#viec-nhom` in PHÒNG HỌC for `drop-blocked`.

@@ -21,6 +21,7 @@ const channel = (
   focus_control: 'off' as const,
   permissions_synced: true,
   permission_overwrites: [],
+  last_message_id: null,
 });
 
 // "CLB Guitar PTIT" (02 › Dữ liệu mẫu): what POST /servers returns for template general.

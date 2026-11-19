@@ -109,6 +109,7 @@ function buildServer(
     channels.push({
       id,
       server_id: summary.id,
+      last_message_id: null,
       type,
       name,
       parent_id: parent,
@@ -419,6 +420,7 @@ export function createFakeServerRepository(
       const channel: ChannelResponse = {
         id: id(),
         server_id: serverId,
+        last_message_id: null,
         type: body.type,
         name: body.name,
         parent_id,

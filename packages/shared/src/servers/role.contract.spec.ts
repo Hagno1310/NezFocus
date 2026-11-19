@@ -63,6 +63,7 @@ const thongBao = {
       deny: '0',
     },
   ],
+  last_message_id: null,
 };
 
 describe('RoleResponse', () => {

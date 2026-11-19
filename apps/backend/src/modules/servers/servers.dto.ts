@@ -78,6 +78,8 @@ export const toChannelResponse = (
   permission_overwrites: [...c.overwrites]
     .sort(byTarget)
     .map(toOverwriteResponse),
+  // ponytail: channels.last_message_id comes with P2-A3.2 (#100).
+  last_message_id: null,
 });
 
 export const toRoleResponse = (r: RoleRow): RoleResponse => ({

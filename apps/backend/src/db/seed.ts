@@ -2,6 +2,7 @@ import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { SnowflakeGenerator } from '../common/snowflake.js';
+import { seedMessages } from '../modules/messaging/messaging.seed.js';
 import { seedServers } from '../modules/servers/servers.seed.js';
 import { seedStudy } from '../modules/study/study.seed.js';
 import { seedUsers } from '../modules/users/users.seed.js';
@@ -15,6 +16,7 @@ const seeds: ((ctx: SeedContext) => Promise<void>)[] = [
   seedUsers,
   seedServers,
   seedStudy,
+  seedMessages,
 ];
 
 export function assertNotProduction(nodeEnv: string | undefined) {

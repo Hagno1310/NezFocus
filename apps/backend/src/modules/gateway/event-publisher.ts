@@ -1,5 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { DispatchEventName, DispatchPayload } from '@nezfocus/shared';
+import {
+  Permission,
+  type DispatchEventName,
+  type DispatchPayload,
+} from '@nezfocus/shared';
+import { PermissionService } from '../permissions/permission.service.js';
 import { ServersRepository } from '../servers/servers.repository.js';
 import { GatewaySessions } from './gateway-sessions.js';
 
@@ -10,7 +15,7 @@ export abstract class EventPublisher {
     t: T,
     d: DispatchPayload<T>,
   ): Promise<void>;
-  // Members who can VIEW_CHANNEL; filtering lands in P2-B1 (#18).
+  // Members who can VIEW_CHANNEL (REQ-ROLE-03); the real fanout is P2-B1 (#18).
   abstract toChannel<T extends DispatchEventName>(
     channelId: bigint,
     t: T,
@@ -30,6 +35,7 @@ export class GatewayEventPublisher extends EventPublisher {
   constructor(
     private readonly sessions: GatewaySessions,
     private readonly servers: ServersRepository,
+    private readonly permissions: PermissionService,
   ) {
     super();
   }
@@ -42,9 +48,27 @@ export class GatewayEventPublisher extends EventPublisher {
     return this.sessions.dispatchToUser(userId, t, d);
   }
 
-  // ponytail: needs membership + VIEW_CHANNEL (P2-B1 #18); logs until then.
-  async toChannel(channelId: bigint, t: DispatchEventName) {
-    this.logger.warn(`${t} to channel ${channelId} dropped: not wired yet`);
+  // ponytail: stand-in from P2-A3.2 (#100) so MESSAGE_CREATE reaches who can VIEW_CHANNEL:
+  // one permission lookup per member and event, DMs dropped. P2-B1.2 (#108) replaces it.
+  async toChannel<T extends DispatchEventName>(
+    channelId: bigint,
+    t: T,
+    d: DispatchPayload<T>,
+  ) {
+    const serverId = (await this.servers.findChannel(channelId))?.serverId;
+    if (!serverId) {
+      this.logger.warn(`${t} to channel ${channelId} dropped: no server`);
+      return;
+    }
+    for (const userId of await this.servers.memberIds(serverId))
+      if (
+        await this.permissions.can(
+          userId,
+          { channelId },
+          Permission.VIEW_CHANNEL,
+        )
+      )
+        await this.sessions.dispatchToUser(userId, t, d);
   }
 
   // ponytail: stand-in from P1-A2.1 (#58) so CHANNEL_* / SERVER_UPDATE reach the other

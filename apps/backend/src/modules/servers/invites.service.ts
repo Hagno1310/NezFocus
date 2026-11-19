@@ -40,7 +40,6 @@ const toInviteResponse = (row: InviteRow): InviteResponse => ({
   created_at: row.createdAt.toISOString(),
 });
 
-// REQ-SRV-03 / SRV-04: make, reuse, preview, accept and revoke invites.
 @Injectable()
 export class InvitesService {
   constructor(
@@ -95,7 +94,7 @@ export class InvitesService {
       if (await this.repo.insert(row))
         return { invite: toInviteResponse(row), created: true };
     }
-    throw new Error('no free invite code');
+    throw new AppError(ErrorCode.InternalError, 'No free invite code');
   }
 
   async preview(code: string, ip: string | undefined): Promise<InvitePreview> {
@@ -209,8 +208,7 @@ export class InvitesService {
     );
   }
 
-  // The invite row, or 40041. Unknown codes count per IP; past the limit the IP waits out
-  // the minute, real codes included, so guessing cannot continue.
+  // SRV-03 AC3: past the limit the IP waits the minute out, real codes included.
   private async lookup(code: string, ip: string | undefined) {
     const key = `invite:unknown:${ip ?? 'unknown'}`;
     const seen = await this.kv.peek(key);

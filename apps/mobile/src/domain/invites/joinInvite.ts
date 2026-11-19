@@ -7,6 +7,13 @@ import {
 import { asApiError } from '../auth/authFlow';
 import { firstTextChannel } from '../servers/createServer';
 import type { OpenChannel } from '../servers/drawer';
+import {
+  homeStore,
+  openChannel,
+  selectServer,
+  setServerDetail,
+} from '../servers/homeStore';
+import type { ServerRepository } from '../servers/ServerRepository';
 import type { InviteRepository } from './InviteRepository';
 
 // S-HOME-06 `join-error` (spec 02).
@@ -104,6 +111,34 @@ export const memberDestination = (
   (open?.serverId === server.id ? target(server, open.channelId) : null) ??
   firstChannel(server);
 
-// S-MOD-01 › Số lớn: "12.480 thành viên · 1.204 đang online".
-export const formatCount = (n: number) =>
-  String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+export { formatInviteCount as formatCount } from '@nezfocus/shared';
+
+// Shows the destination in Home: a text channel opens in the drawers, a room goes to its
+// preview (S-ROOM-01/02 `not-joined`), never connecting voice (VC-01).
+export function arrive(serverId: string, to: Destination) {
+  if (to.kind === 'channel') openChannel({ serverId, channelId: to.channelId });
+  else selectServer(serverId);
+}
+
+// already-member: the server as the app knows it, fetched if its channels were never loaded.
+export async function arriveAsMember(
+  repo: Pick<ServerRepository, 'getServer'>,
+  serverId: string,
+  channelParam: string | undefined,
+): Promise<Destination | null> {
+  const home = homeStore.getState();
+  let server = home.channels[serverId]
+    ? ({ id: serverId, channels: home.channels[serverId] } as ServerResponse)
+    : null;
+  if (!server) {
+    try {
+      server = await repo.getServer(serverId);
+      setServerDetail(server);
+    } catch {
+      return null;
+    }
+  }
+  const to = memberDestination(server, channelParam, home.open);
+  if (to) arrive(serverId, to);
+  return to;
+}

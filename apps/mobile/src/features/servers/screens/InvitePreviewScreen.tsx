@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from 'zustand';
 import { asApiError } from '../../../domain/auth/authFlow';
 import {
+  arriveAsMember,
   formatCount,
   type Destination,
 } from '../../../domain/invites/joinInvite';
@@ -22,7 +23,8 @@ import { showToast } from '../../../shared/ui/Toast';
 import { useOnline } from '../../gateway/hooks/useOnline';
 import { ServerIcon } from '../components/ServerIcon';
 import { useInvitePreview } from '../hooks/useInvitePreview';
-import { memberArrival, useJoinInvite } from '../hooks/useJoinInvite';
+import { serverRepository } from '../../../data/servers';
+import { useJoinInvite } from '../hooks/useJoinInvite';
 
 const ICON = 72;
 
@@ -96,6 +98,7 @@ export function InvitePreviewScreen({
   const join = useJoinInvite(code, channelParam, (server, to) =>
     onArrive(server.id, to, roomName(to)),
   );
+  const serversKnown = useStore(homeStore, (s) => s.servers !== null);
   const isMember = useStore(
     homeStore,
     (s) => !!preview && !!s.servers?.some((x) => x.id === preview.server.id),
@@ -112,19 +115,32 @@ export function InvitePreviewScreen({
   useEffect(() => {
     if (!preview || !isMember || guest || handled.current) return;
     handled.current = true;
-    void memberArrival(preview.server.id, channelParam).then((found) => {
-      onArrive(
-        preview.server.id,
-        found?.to ?? null,
-        found?.to.kind === 'room' ? preview.channel?.name : undefined,
-      );
-      showToast({
-        message: t('invites.alreadyMember', { server: preview.server.name }),
-      });
-    });
+    void arriveAsMember(serverRepository, preview.server.id, channelParam).then(
+      (to) => {
+        onArrive(
+          preview.server.id,
+          to,
+          to?.kind === 'room' ? preview.channel?.name : undefined,
+        );
+        showToast({
+          message: t('invites.alreadyMember', { server: preview.server.name }),
+        });
+      },
+    );
   }, [preview, isMember, guest, channelParam, onArrive, t]);
 
   const lookupError = asApiError(query.error);
+  const rateLimited = lookupError?.code === ErrorCode.RateLimited;
+  useEffect(() => {
+    if (!rateLimited) return;
+    const wait = lookupError?.retry_after ?? 60;
+    showToast({
+      message:
+        wait < 60
+          ? t('invites.tooFastSeconds', { count: Math.ceil(wait) })
+          : t('invites.tooFastMinutes', { count: Math.ceil(wait / 60) }),
+    });
+  }, [rateLimited, lookupError?.retry_after, t]);
   const expired =
     lookupError?.code === ErrorCode.InviteInvalid || join.error === 'invalid';
 
@@ -176,7 +192,7 @@ export function InvitePreviewScreen({
           {offline && (
             <FormMessage tone="info" text={t('invites.previewOffline')} />
           )}
-          {failed && (
+          {failed && !rateLimited && (
             <FormMessage tone="error" text={t('invites.lookupFailed')} />
           )}
           {(offline || failed) && (
@@ -247,7 +263,8 @@ export function InvitePreviewScreen({
           size="L"
           fullWidth
           label={t('invites.join')}
-          loading={join.joining}
+          // Until READY lists my servers, "already a member" cannot be told apart.
+          loading={join.joining || !serversKnown}
           disabled={join.error === 'max-servers' || isMember}
           onPress={() => void join.join(preview)}
         />

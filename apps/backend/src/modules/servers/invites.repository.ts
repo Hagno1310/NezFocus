@@ -81,7 +81,6 @@ export class InvitesRepository {
       .where(and(eq(invites.code, code), isNull(invites.revokedAt)));
   }
 
-  // Live channels of a server only (a soft-deleted channel has no invites to make).
   async channel(id: bigint) {
     const [row] = await this.db
       .select({
@@ -212,9 +211,13 @@ export class InvitesRepository {
         .from(serverMembers)
         .where(eq(serverMembers.userId, userId));
       if (joined!.n >= limit) return 'max-servers';
-      await tx
+      // Two invites to the same server accepted at once: the second finds the row taken.
+      const added = await tx
         .insert(serverMembers)
-        .values({ serverId: row.serverId, userId, joinedAt: now });
+        .values({ serverId: row.serverId, userId, joinedAt: now })
+        .onConflictDoNothing()
+        .returning({ userId: serverMembers.userId });
+      if (!added.length) return 'member';
       await tx
         .update(invites)
         .set({ uses: sql`${invites.uses} + 1` })

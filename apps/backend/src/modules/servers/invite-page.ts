@@ -1,4 +1,7 @@
-import type { InvitePreview } from '@nezfocus/shared';
+import {
+  formatInviteCount as count,
+  type InvitePreview,
+} from '@nezfocus/shared';
 
 const ANDROID_PACKAGE = 'app.nezfocus';
 
@@ -10,8 +13,6 @@ const escape = (text: string) =>
         c
       ]!,
   );
-
-const count = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
 // REQ-SRV-07 AC2 / AC6 / AC7: the static page a link opens without the app — server name,
 // Open Graph card, a download button and how to paste the code after installing. Not a web

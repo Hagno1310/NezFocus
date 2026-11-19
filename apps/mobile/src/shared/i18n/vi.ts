@@ -831,8 +831,10 @@ export const vi = {
     badFormat: 'Mã mời gồm 8–10 chữ và số, hoặc dán cả link',
     invalid:
       'Lời mời không tồn tại hoặc đã hết hạn. Xin bạn bè gửi lời mời mới.',
-    bannedShort: 'Bạn không thể tham gia server này',
     tooMany: 'Bạn thử quá nhiều mã. Thử lại sau 1 phút.',
+    // S-MOD-04 Toast chung theo mã (40029)
+    tooFastSeconds: 'Thao tác quá nhanh · thử lại sau {{count}} giây',
+    tooFastMinutes: 'Thao tác quá nhanh · thử lại sau {{count}} phút',
     maxServers:
       'Bạn đã ở 100 server, mức tối đa. Rời bớt một server để tham gia server mới.',
     joinOffline: 'Cần kết nối mạng để tạo hoặc tham gia server',

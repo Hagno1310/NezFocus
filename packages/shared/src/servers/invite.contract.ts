@@ -40,6 +40,10 @@ export function parseInviteInput(
   return link[2] ? { code: link[1]!, channelId: link[2] } : { code: link[1]! };
 }
 
+// S-MOD-01 › Số lớn, and the redirect page: "12.480 thành viên".
+export const formatInviteCount = (n: number) =>
+  String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
 // REQ-SRV-03 settings. Seconds; 0 = never expires. Uses: 0 = unlimited (DDL `max_uses`).
 export const INVITE_MAX_AGES = [1800, 3600, 86_400, 604_800, 0] as const;
 export const INVITE_MAX_USES = [0, 1, 5, 10, 25, 50, 100] as const;

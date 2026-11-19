@@ -839,8 +839,9 @@ export const en: Strings = {
       'An invite code has 8–10 letters and digits, or paste the whole link',
     invalid:
       "This invite doesn't exist or has expired. Ask a friend for a new one.",
-    bannedShort: "You can't join this server",
     tooMany: 'Too many codes tried. Try again in 1 minute.',
+    tooFastSeconds: 'Too fast · try again in {{count}} seconds',
+    tooFastMinutes: 'Too fast · try again in {{count}} minutes',
     maxServers:
       "You're in 100 servers, the maximum. Leave one to join a new server.",
     joinOffline: 'You need a connection to create or join a server',

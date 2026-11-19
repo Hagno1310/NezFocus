@@ -1,4 +1,6 @@
 import {
+  DEFAULT_INVITE_MAX_AGE,
+  DEFAULT_INVITE_MAX_USES,
   ErrorCode,
   type InvitePreview,
   type InviteResponse,
@@ -98,8 +100,8 @@ export function createFakeInviteRepository(
   return {
     async createInvite(channelId, body) {
       await wait();
-      const max_age = body.max_age ?? 604_800;
-      const max_uses = body.max_uses ?? 0;
+      const max_age = body.max_age ?? DEFAULT_INVITE_MAX_AGE;
+      const max_uses = body.max_uses ?? DEFAULT_INVITE_MAX_USES;
       if (max_uses === FAKE_INVITE_FAILING_USES)
         throw fail(ErrorCode.InternalError);
       const same = made.find(

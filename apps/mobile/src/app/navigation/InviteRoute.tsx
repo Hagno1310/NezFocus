@@ -1,5 +1,6 @@
 import type { InvitePreview } from '@nezfocus/shared';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useEffect, useRef } from 'react';
 import { useStore } from 'zustand';
 import { pendingInvites } from '../../data/invites';
 import type { Destination } from '../../domain/invites/joinInvite';
@@ -14,11 +15,20 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Invite'>;
 export function InviteRoute({ navigation, route }: Props) {
   const { code, channel } = route.params;
   const status = useStore(sessionStore, (s) => s.status);
+  // Spec 10 › Tương tác: leaving (✕ or Back) drops a pending invite, unless a button just kept it.
+  const kept = useRef(false);
+  useEffect(
+    () => () => {
+      if (!kept.current) void pendingInvites.drop(code);
+    },
+    [code],
+  );
 
   const keep = (
     preview: InvitePreview | null,
     to: 'CreateAccount' | 'SignIn',
   ) => {
+    kept.current = true;
     void pendingInvites.keep({
       code,
       channel,
@@ -28,7 +38,6 @@ export function InviteRoute({ navigation, route }: Props) {
     navigation.reset({ index: 1, routes: [{ name: 'Welcome' }, { name: to }] });
   };
 
-  const done = () => void pendingInvites.drop(code);
   const home = (to: Destination | null, room?: string) =>
     navigation.popTo('Main', {
       screen: 'Home',
@@ -58,8 +67,11 @@ export function InviteRoute({ navigation, route }: Props) {
         const invite = { code, channel, serverName: p.server.name };
         // Mid sign-up (Complete account not done): keep it and go on with the form.
         if (status === 'incomplete') {
+          kept.current = true;
           void pendingInvites.keep(invite);
-          return navigation.goBack();
+          return navigation.canGoBack()
+            ? navigation.goBack()
+            : navigation.replace('CompleteAccount');
         }
         // Spec 10 › Chỉ ghi luật: a second link replaces the invite already waiting.
         const waiting = pendingInvites.current();
@@ -67,15 +79,11 @@ export function InviteRoute({ navigation, route }: Props) {
           void pendingInvites.keep(invite);
       }}
       onClose={() => {
-        // ✕ drops a pending invite; right after Complete account it lands on S-HOME-02.
-        done();
+        // Right after Complete account ✕ lands on S-HOME-02 (unmounting drops the invite).
         if (navigation.canGoBack()) navigation.goBack();
         else navigation.replace(status === 'signed-in' ? 'Main' : 'Welcome');
       }}
-      onArrive={(_serverId, to, room) => {
-        done();
-        home(to, room);
-      }}
+      onArrive={(_serverId, to, room) => home(to, room)}
     />
   );
 }

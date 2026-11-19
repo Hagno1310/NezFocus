@@ -42,6 +42,7 @@ import {
 import { Button } from '../../../shared/ui/Button';
 import { Checkbox } from '../../../shared/ui/Checkbox';
 import { SystemBanner } from '../../../shared/ui/Feedback';
+import { PendingInviteBanner } from '../components/PendingInviteBanner';
 import { FormMessage } from '../../../shared/ui/FormMessage';
 import { Icon } from '../../../shared/ui/Icon';
 import { PasswordRules } from '../../../shared/ui/PasswordRules';
@@ -224,6 +225,7 @@ export function CompleteAccountScreen() {
     >
       <View style={{ paddingTop: top }}>
         {!online && <SystemBanner kind="offline" />}
+        <PendingInviteBanner step="complete" />
       </View>
       <View style={styles.flex}>
         <ScrollView

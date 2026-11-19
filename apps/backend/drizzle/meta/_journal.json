@@ -78,6 +78,13 @@
       "when": 1794455879777,
       "tag": "0010_open_the_leader",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795074863490,
+      "tag": "0011_spotty_millenium_guard",
+      "breakpoints": true
     }
   ]
 }

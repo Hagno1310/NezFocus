@@ -6,6 +6,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { PendingInviteBanner } from '../components/PendingInviteBanner';
 import {
   fontScale as textScale,
   size,
@@ -43,6 +44,7 @@ export function WelcomeScreen({
     <View
       style={[styles.screen, { paddingTop: top, backgroundColor: colors.bg }]}
     >
+      <PendingInviteBanner step="signIn" />
       <View style={styles.flex}>
         <ScrollView
           contentContainerStyle={styles.body}

@@ -4,16 +4,18 @@ import {
   permissionBits,
   type ServerTemplate,
 } from '@nezfocus/shared';
-import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
 import type { SeedContext } from '../../db/seed.js';
 import { SAMPLE_USERS } from '../users/users.seed.js';
 import { users } from '../users/users.schema.js';
 import { buildServer } from './server-templates.js';
 import { ServersRepository } from './servers.repository.js';
 import {
+  ChannelTypeCode,
   OverwriteTargetCode,
   channelPermissionOverwrites,
   channels,
+  invites,
   roles,
   serverMemberRoles,
   serverMembers,
@@ -97,6 +99,7 @@ export async function seedServers(ctx: SeedContext) {
   );
   await seedSampleRoles(ctx, an, idOf);
   await seedAnnouncements(ctx, an);
+  await seedSampleInvites(ctx, an, idOf);
 }
 
 // SRS 8.5.3 for Study Servers seeded before overwrites existed: #thong-bao still synced and
@@ -205,4 +208,59 @@ async function seedSampleRoles(
     if (holders.length)
       await db.insert(serverMemberRoles).values(holders).onConflictDoNothing();
   }
+}
+
+// Spec 08 › Dữ liệu mẫu (P2-A1.1 #92): An's k7Qm2xPa (7 days, unlimited) and Bình's Rt4nW8eq
+// (1 day, 3/10) on the first text channel of Ôn thi Giải tích 2. Dated from the seed run so
+// they are live; a rerun keeps the existing rows.
+async function seedSampleInvites(
+  { db, now }: SeedContext,
+  an: bigint,
+  idOf: Map<string | null, bigint>,
+) {
+  const [server] = await db
+    .select({ id: servers.id })
+    .from(servers)
+    .where(
+      and(eq(servers.ownerId, an), eq(servers.name, SAMPLE_SERVERS[0]!.name)),
+    );
+  const binh = idOf.get('binh.tran');
+  if (!server || !binh) return;
+  const [first] = await db
+    .select({ id: channels.id })
+    .from(channels)
+    .where(
+      and(
+        eq(channels.serverId, server.id),
+        eq(channels.type, ChannelTypeCode.text),
+        isNull(channels.deletedAt),
+      ),
+    )
+    .orderBy(asc(channels.position), asc(channels.id))
+    .limit(1);
+  if (!first) return;
+  const day = 86_400_000;
+  await db
+    .insert(invites)
+    .values([
+      {
+        code: 'k7Qm2xPa',
+        serverId: server.id,
+        channelId: first.id,
+        creatorId: an,
+        expiresAt: new Date(now.getTime() + 7 * day),
+        createdAt: now,
+      },
+      {
+        code: 'Rt4nW8eq',
+        serverId: server.id,
+        channelId: first.id,
+        creatorId: binh,
+        maxUses: 10,
+        uses: 3,
+        expiresAt: new Date(now.getTime() + day),
+        createdAt: now,
+      },
+    ])
+    .onConflictDoNothing();
 }

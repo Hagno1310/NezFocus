@@ -472,8 +472,8 @@ Không áp dụng: `empty`, `loading`, `forbidden` (không có `ATTACH_FILES` th
 | `creating` | Nút "Tạo server" `loading`; ô nhập khóa | |
 | `create-error` | `FormMessage` trên nút | 40011: "Bạn đã ở 100 server, mức tối đa. Rời bớt một server để tạo server mới." · mạng: "Không tạo được server. Kiểm tra kết nối rồi thử lại." |
 | `created` | Không có màn chúc mừng riêng: vào thẳng S-HOME-01 `#chao-mung` của server mới (`empty`; v1.9, CR-17 #2 — kênh text đầu tiên xem được; server thường: `#general`), S-HOME-07 mở sẵn | Tiêu đề sheet S-HOME-07: "Mời bạn vào Ôn thi Giải tích 2" |
-| `join-by-code` | `ScreenHeader` "Nhập mã mời"; `TextField` "Mã hoặc link mời" (JetBrains Mono khi có chữ) + nút "Dán" bên trong ô; gợi ý dưới ô; nút "Tiếp tục" | Gợi ý: "VD: k7Qm2xPa hoặc https://nezfocus.app/invite/k7Qm2xPa". Dán link → app tự tách mã |
-| `join-error` | Lỗi dưới ô, giữ user ở màn này | Sai định dạng: "Mã mời gồm 8–10 chữ và số, hoặc dán cả link". 40041: "Lời mời không tồn tại hoặc đã hết hạn. Xin bạn bè gửi lời mời mới." 40306: "Bạn không thể tham gia server này". 40029: "Bạn thử quá nhiều mã. Thử lại sau 1 phút." |
+| `join-by-code` | `ScreenHeader` "Nhập mã mời"; dòng mô tả "Dán link hoặc nhập mã bạn bè gửi cho bạn."; `TextField` "Mã hoặc link mời" placeholder "Dán hoặc nhập mã" (JetBrains Mono khi có chữ) + nút "Dán" bên trong ô; gợi ý dưới ô; nút "Tiếp tục" (dòng mô tả và placeholder theo frame, 19/11/2026) | Gợi ý: "VD: k7Qm2xPa hoặc https://nezfocus.app/invite/k7Qm2xPa". Dán link → app tự tách mã |
+| `join-error` | Lỗi dưới ô, giữ user ở màn này | Sai định dạng: "Mã mời gồm 8–10 chữ và số, hoặc dán cả link". 40041: "Lời mời không tồn tại hoặc đã hết hạn. Xin bạn bè gửi lời mời mới." 40029: "Bạn thử quá nhiều mã. Thử lại sau 1 phút." (19/11/2026) Bị cấm (40306) và đủ 100 server (40011) không báo ở đây: "Tiếp tục" chỉ xem lời mời, hai lỗi này báo ở S-MOD-01 khi bấm "Tham gia". |
 | `keyboard-open` | `OS/Keyboard · text` ở `name-server` (phím "Xong") và `join-by-code` (phím "Tiếp"); nút chính nằm ngay trên bàn phím (C-02). Hai frame: `keyboard-open · name`, `keyboard-open · code` | |
 | `offline` | Nút chính `disabled` kèm dòng "Cần kết nối mạng để tạo hoặc tham gia server" (`wifi-off`) | |
 | `restore` 🆕 | (21/10/2026, area 08 Q16) An có server đã xóa trong 30 ngày: dưới "Nhập mã mời" thêm `SettingsRow` "Server đã xóa" (icon `archive-restore`, giá trị "1") | Chỉ hiện khi có |
@@ -518,16 +518,16 @@ Không áp dụng: `loading`, `empty`, `forbidden` (ai đã xác nhận email c�
 ### Trạng thái
 | State | Khác gì so với default | Chữ / hành động riêng |
 |---|---|---|
-| `loading` | Ô link là `Skeleton`; hai nút `disabled` ("Sao chép" chữ `text-tertiary`, "Chia sẻ link mời" nền `surface-3`); "Sửa" · "Thu hồi" ẩn | Dùng lại invite còn hạn của An với cùng thiết lập nếu có, không thì tạo mới |
+| `loading` | Ô link là `Skeleton`; hai nút `disabled` ("Sao chép" chữ `text-tertiary`, "Chia sẻ link mời" nền `surface-3`); "Sửa" · "Thu hồi" ẩn | Dùng lại invite còn hạn của An với cùng thiết lập nếu có, không thì tạo mới. Mỗi lần mở sheet là thiết lập mặc định (7 ngày, không giới hạn); "Sửa" chỉ áp cho link tạo lúc đó, máy không nhớ (19/11/2026). Link gắn với kênh text đầu tiên của server |
 | `default` | Như bố cục | Chữ chia sẻ soạn sẵn: "Vào server Ôn thi Giải tích 2 trên NezFocus học cùng mình nhé: https://nezfocus.app/invite/k7Qm2xPa" |
 | `copied` | `Toast` ngay trên mép trên của sheet, cách mép ≥ 8 | "Đã sao chép link mời" |
-| `edit-settings` | Sheet đổi sang 2 nhóm lựa chọn (radio chip): "Hết hạn sau" 30 phút · 1 giờ · 1 ngày · **7 ngày** · Không bao giờ; "Số lượt dùng" **Không giới hạn** · 1 · 5 · 10 · 25 · 50 · 100; nút "Tạo link mới" | Link cũ vẫn dùng được tới khi hết hạn |
+| `edit-settings` | Tiêu đề "Thiết lập link mời"; sheet đổi sang 2 nhóm lựa chọn (radio chip): "Hết hạn sau" 30 phút · 1 giờ · 1 ngày · **7 ngày** · Không bao giờ; "Số lượt dùng" **Không giới hạn** · 1 · 5 · 10 · 25 · 50 · 100; dòng ghi chú trên nút; nút "Tạo link mới" (tiêu đề và ghi chú theo frame, 19/11/2026) | Ghi chú: "Link cũ vẫn dùng được tới khi hết hạn." |
 | `revoked` 🆕 | (v1.9, CR-17 #7) Chạm "Thu hồi" (không hỏi lại): ô link thành "Link đã bị thu hồi" (`text-tertiary`, Be Vietnam Pro), "Sao chép" ẩn, dòng thiết lập giữ, "Sửa" · "Thu hồi" ẩn; nút chính thành "Tạo link mới" (cùng thiết lập) | Người tạo **hoặc** `MANAGE_SERVER` thu hồi được; sheet chỉ hiện invite của chính An nên luôn có "Thu hồi" |
 | `share-sheet` | Bảng chia sẻ của Android (`OS/ShareSheet`) phủ lên, chữ soạn sẵn ở trên | |
 | `room` | **Không có sheet trong app** (STUDY-16 AC1): chạm "Mời vào phòng" mở thẳng `OS/ShareSheet` (frame vẽ trên nền S-ROOM-02 `focus-host`) | "Mình đang học ở Phòng học im lặng (Ôn thi Giải tích 2), vào học cùng nhé: https://nezfocus.app/invite/k7Qm2xPa?channel=…" |
-| `error` | Ô link thay bằng dòng lỗi + "Thử lại" | "Không tạo được link mời. Thử lại." |
+| `error` | Ô link thay bằng dòng lỗi + "Thử lại"; còn "Sửa", không có "Thu hồi" (theo frame, 19/11/2026) | "Không tạo được link mời. Thử lại." |
 | `forbidden` | Không có `CREATE_INVITE`: nút "Mời bạn" ở S-HOME-02 / S-HOME-09 **ẩn**; biến thể `room` chia sẻ link kênh `https://nezfocus.app/channels/…` (chỉ thành viên mở được) với chữ "…vào học cùng nhé (dành cho thành viên server):" | STUDY-16 |
-| `offline` | Ô link hiện invite đã có trong cache nếu còn hạn; không có thì dòng "Cần kết nối mạng để tạo link mời"; "Thu hồi" `disabled` | |
+| `offline` | Ô link hiện invite đã có trong cache nếu còn hạn; không có thì dòng "Cần kết nối mạng để tạo link mời"; "Thu hồi" `disabled`, "Sửa" vẫn bấm được (theo frame); ở `edit-settings` khi offline nút "Tạo link mới" `disabled` (19/11/2026) | |
 
 Không áp dụng: `empty`, `os-permission`.
 
@@ -761,7 +761,7 @@ Frame nằm trong nhóm "02 · Home & Chat — Edge case", tên `S-HOME-EDGE · 
 | Hai người cùng ghim tin thứ 50 | Người bấm sau nhận `Toast` 40904 như S-HOME-04 |
 | Hai người cùng xóa một tin | Người bấm sau không thấy lỗi: tin đã biến mất là kết quả mong muốn (xóa là idempotent phía app) |
 | Qua nửa đêm | Vạch ngày tính lại khi qua 00:00 theo timezone của user ("Hôm nay" thành "Hôm qua"; giờ đầu tin "20:02" thành "Hôm qua 20:02"); hai tin ở hai bên vạch ngày không gộp nhóm dù cách nhau ≤ 5 phút |
-| Đã ở đủ 100 server | Tham gia bằng mã / link cũng báo 40011: ở S-HOME-06 `join-error` "Bạn đã ở 100 server, mức tối đa. Rời bớt một server để tham gia server mới."; ở S-MOD-01 cùng chữ, nút "Tham gia" `disabled`; thẻ lời mời trong chat: S-HOME-01 `invite-cards · max` |
+| Đã ở đủ 100 server | Tham gia bằng mã / link cũng báo 40011, khi bấm "Tham gia" ở S-MOD-01 (19/11/2026: không báo ở S-HOME-06): "Bạn đã ở 100 server, mức tối đa. Rời bớt một server để tham gia server mới.", nút "Tham gia" `disabled`; thẻ lời mời trong chat: S-HOME-01 `invite-cards · max` |
 | Chip link tên dài | (v1.9, CR-19 #11) Chip rộng tối đa cột nội dung tin (306 ở khung 390); tên server co trước, tối thiểu 80, rồi "…", sau đó tới tên kênh / phòng; "› Tin nhắn" không cắt. Ví dụ "Câu lạc bộ Ôn thi Giả… › #hoi-dap-bai-tap-chuong-4" |
 
 ## Câu hỏi còn mở

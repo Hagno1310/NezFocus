@@ -13,6 +13,7 @@ import {
   ServerRoleDeleted,
   ServerRoleEvent,
 } from '../servers/role.contract.js';
+import { ServerMemberAdd } from '../servers/invite.contract.js';
 import { ServerResponse, ServerSummary } from '../servers/server.contract.js';
 import { SnowflakeId } from '../snowflake.js';
 import { SoloSessionResponse } from '../study/solo.contract.js';
@@ -39,8 +40,9 @@ export const DispatchEvents = {
   SOLO_SESSION_UPDATE: SoloSessionResponse, // REQ-STUDY-10: every change, to every session of the user
   PRESENCE_UPDATE: PresenceEvent, // REQ-AUTH-05: to the people who receive this user's presence, activity filtered per receiver
   STREAK_UPDATE: StreakState, // REQ-STUDY-03: when the streak or today's minutes change, to every session of the user
-  SERVER_CREATE: ServerResponse, // REQ-SRV-01: to every session of the creator
+  SERVER_CREATE: ServerResponse, // REQ-SRV-01 / SRV-04: to every session of the creator, or of who joins
   SERVER_UPDATE: ServerSummary, // to the members
+  SERVER_MEMBER_ADD: ServerMemberAdd, // REQ-SRV-04 AC1: to the members, the newcomer included
   SERVER_ROLE_CREATE: ServerRoleEvent, // REQ-ROLE-01: to the members
   SERVER_ROLE_UPDATE: ServerRoleEvent, // also one per role moved by a reorder
   SERVER_ROLE_DELETE: ServerRoleDeleted,

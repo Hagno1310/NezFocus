@@ -30,6 +30,12 @@ export abstract class PresenceSink {
   abstract settingsChanged(userId: bigint): Promise<void>;
 }
 
+// Read side for other modules: how many of these users others see online right now
+// (REQ-SRV-04 preview "N đang online"; Invisible counts as offline). Owner: gateway (B).
+export abstract class PresenceReader {
+  abstract onlineCount(userIds: readonly bigint[]): number;
+}
+
 type UserPresence = {
   settings: PresenceSettings;
   activity: StudyActivity | null;
@@ -47,7 +53,7 @@ const OFFLINE = (userId: bigint): PresenceEvent => ({
 @Injectable()
 export class PresenceService
   extends PresenceSink
-  implements OnModuleInit, OnModuleDestroy
+  implements PresenceReader, OnModuleInit, OnModuleDestroy
 {
   private readonly users = new Map<bigint, UserPresence>();
   private sweep?: ReturnType<typeof setInterval>;
@@ -119,6 +125,10 @@ export class PresenceService
     for (const receiver of receivers)
       await this.sessions.dispatchToUser(receiver, 'PRESENCE_UPDATE', event);
     this.forgetIfGone(userId);
+  }
+
+  onlineCount(userIds: readonly bigint[]) {
+    return userIds.filter((id) => this.event(id).status !== 'offline').length;
   }
 
   private unchanged(userId: bigint) {

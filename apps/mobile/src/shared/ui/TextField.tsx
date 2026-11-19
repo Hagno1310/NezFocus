@@ -32,6 +32,7 @@ export type TextFieldProps = BaseProps & {
   password?: boolean;
   trailing?: ReactNode; // status icon at the end of the field (S-ONB-01 username ✓)
   minLines?: number; // multiline: height kept for this many lines (S-ME-01 bio: 3)
+  mono?: boolean; // JetBrains Mono once there is text (S-HOME-06 invite code)
 };
 
 // C-02: the label sits above the field, never floating inside (floating labels clip Vietnamese marks).
@@ -47,6 +48,7 @@ export function TextField({
   trailing,
   multiline,
   minLines = 1,
+  mono = false,
   value,
   onFocus,
   onBlur,
@@ -147,6 +149,7 @@ export function TextField({
                 ? colors['text-tertiary']
                 : colors['text-primary'],
             },
+            mono && !!value && { fontFamily: typography.mono.fontFamily },
             multiline && {
               maxHeight:
                 typography.body.lineHeight * MULTILINE_MAX_LINES + space[3],

@@ -727,6 +727,7 @@ export const en: Strings = {
       'Set Messages, Calls and Study reminders separately in your phone settings',
     logout: 'Log out',
     logoutTitle: 'Log out of this device?',
+    logoutUnsent: 'Unsent messages on this device will be deleted.',
     cancel: 'Cancel',
     version: 'NezFocus {{version}}',
     changeAvatar: 'Change profile photo',

@@ -718,6 +718,7 @@ export const vi = {
       'Chỉnh riêng cho Tin nhắn, Cuộc gọi, Nhắc học tập trong Cài đặt của máy',
     logout: 'Đăng xuất',
     logoutTitle: 'Đăng xuất khỏi thiết bị này?',
+    logoutUnsent: 'Tin nhắn chưa gửi trên máy này sẽ bị xóa.',
     cancel: 'Hủy',
     version: 'NezFocus {{version}}',
     changeAvatar: 'Đổi ảnh đại diện',

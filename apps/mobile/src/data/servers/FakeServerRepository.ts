@@ -230,6 +230,7 @@ export function createFakeServerRepository(
   now: () => Date = () => new Date(),
 ): ServerRepository & {
   summaries(): ServerSummary[];
+  channelId(serverId: string, name: string): string | undefined;
   join(name: string, template: ServerTemplate, members: number): ServerResponse;
 } {
   let nextId = 1000;
@@ -298,6 +299,9 @@ export function createFakeServerRepository(
 
   return {
     summaries: () => [...servers.values()].map(toSummary),
+    // Fake messages (data/messages) play the 02 sample in "Ôn thi Giải tích 2" › #hoi-dap.
+    channelId: (serverId, name) =>
+      servers.get(serverId)?.channels.find((c) => c.name === name)?.id,
     // Fake invites (data/invites): a server someone else made, which the caller now joins.
     join(name, template, members) {
       const server = buildServer(

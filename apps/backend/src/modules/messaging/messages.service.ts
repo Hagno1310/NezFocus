@@ -51,7 +51,7 @@ export class MessagesService {
       Permission.SEND_MESSAGES,
     );
     // ponytail: rate limit (REQ-MSG-08, 40029) goes here, P2-A4.1 (#103).
-    // ponytail: timed-out members get 40302 instead of 40307 until P3-A3 (#23).
+    // ponytail: timed-out members get 40302 instead of 40307 until P3-A3.1 (#126).
     const sent = await this.repo.byNonce(userId, body.nonce);
     if (sent) return this.replay(sent, channelId, body.content);
 

@@ -63,6 +63,13 @@ afterEach(() => {
 });
 
 describe('PresenceService (REQ-AUTH-05)', () => {
+  it('onlineCount (SRV-04 preview): connected users count, Invisible and absent ones do not', async () => {
+    settings.set(2n, { preferred: 'invisible', showActivity: true });
+    await connect(1n);
+    await connect(2n);
+    expect(presence.onlineCount([1n, 2n, 3n])).toBe(1);
+  });
+
   it('broadcasts online to members of a shared server only', async () => {
     await connect(2n);
     await connect(1n);

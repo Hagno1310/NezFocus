@@ -5,6 +5,10 @@ import { ChannelOverwritesService } from './channel-overwrites.service.js';
 import { ChannelsController } from './channels.controller.js';
 import { ChannelsRepository } from './channels.repository.js';
 import { ChannelsService } from './channels.service.js';
+import { InviteCodes, RandomInviteCodes } from './invite-rules.js';
+import { InvitesController } from './invites.controller.js';
+import { InvitesRepository } from './invites.repository.js';
+import { InvitesService } from './invites.service.js';
 import { RolesController } from './roles.controller.js';
 import { RolesRepository } from './roles.repository.js';
 import { RolesService } from './roles.service.js';
@@ -14,7 +18,12 @@ import { ServersService } from './servers.service.js';
 
 @Module({
   imports: [AttachmentsModule],
-  controllers: [ServersController, ChannelsController, RolesController],
+  controllers: [
+    ServersController,
+    ChannelsController,
+    RolesController,
+    InvitesController,
+  ],
   providers: [
     ServersRepository,
     ServersService,
@@ -24,6 +33,9 @@ import { ServersService } from './servers.service.js';
     ChannelOverwritesService,
     RolesRepository,
     RolesService,
+    InvitesRepository,
+    InvitesService,
+    { provide: InviteCodes, useClass: RandomInviteCodes },
   ],
   // The Gateway lists the user's servers in READY; ServersRepository gives toServer its
   // members until P2-B1.2 (#108).

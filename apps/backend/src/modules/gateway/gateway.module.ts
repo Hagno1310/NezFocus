@@ -7,10 +7,14 @@ import { EventPublisher, GatewayEventPublisher } from './event-publisher.js';
 import { GatewaySessions } from './gateway-sessions.js';
 import { GatewayListener } from './gateway.listener.js';
 import { PresenceRepository } from './presence.repository.js';
-import { PresenceService, PresenceSink } from './presence.service.js';
+import {
+  PresenceReader,
+  PresenceService,
+  PresenceSink,
+} from './presence.service.js';
 import { GatewaySessionRevoker, SessionRevoker } from './session-revoker.js';
 
-// WORKFLOW 4.3: EventPublisher and SessionRevoker are what other modules inject.
+// WORKFLOW 4.3: EventPublisher, SessionRevoker, PresenceSink / PresenceReader are what other modules inject.
 @Global()
 @Module({
   imports: [AuthModule, UsersModule, ServersModule],
@@ -26,7 +30,8 @@ import { GatewaySessionRevoker, SessionRevoker } from './session-revoker.js';
     PresenceRepository,
     PresenceService,
     { provide: PresenceSink, useExisting: PresenceService },
+    { provide: PresenceReader, useExisting: PresenceService },
   ],
-  exports: [SessionRevoker, EventPublisher, PresenceSink],
+  exports: [SessionRevoker, EventPublisher, PresenceSink, PresenceReader],
 })
 export class GatewayModule {}

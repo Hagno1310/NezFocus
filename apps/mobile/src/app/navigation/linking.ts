@@ -1,8 +1,9 @@
 import type { LinkingOptions } from '@react-navigation/native';
 import type { RootStackParamList } from './RootNavigator';
 
-// ponytail: SRS 3.1 deep link frame on placeholders; real handling + App Links intent filter come
-// with P2-A1 (#14).
+// SRS 3.1 deep links. /invite/<code>?channel= → S-MOD-01 (REQ-SRV-07; App Link in app.config.ts).
+// ponytail: ChannelLink is a placeholder until message / channel links, P3-A1 (#21); their App
+// Link path joins the intent filter then.
 export const linking: LinkingOptions<RootStackParamList> = {
   prefixes: ['https://nezfocus.app', 'nezfocus://'],
   config: {

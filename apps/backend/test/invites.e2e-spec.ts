@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import request from 'supertest';
 import type { INestApplication } from '@nestjs/common';
 import {
   ErrorCode,
@@ -231,5 +232,33 @@ describe('Invites (e2e)', () => {
       .expect(429);
     expect(res.body.code).toBe(ErrorCode.RateLimited);
     expect(Number(res.header['retry-after'])).toBeGreaterThan(0);
+  });
+
+  it('SRV-07 AC2 / AC6 / AC7: /invite/<code> at the site root, plain card once revoked', async () => {
+    const { an, invite } = await ownerWithInvite();
+    const page = await request(app.getHttpServer())
+      .get(`/invite/${invite.code}`)
+      .set('X-Forwarded-For', ip())
+      .expect(200)
+      .expect('Content-Type', /text\/html/);
+    expect(page.text).toContain(
+      '<meta property="og:title" content="CLB Guitar PTIT">',
+    );
+    await an.delete(byCode(invite.code)).expect(204);
+    const gone = await request(app.getHttpServer())
+      .get(`/invite/${invite.code}`)
+      .set('X-Forwarded-For', ip())
+      .expect(200);
+    expect(gone.text).toContain(
+      '<meta property="og:title" content="NezFocus">',
+    );
+    expect(gone.text).not.toContain('CLB Guitar');
+  });
+
+  it('serves /.well-known/assetlinks.json for app.nezfocus', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/.well-known/assetlinks.json')
+      .expect(200);
+    expect(res.body[0].target.package_name).toBe('app.nezfocus');
   });
 });

@@ -1,0 +1,81 @@
+import type { InvitePreview } from '@nezfocus/shared';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useStore } from 'zustand';
+import { pendingInvites } from '../../data/invites';
+import type { Destination } from '../../domain/invites/joinInvite';
+import { sessionStore } from '../../domain/session/sessionStore';
+import { InvitePreviewScreen } from '../../features/servers/screens/InvitePreviewScreen';
+import type { RootStackParamList } from './RootNavigator';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'Invite'>;
+
+// S-MOD-01 from a link, S-HOME-06 or a pending invite (spec 01 › Điều hướng sau khi vào được
+// tài khoản). Signed out it is `guest`; the invite is kept only when a button is pressed.
+export function InviteRoute({ navigation, route }: Props) {
+  const { code, channel } = route.params;
+  const status = useStore(sessionStore, (s) => s.status);
+
+  const keep = (
+    preview: InvitePreview | null,
+    to: 'CreateAccount' | 'SignIn',
+  ) => {
+    void pendingInvites.keep({
+      code,
+      channel,
+      serverName: preview?.server.name ?? '',
+    });
+    // Off the stack before signing in: once the session flips, the pending invite reopens it.
+    navigation.reset({ index: 1, routes: [{ name: 'Welcome' }, { name: to }] });
+  };
+
+  const done = () => void pendingInvites.drop(code);
+  const home = (to: Destination | null, room?: string) =>
+    navigation.popTo('Main', {
+      screen: 'Home',
+      params:
+        to?.kind === 'room'
+          ? {
+              screen: 'HomePlaceholder',
+              // ponytail: the room preview `not-joined` is P3-B1 (#26).
+              params: { title: room ?? '', ticket: 'P3-B1 (#26)' },
+            }
+          : { screen: 'HomeRoot' },
+    });
+
+  return (
+    <InvitePreviewScreen
+      code={code}
+      channelParam={channel}
+      guest={
+        status === 'signed-out'
+          ? {
+              onCreateAccount: (p) => keep(p, 'CreateAccount'),
+              onSignIn: (p) => keep(p, 'SignIn'),
+            }
+          : undefined
+      }
+      onPreview={(p) => {
+        const invite = { code, channel, serverName: p.server.name };
+        // Mid sign-up (Complete account not done): keep it and go on with the form.
+        if (status === 'incomplete') {
+          void pendingInvites.keep(invite);
+          return navigation.goBack();
+        }
+        // Spec 10 › Chỉ ghi luật: a second link replaces the invite already waiting.
+        const waiting = pendingInvites.current();
+        if (status === 'signed-out' && waiting && waiting.code !== code)
+          void pendingInvites.keep(invite);
+      }}
+      onClose={() => {
+        // ✕ drops a pending invite; right after Complete account it lands on S-HOME-02.
+        done();
+        if (navigation.canGoBack()) navigation.goBack();
+        else navigation.replace(status === 'signed-in' ? 'Main' : 'Welcome');
+      }}
+      onArrive={(_serverId, to, room) => {
+        done();
+        home(to, room);
+      }}
+    />
+  );
+}

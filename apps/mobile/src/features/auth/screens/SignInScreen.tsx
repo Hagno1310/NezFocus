@@ -24,6 +24,7 @@ import {
 import { space } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import { Banner, SystemBanner } from '../../../shared/ui/Feedback';
+import { PendingInviteBanner } from '../components/PendingInviteBanner';
 import { FormMessage } from '../../../shared/ui/FormMessage';
 import { Text } from '../../../shared/ui/Text';
 import { TextField } from '../../../shared/ui/TextField';
@@ -169,14 +170,21 @@ export function SignInScreen({ navigation, route }: Props) {
             }
           : null;
 
-  const banner = !online ? (
-    <SystemBanner kind="offline" />
-  ) : ended ? (
-    <Banner
-      icon={endedIcon[ended.reason]}
-      text={t(`auth.ended.${ended.reason}`)}
-    />
-  ) : null;
+  // S-MOD-04: the system strip, then the most important context strip (session ended, else
+  // the pending invite).
+  const banner = (
+    <>
+      {!online && <SystemBanner kind="offline" />}
+      {ended ? (
+        <Banner
+          icon={endedIcon[ended.reason]}
+          text={t(`auth.ended.${ended.reason}`)}
+        />
+      ) : (
+        <PendingInviteBanner step="signIn" />
+      )}
+    </>
+  );
 
   return (
     <AuthScreen

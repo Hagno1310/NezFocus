@@ -1,6 +1,6 @@
 import { ErrorCode, type InvitePreview } from '@nezfocus/shared';
 import { Volume2, X } from 'lucide-react-native';
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -70,13 +70,18 @@ export function InvitePreviewScreen({
   code,
   channelParam,
   guest,
+  onPreview,
   onClose,
   onArrive,
 }: {
   code: string;
   channelParam?: string;
   // Signed out: the two buttons of `guest` instead of "Tham gia" (P2-A1.4).
-  guest?: { onCreateAccount: () => void; onSignIn: () => void };
+  guest?: {
+    onCreateAccount: (preview: InvitePreview | null) => void;
+    onSignIn: (preview: InvitePreview | null) => void;
+  };
+  onPreview?: (preview: InvitePreview) => void;
   onClose: () => void;
   onArrive: (serverId: string, to: Destination | null, room?: string) => void;
 }) {
@@ -95,6 +100,12 @@ export function InvitePreviewScreen({
     homeStore,
     (s) => !!preview && !!s.servers?.some((x) => x.id === preview.server.id),
   );
+
+  // Once per loaded preview, whatever the parent's callback identity.
+  const previewed = useEffectEvent((p: InvitePreview) => onPreview?.(p));
+  useEffect(() => {
+    if (preview) previewed(preview);
+  }, [preview]);
 
   // already-member: no preview, straight to the channel + Toast (SRV-04 AC3, SRV-07 v1.6).
   const handled = useRef(false);
@@ -193,14 +204,14 @@ export function InvitePreviewScreen({
             size="L"
             fullWidth
             label={t('invites.guestCreate')}
-            onPress={guest.onCreateAccount}
+            onPress={() => guest.onCreateAccount(preview)}
           />
           <Button
             variant="secondary"
             size="L"
             fullWidth
             label={t('invites.guestSignIn')}
-            onPress={guest.onSignIn}
+            onPress={() => guest.onSignIn(preview)}
           />
         </>
       );

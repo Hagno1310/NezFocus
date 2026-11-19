@@ -43,7 +43,6 @@ import { StatsScreen } from '../../features/study/screens/StatsScreen';
 import { StudyHome } from '../../features/study/screens/StudyHome';
 import { useStudyStatsSync } from '../../features/study/hooks/useStudyStats';
 import { CreateServerScreen } from '../../features/servers/screens/CreateServerScreen';
-import { InvitePreviewScreen } from '../../features/servers/screens/InvitePreviewScreen';
 import { JoinByCodeScreen } from '../../features/servers/screens/JoinByCodeScreen';
 import { useKeyboardVisible } from '../../shared/hooks/useKeyboardVisible';
 import { TabBar } from '../../shared/ui/TabBar';
@@ -84,6 +83,7 @@ import { RolesScreen } from '../../features/servers/screens/RolesScreen';
 import { ServerOverviewScreen } from '../../features/servers/screens/ServerOverviewScreen';
 import { ServerSettingsScreen } from '../../features/servers/screens/ServerSettingsScreen';
 import { HomeDrawers } from './HomeDrawers';
+import { InviteRoute } from './InviteRoute';
 import { Placeholder } from './Placeholder';
 // Metro folds __DEV__ before collecting dependencies, so release bundles leave the gallery out.
 const UiGallery: ComponentType | null = __DEV__
@@ -841,32 +841,11 @@ export function RootNavigator() {
           options={{ headerShown: false }}
         />
       )}
-      <Stack.Screen name="Invite" options={{ headerShown: false }}>
-        {({ navigation, route }) => (
-          <InvitePreviewScreen
-            code={route.params.code}
-            channelParam={route.params.channel}
-            onClose={() =>
-              navigation.canGoBack()
-                ? navigation.goBack()
-                : navigation.replace('Main')
-            }
-            onArrive={(_serverId, to, room) =>
-              navigation.popTo('Main', {
-                screen: 'Home',
-                params:
-                  to?.kind === 'room'
-                    ? {
-                        screen: 'HomePlaceholder',
-                        // ponytail: the room preview `not-joined` is P3-B1 (#26).
-                        params: { title: room ?? '', ticket: 'P3-B1 (#26)' },
-                      }
-                    : { screen: 'HomeRoot' },
-              })
-            }
-          />
-        )}
-      </Stack.Screen>
+      <Stack.Screen
+        name="Invite"
+        component={InviteRoute}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen
         name="ChannelLink"
         options={{ title: t('screens.channel') }}

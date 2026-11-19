@@ -5,6 +5,7 @@ import { ChannelOverwritesService } from './channel-overwrites.service.js';
 import { ChannelsController } from './channels.controller.js';
 import { ChannelsRepository } from './channels.repository.js';
 import { ChannelsService } from './channels.service.js';
+import { InvitePageController } from './invite-page.controller.js';
 import { InviteCodes, RandomInviteCodes } from './invite-rules.js';
 import { InvitesController } from './invites.controller.js';
 import { InvitesRepository } from './invites.repository.js';
@@ -23,6 +24,7 @@ import { ServersService } from './servers.service.js';
     ChannelsController,
     RolesController,
     InvitesController,
+    InvitePageController,
   ],
   providers: [
     ServersRepository,

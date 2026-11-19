@@ -1,12 +1,13 @@
 import { z } from 'zod';
 import { AvatarUrls } from '../auth/auth.contract.js';
+import { ClientRequestId } from '../idempotency.js';
 import { SnowflakeId } from '../snowflake.js';
 
 // Paths are relative to /api/v1 (SRS 5.3 Message). A channel the caller cannot view (no
 // VIEW_CHANNEL, not a member, a DM until P2-B3.1) is 40401, never 40302 (REQ-ROLE-03 AC3).
 export const MessageRoutes = {
-  // GET REQ-SEARCH-02: MessageHistoryQuery → Message[] oldest first · 40001, 40401
-  // POST REQ-MSG-01 / MSG-09: CreateMessageRequest → 201 Message · 40001, 40029 (MSG-08),
+  // GET REQ-SEARCH-02: MessageHistoryQuery → MessageListResponse, oldest first · 40001, 40401
+  // POST REQ-MSG-01 / MSG-09: CreateMessageRequest → 201 MessageResponse · 40001, 40029 (MSG-08),
   // 40302 (no SEND_MESSAGES), 40303 (DM), 40307 (timed out), 40401,
   // 40907 (same nonce already used for another channel or content)
   list: '/channels/:id/messages',
@@ -68,7 +69,7 @@ const messageFields = {
 
 // REQ-MSG-11 v1.9: system_data holds the kind's parameters only, never wording. A system
 // type joins this union with its own system_data in the ticket that sends it.
-export const Message = z.discriminatedUnion('type', [
+export const MessageResponse = z.discriminatedUnion('type', [
   z.object({
     ...messageFields,
     type: z.literal('default'),
@@ -80,14 +81,14 @@ export const Message = z.discriminatedUnion('type', [
     system_data: z.object({ user_id: SnowflakeId }),
   }),
 ]);
-export type Message = z.infer<typeof Message>;
+export type MessageResponse = z.infer<typeof MessageResponse>;
 
-export const MessageListResponse = z.array(Message);
+export const MessageListResponse = z.array(MessageResponse);
 export type MessageListResponse = z.infer<typeof MessageListResponse>;
 
 // MESSAGE_CREATE: the message plus its server (null in a DM), to everyone who can view the channel.
 export const MessageCreateEvent = z.intersection(
-  Message,
+  MessageResponse,
   z.object({ server_id: SnowflakeId.nullable() }),
 );
 export type MessageCreateEvent = z.infer<typeof MessageCreateEvent>;
@@ -106,7 +107,7 @@ export const CreateMessageRequest = z
             `at most ${MESSAGE_MAX_CHARS} characters`,
           ),
       ),
-    nonce: z.string().min(1).max(64), // UUIDv4 / ULID from the app, VARCHAR(64)
+    nonce: ClientRequestId,
   })
   // MSG-01 AC2: "empty and no file"; P3-A2 relaxes this when attachments are sent.
   .refine((b) => b.content.trim() !== '', {
@@ -121,7 +122,17 @@ export const MessageHistoryQuery = z
     before: SnowflakeId.optional(),
     after: SnowflakeId.optional(),
     around: SnowflakeId.optional(),
-    limit: z.coerce.number().int().min(1).max(100).default(50),
+    // A query string carries text: digits only, so "0x10" or "1e2" is not a number here.
+    limit: z
+      .union([
+        z.number(),
+        z
+          .string()
+          .regex(/^\d{1,3}$/)
+          .transform(Number),
+      ])
+      .pipe(z.number().int().min(1).max(100))
+      .default(50),
   })
   .refine(
     (q) => [q.before, q.after, q.around].filter(Boolean).length <= 1,
@@ -169,10 +180,10 @@ export const parseMentions = (content: string) => {
     else here = true;
   }
   return {
-    user_ids: [...user],
-    role_ids: [...role],
-    channel_ids: [...channel],
-    everyone,
-    here,
+    mention_user_ids: [...user],
+    mention_role_ids: [...role],
+    mention_channel_ids: [...channel],
+    mention_everyone: everyone,
+    mention_here: here,
   };
 };

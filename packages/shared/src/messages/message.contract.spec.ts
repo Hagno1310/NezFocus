@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CreateMessageRequest,
   MESSAGE_MAX_CHARS,
-  Message,
+  MessageResponse,
   MessageHistoryQuery,
   countMessageChars,
   mentionToken,
@@ -79,7 +79,7 @@ describe('MessageHistoryQuery (REQ-SEARCH-02)', () => {
   });
 
   it('refuses limit=500 (AC2) and anything outside 1–100', () => {
-    for (const limit of ['500', '0', '101', '1.5'])
+    for (const limit of ['500', '0', '101', '1.5', '0x10', '1e2', ' 5', ''])
       expect(MessageHistoryQuery.safeParse({ limit }).success).toBe(false);
   });
 
@@ -93,7 +93,7 @@ describe('MessageHistoryQuery (REQ-SEARCH-02)', () => {
   });
 });
 
-describe('Message', () => {
+describe('MessageResponse', () => {
   const base = {
     id: '1300000000000000001',
     channel_id: '1200000000000000001',
@@ -116,18 +116,21 @@ describe('Message', () => {
 
   it('carries system_data matching its type (MSG-11)', () => {
     expect(
-      Message.safeParse({
+      MessageResponse.safeParse({
         ...base,
         type: 'member_join',
         system_data: { user_id: '1100000000000000002' },
       }).success,
     ).toBe(true);
     expect(
-      Message.safeParse({ ...base, type: 'member_join', system_data: null })
-        .success,
+      MessageResponse.safeParse({
+        ...base,
+        type: 'member_join',
+        system_data: null,
+      }).success,
     ).toBe(false);
     expect(
-      Message.safeParse({ ...base, type: 'default', system_data: null })
+      MessageResponse.safeParse({ ...base, type: 'default', system_data: null })
         .success,
     ).toBe(true);
   });
@@ -144,21 +147,21 @@ describe('mention tokens (REQ-MSG-03, read by P2-A4.1)', () => {
     const text = `${mentionToken.user('11')} hỏi ${mentionToken.role('22')} ở ${mentionToken.channel('33')} @everyone`;
     expect(text).toBe('<@11> hỏi <@&22> ở <#33> @everyone');
     expect(parseMentions(text)).toEqual({
-      user_ids: ['11'],
-      role_ids: ['22'],
-      channel_ids: ['33'],
-      everyone: true,
-      here: false,
+      mention_user_ids: ['11'],
+      mention_role_ids: ['22'],
+      mention_channel_ids: ['33'],
+      mention_everyone: true,
+      mention_here: false,
     });
   });
 
   it('dedupes and ignores look-alikes', () => {
     expect(parseMentions('<@1> <@1> <@x> email@here.com @here')).toEqual({
-      user_ids: ['1'],
-      role_ids: [],
-      channel_ids: [],
-      everyone: false,
-      here: true,
+      mention_user_ids: ['1'],
+      mention_role_ids: [],
+      mention_channel_ids: [],
+      mention_everyone: false,
+      mention_here: true,
     });
   });
 });

@@ -33,7 +33,7 @@ export const Ready = z.object({
   preferred_status: PresenceStatus, // REQ-AUTH-05: my chosen status, Invisible included
   presences: z.array(PresenceEvent), // people whose presence I receive (AUTH-05 AC1), as they see now
   settings: UserSettings, // SRS 5.4: my settings (the app reads them cache-first)
-  read_states: z.array(ReadState), // REQ-NOTIF-01: only channels with a read state (P2-A4.2)
+  read_states: z.array(ReadState), // REQ-NOTIF-01: every channel I can view and every DM (P2-A4.2)
 });
 export type Ready = z.infer<typeof Ready>;
 

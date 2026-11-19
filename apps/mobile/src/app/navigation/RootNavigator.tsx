@@ -43,6 +43,8 @@ import { StatsScreen } from '../../features/study/screens/StatsScreen';
 import { StudyHome } from '../../features/study/screens/StudyHome';
 import { useStudyStatsSync } from '../../features/study/hooks/useStudyStats';
 import { CreateServerScreen } from '../../features/servers/screens/CreateServerScreen';
+import { InvitePreviewScreen } from '../../features/servers/screens/InvitePreviewScreen';
+import { JoinByCodeScreen } from '../../features/servers/screens/JoinByCodeScreen';
 import { useKeyboardVisible } from '../../shared/hooks/useKeyboardVisible';
 import { TabBar } from '../../shared/ui/TabBar';
 import type { SignInMode } from '../../domain/auth/authFlow';
@@ -97,10 +99,10 @@ export type RootStackParamList = {
   ForgotPassword: { email?: string } | undefined; // S-AUTH-05 request
   ResetPassword: { email: string }; // S-AUTH-05 reset-form
   CompleteAccount: undefined; // S-ONB-01
-  Main: undefined;
+  Main: NavigatorScreenParams<TabParamList> | undefined;
   // Replaces everything while sessionStore.upgradeRequired (42601 on any request, NFR-MOB-12).
   UpdateRequired: undefined; // S-AUTH-00
-  Invite: { code: string };
+  Invite: { code: string; channel?: string }; // S-MOD-01; `channel` = ?channel= (STUDY-16)
   UiGallery: undefined; // dev only (P0-3b)
   ChannelLink: { serverId: string; channelId: string; messageId?: string };
 };
@@ -122,7 +124,7 @@ type HomeParamList = {
       | { screen: 'CreateServer' }
       | { screen: 'ServerOverview'; serverId: string };
   };
-  JoinByCode: undefined; // ponytail: placeholder for S-HOME-06 join-by-code until P2-A1 (#14)
+  JoinByCode: undefined; // S-HOME-06 join-by-code
   // ponytail: where S-HOME-02 / S-HOME-09 / S-SET-01 lead before those screens exist —
   // voice room P3-B1 (#26), DMs P2-B3 (#20), and the rest per row.
   HomePlaceholder: { title: string; ticket?: string };
@@ -413,11 +415,15 @@ function HomeTab() {
             />
           )}
         </HomeStack.Screen>
-        <HomeStack.Screen
-          name="JoinByCode"
-          options={{ headerShown: true, title: t('screens.joinByCode') }}
-        >
-          {() => <Placeholder title={t('screens.joinByCode')} />}
+        <HomeStack.Screen name="JoinByCode">
+          {({ navigation }) => (
+            <JoinByCodeScreen
+              onBack={navigation.goBack}
+              onFound={(code, channel) =>
+                navigation.navigate('Invite', { code, channel })
+              }
+            />
+          )}
         </HomeStack.Screen>
       </HomeStack.Navigator>
       {/* S-HOME-07: one sheet for the tab, opened by openInviteSheet. */}
@@ -835,8 +841,31 @@ export function RootNavigator() {
           options={{ headerShown: false }}
         />
       )}
-      <Stack.Screen name="Invite" options={{ title: t('screens.invite') }}>
-        {() => <Placeholder title={t('screens.invite')} />}
+      <Stack.Screen name="Invite" options={{ headerShown: false }}>
+        {({ navigation, route }) => (
+          <InvitePreviewScreen
+            code={route.params.code}
+            channelParam={route.params.channel}
+            onClose={() =>
+              navigation.canGoBack()
+                ? navigation.goBack()
+                : navigation.replace('Main')
+            }
+            onArrive={(_serverId, to, room) =>
+              navigation.popTo('Main', {
+                screen: 'Home',
+                params:
+                  to?.kind === 'room'
+                    ? {
+                        screen: 'HomePlaceholder',
+                        // ponytail: the room preview `not-joined` is P3-B1 (#26).
+                        params: { title: room ?? '', ticket: 'P3-B1 (#26)' },
+                      }
+                    : { screen: 'HomeRoot' },
+              })
+            }
+          />
+        )}
       </Stack.Screen>
       <Stack.Screen
         name="ChannelLink"

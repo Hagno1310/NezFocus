@@ -1,4 +1,10 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking, StyleSheet, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
@@ -21,15 +27,24 @@ import { Text } from './Text';
 
 const open = (url: string) => void Linking.openURL(url).catch(() => {});
 
+// Spoilers opened in this message, by position. Kept here, not in each spoiler, so the blocks
+// can remount on a reveal: Android dropped the line-through of sibling spans updated in place.
+const Opened = createContext<{
+  ids: ReadonlySet<string>;
+  reveal: (id: string) => void;
+}>({ ids: new Set(), reveal: () => {} });
+
 // C-10 › Nội dung đặc biệt; `hidden` = under a closed spoiler: cover colour, dead links.
 function Runs({
   nodes,
   colors,
   hidden,
+  path,
 }: {
   nodes: Inline[];
   colors: Colors;
   hidden: boolean;
+  path: string;
 }): ReactNode {
   return nodes.map((n, i) => {
     switch (n.t) {
@@ -38,19 +53,34 @@ function Runs({
       case 'bold':
         return (
           <Text key={i} weight="700" style={hidden && hide(colors)}>
-            <Runs nodes={n.children} colors={colors} hidden={hidden} />
+            <Runs
+              nodes={n.children}
+              colors={colors}
+              hidden={hidden}
+              path={`${path}.${i}`}
+            />
           </Text>
         );
       case 'italic':
         return (
           <Text key={i} style={[styles.italic, hidden && hide(colors)]}>
-            <Runs nodes={n.children} colors={colors} hidden={hidden} />
+            <Runs
+              nodes={n.children}
+              colors={colors}
+              hidden={hidden}
+              path={`${path}.${i}`}
+            />
           </Text>
         );
       case 'strike':
         return (
           <Text key={i} style={[styles.strike, hidden && hide(colors)]}>
-            <Runs nodes={n.children} colors={colors} hidden={hidden} />
+            <Runs
+              nodes={n.children}
+              colors={colors}
+              hidden={hidden}
+              path={`${path}.${i}`}
+            />
           </Text>
         );
       case 'code':
@@ -83,7 +113,14 @@ function Runs({
           </Text>
         );
       case 'spoiler':
-        return <Spoiler key={i} nodes={n.children} colors={colors} />;
+        return (
+          <Spoiler
+            key={i}
+            nodes={n.children}
+            colors={colors}
+            id={`${path}.${i}`}
+          />
+        );
     }
   });
 }
@@ -95,27 +132,49 @@ const hide = (colors: Colors) => ({
 });
 
 // C-10 Spoiler: a `surface-3` block over the text until tapped.
-function Spoiler({ nodes, colors }: { nodes: Inline[]; colors: Colors }) {
+function Spoiler({
+  nodes,
+  colors,
+  id,
+}: {
+  nodes: Inline[];
+  colors: Colors;
+  id: string;
+}) {
   const { t } = useTranslation();
-  const [shown, setShown] = useState(false);
+  const { ids, reveal } = useContext(Opened);
+  const shown = ids.has(id);
   return (
     <Text
       accessibilityRole={shown ? undefined : 'button'}
       accessibilityLabel={shown ? undefined : t('chat.spoiler')}
-      onPress={shown ? undefined : () => setShown(true)}
+      onPress={shown ? undefined : () => reveal(id)}
       style={shown ? { backgroundColor: colors['surface-3'] } : hide(colors)}
     >
-      <Runs nodes={nodes} colors={colors} hidden={!shown} />
+      <Runs nodes={nodes} colors={colors} hidden={!shown} path={id} />
     </Text>
   );
 }
 
-function BlockView({ block, colors }: { block: Block; colors: Colors }) {
+function BlockView({
+  block,
+  colors,
+  path,
+}: {
+  block: Block;
+  colors: Colors;
+  path: string;
+}) {
   switch (block.t) {
     case 'paragraph':
       return (
         <Text>
-          <Runs nodes={block.children} colors={colors} hidden={false} />
+          <Runs
+            nodes={block.children}
+            colors={colors}
+            hidden={false}
+            path={path}
+          />
         </Text>
       );
     case 'quote':
@@ -128,7 +187,12 @@ function BlockView({ block, colors }: { block: Block; colors: Colors }) {
             ]}
           />
           <Text color="text-secondary" style={styles.flex}>
-            <Runs nodes={block.children} colors={colors} hidden={false} />
+            <Runs
+              nodes={block.children}
+              colors={colors}
+              hidden={false}
+              path={path}
+            />
           </Text>
         </View>
       );
@@ -161,14 +225,30 @@ function BlockView({ block, colors }: { block: Block; colors: Colors }) {
 export function MessageText({ content }: { content: string }) {
   const { colors } = useTheme();
   const blocks = useMemo(() => parseMessage(content), [content]);
-  if (blocks.length === 1 && blocks[0]!.t === 'paragraph')
-    return <BlockView block={blocks[0]!} colors={colors} />;
+  const [ids, setIds] = useState<ReadonlySet<string>>(new Set());
+  const opened = useMemo(
+    () => ({
+      ids,
+      reveal: (id: string) => setIds((s) => new Set(s).add(id)),
+    }),
+    [ids],
+  );
+  const view = (b: Block, i: number) => (
+    <BlockView
+      key={`${i}:${ids.size}`}
+      block={b}
+      colors={colors}
+      path={`${i}`}
+    />
+  );
   return (
-    <View style={styles.blocks}>
-      {blocks.map((b, i) => (
-        <BlockView key={i} block={b} colors={colors} />
-      ))}
-    </View>
+    <Opened.Provider value={opened}>
+      {blocks.length === 1 && blocks[0]!.t === 'paragraph' ? (
+        view(blocks[0]!, 0)
+      ) : (
+        <View style={styles.blocks}>{blocks.map(view)}</View>
+      )}
+    </Opened.Provider>
   );
 }
 

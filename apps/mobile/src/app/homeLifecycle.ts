@@ -2,6 +2,7 @@ import { Hash } from 'lucide-react-native';
 import { serverRepository } from '../data/servers';
 import { homePrefs } from '../data/servers/homePrefs';
 import { onGatewayEvent } from '../domain/gateway/gatewayStore';
+import { drafts } from '../domain/messages/drafts';
 import { firstTextChannel } from '../domain/servers/createServer';
 import type { HomeState } from '../domain/servers/drawer';
 import {
@@ -20,8 +21,10 @@ import { showToast } from '../shared/ui/Toast';
 // the channels of the server the drawer shows, and remembers collapsed categories.
 export function startHomeLifecycle() {
   const stopEvents = onGatewayEvent((event) => {
+    const was = homeStore.getState().open?.channelId;
     const removed = applyGatewayEvent(event);
-    // Edge case `channel-removed`.
+    // Edge case `channel-removed`: the old channel's draft goes too.
+    if (removed && was) drafts.drop(was);
     if (removed)
       showToast({
         message: i18n.t('servers.drawer.channelRemoved', { name: removed }),

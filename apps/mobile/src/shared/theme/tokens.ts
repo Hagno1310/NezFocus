@@ -171,7 +171,8 @@ export const size = {
   badge: 16,
   badgeDot: 8,
   // hero: the 32 icon above a S-MOD-03 sheet title (spec 10 › S-MOD-03 Bố cục).
-  icon: { xs: 14, sm: 16, base: 18, md: 20, lg: 22, xl: 24, hero: 32 },
+  // xxl: the `hash` in the 56 circle of the channel start block (S-HOME-01 `empty`).
+  icon: { xs: 14, sm: 16, base: 18, md: 20, lg: 22, xl: 24, xxl: 28, hero: 32 },
   focusRing: 2,
   hairline: 1,
   // Emphasis border: focused / error fields, checkbox frame (C-02, C-23, C-24).

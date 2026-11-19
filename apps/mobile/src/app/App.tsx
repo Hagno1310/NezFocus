@@ -29,6 +29,7 @@ import {
 import { loadLastMethod } from '../features/auth/authFlowStore';
 import { fontFamily, useTheme, type Theme } from '../shared/theme';
 import { ToastHost } from '../shared/ui/Toast';
+import { startMessagesLifecycle } from './messagesLifecycle';
 import { startGatewayLifecycle } from './gatewayLifecycle';
 import { startHomeLifecycle } from './homeLifecycle';
 import { startPresenceLifecycle } from './presenceLifecycle';
@@ -134,6 +135,7 @@ export default function App() {
   useEffect(startHomeLifecycle, []);
   useEffect(startPresenceLifecycle, []);
   useEffect(startSettingsLifecycle, []);
+  useEffect(startMessagesLifecycle, []);
   useEffect(startGatewayLifecycle, []);
   useEffect(watchNavigationRestore, []);
   useEffect(watchPendingInvite, []);

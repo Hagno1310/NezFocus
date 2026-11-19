@@ -1,6 +1,7 @@
 import type { CycleConfig, StudyStatsResponse } from '@nezfocus/shared';
 import { ChevronDown, ChevronRight, Play } from 'lucide-react-native';
 import { useState } from 'react';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import {
   Pressable,
@@ -139,7 +140,7 @@ function Rooms({
 }
 
 // C-16 `list`: minutes only (the MiniPlayer on the same screen counts seconds).
-function soloLine(t: ReturnType<typeof useTranslation>['t'], timer: SoloTimer) {
+function soloLine(t: TFunction, timer: SoloTimer) {
   const minutes = Math.floor(timer.remainingMs / 60_000);
   if (timer.status === 'paused') return t('study.phase.pausedShort');
   if (timer.status === 'waiting')

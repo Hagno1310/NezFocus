@@ -49,6 +49,10 @@ class RedisKeyValueStore extends KeyValueStore {
     await this.redis.set(key, value, 'EX', ttlSeconds);
   }
 
+  async setIfAbsent(key: string, value: string, ttlSeconds: number) {
+    return (await this.redis.set(key, value, 'EX', ttlSeconds, 'NX')) === 'OK';
+  }
+
   async delete(key: string) {
     await this.redis.del(key);
   }

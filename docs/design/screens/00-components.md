@@ -228,7 +228,7 @@ Thứ tự xử lý nút / cử chỉ Back theo DESIGN.md › Platform & Touch. 
 [≡]  [icon kênh] Tên kênh                          [ô phải] [👥]
      dòng phụ (tùy chọn): server · trạng thái
 ```
-Cao 56 (một dòng) hoặc 64 (có dòng phụ). `IconButton` 48 hai bên.
+Cao 56, kể cả khi có dòng phụ (tên `headline` 24 + dòng phụ `label` 20 vừa đủ; theo frame và DESIGN.md › Layout, 19/11/2026, thay "64 khi có dòng phụ"); cỡ chữ lớn thì cao tối thiểu 56 và giãn theo chữ. `IconButton` 48 hai bên. Bảng `C-04 · ChannelHeader` vẽ `text` thiếu dòng tên server là lỗi vẽ: màn nào cũng có dòng này.
 
 **Ô phải** (chốt 18/10/2026, area 02) — một chỗ, mỗi biến thể dùng một kiểu: kênh text **để trống ở MVP** (🔍 tìm kiếm tin nhắn là v1.x, REQ-SEARCH-01; không hiện nút vô hiệu); phòng voice / Study Room là **nút chat** `message-square` + `Badge` (số tin chưa đọc, `danger` khi có mention) mở S-HOME-08 (DEC-35). Từ v1.x, 🔍 vào ô phải của kênh text và của `room-chat` — không thêm vào header phòng.
 
@@ -805,7 +805,7 @@ Tên giữ là `MessageBubble` cho khớp SRS, nhưng **không vẽ bong bóng**
               [tệp / ảnh / embed]
               [👍 3] [🎉 1] [☺+]          ← ReactionChip, cao 32, rounded.full
 ```
-Đệm trái `space-3`, khoảng avatar → chữ 12, khoảng giữa hai nhóm tin `space-3`, giữa hai tin trong nhóm `space-1`.
+Đệm trái `space-3`, khoảng avatar → chữ 12. Khoảng cách theo master `MessageBubble` (19/11/2026, thay "giữa nhóm `space-3`, trong nhóm `space-1`"): tin đầu nhóm đệm dọc 6 (giữa hai nhóm 12), tin gộp đệm dọc 1 (sau tin đầu nhóm 7, giữa hai tin gộp 2); các dòng trong cột nội dung cách nhau 2. Giờ, dòng trạng thái gửi và dòng trả lời dùng `label` đậm **400** (theo frame, 19/11/2026).
 
 **Giờ ở đầu tin** (v1.9, CR-19 #3), theo múi giờ của user: hôm nay "20:02" · hôm qua "Hôm qua 20:00" · cũ hơn "16/10/2026 20:00" (luôn đủ ngày tháng năm). Dùng cho `default`, `reply`, `system` và `pinned`. Tên người gửi dài cắt `…` trước để giờ luôn đủ.
 
@@ -817,7 +817,7 @@ Tên giữ là `MessageBubble` cho khớp SRS, nhưng **không vẽ bong bóng**
 |---|---|
 | `default` | Như cấu tạo |
 | `grouped` | Không avatar / tên / giờ; nội dung thẳng cột với nội dung tin trên |
-| `reply` | Dòng trên tên: đường cong nối + `Avatar` 16 + tên người được trả lời (đậm) + 1 dòng nội dung tin gốc, `label` `text-secondary`, cắt `…`. Tin gốc đã xóa: "Tin nhắn gốc đã bị xóa" nghiêng |
+| `reply` | Dòng trên tên (theo frame, 19/11/2026, thay "đường cong + `Avatar` 16"): icon `corner-up-right` 14 `text-tertiary` + tên người được trả lời `label` 600 `text-secondary` + 1 dòng nội dung tin gốc `label` 400 `text-tertiary`, cắt `…`. Tin gốc đã xóa: "Tin nhắn gốc đã bị xóa" nghiêng |
 | `mention` | Tin **liên quan tới mình** (CR-12, 23/10/2026; v1.9): nhắc tới mình (`@An`, `@everyone`/`@here` hợp lệ, role của mình) **hoặc trả lời một tin của mình** (dòng trích ghi "An"). Thanh trái 2 `primary` + nền `surface-1` cả hàng; kết hợp được với `reply` và `highlight`. Không áp dụng: tự trả lời tin của mình, mọi tin trong DM / Group DM, và tin nhắc hạn việc (tên trong đó là chữ thường — v1.9, CR-20 #3). Bảng Chat có hai ô: `mention` và `mention · trả lời tin của mình` |
 | `system` | Không avatar: icon 16 `text-tertiary` (cột avatar) + chữ `label` `text-secondary` + giờ. Tên người trong chữ đậm 600 `text-primary`. Không có reaction, không trả lời |
 | `blocked` | Một dòng `label` `text-tertiary`: "1 tin nhắn bị chặn · **Hiện**" (`Hiện` đậm, `primary`) |
@@ -842,6 +842,7 @@ Tên giữ là `MessageBubble` cho khớp SRS, nhưng **không vẽ bong bóng**
 | Quote | Thanh trái 4 `border-input`, chữ `text-secondary` |
 | Spoiler | Khối `surface-3` che chữ; chạm để hiện |
 | Link | Chữ `primary` gạch dưới; link `javascript:` hiện dạng chữ thường (MSG-02 AC4) |
+| Cú pháp Markdown (chốt 19/11/2026, MSG-02 AC1) | `**đậm**` · `*nghiêng*` hoặc `_nghiêng_` · `~~gạch ngang~~` · `` `inline code` `` · khối ` ``` ` (dòng mở và dòng đóng riêng) · dòng bắt đầu `> ` là quote · `\|\|spoiler\|\|`. Ký hiệu không đóng hiện nguyên văn. Không có link che chữ `[chữ](url)`: hiện nguyên văn, link `http(s)` bên trong vẫn bấm được. Không render thẻ HTML (`<b>` hiện nguyên văn). Trong code (inline và khối) không áp Markdown hay link |
 | Thẻ xem trước link (v1.9, CR-19 #10, #15) | Thẻ dưới tin, viền trái 4 `border-input`, rộng tối đa cột nội dung; tin gửi ngay, thẻ tới sau qua `MESSAGE_UPDATE` (1–3 giây, **không Skeleton**), chèn dưới tin, không làm tin phía trên nhảy chỗ. Tối đa **3 thẻ** mỗi tin, theo thứ tự link. Ba kiểu: **`large`** (ảnh ≥ 400 px chiều ngang) — ảnh 16:9 rộng hết thẻ ở trên, rồi tên trang `label` `text-tertiary`, tiêu đề `body` đậm 600, mô tả 2 dòng `body-sm` `text-secondary`; **`small`** — cột chữ như trên + ảnh 64 vuông `rounded.badge` bên phải; **`text`** — chỉ chữ. **Link video** (YouTube…) là `large` có nút ▶ tròn 48 giữa ảnh (nền `scrim`, icon `play` `text-primary`); chạm mở trình duyệt / app của trang, **không phát trong chat**. Ảnh thẻ chỉ tải từ storage NezFocus; ảnh lỗi → thẻ không ảnh, không báo lỗi. Gỡ thẻ ("Gỡ xem trước link"): 02 S-HOME-04 |
 | Ảnh / video | Thumbnail rộng tối đa 240, cao tối đa 320, `rounded.button`; video có nút `play` + thời lượng. Nhiều ảnh: lưới 2 cột. Thumbnail trước, ảnh gốc khi mở (NFR-MOB-07). Chạm ảnh → `MediaViewer · image` (C-36, vuốt giữa các ảnh của cùng tin); chạm video → `MediaViewer · video` (trình phát của nền tảng), không tự phát trong danh sách (v1.9, CR-19 #8) |
 | Âm thanh (mp3, m4a) 🆕 (v1.9, CR-19 #8) | Thẻ cao 56 như thẻ tệp: `IconButton` tròn 40 `play` / `pause` (nền `surface-3`, icon `text-primary`) + tên tệp (1 dòng, cắt giữa giữ đuôi) + thanh tiến độ cao 4 `rounded.full` (rãnh `surface-3`, phần đã phát `text-primary`) + "0:42 / 3:15" (`numeric-inline` `text-secondary`) + nút `download`. Phát ngay trong tin; một tệp một lúc (bấm tệp khác thì tệp đang phát dừng); rời màn chat thì dừng. `accessibilityLabel` "ghi-am-buoi-2.m4a, 0 phút 42 giây trên 3 phút 15 giây" |
@@ -855,7 +856,7 @@ Tên giữ là `MessageBubble` cho khớp SRS, nhưng **không vẽ bong bóng**
 | `sent` | Bình thường |
 | `pending` | Cả tin mờ 50%; offline thêm dòng `label` icon `clock-3` "Sẽ gửi khi có mạng" |
 | `retrying` | Như `pending` (user không cần phân biệt) |
-| `failed` | Nội dung bình thường; dòng dưới icon `circle-alert` + "Không gửi được · **Thử lại**" màu `danger`; rate limit: "Bạn gửi quá nhanh · tự gửi lại sau 4 giây" |
+| `failed` | Nội dung bình thường; dòng dưới icon `circle-alert` + "Không gửi được · Thử lại" màu `danger`, đậm 600 cả dòng (theo frame, 19/11/2026); rate limit: "Bạn gửi quá nhanh · tự gửi lại sau 4 giây" |
 | `failed · file-blocked` 🆕 (v1.9, CR-19 #7) | Đã bấm ➤ khi còn tệp đang tải, sau đó một tệp bị chặn ở bước kiểm tra: dòng dưới icon `circle-alert` + "Không gửi được · 1 tệp bị chặn" màu `danger`, không có "Thử lại"; chạm tin → S-HOME-04 `failed-message` ("Gửi không kèm tệp bị chặn" · "Xóa tin nhắn") |
 
 Bỏ state `blocked-file` (v1.9, CR-19 #6): tệp được kiểm tra **trước khi gửi** (C-29 `checking` / `rejected`), không còn tin đã hiện rồi mất tệp.
@@ -915,7 +916,7 @@ Nội dung xuống dòng tự do; tên + giờ xuống 2 dòng được (tên c�
  [AttachmentTray]                                     ← tùy chọn (C-29)
  (+)  [ Nhắn #hoi-dap                 ]  (☺)  (➤)
 ```
-Nền `surface-1`, kẻ trên `border`, đệm `space-2`. Ô nhập `TextField` nền `surface-2`, `rounded.input`, cao 40 → tối đa 5 dòng rồi cuộn trong ô. `IconButton` 48 cho `+`, `☺`, `➤`.
+Nền `surface-1`, kẻ trên `border`, hàng đệm 4 (theo master `Composer`, 19/11/2026, thay "đệm `space-2`"). Ô nhập nền `surface-2`, `rounded.input`, đệm 9 / 12, cao 40 → tối đa 5 dòng rồi cuộn trong ô. `IconButton` 48 cho `+`, `☺`, `➤`, căn giữa theo chiều dọc của ô. Bộ đếm ký tự nằm trong ô, góc dưới phải. Dòng lỗi và dòng `disabled` dùng `label` đậm 400.
 
 ### Trạng thái
 

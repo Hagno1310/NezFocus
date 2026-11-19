@@ -185,10 +185,13 @@ export function IconButton({
   icon,
   label,
   disabled = false,
+  color = 'text-secondary',
   ...rest
 }: Omit<PressableProps, 'children' | 'style'> & {
   icon: IconComponent;
   label: string;
+  // C-11 ➤ turns `primary` once there is something to send.
+  color?: ColorToken;
 }) {
   const { colors } = useTheme();
   const ring = useFocusRing();
@@ -206,11 +209,7 @@ export function IconButton({
         ring.style,
       ]}
     >
-      <Icon
-        as={icon}
-        size="lg"
-        color={disabled ? 'text-tertiary' : 'text-secondary'}
-      />
+      <Icon as={icon} size="lg" color={disabled ? 'text-tertiary' : color} />
     </Pressable>
   );
 }

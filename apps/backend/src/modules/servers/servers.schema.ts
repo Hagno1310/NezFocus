@@ -51,6 +51,7 @@ export const channels = pgTable(
     position: integer().notNull().default(0),
     focusControl: varchar({ length: 10 }).notNull().default('off'), // everyone | managers | off
     permissionsSynced: boolean().notNull().default(true),
+    lastMessageId: id(), // SRS 8.2, no FK; the app fetches after= it (7.3.2)
     createdAt: tz().notNull().defaultNow(),
     // REQ-SRV-02: deleting is a soft-delete; every read of live channels filters on it.
     deletedAt: tz(),

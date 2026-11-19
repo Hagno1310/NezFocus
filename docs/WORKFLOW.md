@@ -129,6 +129,20 @@ Chủ module thêm phần seed của mình:
 2. Thêm **một dòng** vào mảng `seeds` trong `apps/backend/src/db/seed.ts`, sau các module mình phụ thuộc (users đầu tiên). Không sửa file seed của người khác.
 3. Thêm một ca vào `apps/backend/test/seed.e2e-spec.ts` nếu phần đó có luật riêng.
 
+### 4.5 CSDL cục bộ trên app (SRS 8.7)
+
+Có từ P2-A3.3 (#101): op-sqlite + Drizzle, file `nezfocus.db`, mở ở lần dùng đầu sau khi đăng nhập, **xóa ở mọi lần chuyển sang `signed-out`** (đăng xuất hoặc hết phiên, AUTH-07). Thứ phải giữ qua đăng xuất để ngoài file này (SecureStore / AsyncStorage).
+
+Thêm bảng của mảng mình:
+
+1. Viết `apps/mobile/src/data/db/schema/<mảng>.ts` (bảng `sqliteTable`, tên cột snake_case như DDL 8.7), thêm **một dòng** `export *` vào `schema/index.ts`. Không sửa file schema của người khác.
+2. ID lưu TEXT pad 20 chữ số: ghi bằng `padId`, đọc ra bằng `unpadId` (`data/db/types.ts`).
+3. `pnpm --filter mobile db:generate` sinh migration vào `apps/mobile/drizzle/` (kèm `migrations.js` cho bundle). Một migration mỗi PR; conflict ở `drizzle/meta` thì cập nhật branch từ `main`, xóa migration của mình rồi sinh lại (như backend, mục 9).
+4. Chỉ `src/data/<mảng>/` đọc / ghi, qua `localDb()` (`data/db`). Chỉ dùng query builder: `db.all(sql…)` / `db.get(sql…)` trả rỗng với drizzle 0.45 + op-sqlite.
+5. Test: `createTestDb()` (`data/db/testDb.ts`, node:sqlite chạy đúng các migration đó) trong `*.spec.ts`; không import `data/db/index.ts` trong spec.
+
+Thêm bảng hay cột không cần build lại dev client (op-sqlite đã có trong bản build từ #101).
+
 ## 5. Đường ngắn (mặc định): một phiên agent cho một issue cha
 
 Mỗi issue cha (nhãn `spec`) là một dòng task trong `task-breakdown.md`, gồm vài ticket con. Mặc định **một phiên agent làm trọn một issue cha**: các ticket con lần lượt, mỗi ticket con một commit, cuối cùng một PR. Ticket không có issue cha (vd P0-6) thì một phiên cho một ticket, cùng các bước dưới đây.

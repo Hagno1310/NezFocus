@@ -109,6 +109,11 @@ describe('chatRows: gộp nhóm (v1.9, CR-19 #13)', () => {
     expect(heads(r)).toEqual(['day', true, false, false]);
   });
 
+  it('an unsent message older than the one above it shows its own time', () => {
+    const r = rows([sent(AN, 18, '20:11'), queued(18, '20:03')]);
+    expect(heads(r)).toEqual(['day', true, true]);
+  });
+
   it('two messages either side of midnight are not grouped (Edge case "Qua nửa đêm")', () => {
     const r = rows([sent('2', 17, '23:58'), sent('2', 18, '00:01')]);
     expect(heads(r)).toEqual(['day', true, 'day', true]);

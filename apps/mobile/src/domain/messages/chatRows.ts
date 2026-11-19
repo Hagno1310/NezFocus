@@ -82,6 +82,8 @@ export function chatRows(
     const head =
       !group ||
       group.author !== author ||
+      // Outbox entries sit below sent messages, so one can be older than the group head.
+      at < group.at ||
       at - group.at > GROUP_MS ||
       isSystem(item);
     if (head) group = isSystem(item) ? null : { author, at };

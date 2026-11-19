@@ -1,5 +1,11 @@
 import { Check, ChevronLeft } from 'lucide-react-native';
-import { useEffect, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   KeyboardAvoidingView,
@@ -8,6 +14,7 @@ import {
   ScrollView,
   StyleSheet,
   View,
+  type LayoutChangeEvent,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
@@ -49,6 +56,11 @@ const DISMISS_VELOCITY = 800;
 // `top`: window y of the row (measureInWindow); the Modal draws under the status bar too.
 export type Lifted = { top: number; node: ReactNode };
 
+// The sheet reports where it sits, so the lifted row can stay clear of it.
+const SheetLayout = createContext<((e: LayoutChangeEvent) => void) | undefined>(
+  undefined,
+);
+
 function Overlay({
   visible,
   onDismiss,
@@ -74,6 +86,14 @@ function Overlay({
     return () => clearTimeout(id);
   }, [visible]);
   const shown = visible || lingering;
+
+  // S-HOME-04 `failed-message`: the lifted row sits just above the sheet when the sheet would cover it.
+  const [sheetTop, setSheetTop] = useState<number | null>(null);
+  const [liftedHeight, setLiftedHeight] = useState<number | null>(null);
+  const liftedTop =
+    lifted && sheetTop !== null && liftedHeight !== null
+      ? Math.min(lifted.top, sheetTop - liftedHeight)
+      : null;
 
   // S-MOD-04: no toast over a sheet or dialog, including while it fades out.
   useEffect(() => {
@@ -120,7 +140,14 @@ function Overlay({
               entering={fadeIn}
               exiting={fadeOut}
               pointerEvents="none"
-              style={[styles.lifted, { top: lifted.top }]}
+              onLayout={(e) => setLiftedHeight(e.nativeEvent.layout.height)}
+              style={[
+                styles.lifted,
+                {
+                  top: liftedTop ?? lifted.top,
+                  opacity: liftedTop === null ? 0 : 1,
+                },
+              ]}
             >
               {lifted.node}
             </Animated.View>
@@ -132,7 +159,11 @@ function Overlay({
               placement === 'center' ? styles.center : styles.bottom,
             ]}
           >
-            {visible && children}
+            <SheetLayout.Provider
+              value={(e) => setSheetTop(e.nativeEvent.layout.y)}
+            >
+              {visible && children}
+            </SheetLayout.Provider>
           </View>
         </KeyboardAvoidingView>
       </GestureHandlerRootView>
@@ -259,6 +290,7 @@ function SheetFrame({
   const { colors } = useTheme();
   const reduced = useReducedMotion();
   const insets = useSafeAreaInsets();
+  const onLayout = useContext(SheetLayout);
   // Render once with the fade exit before closing, so a dragged sheet does not snap back.
   const [dragged, setDragged] = useState(false);
   const dismissFromDrag = () => {
@@ -302,6 +334,7 @@ function SheetFrame({
       entering={sheetEnter(reduced)}
       exiting={sheetExit(reduced, dragged)}
       accessibilityViewIsModal
+      onLayout={onLayout}
       style={[style, { paddingBottom: insets.bottom + space[4] }, dragStyle]}
     >
       {children(handle)}

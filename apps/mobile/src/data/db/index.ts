@@ -1,7 +1,8 @@
 import { open, type DB } from '@op-engineering/op-sqlite';
-import { drizzle } from 'drizzle-orm/op-sqlite';
 import { migrate } from 'drizzle-orm/op-sqlite/migrator';
+import { drizzle } from 'drizzle-orm/sqlite-proxy';
 import migrations from '../../../drizzle/migrations';
+import { opSqliteProxy } from './opSqliteProxy';
 import * as schema from './schema';
 import type { LocalDb } from './types';
 
@@ -13,8 +14,10 @@ let opened: { sqlite: DB; db: Promise<LocalDb> } | null = null;
 export function localDb(): Promise<LocalDb> {
   if (!opened) {
     const sqlite = open({ name: NAME });
-    const db = drizzle(sqlite, { schema });
-    opened = { sqlite, db: migrate(db, migrations).then(() => db) };
+    const db = drizzle(opSqliteProxy(sqlite), { schema });
+    // The migrator only needs drizzle's dialect and session, which the proxy has too.
+    const migrated = migrate(db as never, migrations);
+    opened = { sqlite, db: migrated.then(() => db) };
   }
   return opened.db;
 }

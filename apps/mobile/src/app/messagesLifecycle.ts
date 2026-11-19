@@ -1,6 +1,7 @@
 import { wipeLocalDb } from '../data/db';
 import { messageStore } from '../data/messages';
 import { gatewayStore, onGatewayEvent } from '../domain/gateway/gatewayStore';
+import { drafts } from '../domain/messages/drafts';
 import { sessionStore } from '../domain/session/sessionStore';
 
 const quietly = (p: Promise<unknown>) => void p.catch(() => {});
@@ -31,6 +32,7 @@ export function startMessagesLifecycle() {
     // AUTH-07, also when the session ended (19/11/2026): the local DB file goes.
     if (s.status === 'signed-out' && prev.status !== 'signed-out') {
       messageStore.reset();
+      drafts.reset();
       quietly(wipeLocalDb());
     }
   });

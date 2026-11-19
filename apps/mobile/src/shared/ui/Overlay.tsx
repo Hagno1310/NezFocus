@@ -46,17 +46,22 @@ import { interacted } from '../interaction';
 const DISMISS_DISTANCE = 80;
 const DISMISS_VELOCITY = 800;
 
+// `top`: window y of the row (measureInWindow); the Modal draws under the status bar too.
+export type Lifted = { top: number; node: ReactNode };
+
 function Overlay({
   visible,
   onDismiss,
   dismissible,
   placement,
+  lifted,
   children,
 }: {
   visible: boolean;
   onDismiss: () => void;
   dismissible: boolean;
   placement: 'center' | 'bottom';
+  lifted?: Lifted;
   children: ReactNode;
 }) {
   const { colors } = useTheme();
@@ -108,6 +113,16 @@ function Overlay({
                 onPress={close}
                 importantForAccessibility="no"
               />
+            </Animated.View>
+          )}
+          {visible && lifted && (
+            <Animated.View
+              entering={fadeIn}
+              exiting={fadeOut}
+              pointerEvents="none"
+              style={[styles.lifted, { top: lifted.top }]}
+            >
+              {lifted.node}
             </Animated.View>
           )}
           <View
@@ -421,6 +436,7 @@ export function ActionSheet({
   groups,
   cancel = true,
   onDismiss,
+  lifted,
 }: {
   visible: boolean;
   title?: string;
@@ -434,6 +450,8 @@ export function ActionSheet({
   // spec 08 `channel-menu`, 02 `category-menu`).
   cancel?: boolean;
   onDismiss: () => void;
+  // C-09 "Nhấn giữ một hàng": the row drawn again over the scrim, where it sits on screen.
+  lifted?: Lifted;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -448,6 +466,7 @@ export function ActionSheet({
       onDismiss={onDismiss}
       dismissible
       placement="bottom"
+      lifted={lifted}
     >
       <SheetFrame
         onDismiss={onDismiss}
@@ -581,6 +600,7 @@ function ActionRow({
 const styles = StyleSheet.create({
   above: { marginHorizontal: space[3], marginBottom: space[2] },
   flex: { flex: 1 },
+  lifted: { position: 'absolute', left: 0, right: 0 },
   shrink: { flexGrow: 0, flexShrink: 1 },
   center: { justifyContent: 'center', alignItems: 'center', padding: space[3] },
   bottom: { justifyContent: 'flex-end' },

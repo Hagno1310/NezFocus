@@ -14,6 +14,7 @@ import type {
 import { useTranslation } from 'react-i18next';
 import { useStore } from 'zustand';
 import { homeStore, openChannel } from '../../domain/servers/homeStore';
+import { ChannelScreen } from '../../features/chat/screens/ChannelScreen';
 import {
   LeftDrawer,
   type LeftDrawerActions,
@@ -51,33 +52,32 @@ const openFrom = (e: { data: { state: unknown } }) =>
     e.data.state as Parameters<typeof getDrawerStatusFromState>[0],
   ) === 'open';
 
-function ChannelPlaceholder() {
+// S-HOME-01 for the open channel. Before any is open (READY not in yet) the drawers still
+// open from here.
+function ChannelHost() {
   const { t } = useTranslation();
   const navigation = useNavigation<DrawerNavigationProp<ParamListBase>>();
   const leftDrawer = navigation.getParent<DrawerNavigationProp<ParamListBase>>(
     'LeftDrawer' as never,
   );
-  const title = useStore(homeStore, (s) => {
-    const server = s.servers?.find((x) => x.id === s.open?.serverId);
-    const channel = s.channels[s.open?.serverId ?? '']?.find(
-      (c) => c.id === s.open?.channelId,
+  const open = useStore(homeStore, (s) => s.open);
+  const openLeft = () => leftDrawer?.openDrawer();
+  const openRight = () => navigation.openDrawer();
+  if (open)
+    return (
+      <ChannelScreen
+        channelId={open.channelId}
+        serverId={open.serverId}
+        onOpenLeft={openLeft}
+        onOpenRight={openRight}
+      />
     );
-    return server && channel ? `# ${channel.name} · ${server.name}` : null;
-  });
-  // SRS 3.1: ≡ and 👥 buttons always exist as the non-gesture way to open the drawers.
-  // ponytail: S-HOME-01 (channel screen) replaces this with P2-A3 (#16).
   return (
     <Placeholder
-      title={title ?? t('screens.channel')}
+      title={t('screens.channel')}
       actions={[
-        {
-          label: t('placeholder.openLeft'),
-          onPress: () => leftDrawer?.openDrawer(),
-        },
-        {
-          label: t('placeholder.openRight'),
-          onPress: () => navigation.openDrawer(),
-        },
+        { label: t('placeholder.openLeft'), onPress: openLeft },
+        { label: t('placeholder.openRight'), onPress: openRight },
       ]}
     />
   );
@@ -158,7 +158,7 @@ export function HomeDrawers({
               <Placeholder title={t('screens.rightDrawer')} />
             )}
           >
-            <Right.Screen name="Channel" component={ChannelPlaceholder} />
+            <Right.Screen name="Channel" component={ChannelHost} />
           </Right.Navigator>
         )}
       </Left.Screen>

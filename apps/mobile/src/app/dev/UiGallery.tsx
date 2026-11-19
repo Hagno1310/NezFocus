@@ -14,6 +14,7 @@ import { Button, IconButton } from '../../shared/ui/Button';
 import { ScreenHeader } from '../../shared/ui/ScreenHeader';
 import { Text } from '../../shared/ui/Text';
 import { SearchField, TextField } from '../../shared/ui/TextField';
+import { ChatSections } from './galleryChat';
 import { FocusSections } from './galleryFocus';
 import { FormSections } from './galleryForms';
 import { PeopleSections } from './galleryPeople';
@@ -213,6 +214,7 @@ export function UiGallery() {
       <FormSections />
       <PeopleSections />
       <ServerSections />
+      <ChatSections />
       <FocusSections />
     </ScrollView>
   );

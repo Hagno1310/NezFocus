@@ -7,6 +7,7 @@ import {
   type StudyStatsResponse,
 } from '@nezfocus/shared';
 import { ChevronLeft, ChevronRight, Flame } from 'lucide-react-native';
+import type { TFunction } from 'i18next';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -65,7 +66,7 @@ import {
   useStudyStats,
 } from '../hooks/useStudyStats';
 
-type T = ReturnType<typeof useTranslation>['t'];
+type T = TFunction;
 
 const NBSP = String.fromCharCode(0xa0);
 

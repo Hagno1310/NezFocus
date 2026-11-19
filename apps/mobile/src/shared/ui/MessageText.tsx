@@ -27,8 +27,7 @@ import { Text } from './Text';
 
 const open = (url: string) => void Linking.openURL(url).catch(() => {});
 
-// Spoilers opened in this message, by position. Kept here, not in each spoiler, so the blocks
-// can remount on a reveal: Android dropped the line-through of sibling spans updated in place.
+// Spoilers opened in this message, by position. Kept here so a reveal can remount the blocks (below).
 const Opened = createContext<{
   ids: ReadonlySet<string>;
   reveal: (id: string) => void;
@@ -223,7 +222,7 @@ function BlockView({
 
 // REQ-MSG-02; the 2000 counter counts the typed text with its marks, not this (C-11).
 export function MessageText({ content }: { content: string }) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   const blocks = useMemo(() => parseMessage(content), [content]);
   const [ids, setIds] = useState<ReadonlySet<string>>(new Set());
   const opened = useMemo(
@@ -233,9 +232,11 @@ export function MessageText({ content }: { content: string }) {
     }),
     [ids],
   );
+  // Gotcha: Android drops the line-through and underline of nested spans restyled in place
+  // (a theme switch, a spoiler opening), so those remount the blocks instead.
   const view = (b: Block, i: number) => (
     <BlockView
-      key={`${i}:${ids.size}`}
+      key={`${i}:${ids.size}:${scheme}`}
       block={b}
       colors={colors}
       path={`${i}`}

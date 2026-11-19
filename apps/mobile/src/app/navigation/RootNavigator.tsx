@@ -70,6 +70,8 @@ import { Button } from '../../shared/ui/Button';
 import { StyleSheet, View } from 'react-native';
 import { space } from '../../shared/theme';
 import { homeStore } from '../../domain/servers/homeStore';
+import { openInviteSheet } from '../../domain/invites/inviteSheetStore';
+import { InviteSheet } from '../../features/servers/components/InviteSheet';
 import { NoServerHome } from '../../features/servers/screens/LeftDrawer';
 import { ChannelOverviewScreen } from '../../features/servers/screens/ChannelOverviewScreen';
 import { ChannelPermissionsScreen } from '../../features/servers/screens/ChannelPermissionsScreen';
@@ -122,7 +124,7 @@ type HomeParamList = {
   };
   JoinByCode: undefined; // ponytail: placeholder for S-HOME-06 join-by-code until P2-A1 (#14)
   // ponytail: where S-HOME-02 / S-HOME-09 / S-SET-01 lead before those screens exist —
-  // voice room P3-B1 (#26), DMs P2-B3 (#20), invite P2-A1 (#14), and the rest per row.
+  // voice room P3-B1 (#26), DMs P2-B3 (#20), and the rest per row.
   HomePlaceholder: { title: string; ticket?: string };
   ServerSettings: { serverId: string }; // S-SET-01
   ServerOverview: { serverId: string; cropped?: ImageFile }; // S-SET-01 overview
@@ -175,240 +177,252 @@ function HomeTab() {
   // S-HOME-02 `no-server`: READY listed none; the drawer becomes the Home root.
   const noServer = useStore(homeStore, (s) => s.servers?.length === 0);
   return (
-    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
-      <HomeStack.Screen name="HomeRoot">
-        {({ navigation }) => {
-          const placeholder = (title: string, ticket?: string) => () =>
-            navigation.navigate('HomePlaceholder', { title, ticket });
-          const dm = placeholder(t('screens.directMessages'), 'P2-B3 (#20)');
-          return noServer ? (
-            <NoServerHome
-              onCreate={() => navigation.navigate('CreateServer')}
+    <>
+      <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+        <HomeStack.Screen name="HomeRoot">
+          {({ navigation }) => {
+            const placeholder = (title: string, ticket?: string) => () =>
+              navigation.navigate('HomePlaceholder', { title, ticket });
+            const dm = placeholder(t('screens.directMessages'), 'P2-B3 (#20)');
+            return noServer ? (
+              <NoServerHome
+                onCreate={() => navigation.navigate('CreateServer')}
+                onJoinByCode={() => navigation.navigate('JoinByCode')}
+                onDirectMessages={dm}
+              />
+            ) : (
+              <HomeDrawers
+                actions={{
+                  onAdd: () => navigation.navigate('CreateServer'),
+                  onOpenVoice: (channel) =>
+                    placeholder(channel.name, 'P3-B1 (#26)')(),
+                  onDirectMessages: dm,
+                  onInvite: openInviteSheet,
+                  menu: {
+                    invite: () => {
+                      const { selectedServerId } = homeStore.getState();
+                      if (selectedServerId) openInviteSheet(selectedServerId);
+                    },
+                    settings: (serverId) =>
+                      navigation.navigate('ServerSettings', { serverId }),
+                    // ponytail: report (P3-A5 #25), leave / owner-leave (P3-A4 #24).
+                    report: placeholder(
+                      t('servers.menu.report'),
+                      'P3-A5 (#25)',
+                    ),
+                    leave: placeholder(t('servers.menu.leave'), 'P3-A4 (#24)'),
+                  },
+                  onChannelSettings: (channel) =>
+                    navigation.navigate('ChannelSettings', {
+                      serverId: channel.server_id,
+                      channelId: channel.id,
+                    }),
+                  onCategoryPermissions: (category) =>
+                    navigation.navigate('ChannelPermissions', {
+                      serverId: category.server_id,
+                      channelId: category.id,
+                    }),
+                }}
+              />
+            );
+          }}
+        </HomeStack.Screen>
+        <HomeStack.Screen name="CreateServer">
+          {({ navigation, route }) => (
+            <CreateServerScreen
+              cropped={route.params?.cropped}
+              onCrop={(photo) =>
+                navigation.navigate('CropImage', {
+                  photo,
+                  back: { screen: 'CreateServer' },
+                })
+              }
+              onClose={navigation.goBack}
               onJoinByCode={() => navigation.navigate('JoinByCode')}
-              onDirectMessages={dm}
+              onCreated={() => navigation.popTo('HomeRoot')}
             />
-          ) : (
-            <HomeDrawers
-              actions={{
-                onAdd: () => navigation.navigate('CreateServer'),
-                onOpenVoice: (channel) =>
-                  placeholder(channel.name, 'P3-B1 (#26)')(),
-                onDirectMessages: dm,
-                onInvite: placeholder(t('screens.invite'), 'P2-A1 (#14)'),
-                menu: {
-                  invite: placeholder(t('screens.invite'), 'P2-A1 (#14)'),
-                  settings: (serverId) =>
-                    navigation.navigate('ServerSettings', { serverId }),
-                  // ponytail: report (P3-A5 #25), leave / owner-leave (P3-A4 #24).
-                  report: placeholder(t('servers.menu.report'), 'P3-A5 (#25)'),
-                  leave: placeholder(t('servers.menu.leave'), 'P3-A4 (#24)'),
-                },
-                onChannelSettings: (channel) =>
-                  navigation.navigate('ChannelSettings', {
-                    serverId: channel.server_id,
-                    channelId: channel.id,
-                  }),
-                onCategoryPermissions: (category) =>
-                  navigation.navigate('ChannelPermissions', {
-                    serverId: category.server_id,
-                    channelId: category.id,
-                  }),
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen name="ServerSettings">
+          {({ navigation, route }) => (
+            <ServerSettingsScreen
+              serverId={route.params.serverId}
+              onBack={navigation.goBack}
+              onOverview={() =>
+                navigation.navigate('ServerOverview', {
+                  serverId: route.params.serverId,
+                })
+              }
+              onRoles={() =>
+                navigation.navigate('Roles', {
+                  serverId: route.params.serverId,
+                })
+              }
+              onRow={(title, ticket) =>
+                navigation.navigate('HomePlaceholder', { title, ticket })
+              }
+              onLostAccess={() => navigation.popTo('HomeRoot')}
+            />
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen name="Roles">
+          {({ navigation, route }) => (
+            <RolesScreen
+              serverId={route.params.serverId}
+              onBack={navigation.goBack}
+              onEdit={(roleId) =>
+                navigation.navigate('RoleEdit', {
+                  serverId: route.params.serverId,
+                  roleId,
+                })
+              }
+              onLostAccess={() =>
+                navigation.popTo('ServerSettings', route.params)
+              }
+            />
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen name="RoleEdit">
+          {({ navigation, route }) => (
+            <RoleEditScreen
+              {...route.params}
+              onMembers={(title) =>
+                navigation.navigate('HomePlaceholder', {
+                  title,
+                  ticket: 'P2-A2 (#15)',
+                })
+              }
+              onLostAccess={() =>
+                navigation.popTo('ServerSettings', {
+                  serverId: route.params.serverId,
+                })
+              }
+            />
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen name="ServerOverview">
+          {({ navigation, route }) => (
+            <ServerOverviewScreen
+              serverId={route.params.serverId}
+              cropped={route.params.cropped}
+              onCrop={(photo) =>
+                navigation.navigate('CropImage', {
+                  photo,
+                  back: {
+                    screen: 'ServerOverview',
+                    serverId: route.params.serverId,
+                  },
+                })
+              }
+              onSaved={navigation.goBack}
+              onLostAccess={() => navigation.popTo('HomeRoot')}
+            />
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen
+          name="CropImage"
+          options={{ presentation: 'fullScreenModal' }}
+        >
+          {({ navigation, route }) => (
+            <CropImageScreen
+              photo={route.params.photo}
+              shape="square"
+              onCancel={navigation.goBack}
+              onDone={(cropped) => {
+                const { back } = route.params;
+                if (back.screen === 'CreateServer')
+                  navigation.popTo('CreateServer', { cropped });
+                else
+                  navigation.popTo('ServerOverview', {
+                    serverId: back.serverId,
+                    cropped,
+                  });
               }}
             />
-          );
-        }}
-      </HomeStack.Screen>
-      <HomeStack.Screen name="CreateServer">
-        {({ navigation, route }) => (
-          <CreateServerScreen
-            cropped={route.params?.cropped}
-            onCrop={(photo) =>
-              navigation.navigate('CropImage', {
-                photo,
-                back: { screen: 'CreateServer' },
-              })
-            }
-            onClose={navigation.goBack}
-            onJoinByCode={() => navigation.navigate('JoinByCode')}
-            onCreated={() => navigation.popTo('HomeRoot')}
-          />
-        )}
-      </HomeStack.Screen>
-      <HomeStack.Screen name="ServerSettings">
-        {({ navigation, route }) => (
-          <ServerSettingsScreen
-            serverId={route.params.serverId}
-            onBack={navigation.goBack}
-            onOverview={() =>
-              navigation.navigate('ServerOverview', {
-                serverId: route.params.serverId,
-              })
-            }
-            onRoles={() =>
-              navigation.navigate('Roles', { serverId: route.params.serverId })
-            }
-            onRow={(title, ticket) =>
-              navigation.navigate('HomePlaceholder', { title, ticket })
-            }
-            onLostAccess={() => navigation.popTo('HomeRoot')}
-          />
-        )}
-      </HomeStack.Screen>
-      <HomeStack.Screen name="Roles">
-        {({ navigation, route }) => (
-          <RolesScreen
-            serverId={route.params.serverId}
-            onBack={navigation.goBack}
-            onEdit={(roleId) =>
-              navigation.navigate('RoleEdit', {
-                serverId: route.params.serverId,
-                roleId,
-              })
-            }
-            onLostAccess={() =>
-              navigation.popTo('ServerSettings', route.params)
-            }
-          />
-        )}
-      </HomeStack.Screen>
-      <HomeStack.Screen name="RoleEdit">
-        {({ navigation, route }) => (
-          <RoleEditScreen
-            {...route.params}
-            onMembers={(title) =>
-              navigation.navigate('HomePlaceholder', {
-                title,
-                ticket: 'P2-A2 (#15)',
-              })
-            }
-            onLostAccess={() =>
-              navigation.popTo('ServerSettings', {
-                serverId: route.params.serverId,
-              })
-            }
-          />
-        )}
-      </HomeStack.Screen>
-      <HomeStack.Screen name="ServerOverview">
-        {({ navigation, route }) => (
-          <ServerOverviewScreen
-            serverId={route.params.serverId}
-            cropped={route.params.cropped}
-            onCrop={(photo) =>
-              navigation.navigate('CropImage', {
-                photo,
-                back: {
-                  screen: 'ServerOverview',
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen name="ChannelSettings">
+          {({ navigation, route }) => (
+            <ChannelSettingsScreen
+              {...route.params}
+              onBack={navigation.goBack}
+              onOverview={() =>
+                navigation.navigate('ChannelOverview', route.params)
+              }
+              onPermissions={() =>
+                navigation.navigate('ChannelPermissions', route.params)
+              }
+              onRow={(title, ticket) =>
+                navigation.navigate('HomePlaceholder', { title, ticket })
+              }
+              onClose={() => navigation.popTo('HomeRoot')}
+            />
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen name="ChannelPermissions">
+          {({ navigation, route }) => (
+            <ChannelPermissionsScreen
+              {...route.params}
+              onBack={navigation.goBack}
+              onEdit={(target) =>
+                navigation.navigate('OverwriteEdit', {
+                  ...route.params,
+                  targetId: target.target_id,
+                  targetType: target.target_type,
+                })
+              }
+              onCategory={(categoryId) =>
+                navigation.push('ChannelPermissions', {
                   serverId: route.params.serverId,
-                },
-              })
-            }
-            onSaved={navigation.goBack}
-            onLostAccess={() => navigation.popTo('HomeRoot')}
-          />
-        )}
-      </HomeStack.Screen>
-      <HomeStack.Screen
-        name="CropImage"
-        options={{ presentation: 'fullScreenModal' }}
-      >
-        {({ navigation, route }) => (
-          <CropImageScreen
-            photo={route.params.photo}
-            shape="square"
-            onCancel={navigation.goBack}
-            onDone={(cropped) => {
-              const { back } = route.params;
-              if (back.screen === 'CreateServer')
-                navigation.popTo('CreateServer', { cropped });
-              else
-                navigation.popTo('ServerOverview', {
-                  serverId: back.serverId,
-                  cropped,
-                });
-            }}
-          />
-        )}
-      </HomeStack.Screen>
-      <HomeStack.Screen name="ChannelSettings">
-        {({ navigation, route }) => (
-          <ChannelSettingsScreen
-            {...route.params}
-            onBack={navigation.goBack}
-            onOverview={() =>
-              navigation.navigate('ChannelOverview', route.params)
-            }
-            onPermissions={() =>
-              navigation.navigate('ChannelPermissions', route.params)
-            }
-            onRow={(title, ticket) =>
-              navigation.navigate('HomePlaceholder', { title, ticket })
-            }
-            onClose={() => navigation.popTo('HomeRoot')}
-          />
-        )}
-      </HomeStack.Screen>
-      <HomeStack.Screen name="ChannelPermissions">
-        {({ navigation, route }) => (
-          <ChannelPermissionsScreen
-            {...route.params}
-            onBack={navigation.goBack}
-            onEdit={(target) =>
-              navigation.navigate('OverwriteEdit', {
-                ...route.params,
-                targetId: target.target_id,
-                targetType: target.target_type,
-              })
-            }
-            onCategory={(categoryId) =>
-              navigation.push('ChannelPermissions', {
-                serverId: route.params.serverId,
-                channelId: categoryId,
-              })
-            }
-            onClose={() => navigation.popTo('HomeRoot')}
-          />
-        )}
-      </HomeStack.Screen>
-      <HomeStack.Screen name="OverwriteEdit">
-        {({ navigation, route }) => (
-          <OverwriteEditScreen
-            {...route.params}
-            onBack={navigation.goBack}
-            onClose={() => navigation.popTo('HomeRoot')}
-          />
-        )}
-      </HomeStack.Screen>
-      <HomeStack.Screen name="ChannelOverview">
-        {({ navigation, route }) => (
-          <ChannelOverviewScreen
-            {...route.params}
-            onSaved={navigation.goBack}
-            onClose={() => navigation.popTo('HomeRoot')}
-          />
-        )}
-      </HomeStack.Screen>
-      <HomeStack.Screen
-        name="HomePlaceholder"
-        options={({ route }) => ({
-          headerShown: true,
-          title: route.params.title,
-        })}
-      >
-        {({ route }) => (
-          <Placeholder
-            title={route.params.title}
-            ticket={route.params.ticket}
-          />
-        )}
-      </HomeStack.Screen>
-      <HomeStack.Screen
-        name="JoinByCode"
-        options={{ headerShown: true, title: t('screens.joinByCode') }}
-      >
-        {() => <Placeholder title={t('screens.joinByCode')} />}
-      </HomeStack.Screen>
-    </HomeStack.Navigator>
+                  channelId: categoryId,
+                })
+              }
+              onClose={() => navigation.popTo('HomeRoot')}
+            />
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen name="OverwriteEdit">
+          {({ navigation, route }) => (
+            <OverwriteEditScreen
+              {...route.params}
+              onBack={navigation.goBack}
+              onClose={() => navigation.popTo('HomeRoot')}
+            />
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen name="ChannelOverview">
+          {({ navigation, route }) => (
+            <ChannelOverviewScreen
+              {...route.params}
+              onSaved={navigation.goBack}
+              onClose={() => navigation.popTo('HomeRoot')}
+            />
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen
+          name="HomePlaceholder"
+          options={({ route }) => ({
+            headerShown: true,
+            title: route.params.title,
+          })}
+        >
+          {({ route }) => (
+            <Placeholder
+              title={route.params.title}
+              ticket={route.params.ticket}
+            />
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen
+          name="JoinByCode"
+          options={{ headerShown: true, title: t('screens.joinByCode') }}
+        >
+          {() => <Placeholder title={t('screens.joinByCode')} />}
+        </HomeStack.Screen>
+      </HomeStack.Navigator>
+      {/* S-HOME-07: one sheet for the tab, opened by openInviteSheet. */}
+      <InviteSheet />
+    </>
   );
 }
 

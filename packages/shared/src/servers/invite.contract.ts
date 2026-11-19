@@ -43,8 +43,10 @@ export function parseInviteInput(
 // REQ-SRV-03 settings. Seconds; 0 = never expires. Uses: 0 = unlimited (DDL `max_uses`).
 export const INVITE_MAX_AGES = [1800, 3600, 86_400, 604_800, 0] as const;
 export const INVITE_MAX_USES = [0, 1, 5, 10, 25, 50, 100] as const;
-export const DEFAULT_INVITE_MAX_AGE = 604_800;
-export const DEFAULT_INVITE_MAX_USES = 0;
+export type InviteMaxAge = (typeof INVITE_MAX_AGES)[number];
+export type InviteMaxUses = (typeof INVITE_MAX_USES)[number];
+export const DEFAULT_INVITE_MAX_AGE: InviteMaxAge = 604_800;
+export const DEFAULT_INVITE_MAX_USES: InviteMaxUses = 0;
 
 export const CreateInviteRequest = z.object({
   max_age: z.literal(INVITE_MAX_AGES).default(DEFAULT_INVITE_MAX_AGE),

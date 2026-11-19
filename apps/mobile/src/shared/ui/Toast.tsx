@@ -65,7 +65,6 @@ function useKeyboardHeight() {
 
 // Mount once above the navigator. Above the keyboard when it is open, else above the anchor.
 export function ToastHost() {
-  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const keyboard = useKeyboardHeight();
   const current = useToastStore((s) => s.current);
@@ -94,29 +93,47 @@ export function ToastHost() {
       pointerEvents="box-none"
       style={[styles.host, { bottom }]}
     >
-      {/* C-14: inverted surface, no shadow; every icon takes the text colour. */}
-      <View style={[styles.toast, { backgroundColor: colors['text-primary'] }]}>
-        {toast.icon && <Icon as={toast.icon} size="base" color="bg" />}
-        <Text variant="body-sm" weight="500" color="bg" style={styles.message}>
-          {toast.message}
-        </Text>
-        {toast.action && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={toast.action.label}
-            hitSlop={touchSlop(typography['body-sm'].lineHeight)}
-            onPress={() => {
-              toast.action?.onPress();
-              dispatch({ type: 'dismiss' });
-            }}
-          >
-            <Text variant="body-sm" weight="600" color="primary-inverse">
-              {toast.action.label}
-            </Text>
-          </Pressable>
-        )}
-      </View>
+      <ToastCard
+        toast={toast}
+        onAction={() => {
+          toast.action?.onPress();
+          dispatch({ type: 'dismiss' });
+        }}
+      />
     </Animated.View>
+  );
+}
+
+// C-14 Toast shape, also for a toast that belongs to a sheet (S-HOME-07 `copied`: the global
+// host sits under the sheet's Modal window).
+export function ToastCard({
+  toast,
+  onAction,
+}: {
+  toast: Toast;
+  onAction?: () => void;
+}) {
+  const { colors } = useTheme();
+  // C-14: inverted surface, no shadow; every icon takes the text colour.
+  return (
+    <View style={[styles.toast, { backgroundColor: colors['text-primary'] }]}>
+      {toast.icon && <Icon as={toast.icon} size="base" color="bg" />}
+      <Text variant="body-sm" weight="500" color="bg" style={styles.message}>
+        {toast.message}
+      </Text>
+      {toast.action && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={toast.action.label}
+          hitSlop={touchSlop(typography['body-sm'].lineHeight)}
+          onPress={onAction}
+        >
+          <Text variant="body-sm" weight="600" color="primary-inverse">
+            {toast.action.label}
+          </Text>
+        </Pressable>
+      )}
+    </View>
   );
 }
 

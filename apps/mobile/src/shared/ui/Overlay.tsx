@@ -306,6 +306,7 @@ export function BottomSheet({
   icon,
   onBack,
   onDismiss,
+  above,
 }: {
   visible: boolean;
   title: string;
@@ -323,6 +324,8 @@ export function BottomSheet({
   // `chevron-left` before the title: the same sheet showing a sub-list (S-SET-09 `category-picker`).
   onBack?: () => void;
   onDismiss: () => void;
+  // Sits on the sheet's top edge, 8 above it (S-HOME-07 `copied` toast).
+  above?: ReactNode;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -334,6 +337,7 @@ export function BottomSheet({
       dismissible={!busy}
       placement="bottom"
     >
+      {above && <View style={styles.above}>{above}</View>}
       <SheetFrame
         onDismiss={onDismiss}
         dismissible={!busy}
@@ -575,6 +579,7 @@ function ActionRow({
 }
 
 const styles = StyleSheet.create({
+  above: { marginHorizontal: space[3], marginBottom: space[2] },
   flex: { flex: 1 },
   shrink: { flexGrow: 0, flexShrink: 1 },
   center: { justifyContent: 'center', alignItems: 'center', padding: space[3] },

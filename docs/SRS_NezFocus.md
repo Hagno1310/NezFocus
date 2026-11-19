@@ -2410,11 +2410,14 @@ CREATE TABLE message_reactions (
 ```
  soạn & bấm gửi ─▶ [pending] ── 201 / MESSAGE_CREATE khớp nonce ─▶ [sent]
                       │  ▲
-      lỗi mạng/5xx/429│  │ retry (cùng nonce, backoff; 429 chờ Retry-After)
+         lỗi mạng/5xx │  │ retry (cùng nonce, backoff 1 s, 2 s, 4 s… tối đa 30 s, có jitter)
                       ▼  │
                    [retrying] ── quá 24h hoặc lỗi 4xx không retry được ─▶ [failed] ── user bấm Thử lại ─▶ [pending]
                                                                               └── user Xóa ─▶ (xóa khỏi outbox)
+   [pending] ── 429 (40029) ─▶ [failed] ── tự gửi lại sau đúng Retry-After ─▶ [pending]
 ```
+
+- **(19/11/2026, P2-A3.3)** `429` → `[failed]` (không phải `[retrying]`) và tự gửi lại sau đúng `Retry-After`, theo REQ-MSG-08 AC1 và trạng thái `rate-limited` của S-HOME-01. 24 giờ tính từ lúc tin vào hàng đợi; "Thử lại" ("Gửi lại" ở S-HOME-04) tính lại từ đầu. Mất mạng rồi có lại / app về foreground: tin `[retrying]` gửi ngay, không chờ hết backoff. `[sent]` không nằm trong bảng `outbox`: tin đã gửi rời outbox và nằm trong `cached_messages`.
 
 - **(v1.9, CR-19 #7)** Tin có tệp chỉ gửi khi mọi tệp đã `complete` thành công. Đã bấm gửi khi còn tệp đang tải mà sau đó một tệp bị chặn (`40014` / `40019`) → `[failed]` "Không gửi được · 1 tệp bị chặn"; chạm tin có "Gửi không kèm tệp bị chặn" · "Xóa tin nhắn".
 - **(v1.9, CR-17 #17)** Bị mời ra / cấm khỏi server: tin trong outbox của server đó bị bỏ (xóa khỏi outbox, không thành `[failed]`), tệp đang tải và request đang chờ của server bị hủy; lỗi trả về sau đó (`40302`, `40401`, `40306`) không hiện Toast.
@@ -2588,7 +2591,11 @@ CREATE INDEX idx_cached_messages_channel ON cached_messages(channel_id, id DESC)
 -- v1.3: mọi ID lưu TEXT được pad trái '0' đủ 20 ký tự để sắp xếp chữ = sắp xếp số; bỏ pad khi đọc ra.
 CREATE TABLE outbox (nonce TEXT PRIMARY KEY, kind TEXT NOT NULL, channel_id TEXT, payload TEXT NOT NULL,
                      status TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0,
-                     next_attempt_at INTEGER, created_at INTEGER);
+                     next_attempt_at INTEGER, created_at INTEGER,
+                     server_id TEXT,      -- 19/11/2026: bỏ outbox của server khi bị mời ra / cấm (8.4.5)
+                     last_error TEXT);    -- 19/11/2026: mã lỗi lần gửi cuối ('40029', '40302'…) hoặc 'expired'
+-- 19/11/2026 (P2-A3.3): lần mở kênh gần nhất, cho LRU 200 kênh (7.3.2)
+CREATE TABLE cached_channels (channel_id TEXT PRIMARY KEY, server_id TEXT, opened_at INTEGER NOT NULL);
 CREATE TABLE read_states (channel_id TEXT PRIMARY KEY, last_read_message_id TEXT, mention_count INTEGER);
 CREATE TABLE relationships (user_id TEXT PRIMARY KEY, type INTEGER, json TEXT);
 CREATE TABLE dm_channels (id TEXT PRIMARY KEY, type INTEGER, recipient_ids TEXT, last_message_id TEXT, json TEXT);

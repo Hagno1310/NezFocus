@@ -1,7 +1,7 @@
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 // SRS 8.7 (v1.3): every id is TEXT padded to 20 digits, so text order = number order.
-// ponytail: CR-28 #7: the outbox holds messages only (`kind = 'message'`).
+// SRS CR-28 item 7: the outbox holds messages only (`kind = 'message'`).
 
 export const cachedMessages = sqliteTable(
   'cached_messages',

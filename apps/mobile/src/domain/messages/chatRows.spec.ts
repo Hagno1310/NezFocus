@@ -4,6 +4,7 @@ import {
   chatRows,
   composerCount,
   itemKey,
+  messageToSend,
   newBelow,
   type ChatRow,
 } from './chatRows';
@@ -246,6 +247,16 @@ describe('composerCount (MSG-01 AC5, C-11 bộ đếm)', () => {
       kind: 'over',
       n: 1,
     });
+  });
+
+  it('counts what is sent: spaces and new lines around the text are dropped', () => {
+    expect(
+      composerCount(`${'a'.repeat(1990)}\n\n\n\n\n\n\n\n\n\n\n\n`),
+    ).toEqual({
+      counter: { kind: 'left', n: 10 },
+      canSend: true,
+    });
+    expect(messageToSend('\n  câu 3 \n')).toBe('câu 3');
   });
 
   it('blank text cannot be sent and shows nothing', () => {

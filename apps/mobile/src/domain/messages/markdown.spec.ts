@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { parseInline, parseMessage, type Inline } from './markdown';
+import {
+  linksOf,
+  parseInline,
+  parseMessage,
+  spokenText,
+  type Inline,
+} from './markdown';
 
 const text = (t: string): Inline => ({ t: 'text', text: t });
 
@@ -191,5 +197,19 @@ describe('parseMessage: blocks', () => {
 
   it('empty text gives nothing', () => {
     expect(parseMessage('')).toEqual([]);
+  });
+});
+
+describe('spoken text and links (C-10 accessibility)', () => {
+  it('reads the text without marks; a spoiler stays hidden', () => {
+    expect(
+      spokenText(parseMessage('**Đáp án**: ||8π/3||, xem `x`'), 'bị ẩn'),
+    ).toBe('Đáp án: bị ẩn, xem x');
+  });
+
+  it('lists the links, spoilers excluded, in order', () => {
+    expect(
+      linksOf(parseMessage('https://a.vn ||https://b.vn||\n> https://c.vn')),
+    ).toEqual(['https://a.vn', 'https://c.vn']);
   });
 });

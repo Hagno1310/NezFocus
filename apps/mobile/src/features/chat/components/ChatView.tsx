@@ -1,34 +1,33 @@
-import type { MessageResponse } from '@nezfocus/shared';
-import type { TFunction } from 'i18next';
-import {
-  CloudOff,
-  RotateCw,
-  Trash2,
-  type LucideIcon,
-} from 'lucide-react-native';
+import { CloudOff, RotateCw, Trash2 } from 'lucide-react-native';
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   FlatList,
   KeyboardAvoidingView,
+  Linking,
   StyleSheet,
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
 import { useStore } from 'zustand';
-import type { LastActive } from '../../../domain/account/sessions';
 import {
   chatRows,
   composerCount,
+  contentOf,
+  messageToSend,
   itemKey,
   newBelow,
   type ChatRow,
-  type DayLabel,
 } from '../../../domain/messages/chatRows';
 import { drafts } from '../../../domain/messages/drafts';
+import {
+  linksOf,
+  parseMessage,
+  spokenText,
+} from '../../../domain/messages/markdown';
 import type { ChatItem } from '../../../domain/messages/messageStore';
-import { space, useTheme } from '../../../shared/theme';
+import { size, space, useTheme } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import {
   ChannelStart,
@@ -37,7 +36,7 @@ import {
   MessageBubble,
   type MessageStatus,
 } from '../../../shared/ui/Chat';
-import { Composer } from '../../../shared/ui/Composer';
+import { Composer, type ComposerBlock } from '../../../shared/ui/Composer';
 import { Skeleton } from '../../../shared/ui/Feedback';
 import { Icon } from '../../../shared/ui/Icon';
 import { MessageText } from '../../../shared/ui/MessageText';
@@ -49,29 +48,11 @@ import { avatarUri } from '../../me/avatarUri';
 import { useChannelMessages } from '../hooks/useChannelMessages';
 import { useChatClock } from '../hooks/useChatClock';
 import { useSendMessage } from '../hooks/useSendMessage';
+import { dayText, timeText } from '../chatText';
 
 // Offset from the bottom (the list is inverted) under which the list counts as "at the bottom".
 const AT_BOTTOM = 48;
-
-export const dayText = (t: TFunction, d: DayLabel) =>
-  d.kind === 'today'
-    ? t('chat.today')
-    : d.kind === 'yesterday'
-      ? t('chat.yesterday')
-      : t('chat.dayDate', {
-          weekday: t('chat.weekdays').split('|')[d.weekday],
-          date: d.date,
-        });
-
-// C-10 Giờ ở đầu tin: "20:02" · "Hôm qua 20:00" · "16/10/2026 20:00".
-export const timeText = (t: TFunction, at: LastActive, spoken = false) =>
-  at.kind === 'today'
-    ? at.time
-    : at.kind === 'yesterday'
-      ? t(spoken ? 'chat.a11yTimeYesterday' : 'chat.timeYesterday', {
-          time: at.time,
-        })
-      : t('chat.timeDate', { date: at.date, time: at.time });
+const AVATAR = size.avatar[3];
 
 type Measurable = {
   measureInWindow: (cb: (x: number, y: number) => void) => void;
@@ -79,8 +60,7 @@ type Measurable = {
 
 type Author = { name: string; uri: string | null; deleted: boolean };
 
-// S-HOME-01 body: the message list, its states and the Composer. The header, the strip under it
-// and the strip over the Composer are slots, so S-DM-02 (P2-B3.3, #116) reuses it.
+// S-HOME-01 body; header and the strips around it are slots so S-DM-02 (P2-B3.3, #116) reuses it.
 export function ChatView({
   channelId,
   serverId,
@@ -99,7 +79,7 @@ export function ChatView({
   belowHeader?: ReactNode;
   // The typing line (P2-B1.3, #109).
   aboveComposer?: ReactNode;
-  disabled?: { icon: LucideIcon; text: string };
+  disabled?: ComposerBlock;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -142,7 +122,7 @@ export function ChatView({
   const count = composerCount(draft);
   const send = () => {
     if (!count.canSend) return;
-    void outbox.send(draft.trim());
+    void outbox.send(messageToSend(draft));
     drafts.set(channelId, '');
     toBottom();
   };
@@ -159,7 +139,7 @@ export function ChatView({
         uri: avatarUri(me?.avatar, '128'),
         deleted: false,
       };
-    const a = (row.item.message as MessageResponse).author;
+    const a = row.item.message.author;
     return {
       name: a.display_name ?? a.username ?? t('ui.deletedUser'),
       uri: avatarUri(a.avatar, '128'),
@@ -180,10 +160,8 @@ export function ChatView({
     lifted = false,
   ) => {
     const who = author(row);
-    const content =
-      row.item.kind === 'outbox'
-        ? row.item.entry.content
-        : row.item.message.content;
+    const blocks = parseMessage(contentOf(row.item));
+    const content = spokenText(blocks, t('chat.spoiler'));
     const time = timeText(t, row.time);
     const status = statusOf(row.item);
     const isFailed = status?.kind === 'failed';
@@ -199,6 +177,10 @@ export function ChatView({
         status={status}
         surface={lifted ? 'surface-2' : undefined}
         liftedTime={lifted ? row.time.time : undefined}
+        actions={linksOf(blocks).map((url) => ({
+          label: url,
+          onPress: () => void Linking.openURL(url).catch(() => {}),
+        }))}
         accessibilityLabel={[
           t('chat.a11yMessage', {
             name: who.name,
@@ -224,7 +206,7 @@ export function ChatView({
             : undefined
         }
       >
-        <MessageText content={content} />
+        <MessageText content={contentOf(row.item)} />
       </MessageBubble>
     );
   };
@@ -346,7 +328,7 @@ function SkeletonRows({ count }: { count: number }) {
     <View style={styles.skeletons}>
       {Array.from({ length: count }, (_, i) => (
         <View key={i} style={styles.skeletonRow}>
-          <Skeleton width={40} height={40} round />
+          <Skeleton width={AVATAR} height={AVATAR} round />
           <View style={styles.skeletonLines}>
             <Skeleton width={90} height={12} />
             <Skeleton width={240} height={12} />

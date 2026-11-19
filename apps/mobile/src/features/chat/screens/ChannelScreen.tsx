@@ -7,8 +7,7 @@ import { ConnectionBanner } from '../../gateway/components/ConnectionBanner';
 import { ChatView } from '../components/ChatView';
 import { useCanSend } from '../hooks/useCanSend';
 
-// S-HOME-01: the open text channel of the Home tab. ≡ and 👥 are the non-gesture way to the
-// drawers (SRS 3.1); no 🔍 at MVP.
+// S-HOME-01: ≡ and 👥 are the non-gesture way to the drawers (SRS 3.1); no 🔍 at MVP.
 export function ChannelScreen({
   channelId,
   serverId,

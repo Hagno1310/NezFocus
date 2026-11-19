@@ -40,7 +40,7 @@ export type MessageStoreDeps = {
 const emptyView = (serverId: string | null): ChannelView => ({
   serverId,
   items: [],
-  loading: false,
+  loading: true, // until the cache is read: S-HOME-01 `loading`, never a flash of `empty`
   error: false,
   reachedStart: false,
 });
@@ -84,8 +84,7 @@ export function createMessageStore(deps: MessageStoreDeps) {
     const cached = await local.messages(channelId);
     let after = cached.at(-1)?.id;
     try {
-      // ponytail: a long gap is fetched page after page; 7.3.2 "too far behind → reload the
-      // newest page" waits until it is slow in practice.
+      // ponytail: khi bắt kịp phải tải nhiều trang: tải lại trang mới nhất thay vì đi hết (7.3.2).
       for (;;) {
         const page = await remote.history(
           channelId,

@@ -28,8 +28,7 @@ import { Icon, type IconComponent } from './Icon';
 import { Avatar } from './People';
 import { Text } from './Text';
 
-// C-04 ChannelHeader. 56 high with the sub-line too (19/11/2026); grows with large text.
-// `right`: the slot before 👥 (empty for a text channel at MVP: no 🔍).
+// C-04: 56 high with the sub-line too (19/11/2026); `right` stays empty for text (no 🔍 at MVP).
 export function ChannelHeader({
   icon = Hash,
   leading,
@@ -105,8 +104,7 @@ export function ChannelHeader({
 export type MessageStatus =
   { kind: 'pending'; offline: boolean } | { kind: 'failed'; text: string };
 
-// C-10 MessageBubble: a flat row, never a bubble. `head` = first of its group (avatar, name,
-// time); spacing from the master: 6 above and below a head, 1 around a grouped message.
+// C-10: a flat row, never a bubble; padding 6 around a group head, 1 around a grouped one.
 export function MessageBubble({
   name,
   avatarUri,
@@ -120,6 +118,7 @@ export function MessageBubble({
   surface,
   liftedTime,
   accessibilityLabel,
+  actions = [],
   onPress,
   onLongPress,
   onPressAuthor,
@@ -141,6 +140,8 @@ export function MessageBubble({
   // C-10 `lifted` of a grouped message: its own "20:04" in the avatar column.
   liftedTime?: string;
   accessibilityLabel: string;
+  // C-10: what the row offers a screen reader instead of its inner presses (links…).
+  actions?: { label: string; onPress: () => void }[];
   onPress?: (e: GestureResponderEvent) => void;
   onLongPress?: (e: GestureResponderEvent) => void;
   // Avatar / name → S-HOME-10 (P2-B3.4, #117).
@@ -153,6 +154,13 @@ export function MessageBubble({
   return (
     <Pressable
       accessibilityLabel={accessibilityLabel}
+      accessibilityActions={actions.map((a, i) => ({
+        name: `a${i}`,
+        label: a.label,
+      }))}
+      onAccessibilityAction={(e) =>
+        actions[Number(e.nativeEvent.actionName.slice(1))]?.onPress()
+      }
       onPress={onPress}
       onLongPress={onLongPress}
       disabled={!onPress && !onLongPress}
@@ -186,7 +194,7 @@ export function MessageBubble({
             uri={avatarUri}
             self={self}
             deleted={deleted}
-            size={40}
+            size={size.avatar[3]}
           />
         )}
       </Pressable>
@@ -316,7 +324,7 @@ export function ChannelStart({ name }: { name: string }) {
       <View
         style={[styles.startIcon, { backgroundColor: colors['surface-2'] }]}
       >
-        <Hash size={28} color={colors['text-primary']} strokeWidth={2} />
+        <Icon as={Hash} size="xxl" color="text-primary" />
       </View>
       <Text variant="title-2" accessibilityRole="header">
         {t('chat.channelStartTitle', { name })}
@@ -349,7 +357,11 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     gap: space[2],
   },
-  statusLine: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  statusLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: size.iconGap,
+  },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',

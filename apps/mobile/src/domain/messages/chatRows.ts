@@ -31,6 +31,9 @@ export const itemKey = (item: ChatItem) =>
       ? `n${item.message.nonce}`
       : `m${item.message.id}`;
 
+export const contentOf = (item: ChatItem) =>
+  item.kind === 'outbox' ? item.entry.content : item.message.content;
+
 const authorOf = (item: ChatItem, myId: string) =>
   item.kind === 'outbox' ? myId : item.message.author.id;
 
@@ -55,8 +58,7 @@ function dayLabel(date: string, now: number, timeZone: string): DayLabel {
   };
 }
 
-// S-HOME-01 list, oldest first: date dividers and groups (02 › Dữ liệu nhất quán, v1.9 CR-19
-// #13): same sender, within 5 minutes of the group's first message, nothing in between.
+// 02 › Dữ liệu nhất quán (CR-19): a group = same sender, ≤ 5 min from its first, nothing between.
 export function chatRows(
   items: readonly ChatItem[],
   { now, timeZone, myId }: { now: number; timeZone: string; myId: string },
@@ -106,6 +108,9 @@ export function newBelow(
   return items.slice(i + 1).filter((x) => authorOf(x, myId) !== myId).length;
 }
 
+// What ➤ sends, and so what the counter counts.
+export const messageToSend = (text: string) => text.trim();
+
 export type Counter = { kind: 'left' | 'over'; n: number };
 
 // MSG-01 AC5 (C-11 bộ đếm): counted as the backend counts; pasted text is never cut.
@@ -113,9 +118,9 @@ export function composerCount(text: string): {
   counter: Counter | null;
   canSend: boolean;
 } {
-  const count = countMessageChars(text);
-  const left = MESSAGE_MAX_CHARS - count;
-  const blank = text.trim() === '';
+  const sent = messageToSend(text);
+  const left = MESSAGE_MAX_CHARS - countMessageChars(sent);
+  const blank = sent === '';
   return {
     counter:
       blank || left > COUNTER_FROM

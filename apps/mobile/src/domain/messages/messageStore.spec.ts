@@ -122,6 +122,15 @@ function setup(
 }
 
 describe('history (REQ-SEARCH-02, 7.3.2)', () => {
+  it('a channel opened for the first time is `loading` from the start, never `empty` first', () => {
+    const { store } = setup(fakeRemote([msg('1')]));
+    void store.open('7', '9');
+    expect(store.state.getState().views['7']).toMatchObject({
+      items: [],
+      loading: true,
+    });
+  });
+
   it('first open fetches the newest page; reopening shows the cache, then asks after= it', async () => {
     const server = fakeRemote([msg('1'), msg('2')]);
     const { store, shown, local } = setup(server);

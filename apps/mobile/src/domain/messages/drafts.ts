@@ -1,7 +1,6 @@
 import { createStore } from 'zustand/vanilla';
 
-// C-11: the draft stays with its channel when the user leaves it and is lost when the app
-// exits (7.3.2), so memory only.
+// C-11 / 7.3.2: kept per channel until the app exits, so memory only.
 export function createDrafts() {
   const state = createStore<Record<string, string>>(() => ({}));
   const drop = (channelId: string) =>

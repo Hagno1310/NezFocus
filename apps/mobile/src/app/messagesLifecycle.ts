@@ -6,10 +6,8 @@ import { sessionStore } from '../domain/session/sessionStore';
 
 const quietly = (p: Promise<unknown>) => void p.catch(() => {});
 
-// SRS 7.3.2 / 8.4.5: keeps the message cache and outbox in step with the Gateway, the network
-// and the session.
-// ponytail: no flush while the app sits in the background (react-native-background-fetch);
-// add it when unsent messages left in the background turn out to matter.
+// SRS 7.3.2 / 8.4.5: keeps the message cache and outbox in step with Gateway, network, session.
+// Flushing from the background (react-native-background-fetch) is v1.x: SRS › Outbox, CR-28.
 export function startMessagesLifecycle() {
   const stopEvents = onGatewayEvent((event) => {
     if (event.t === 'MESSAGE_CREATE')

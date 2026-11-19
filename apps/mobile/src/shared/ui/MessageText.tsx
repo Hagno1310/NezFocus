@@ -10,17 +10,18 @@ import {
 import {
   fontFamily,
   radius,
+  space,
   size,
   typography,
   useTheme,
   type Colors,
 } from '../theme';
+import { holdSwipe } from './swipeGuard';
 import { Text } from './Text';
 
 const open = (url: string) => void Linking.openURL(url).catch(() => {});
 
-// C-10 › Nội dung đặc biệt for one inline run. `hidden`: under a spoiler not yet tapped, every
-// colour is the cover's and links do nothing.
+// C-10 › Nội dung đặc biệt; `hidden` = under a closed spoiler: cover colour, dead links.
 function Runs({
   nodes,
   colors,
@@ -131,11 +132,13 @@ function BlockView({ block, colors }: { block: Block; colors: Colors }) {
           </Text>
         </View>
       );
-    // Scrolls sideways, never wraps; the gesture-handler ScrollView keeps the drawer swipe
-    // off it (SRS 3.1).
+    // C-10: scrolls sideways; the gesture-handler ScrollView keeps the drawer swipe off (SRS 3.1).
     case 'codeblock':
       return (
         <View
+          onTouchStart={() => holdSwipe(true)}
+          onTouchEnd={() => holdSwipe(false)}
+          onTouchCancel={() => holdSwipe(false)}
           style={[
             styles.codeBlock,
             {
@@ -154,8 +157,7 @@ function BlockView({ block, colors }: { block: Block; colors: Colors }) {
   }
 }
 
-// REQ-MSG-02 content of a MessageBubble. The 2000-character counter counts the typed text,
-// marks included (C-11), never this rendering.
+// REQ-MSG-02; the 2000 counter counts the typed text with its marks, not this (C-11).
 export function MessageText({ content }: { content: string }) {
   const { colors } = useTheme();
   const blocks = useMemo(() => parseMessage(content), [content]);
@@ -175,7 +177,7 @@ const CODE_PAD = 12;
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  blocks: { gap: 4 },
+  blocks: { gap: space[1] },
   italic: { fontStyle: 'italic' },
   strike: { textDecorationLine: 'line-through' },
   link: { textDecorationLine: 'underline' },

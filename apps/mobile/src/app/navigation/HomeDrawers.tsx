@@ -20,6 +20,7 @@ import {
   type LeftDrawerActions,
 } from '../../features/servers/screens/LeftDrawer';
 import { useTheme } from '../../shared/theme';
+import { swipeGuard } from '../../shared/ui/swipeGuard';
 import { drawerGesture, type DrawerSide } from './drawerGesture';
 import { Placeholder } from './Placeholder';
 
@@ -33,14 +34,19 @@ const Right = createDrawerNavigator<RightParamList>();
 
 type DrawerOpenState = { leftOpen: boolean; rightOpen: boolean };
 
-function drawerOptions(side: DrawerSide, open: DrawerOpenState, width: number) {
+function drawerOptions(
+  side: DrawerSide,
+  open: DrawerOpenState,
+  width: number,
+  held: boolean,
+) {
   const { swipeEnabled, failOffsetX } = drawerGesture(side, open);
   return {
     headerShown: false,
     drawerPosition: side,
     // SRS 3.1: swipe from anywhere in the content; Android keeps the edge strip for system Back itself.
     swipeEdgeWidth: width,
-    swipeEnabled,
+    swipeEnabled: swipeEnabled && !held,
     // Gotcha: drawer types say RNGH 3 `PanGesture`, but it builds a legacy Gesture.Pan() at runtime.
     configureGestureHandler: ((g: LegacyPanGesture) =>
       g.failOffsetX(failOffsetX)) as unknown as (g: PanGesture) => PanGesture,
@@ -52,8 +58,7 @@ const openFrom = (e: { data: { state: unknown } }) =>
     e.data.state as Parameters<typeof getDrawerStatusFromState>[0],
   ) === 'open';
 
-// S-HOME-01 for the open channel. Before any is open (READY not in yet) the drawers still
-// open from here.
+// S-HOME-01; before READY opens a channel the drawers still open from the placeholder.
 function ChannelHost() {
   const { t } = useTranslation();
   const navigation = useNavigation<DrawerNavigationProp<ParamListBase>>();
@@ -117,6 +122,7 @@ export function HomeDrawers({
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
+  const held = useStore(swipeGuard, (s) => s.held);
   // Spec 02 › Drawer: 334 on a 390 frame (304 on 360): the channel shows a 56 strip.
   const drawerStyle = {
     width: width - PEEK,
@@ -131,7 +137,7 @@ export function HomeDrawers({
     <Left.Navigator
       id="LeftDrawer"
       screenOptions={{
-        ...drawerOptions('left', open, width),
+        ...drawerOptions('left', open, width, held),
         drawerStyle,
         overlayColor: colors.scrim,
       }}
@@ -147,7 +153,7 @@ export function HomeDrawers({
           <Right.Navigator
             id="RightDrawer"
             screenOptions={{
-              ...drawerOptions('right', open, width),
+              ...drawerOptions('right', open, width, held),
               drawerStyle: { width: width - PEEK },
               overlayColor: colors.scrim,
             }}

@@ -8,18 +8,19 @@ import {
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, TextInput, View } from 'react-native';
+import type { Counter } from '../../domain/messages/chatRows';
 import { radius, size, space, typography, useTheme } from '../theme';
 import { IconButton } from './Button';
 import { Icon } from './Icon';
 import { Text } from './Text';
 
-export type ComposerCounter = { kind: 'left' | 'over'; n: number };
+// C-11 `disabled`: the reason line in place of the input row.
+export type ComposerBlock = { icon: LucideIcon; text: string };
 
 const LINES = 5;
 const BOX_MIN = 40;
 
-// C-11 Composer. Enter is a new line; only ➤ sends (SRS 3.4). `disabled` replaces the row
-// with its reason. `+` and ☺ show only once their tickets hand a handler in.
+// C-11: Enter is a new line, only ➤ sends (SRS 3.4); `+` and ☺ show once given a handler.
 export function Composer({
   value,
   onChangeText,
@@ -35,13 +36,13 @@ export function Composer({
   value: string;
   onChangeText: (text: string) => void;
   placeholder: string;
-  counter: ComposerCounter | null;
+  counter: Counter | null;
   canSend: boolean;
   onSend: () => void;
   // ponytail: `+` comes with attachments, P3-A2.2 (#124); ☺ with the EmojiPicker, P3-A1.2 (#121).
   onAttach?: () => void;
   onEmoji?: () => void;
-  disabled?: { icon: LucideIcon; text: string };
+  disabled?: ComposerBlock;
   // Context strip / tray over the input (reply, edit, attachments: P3).
   above?: ReactNode;
 }) {

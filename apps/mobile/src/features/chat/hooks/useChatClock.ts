@@ -4,8 +4,7 @@ import { settingsStore } from '../../../domain/settings/settingsStore';
 import { msUntilMidnight } from '../../../domain/study/stats';
 import { deviceTimeZone } from '../../auth/timeZoneList';
 
-// Message times follow the user's time zone (REQ-STUDY-03) and turn over at their midnight
-// (02 › Edge case "Qua nửa đêm": "Hôm nay" becomes "Hôm qua").
+// REQ-STUDY-03 time zone; 02 › Edge case "Qua nửa đêm": labels turn over at the user's midnight.
 export function useChatClock() {
   const timeZone = useStore(
     settingsStore,

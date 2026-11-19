@@ -1,7 +1,4 @@
-// REQ-MSG-02 Markdown, syntax fixed 19/11/2026 (00-components C-10 › Cú pháp Markdown).
-// A small parser on purpose: no HTML is ever read and only http(s) becomes a link
-// (NFR-SEC-09, MSG-02 AC4). Mentions and NezFocus link chips (P2-A4.3, P3-A1.3) add Inline
-// kinds here.
+// REQ-MSG-02, syntax of C-10 (19/11/2026); never reads HTML, only http(s) links (NFR-SEC-09).
 
 export type Inline =
   | { t: 'text'; text: string }
@@ -169,3 +166,37 @@ export function parseMessage(s: string): Block[] {
   flush();
   return blocks;
 }
+
+const spokenRuns = (nodes: Inline[], spoiler: string): string =>
+  nodes
+    .map((n) =>
+      n.t === 'text' || n.t === 'code'
+        ? n.text
+        : n.t === 'link'
+          ? n.url
+          : n.t === 'spoiler'
+            ? spoiler
+            : spokenRuns(n.children, spoiler),
+    )
+    .join('');
+
+// C-10: the message is read as one element, marks dropped and spoilers still covered.
+export const spokenText = (blocks: Block[], spoiler: string) =>
+  blocks
+    .map((b) =>
+      b.t === 'codeblock' ? b.text : spokenRuns(b.children, spoiler),
+    )
+    .join('\n');
+
+const runLinks = (nodes: Inline[]): string[] =>
+  nodes.flatMap((n) =>
+    n.t === 'link'
+      ? [n.url]
+      : n.t === 'bold' || n.t === 'italic' || n.t === 'strike'
+        ? runLinks(n.children)
+        : [],
+  );
+
+// Links a screen reader reaches through the message's accessibilityActions.
+export const linksOf = (blocks: Block[]) =>
+  blocks.flatMap((b) => (b.t === 'codeblock' ? [] : runLinks(b.children)));

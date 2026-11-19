@@ -898,6 +898,7 @@ export const en: Strings = {
     send: 'Send',
     attach: 'Attach',
     emoji: 'Pick an emoji',
+    spoiler: 'Hidden text, tap to show',
     openChannels: 'Open channel list',
     openMembers: 'Open member list',
   },

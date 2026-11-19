@@ -10,11 +10,21 @@ import {
   MessageBubble,
 } from '../../shared/ui/Chat';
 import { Composer } from '../../shared/ui/Composer';
+import { MessageText } from '../../shared/ui/MessageText';
 import { Text } from '../../shared/ui/Text';
 import { Caption, Section, Stack } from './kit';
 
 // Boards `C-04 · ChannelHeader` and `C-10 · C-11 · …· Chat (v1.9)`, sample data of spec 02.
 const noop = () => {};
+// C-10 › Nội dung đặc biệt, every Markdown kind of MSG-02 in one message (#120).
+const MARKDOWN = [
+  '**đậm**, *nghiêng*, _nghiêng_, ~~gạch~~, `inline code`, ||đáp án 8π/3||',
+  '> Đổi sang tọa độ cực rồi tính',
+  'Link https://vi.wikipedia.org/wiki/Tích_phân_bội và [click](javascript:alert(1)), <b>x</b>',
+  '```',
+  'const I = integrate(r => r * f(r * Math.cos(t), r * Math.sin(t)), 0, 2 * Math.PI);',
+  '```',
+].join('\n');
 const LONG = 'Cách này tính ra 8π/3 nhưng ';
 
 function Bubbles() {
@@ -85,6 +95,9 @@ function Bubbles() {
         accessibilityLabel="Tài khoản đã bị xóa"
       >
         <Text>Tài khoản đã bị xóa</Text>
+      </MessageBubble>
+      <MessageBubble name="Chi" time="20:30" accessibilityLabel="Chi">
+        <MessageText content={MARKDOWN} />
       </MessageBubble>
       <ChannelStart name="hoi-dap" />
     </View>

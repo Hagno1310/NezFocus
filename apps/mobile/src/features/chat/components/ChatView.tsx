@@ -40,6 +40,7 @@ import {
 import { Composer } from '../../../shared/ui/Composer';
 import { Skeleton } from '../../../shared/ui/Feedback';
 import { Icon } from '../../../shared/ui/Icon';
+import { MessageText } from '../../../shared/ui/MessageText';
 import { ActionSheet, type Lifted } from '../../../shared/ui/Overlay';
 import { Text } from '../../../shared/ui/Text';
 import { useOnline } from '../../gateway/hooks/useOnline';
@@ -223,7 +224,7 @@ export function ChatView({
             : undefined
         }
       >
-        <Text selectable={!isFailed}>{content}</Text>
+        <MessageText content={content} />
       </MessageBubble>
     );
   };

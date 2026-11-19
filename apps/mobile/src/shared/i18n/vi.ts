@@ -894,6 +894,7 @@ export const vi = {
     send: 'Gửi',
     attach: 'Đính kèm',
     emoji: 'Chọn biểu tượng cảm xúc',
+    spoiler: 'Nội dung bị ẩn, chạm để hiện',
     openChannels: 'Mở danh sách kênh',
     openMembers: 'Mở danh sách thành viên',
   },

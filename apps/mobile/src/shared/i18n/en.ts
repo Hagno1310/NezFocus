@@ -901,6 +901,13 @@ export const en: Strings = {
     spoiler: 'Hidden text, tap to show',
     openChannels: 'Open channel list',
     openMembers: 'Open member list',
+    // REQ-MSG-06, S-HOME-01 Nội dung chữ › Typing
+    typing: {
+      one: '{{name}} is typing…',
+      two: '{{first}} and {{second}} are typing…',
+      many: '{{many}} are typing…',
+      manyPeople: 'Several people',
+    },
   },
   placeholder: {
     note: 'Placeholder — replaced by the real screen in a later ticket',

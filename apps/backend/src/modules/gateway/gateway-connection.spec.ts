@@ -313,5 +313,15 @@ describe('GatewayConnection', () => {
       );
       expect(sessions.hasForegroundSession(7n)).toBe(false);
     });
+
+    it('SUBSCRIBE (op 8) sets the open server; null stops (REQ-MSG-07)', async () => {
+      const { conn } = await ready();
+      await conn.receive(JSON.stringify({ op: 8, d: { server_id: '100' } }));
+      expect(sessions.subscriberIds(100n)).toEqual(new Set([7n]));
+      await conn.receive(JSON.stringify({ op: 8, d: { server_id: '200' } }));
+      expect(sessions.subscriberIds(100n).size).toBe(0);
+      await conn.receive(JSON.stringify({ op: 8, d: { server_id: null } }));
+      expect(sessions.subscriberIds(200n).size).toBe(0);
+    });
   });
 });

@@ -21,6 +21,14 @@ const author = {
 export class MessagesRepository {
   constructor(@Inject(DB) private readonly db: Db) {}
 
+  async author(userId: bigint): Promise<AuthorRow | undefined> {
+    const [row] = await this.db
+      .select(author)
+      .from(users)
+      .where(eq(users.id, userId));
+    return row;
+  }
+
   private select() {
     return this.db
       .select({ message: messages, author })

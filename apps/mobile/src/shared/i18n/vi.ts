@@ -897,6 +897,13 @@ export const vi = {
     spoiler: 'Nội dung bị ẩn, chạm để hiện',
     openChannels: 'Mở danh sách kênh',
     openMembers: 'Mở danh sách thành viên',
+    // REQ-MSG-06, S-HOME-01 Nội dung chữ › Typing
+    typing: {
+      one: '{{name}} đang nhập…',
+      two: '{{first}} và {{second}} đang nhập…',
+      many: '{{many}} đang nhập…',
+      manyPeople: 'Nhiều người',
+    },
   },
   placeholder: {
     note: 'Màn tạm — thay bằng màn thật ở ticket sau',

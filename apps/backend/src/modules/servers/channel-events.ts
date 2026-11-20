@@ -8,9 +8,7 @@ import { ServersRepository } from './servers.repository.js';
 // can VIEW_CHANNEL it (REQ-SRV-02 AC10, ROLE-03 AC3). After an update the others get
 // CHANNEL_DELETE, so a channel someone just lost leaves their list (02 `channel-removed`).
 // Call after PermissionCache.invalidateServer, so the check sees the new overwrites.
-// ponytail: one permission lookup per member and channel, and a role's own bits changing
-// (SERVER_ROLE_UPDATE, member roles) sends no channel again; the Gateway's own recipient
-// filter, P2-B1 (#18), replaces both.
+// ponytail: a role's bits changing or a role (un)assigned sends no channel again: P2-A2.1 (#96).
 @Injectable()
 export class ChannelEvents {
   constructor(
@@ -19,10 +17,8 @@ export class ChannelEvents {
     private readonly events: EventPublisher,
   ) {}
 
-  async created(serverId: bigint, channel: ChannelResponse) {
-    for (const userId of await this.servers.memberIds(serverId))
-      if (await this.sees(userId, channel))
-        await this.events.toUser(userId, 'CHANNEL_CREATE', channel);
+  created(channel: ChannelResponse) {
+    return this.events.toChannel(BigInt(channel.id), 'CHANNEL_CREATE', channel);
   }
 
   async updated(serverId: bigint, channels: readonly ChannelResponse[]) {

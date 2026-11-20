@@ -160,7 +160,7 @@ export class ChannelsService {
         ),
       );
     });
-    await this.channelEvents.created(serverId, channel);
+    await this.channelEvents.created(channel);
     return channel;
   }
 

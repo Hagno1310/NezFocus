@@ -4,6 +4,7 @@ import { useStore } from 'zustand';
 import { homeStore } from '../../../domain/servers/homeStore';
 import { ChannelHeader } from '../../../shared/ui/Chat';
 import { ConnectionBanner } from '../../gateway/components/ConnectionBanner';
+import { TypingLine } from '../../typing/components/TypingLine';
 import { ChatView } from '../components/ChatView';
 import { useCanSend } from '../hooks/useCanSend';
 
@@ -46,6 +47,7 @@ export function ChannelScreen({
         />
       }
       belowHeader={<ConnectionBanner />}
+      aboveComposer={<TypingLine channelId={channelId} />}
       disabled={canSend ? undefined : { icon: Lock, text: t('chat.forbidden') }}
     />
   );

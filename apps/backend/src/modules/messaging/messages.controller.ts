@@ -1,9 +1,18 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   CreateMessageRequest,
   MessageHistoryQuery,
   MessageRoutes,
   SnowflakeId,
+  TypingRoutes,
   type MessageListResponse,
   type MessageResponse,
 } from '@nezfocus/shared';
@@ -34,5 +43,14 @@ export class MessagesController {
     query: MessageHistoryQuery,
   ): Promise<MessageListResponse> {
     return this.messages.history(user.userId, BigInt(id), query);
+  }
+
+  @Post(TypingRoutes.start)
+  @HttpCode(204)
+  async typing(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ZodValidationPipe(SnowflakeId)) id: string,
+  ): Promise<void> {
+    await this.messages.typing(user.userId, BigInt(id));
   }
 }

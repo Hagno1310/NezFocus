@@ -65,7 +65,7 @@ Quan hệ chặn trên GitHub là bản đồ chi tiết cho agent (ticket con n
 | App gọi API chưa có                      | `src/data/<mảng>/Fake<X>Repository.ts` implement interface trong `src/domain/<mảng>/`, bật bằng `EXPO_PUBLIC_FAKE=<mảng>,<mảng>`. Dữ liệu = dữ liệu mẫu của spec. Đổi giả ↔ thật không phải sửa màn hình | Người làm màn hình              |
 | App cần event real-time chưa có          | `FakeGatewayClient` phát event theo kịch bản                                                                                                                                                             | B (P0-5)                        |
 | Backend cần dữ liệu của module người kia | Script seed dev theo dữ liệu mẫu; chủ module thêm bảng của mình vào seed                                                                                                                                 | A khởi tạo (P0-7)               |
-| Backend gọi module người kia chưa xong   | Interface + bản tạm: `EventPublisher` (ghi log), `PermissionService` (dev: cho phép hết), `NotificationService` (bản thật từ P2-B4)                                                                        | Chủ module viết interface trước |
+| Backend gọi module người kia chưa xong   | Interface + bản tạm: `EventPublisher` (ghi log), `PermissionService` (dev: cho phép hết), `NotificationService` (bản thật từ P2-B4)                                                                      | Chủ module viết interface trước |
 
 **Task chỉ xong khi đã nối với hàng thật**: phần người kia xong thì tắt Fake / bản tạm và chạy lại luồng.
 

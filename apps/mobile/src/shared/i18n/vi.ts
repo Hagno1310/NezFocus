@@ -901,7 +901,8 @@ export const vi = {
     typing: {
       one: '{{name}} đang nhập…',
       two: '{{first}} và {{second}} đang nhập…',
-      many: 'Nhiều người đang nhập…',
+      many: '{{many}} đang nhập…',
+      manyPeople: 'Nhiều người',
     },
   },
   placeholder: {

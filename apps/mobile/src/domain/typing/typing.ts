@@ -63,17 +63,21 @@ export const typingStore = createTypingStore(
   () => sessionStore.getState().user?.id ?? '',
 );
 
-// S-HOME-01 Nội dung chữ › Typing: the i18n key and its values for these names.
-export function typingLine(names: string[]) {
+// S-HOME-01 Nội dung chữ › Typing: the i18n key and its values; `{{many}}` is TypingLine's.
+export type TypingLineText = {
+  key: 'chat.typing.one' | 'chat.typing.two' | 'chat.typing.many';
+  values: Record<string, string>;
+};
+export function typingLine(names: string[]): TypingLineText | null {
   if (!names.length) return null;
   if (names.length === 1)
-    return { key: 'chat.typing.one', values: { name: names[0]! } } as const;
+    return { key: 'chat.typing.one', values: { name: names[0]! } };
   if (names.length === 2)
     return {
       key: 'chat.typing.two',
       values: { first: names[0]!, second: names[1]! },
-    } as const;
-  return { key: 'chat.typing.many', values: {} } as const;
+    };
+  return { key: 'chat.typing.many', values: {} };
 }
 
 // DEC-33 / #109 AC3: at most once per channel per interval, for a changed non-empty draft, online.

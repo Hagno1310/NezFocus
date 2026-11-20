@@ -905,7 +905,8 @@ export const en: Strings = {
     typing: {
       one: '{{name}} is typing…',
       two: '{{first}} and {{second}} are typing…',
-      many: 'Several people are typing…',
+      many: '{{many}} are typing…',
+      manyPeople: 'Several people',
     },
   },
   placeholder: {

@@ -108,7 +108,7 @@ Dũng vào server lúc 19:58 hôm nay nên không có tin của Dũng trước g
 │▌    @An tối nay 20:30 vào Phòng học…     │
 │ (A) An  20:11                            │
 │     Ok, mình vào sớm giữ chỗ             │
-│ Chi đang nhập…                           │  dòng typing, label
+│ •••  Chi đang nhập…                      │  dòng typing (chốt 20/11/2026): 3 chấm nháy ở cột avatar, chữ label ở cột nội dung tin
 ├──────────────────────────────────────────┤
 │ [+] [ Nhắn #hoi-dap            ] [☺] [➤] │  Composer
 ├ TabBar (Home) ───────────────────────────┤
@@ -125,7 +125,7 @@ Dũng vào server lúc 19:58 hôm nay nên không có tin của Dũng trước g
 | Vạch chưa đọc | "Tin nhắn mới" |
 | Nút cuộn xuống | "3 tin mới" + `arrow-down` (khi có tin mới chưa xem) · chỉ `arrow-down` (khi chỉ đang cuộn lên) |
 | Nhảy tới chưa đọc (đầu danh sách, khi vạch nằm ngoài màn hình) | "12 tin nhắn mới từ 19:40" · "Đánh dấu đã đọc" |
-| Typing | "Chi đang nhập…" · "Chi và Dũng đang nhập…" · "Nhiều người đang nhập…" (≥ 3) |
+| Typing | "Chi đang nhập…" · "Chi và Dũng đang nhập…" · "Nhiều người đang nhập…" (≥ 3). **(20/11/2026, P2-B1.3 #109)** Tên người gõ / "Nhiều người" đậm 600, phần còn lại 400; dòng đặt như một tin: 3 chấm 6 tròn `text-secondary` nháy lần lượt (cách nhau `short`, mỗi nhịp `long`/2) ở giữa cột avatar 40, chữ thẳng cột nội dung tin; giảm chuyển động: chấm đứng yên. |
 | Đầu kênh | "Chào mừng tới #hoi-dap" · "Đây là đầu kênh. Hãy gửi tin nhắn đầu tiên." |
 | Bộ đếm ký tự (v1.9, CR-19 #4) | "còn 120" (khi còn ≤ 200) · "−12" + dòng "Tin nhắn dài quá 2000 ký tự" |
 | Toast link (v1.9, CR-19 #2, #11) | "Bạn không xem được tin nhắn này" · "Bạn không xem được kênh này" · "Tin nhắn này đã bị xóa" |

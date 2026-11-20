@@ -37,6 +37,12 @@ import { Text } from '../../../shared/ui/Text';
 import { ConnectionBanner } from '../../gateway/components/ConnectionBanner';
 import { CycleSheet } from '../components/CycleSheet';
 import {
+  FriendsStudyingLine,
+  FriendsStudyingSheet,
+  useStudyingFriends,
+} from '../../friends/components/FriendsStudyingSheet';
+import { nameOf } from '../../../domain/friends/friends';
+import {
   openExactAlarmSettings,
   useNotificationAccess,
 } from '../hooks/useSoloAlerts';
@@ -102,6 +108,8 @@ function Running({ snap, timer }: { snap: SoloSnapshot; timer: SoloTimer }) {
   const online = useStore(gatewayStore, (s) => s.online);
   const action = useSoloAction();
   const [editing, setEditing] = useState(false);
+  const [friendsOpen, setFriendsOpen] = useState(false);
+  const studying = useStudyingFriends();
   const s = snap.session;
   const act = (a: SoloAction) => action.mutate({ id: s.id, action: a });
 
@@ -192,7 +200,14 @@ function Running({ snap, timer }: { snap: SoloSnapshot; timer: SoloTimer }) {
             onPress={() => act({ action: 'continue' })}
           />
         )}
-        {/* ponytail: "{N} bạn đang học lúc này" stays hidden (spec: hidden when nobody) until friends' presence, P2-B2 (#19). */}
+        <FriendsStudyingLine
+          count={studying.length}
+          people={studying.slice(0, 3).map(({ r }) => ({
+            name: nameOf(r.user),
+            uri: r.user.avatar?.['128'],
+          }))}
+          onPress={() => setFriendsOpen(true)}
+        />
         <Button
           variant="text"
           label={`${cycle} · ${t('study.edit')}`}
@@ -224,6 +239,10 @@ function Running({ snap, timer }: { snap: SoloSnapshot; timer: SoloTimer }) {
           onPress={() => act({ action: 'stop' })}
         />
       </View>
+      <FriendsStudyingSheet
+        visible={friendsOpen}
+        onDismiss={() => setFriendsOpen(false)}
+      />
       <CycleSheet
         key={String(editing)}
         visible={editing}

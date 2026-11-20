@@ -82,6 +82,10 @@ import { RoleEditScreen } from '../../features/servers/screens/RoleEditScreen';
 import { RolesScreen } from '../../features/servers/screens/RolesScreen';
 import { ServerOverviewScreen } from '../../features/servers/screens/ServerOverviewScreen';
 import { ServerSettingsScreen } from '../../features/servers/screens/ServerSettingsScreen';
+import {
+  FriendsScreen,
+  type FriendsTab,
+} from '../../features/friends/screens/FriendsScreen';
 import { HomeDrawers } from './HomeDrawers';
 import { InviteRoute } from './InviteRoute';
 import { Placeholder } from './Placeholder';
@@ -125,6 +129,7 @@ type HomeParamList = {
       | { screen: 'ServerOverview'; serverId: string };
   };
   JoinByCode: undefined; // S-HOME-06 join-by-code
+  Friends: { tab?: FriendsTab } | undefined; // S-DM-04 (main entry: S-DM-01, P2-B3.3 #116)
   // ponytail: where S-HOME-02 / S-HOME-09 / S-SET-01 lead before those screens exist —
   // voice room P3-B1 (#26), DMs P2-B3 (#20), and the rest per row.
   HomePlaceholder: { title: string; ticket?: string };
@@ -162,7 +167,7 @@ type MeParamList = {
   Sessions: undefined; // S-ME-03 sessions
   DeleteAccount: undefined; // S-ME-03 delete (P3-A4 #24)
   Privacy: undefined; // S-ME-04
-  Blocked: undefined; // S-DM-04 `blocked` (P2-B2.3 #112), placeholder until then
+  Blocked: undefined; // S-DM-04 `blocked`, Back to S-ME-04
   Notifications: undefined; // S-ME-05
   Appearance: undefined; // S-ME-06
 };
@@ -415,6 +420,14 @@ function HomeTab() {
             />
           )}
         </HomeStack.Screen>
+        <HomeStack.Screen name="Friends">
+          {({ navigation, route }) => (
+            <FriendsScreen
+              initialTab={route.params?.tab}
+              onBack={navigation.goBack}
+            />
+          )}
+        </HomeStack.Screen>
         <HomeStack.Screen name="JoinByCode">
           {({ navigation }) => (
             <JoinByCodeScreen
@@ -504,7 +517,6 @@ type Action = { label: string; onPress: () => void };
 // Child screens not built yet: each names the ticket that replaces it.
 const meChildren = [
   ['DeleteAccount', 'me.deleteAccount', 'P3-A4 (#24)'],
-  ['Blocked', 'me.blocked', 'P2-B2.3 (#112)'],
 ] as const;
 
 function MeTab({ devActions }: { devActions: Action[] }) {
@@ -590,6 +602,11 @@ function MeTab({ devActions }: { devActions: Action[] }) {
             onBack={navigation.goBack}
             onOpenBlocked={() => navigation.navigate('Blocked')}
           />
+        )}
+      </MeStack.Screen>
+      <MeStack.Screen name="Blocked" options={{ headerShown: false }}>
+        {({ navigation }) => (
+          <FriendsScreen initialTab="blocked" onBack={navigation.goBack} />
         )}
       </MeStack.Screen>
       <MeStack.Screen name="Notifications" options={{ headerShown: false }}>
@@ -693,6 +710,8 @@ function Welcome({
 function MainTabs() {
   const { t } = useTranslation();
   const gallery = useGalleryAction();
+  const rootNav =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   // ponytail: sample badges for comparing with the C-03 board; real counts come with P2-A4.4 (#106).
   const [sampleBadges, setSampleBadges] = useState(false);
   useSoloSync();
@@ -714,6 +733,17 @@ function MainTabs() {
   const badgeToggle = __DEV__
     ? [{ label: 'Badge mẫu', onPress: () => setSampleBadges((b) => !b) }]
     : [];
+  // ponytail: S-DM-04's real entry is the "Bạn bè" row of S-DM-01, P2-B3.3 (#116).
+  const friendsEntry = [
+    {
+      label: t('friends.title'),
+      onPress: () =>
+        rootNav.navigate('Main', {
+          screen: 'Home',
+          params: { screen: 'Friends' },
+        }),
+    },
+  ];
   // Dev: the Fake cannot end a session, so these stand in for 40100 / 40103 / Gateway 4004.
   const endedActions = __DEV__
     ? (['password_reset', 'revoked', 'reuse_detected', 'expired'] as const).map(
@@ -752,7 +782,9 @@ function MainTabs() {
         {() => (
           <MeTab
             devActions={
-              __DEV__ ? [...gallery, ...badgeToggle, ...endedActions] : []
+              __DEV__
+                ? [...friendsEntry, ...gallery, ...badgeToggle, ...endedActions]
+                : []
             }
           />
         )}

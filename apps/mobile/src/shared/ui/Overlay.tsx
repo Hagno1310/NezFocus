@@ -355,6 +355,7 @@ export function BottomSheet({
   onBack,
   onDismiss,
   above,
+  titleRight,
 }: {
   visible: boolean;
   title: string;
@@ -374,6 +375,8 @@ export function BottomSheet({
   onDismiss: () => void;
   // Sits on the sheet's top edge, 8 above it (S-HOME-07 `copied` toast).
   above?: ReactNode;
+  // Right of the title (S-STUDY-02 `friends-sheet` "6 bạn", chốt 20/11/2026).
+  titleRight?: ReactNode;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -428,6 +431,7 @@ export function BottomSheet({
                 >
                   {title}
                 </Text>
+                {titleRight}
               </View>
               <ScrollView
                 style={styles.shrink}

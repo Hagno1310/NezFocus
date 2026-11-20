@@ -133,7 +133,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 
 - [ ] **P2-B4** [#118](https://github.com/Hagno1310/NezFocus/issues/118) NotificationService.create: hợp đồng mục Hộp thư và phần lưu (NOTIF-05, nền)
   - Cần trước: P0-5
-- [ ] **P2-B2** [#19](https://github.com/Hagno1310/NezFocus/issues/19) Bạn bè và chặn
+- [x] **P2-B2** [#19](https://github.com/Hagno1310/NezFocus/issues/19) Bạn bè và chặn
   - Cần trước: P1-B2, P1-B4, P2-B4
   - Trong lúc làm: P2-B2.3 chờ P2-A3.3 (Hiếu)
   - [x] mốc **P2-B2.1** [#110](https://github.com/Hagno1310/NezFocus/issues/110) Hợp đồng bạn bè và chặn trong shared · hợp đồng · người kia chờ: P2-A4 (Hiếu)

@@ -74,7 +74,7 @@ describe('Fanout (REQ-MSG-07)', () => {
     expect(s.got(1n)).toBe(2);
   });
 
-  it('a channel with no server (DM, until P2-B3.2) or an unknown one reaches nobody', async () => {
+  it('a channel with no server (DM, until P2-B3.2 #115) or an unknown one reaches nobody', async () => {
     const s = setup([1n]);
     s.connect(1n);
     await s.deliver({ kind: 'channel', channelId: DM.toString() });

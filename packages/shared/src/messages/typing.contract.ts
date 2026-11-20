@@ -4,8 +4,7 @@ import { MessageAuthor } from './message.contract.js';
 
 // Paths are relative to /api/v1 (SRS 5.3 Message, DEC-33: typing only over REST).
 export const TypingRoutes = {
-  // POST REQ-MSG-06: no body · 204 · 40302 (no SEND_MESSAGES), 40303 (DM, P2-B3.2), 40401.
-  // A repeat from the same user and channel within TYPING_CLIENT_INTERVAL_MS is 204 and not broadcast.
+  // POST REQ-MSG-06: no body · 204 (a repeat within ~8 s too, not broadcast) · 40302, 40303 (DM, P2-B3.2 #115), 40401
   start: '/channels/:id/typing',
 } as const;
 

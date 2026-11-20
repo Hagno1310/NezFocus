@@ -8,9 +8,7 @@ import { ServersRepository } from './servers.repository.js';
 // can VIEW_CHANNEL it (REQ-SRV-02 AC10, ROLE-03 AC3). After an update the others get
 // CHANNEL_DELETE, so a channel someone just lost leaves their list (02 `channel-removed`).
 // Call after PermissionCache.invalidateServer, so the check sees the new overwrites.
-// The one place that decides who gets CHANNEL_CREATE / UPDATE (P2-B1.2 #108).
-// ponytail: `updated` checks every member, offline ones too; a role's own bits changing
-// (SERVER_ROLE_UPDATE) or a role assigned / removed sends no channel again: P2-A2.1 (#96).
+// ponytail: a role's bits changing or a role (un)assigned sends no channel again: P2-A2.1 (#96).
 @Injectable()
 export class ChannelEvents {
   constructor(

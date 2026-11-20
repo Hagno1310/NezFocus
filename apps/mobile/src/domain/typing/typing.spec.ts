@@ -41,10 +41,19 @@ describe('typing store (REQ-MSG-06 AC1)', () => {
     const s = createTypingStore(() => ME);
     s.started(start('3', 'Chi'));
     s.started(start('4', 'Dũng'));
-    s.messageCreated('7', '3');
+    s.messageCreated('7', '3', '2026-11-20T07:59:00.000Z');
     expect(names(s)).toEqual(['Dũng']);
     vi.advanceTimersByTime(10_000);
     expect(names(s)).toEqual([]);
+  });
+
+  it('a TYPING_START older than their message arrives late and is ignored', () => {
+    const s = createTypingStore(() => ME);
+    s.messageCreated('7', '3', '2026-11-20T08:00:01.000Z');
+    s.started(start('3', 'Chi')); // timestamp 08:00:00, before the message
+    expect(names(s)).toEqual([]);
+    s.started({ ...start('3', 'Chi'), timestamp: '2026-11-20T08:00:02.000Z' });
+    expect(names(s)).toEqual(['Chi']);
   });
 
   it('never shows me, keeps channels apart, falls back to the username', () => {

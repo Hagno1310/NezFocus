@@ -6,13 +6,16 @@ import { homeStore } from '../domain/servers/homeStore';
 import { sessionStore } from '../domain/session/sessionStore';
 import { createTypingSender, typingStore } from '../domain/typing/typing';
 
-// REQ-MSG-06 / MSG-07: SUBSCRIBE the server of the open channel, POST typing as the draft
-// changes, and keep typingStore in step with TYPING_START / MESSAGE_CREATE.
+// REQ-MSG-06 / MSG-07: typing needs op 8 for the open channel's server (SRS 5.4).
 export function startTypingLifecycle() {
   const stopEvents = onGatewayEvent((event) => {
     if (event.t === 'TYPING_START') typingStore.started(event.d);
     if (event.t === 'MESSAGE_CREATE')
-      typingStore.messageCreated(event.d.channel_id, event.d.author.id);
+      typingStore.messageCreated(
+        event.d.channel_id,
+        event.d.author.id,
+        event.d.created_at,
+      );
   });
 
   const subscribe = () =>

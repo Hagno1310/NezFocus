@@ -27,10 +27,7 @@ export type Envelope = {
   };
 }[DispatchEventName];
 
-// REQ-MSG-07: every instance gets every envelope and delivers to the sessions it holds, so
-// only online members cost a permission lookup. PermissionService caches per server and is
-// invalidated on every role / overwrite / member change, so a lost VIEW_CHANNEL counts from
-// the next event (ROLE-08 AC3).
+// REQ-MSG-07 / ROLE-08 AC3: online members only, re-checked per event via PermissionService's cache.
 export class Fanout {
   constructor(
     private readonly sessions: GatewaySessions,

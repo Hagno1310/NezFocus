@@ -8,11 +8,12 @@ import { sessionStore } from '../session/sessionStore';
 
 export type Typer = { userId: string; name: string };
 
-// REQ-MSG-06 AC1: who types per channel; each hides TYPING_EXPIRE_MS after their last
-// TYPING_START, or as soon as their MESSAGE_CREATE arrives.
+// REQ-MSG-06 AC1: a typer hides TYPING_EXPIRE_MS after their last event, or on their message.
 export function createTypingStore(me: () => string) {
   const state = createStore<Record<string, Typer[]>>(() => ({}));
   const timers = new Map<string, ReturnType<typeof setTimeout>>();
+  // A typing POST can lose the race to the message right after it (#109 AC1).
+  const lastMessageAt = new Map<string, number>();
   const key = (channelId: string, userId: string) => `${channelId}:${userId}`;
 
   const remove = (channelId: string, userId: string) => {
@@ -29,9 +30,10 @@ export function createTypingStore(me: () => string) {
 
   return {
     state,
-    started({ channel_id, user }: TypingStart) {
+    started({ channel_id, user, timestamp }: TypingStart) {
       if (user.id === me()) return;
       const k = key(channel_id, user.id);
+      if (Date.parse(timestamp) <= (lastMessageAt.get(k) ?? -Infinity)) return;
       clearTimeout(timers.get(k));
       timers.set(
         k,
@@ -44,10 +46,14 @@ export function createTypingStore(me: () => string) {
         [channel_id]: [...typers, { userId: user.id, name }],
       });
     },
-    messageCreated: remove,
+    messageCreated(channelId: string, userId: string, createdAt: string) {
+      lastMessageAt.set(key(channelId, userId), Date.parse(createdAt));
+      remove(channelId, userId);
+    },
     reset() {
       for (const timer of timers.values()) clearTimeout(timer);
       timers.clear();
+      lastMessageAt.clear();
       state.setState({}, true);
     },
   };
@@ -70,8 +76,7 @@ export function typingLine(names: string[]) {
   return { key: 'chat.typing.many', values: {} } as const;
 }
 
-// DEC-33: POST typing at most once per channel every TYPING_CLIENT_INTERVAL_MS, only for a
-// changed, non-empty draft and only online. Call on every draft change.
+// DEC-33 / #109 AC3: at most once per channel per interval, for a changed non-empty draft, online.
 export function createTypingSender(deps: {
   post: (channelId: string) => Promise<void>;
   online: () => boolean;

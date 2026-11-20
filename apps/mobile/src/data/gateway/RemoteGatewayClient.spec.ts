@@ -441,6 +441,18 @@ describe('RemoteGatewayClient', () => {
       expect(last().sent.at(-1)).toEqual({ op: 8, d: { server_id: null } });
     });
 
+    it('a server opened while disconnected goes out after RESUMED', async () => {
+      const client = await connected();
+      client.subscribe('100');
+      last().drop();
+      client.subscribe('200');
+      await vi.advanceTimersByTimeAsync(1000);
+      last().push({ op: 10, d: { heartbeat_interval: INTERVAL } });
+      await flush();
+      last().push({ op: 0, s: 2, t: 'RESUMED', d: {} });
+      expect(last().sent.at(-1)).toEqual({ op: 8, d: { server_id: '200' } });
+    });
+
     it('a RESUMED session keeps it; stop() forgets it', async () => {
       const client = await connected();
       client.subscribe('100');

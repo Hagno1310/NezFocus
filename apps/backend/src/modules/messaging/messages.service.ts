@@ -93,8 +93,7 @@ export class MessagesService {
     return message;
   }
 
-  // REQ-MSG-06: the same checks as sending, then TYPING_START to who has the server open.
-  // A repeat within TYPING_CLIENT_INTERVAL_MS is 204 and not broadcast (DEC-33, anti-spam).
+  // REQ-MSG-06 / DEC-33: same checks as sending; a repeat inside the window is 204, not broadcast.
   async typing(userId: bigint, channelId: bigint) {
     const channel = await this.viewable(userId, channelId);
     await this.permissions.require(
@@ -102,13 +101,15 @@ export class MessagesService {
       { channelId },
       Permission.SEND_MESSAGES,
     );
+    // 1 s under the client's interval, so its next call on time is never swallowed.
     const fresh = await this.store.setIfAbsent(
       `typing:${userId}:${channelId}`,
       '1',
-      TYPING_CLIENT_INTERVAL_MS / 1000,
+      TYPING_CLIENT_INTERVAL_MS / 1000 - 1,
     );
-    const author = fresh && (await this.repo.author(userId));
-    if (!author || !channel.serverId) return;
+    if (!fresh || !channel.serverId) return;
+    const author = await this.repo.author(userId);
+    if (!author) return;
     // ponytail: skip receivers who blocked the typer once blocking lands, P2-B2.2 (#111).
     await this.events.toServerSubscribers(
       channel.serverId,

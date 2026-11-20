@@ -127,7 +127,7 @@ export class GatewaySessions {
     session.subscribedServerId = serverId;
   }
 
-  // Users with a session here, connected or still resumable.
+  // Resumable sessions count: their events go to the resume buffer (SRS 5.4).
   userIds() {
     return new Set([...this.sessions.values()].map((s) => s.userId));
   }

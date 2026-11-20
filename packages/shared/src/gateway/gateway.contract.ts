@@ -81,8 +81,7 @@ export const VoiceStateUpdate = z.object({
 });
 // REQ-STUDY-15, every 60 s while in a Room Session
 export const FocusHeartbeat = z.object({ focus_session_id: SnowflakeId });
-// REQ-MSG-07: the server open on screen, one per session; another id replaces it, null stops.
-// It gates only detail events (TYPING_START, member-list presence); MESSAGE_CREATE needs none.
+// REQ-MSG-07: the open server, one per session (null stops); gates only TYPING_START / member-list presence.
 export const Subscribe = z.object({ server_id: SnowflakeId.nullable() });
 
 const LastSequence = z.number().int().min(0).nullable(); // null before any DISPATCH

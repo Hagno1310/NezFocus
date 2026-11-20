@@ -5,8 +5,7 @@ import { typingLine, typingStore } from '../../../domain/typing/typing';
 import { space } from '../../../shared/theme';
 import { Text } from '../../../shared/ui/Text';
 
-// S-HOME-01 `default` › Typing: right above the Composer, gone when nobody types (REQ-MSG-06).
-// Weight 400: the frame overrides the label token's 500.
+// S-HOME-01 `default` › Typing (REQ-MSG-06); weight 400: the frame overrides the label token's 500.
 export function TypingLine({ channelId }: { channelId: string }) {
   const { t } = useTranslation();
   const typers = useStore(typingStore.state, (s) => s[channelId]);

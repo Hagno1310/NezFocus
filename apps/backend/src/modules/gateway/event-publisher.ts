@@ -13,32 +13,28 @@ import { ServersRepository } from '../servers/servers.repository.js';
 import { Fanout, type Envelope, type FanoutTarget } from './fanout.js';
 import { GatewaySessions } from './gateway-sessions.js';
 
-// SRS 5.4 DISPATCH. Owner: gateway (B). Other modules inject this and never touch sockets.
-// The caller picks the target; the Gateway works out who receives it (REQ-MSG-07) and does the
-// permission check itself, so a caller never loops over members. Example (messaging):
-//   await this.events.toChannel(channelId, 'MESSAGE_CREATE', { ...message, server_id });
+// SRS 5.4 / REQ-MSG-07: callers pick a target, the Gateway picks and permission-checks receivers.
+// e.g. `await this.events.toChannel(channelId, 'MESSAGE_CREATE', { ...message, server_id })`
 export abstract class EventPublisher {
-  // Every session of one user (their own data: USER_UPDATE, SOLO_SESSION_UPDATE…).
+  // A user's own data (USER_UPDATE, SOLO_SESSION_UPDATE…), every session of theirs.
   abstract toUser<T extends DispatchEventName>(
     userId: bigint,
     t: T,
     d: DispatchPayload<T>,
   ): Promise<void>;
-  // Server channel: members who can VIEW_CHANNEL it (REQ-ROLE-03); DM: its members (P2-B3.2 #115).
-  // Required for every event about a channel's content: MESSAGE_*, CHANNEL_CREATE of a private one.
+  // Channel content (MESSAGE_*, CHANNEL_CREATE): only who can VIEW_CHANNEL (ROLE-03); DM: P2-B3.2 (#115).
   abstract toChannel<T extends DispatchEventName>(
     channelId: bigint,
     t: T,
     d: DispatchPayload<T>,
   ): Promise<void>;
-  // Every member, no permission filter: SERVER_*, roles, CHANNEL_DELETE.
+  // Nothing secret (SERVER_*, roles, CHANNEL_DELETE's id): every member, no permission filter.
   abstract toServer<T extends DispatchEventName>(
     serverId: bigint,
     t: T,
     d: DispatchPayload<T>,
   ): Promise<void>;
-  // Only sessions that SUBSCRIBEd (op 8) to this server; with a channel, only those that can
-  // VIEW_CHANNEL it. For detail events: TYPING_START, member-list presence. `except` skips a user.
+  // Detail events (TYPING_START): op 8 subscribers only, VIEW_CHANNEL-filtered with a channel.
   abstract toServerSubscribers<T extends DispatchEventName>(
     serverId: bigint,
     channelId: bigint | null,
@@ -50,8 +46,7 @@ export abstract class EventPublisher {
 
 const TOPIC = 'gateway:dispatch';
 
-// REQ-MSG-07 (đồ án): every event goes through Redis Pub/Sub, and each instance delivers to
-// the sessions it holds (Fanout), so 2+ instances work.
+// REQ-MSG-07 (đồ án): Redis Pub/Sub to every instance, each delivers to its own sessions.
 // ponytail: khi chạy production (MSG-07 AC2): publish only to the node holding the connection.
 @Injectable()
 export class GatewayEventPublisher

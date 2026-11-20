@@ -31,6 +31,7 @@ import { fontFamily, useTheme, type Theme } from '../shared/theme';
 import { ToastHost } from '../shared/ui/Toast';
 import { startMessagesLifecycle } from './messagesLifecycle';
 import { startGatewayLifecycle } from './gatewayLifecycle';
+import { startTypingLifecycle } from './typingLifecycle';
 import { startHomeLifecycle } from './homeLifecycle';
 import { startPresenceLifecycle } from './presenceLifecycle';
 import { startSettingsLifecycle } from './settingsLifecycle';
@@ -137,6 +138,7 @@ export default function App() {
   useEffect(startSettingsLifecycle, []);
   useEffect(startMessagesLifecycle, []);
   useEffect(startGatewayLifecycle, []);
+  useEffect(startTypingLifecycle, []);
   useEffect(watchNavigationRestore, []);
   useEffect(watchPendingInvite, []);
   useEffect(clearCacheOnSignOut, []);

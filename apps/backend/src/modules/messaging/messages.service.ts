@@ -3,20 +3,23 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   ErrorCode,
   Permission,
+  TYPING_CLIENT_INTERVAL_MS,
   messageTypeCode,
   type CreateMessageRequest,
   type MessageHistoryQuery,
   type MessageResponse,
 } from '@nezfocus/shared';
 import { AppError } from '../../common/app-error.js';
+import { Clock } from '../../common/clock.js';
 import { isUniqueViolation } from '../../common/db-errors.js';
 import { SnowflakeGenerator } from '../../common/snowflake.js';
+import { KeyValueStore } from '../../redis/key-value-store.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
 import { PermissionService } from '../permissions/permission.service.js';
 import { ServersRepository } from '../servers/servers.repository.js';
 import { ChannelTypeCode, type ChannelRow } from '../servers/servers.schema.js';
 import { MESSAGE_CREATED, type MessageCreated } from './message-events.js';
-import { toMessageResponse } from './messages.dto.js';
+import { toMessageAuthor, toMessageResponse } from './messages.dto.js';
 import {
   MessagesRepository,
   type MessageWithAuthor,
@@ -37,6 +40,8 @@ export class MessagesService {
     private readonly events: EventPublisher,
     private readonly emitter: EventEmitter2,
     private readonly ids: SnowflakeGenerator,
+    private readonly store: KeyValueStore,
+    private readonly clock: Clock,
   ) {}
 
   async send(
@@ -86,6 +91,37 @@ export class MessagesService {
       );
     // ponytail: push for mentions / DMs out of the foreground (NOTIF-02) is P3-B5 (#29).
     return message;
+  }
+
+  // REQ-MSG-06: the same checks as sending, then TYPING_START to who has the server open.
+  // A repeat within TYPING_CLIENT_INTERVAL_MS is 204 and not broadcast (DEC-33, anti-spam).
+  async typing(userId: bigint, channelId: bigint) {
+    const channel = await this.viewable(userId, channelId);
+    await this.permissions.require(
+      userId,
+      { channelId },
+      Permission.SEND_MESSAGES,
+    );
+    const fresh = await this.store.setIfAbsent(
+      `typing:${userId}:${channelId}`,
+      '1',
+      TYPING_CLIENT_INTERVAL_MS / 1000,
+    );
+    const author = fresh && (await this.repo.author(userId));
+    if (!author || !channel.serverId) return;
+    // ponytail: skip receivers who blocked the typer once blocking lands, P2-B2.2 (#111).
+    await this.events.toServerSubscribers(
+      channel.serverId,
+      channelId,
+      'TYPING_START',
+      {
+        channel_id: channelId.toString(),
+        server_id: channel.serverId.toString(),
+        user: toMessageAuthor(author),
+        timestamp: this.clock.now().toISOString(),
+      },
+      userId,
+    );
   }
 
   async history(

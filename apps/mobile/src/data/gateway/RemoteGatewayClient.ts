@@ -52,6 +52,8 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
   // Op 3 the backend must still get: a status picked while offline, and afk (a new session starts not afk).
   let pendingStatus: PresenceStatus | undefined;
   let afk = false;
+  // Op 8: a RESUMED session keeps it on the backend; a new one (READY) starts with none.
+  let subscribed: string | null = null;
   const sendPresence = () => {
     send({ op: GatewayOp.PRESENCE_UPDATE, d: { status: pendingStatus, afk } });
     pendingStatus = undefined;
@@ -183,6 +185,8 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
           if (appState === 'background')
             send({ op: GatewayOp.APP_STATE, d: { state: appState } });
           if (pendingStatus || afk) sendPresence();
+          if (event.t === 'READY' && subscribed)
+            send({ op: GatewayOp.SUBSCRIBE, d: { server_id: subscribed } });
         }
         emitGatewayEvent(event);
       }
@@ -244,6 +248,7 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
     attempt = 0;
     pendingStatus = undefined; // the next account must not inherit this one's status
     afk = false;
+    subscribed = null;
     setStatus('idle');
   }
 
@@ -289,5 +294,12 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
     if (identified) sendPresence();
   }
 
-  return { start, stop, setAppState, setOnline, setPresence };
+  function subscribe(serverId: string | null) {
+    if (serverId === subscribed) return;
+    subscribed = serverId;
+    if (identified)
+      send({ op: GatewayOp.SUBSCRIBE, d: { server_id: serverId } });
+  }
+
+  return { start, stop, setAppState, setOnline, setPresence, subscribe };
 }

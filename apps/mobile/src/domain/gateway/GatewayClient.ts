@@ -7,4 +7,5 @@ export interface GatewayClient {
   setAppState(state: AppState['state']): void; // DEC-34
   setOnline(online: boolean): void;
   setPresence(presence: PresenceUpdate): void; // op 3, REQ-AUTH-05; resent after each READY / RESUMED
+  subscribe(serverId: string | null): void; // op 8, REQ-MSG-07: the open server; resent after each READY
 }

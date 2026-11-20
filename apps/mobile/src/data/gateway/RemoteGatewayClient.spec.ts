@@ -428,4 +428,31 @@ describe('RemoteGatewayClient', () => {
       expect(last().ops()).not.toContain(3);
     });
   });
+
+  describe('SUBSCRIBE (op 8, REQ-MSG-07)', () => {
+    it('sends the open server at once, and again to a new session after READY', async () => {
+      const client = createGatewayClient(deps);
+      client.subscribe('100'); // before connecting: goes out with READY
+      await connected(client);
+      expect(last().sent.at(-1)).toEqual({ op: 8, d: { server_id: '100' } });
+      client.subscribe('100'); // unchanged: nothing
+      client.subscribe(null);
+      expect(last().sent.filter((f) => f.op === 8)).toHaveLength(2);
+      expect(last().sent.at(-1)).toEqual({ op: 8, d: { server_id: null } });
+    });
+
+    it('a RESUMED session keeps it; stop() forgets it', async () => {
+      const client = await connected();
+      client.subscribe('100');
+      last().drop();
+      await vi.advanceTimersByTimeAsync(1000);
+      last().push({ op: 10, d: { heartbeat_interval: INTERVAL } });
+      await flush();
+      last().push({ op: 0, s: 2, t: 'RESUMED', d: {} });
+      expect(last().ops()).not.toContain(8);
+      client.stop();
+      await connected(client);
+      expect(last().ops()).not.toContain(8);
+    });
+  });
 });

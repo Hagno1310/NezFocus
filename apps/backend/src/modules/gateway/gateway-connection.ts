@@ -166,7 +166,12 @@ export class GatewayConnection implements SessionSocket {
     }
     if (frame.op === GatewayOp.PRESENCE_UPDATE)
       return this.presence.update(this.session, frame.d);
-    // VOICE_STATE_UPDATE (P3), FOCUS_HEARTBEAT, SUBSCRIBE (P2-B1 #18): not yet.
+    if (frame.op === GatewayOp.SUBSCRIBE) {
+      const id = frame.d.server_id;
+      // Membership is checked per event (Fanout), so subscribing needs no lookup.
+      return this.sessions.subscribe(this.session, id ? BigInt(id) : null);
+    }
+    // VOICE_STATE_UPDATE (P3), FOCUS_HEARTBEAT: not yet.
   }
 
   private async identify(auth: Authenticated, status?: PresenceStatus) {

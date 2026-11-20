@@ -39,8 +39,8 @@ import { ServersService } from './servers.service.js';
     InvitesService,
     { provide: InviteCodes, useClass: RandomInviteCodes },
   ],
-  // The Gateway lists the user's servers in READY; ServersRepository gives toServer its
-  // members until P2-B1.2 (#108).
+  // The Gateway lists the user's servers in READY; ServersRepository gives its fanout the
+  // members (REQ-MSG-07).
   exports: [ServersService, ServersRepository],
 })
 export class ServersModule {}

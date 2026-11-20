@@ -1,11 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
 import {
-  Permission,
-  type DispatchEventName,
-  type DispatchPayload,
-} from '@nezfocus/shared';
+  Inject,
+  Injectable,
+  Logger,
+  type OnModuleDestroy,
+  type OnModuleInit,
+} from '@nestjs/common';
+import type { DispatchEventName, DispatchPayload } from '@nezfocus/shared';
+import type { Redis } from 'ioredis';
+import { REDIS } from '../../redis/redis.module.js';
 import { PermissionService } from '../permissions/permission.service.js';
 import { ServersRepository } from '../servers/servers.repository.js';
+import { Fanout, type Envelope, type FanoutTarget } from './fanout.js';
 import { GatewaySessions } from './gateway-sessions.js';
 
 // SRS 5.4 DISPATCH. Owner: gateway (B). Other modules inject this and never touch sockets.
@@ -43,16 +48,48 @@ export abstract class EventPublisher {
   ): Promise<void>;
 }
 
+const TOPIC = 'gateway:dispatch';
+
+// REQ-MSG-07 (đồ án): every event goes through Redis Pub/Sub, and each instance delivers to
+// the sessions it holds (Fanout), so 2+ instances work.
+// ponytail: khi chạy production (MSG-07 AC2): publish only to the node holding the connection.
 @Injectable()
-export class GatewayEventPublisher extends EventPublisher {
+export class GatewayEventPublisher
+  extends EventPublisher
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger('EventPublisher');
+  private readonly subscriber: Redis;
+  private readonly fanout: Fanout;
+  // One at a time, so events reach a session in the order they were published.
+  // ponytail: khi một lần fanout chậm làm trễ event khác: một hàng cho mỗi người nhận.
+  private delivering = Promise.resolve();
 
   constructor(
-    private readonly sessions: GatewaySessions,
-    private readonly servers: ServersRepository,
-    private readonly permissions: PermissionService,
+    @Inject(REDIS) private readonly redis: Redis,
+    sessions: GatewaySessions,
+    servers: ServersRepository,
+    permissions: PermissionService,
   ) {
     super();
+    this.subscriber = redis.duplicate();
+    this.fanout = new Fanout(sessions, servers, permissions);
+  }
+
+  async onModuleInit() {
+    this.subscriber.on('message', (_topic: string, text: string) => {
+      const envelope = JSON.parse(text) as Envelope;
+      this.delivering = this.delivering
+        .then(() => this.fanout.deliver(envelope))
+        .catch((err: unknown) =>
+          this.logger.error(`${envelope.t} not delivered`, err),
+        );
+    });
+    await this.subscriber.subscribe(TOPIC);
+  }
+
+  onModuleDestroy() {
+    this.subscriber.disconnect();
   }
 
   toUser<T extends DispatchEventName>(
@@ -60,50 +97,57 @@ export class GatewayEventPublisher extends EventPublisher {
     t: T,
     d: DispatchPayload<T>,
   ) {
-    return this.sessions.dispatchToUser(userId, t, d);
+    return this.publish({ kind: 'user', userId: userId.toString() }, t, d);
   }
 
-  // ponytail: stand-in from P2-A3.2 (#100) so MESSAGE_CREATE reaches who can VIEW_CHANNEL:
-  // one permission lookup per member and event, DMs dropped. P2-B1.2 (#108) replaces it.
-  async toChannel<T extends DispatchEventName>(
+  toChannel<T extends DispatchEventName>(
     channelId: bigint,
     t: T,
     d: DispatchPayload<T>,
   ) {
-    const serverId = (await this.servers.findChannel(channelId))?.serverId;
-    if (!serverId) {
-      this.logger.warn(`${t} to channel ${channelId} dropped: no server`);
-      return;
-    }
-    for (const userId of await this.servers.memberIds(serverId))
-      if (
-        await this.permissions.can(
-          userId,
-          { channelId },
-          Permission.VIEW_CHANNEL,
-        )
-      )
-        await this.sessions.dispatchToUser(userId, t, d);
+    return this.publish(
+      { kind: 'channel', channelId: channelId.toString() },
+      t,
+      d,
+    );
   }
 
-  // ponytail: stand-in from P1-A2.1 (#58) so CHANNEL_* / SERVER_UPDATE reach the other
-  // members (REQ-SRV-02 AC1): one membership read per event, then toUser for each member.
-  // P2-B1.2 (#108) replaces it with the subscription map + Redis Pub/Sub.
-  async toServer<T extends DispatchEventName>(
+  toServer<T extends DispatchEventName>(
     serverId: bigint,
     t: T,
     d: DispatchPayload<T>,
   ) {
-    for (const userId of await this.servers.memberIds(serverId))
-      await this.sessions.dispatchToUser(userId, t, d);
+    return this.publish(
+      { kind: 'server', serverId: serverId.toString() },
+      t,
+      d,
+    );
   }
 
-  // ponytail: stand-in until the subscription map of P2-B1.2 (#108): nobody is subscribed yet.
-  async toServerSubscribers<T extends DispatchEventName>(
+  toServerSubscribers<T extends DispatchEventName>(
     serverId: bigint,
-    _channelId: bigint | null,
+    channelId: bigint | null,
     t: T,
+    d: DispatchPayload<T>,
+    except?: bigint,
   ) {
-    this.logger.debug(`${t} to subscribers of ${serverId} dropped`);
+    return this.publish(
+      {
+        kind: 'subscribers',
+        serverId: serverId.toString(),
+        channelId: channelId?.toString() ?? null,
+        except: except?.toString() ?? null,
+      },
+      t,
+      d,
+    );
+  }
+
+  private async publish<T extends DispatchEventName>(
+    target: FanoutTarget,
+    t: T,
+    d: DispatchPayload<T>,
+  ) {
+    await this.redis.publish(TOPIC, JSON.stringify({ target, t, d }));
   }
 }

@@ -123460,26 +123460,85 @@
             },
             {
               "type": "frame",
-              "id": "w6ZN0",
+              "id": "LOSoT",
               "name": "Typing",
               "width": "fill_container",
+              "gap": 12,
               "padding": [
                 4,
                 16,
                 0,
                 16
               ],
+              "alignItems": "center",
               "children": [
                 {
-                  "type": "text",
-                  "id": "boO0f",
+                  "type": "frame",
+                  "id": "PP7xH",
+                  "name": "Typing dots",
+                  "width": 40,
+                  "gap": 3,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "Abp4d",
+                      "name": "Dot 1",
+                      "fill": "$text-secondary",
+                      "width": 6,
+                      "height": 6
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "ydjx3",
+                      "name": "Dot 2",
+                      "opacity": 0.6,
+                      "fill": "$text-secondary",
+                      "width": 6,
+                      "height": 6
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "wRkfB",
+                      "name": "Dot 3",
+                      "opacity": 0.3,
+                      "fill": "$text-secondary",
+                      "width": 6,
+                      "height": 6
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "RVuar",
                   "name": "Typing text",
-                  "fill": "$text-secondary",
-                  "content": "Chi đang nhập…",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "gap": 4,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "N4OOv",
+                      "name": "Typer",
+                      "fill": "$text-secondary",
+                      "content": "Chi",
+                      "lineHeight": 1.45,
+                      "fontFamily": "$font-text",
+                      "fontSize": "$type-label",
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "iHZYP",
+                      "name": "Rest",
+                      "fill": "$text-secondary",
+                      "content": "đang nhập…",
+                      "lineHeight": 1.45,
+                      "fontFamily": "$font-text",
+                      "fontSize": "$type-label",
+                      "fontWeight": "normal"
+                    }
+                  ]
                 }
               ]
             }
@@ -129588,26 +129647,85 @@
             },
             {
               "type": "frame",
-              "id": "Cr8ub",
+              "id": "S8nEE",
               "name": "Typing",
               "width": "fill_container",
+              "gap": 12,
               "padding": [
                 4,
                 16,
                 0,
                 16
               ],
+              "alignItems": "center",
               "children": [
                 {
-                  "type": "text",
-                  "id": "k8goH",
+                  "type": "frame",
+                  "id": "Bff4Y",
+                  "name": "Typing dots",
+                  "width": 40,
+                  "gap": 3,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "C4IXn",
+                      "name": "Dot 1",
+                      "fill": "$text-secondary",
+                      "width": 6,
+                      "height": 6
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "k7BRF",
+                      "name": "Dot 2",
+                      "opacity": 0.6,
+                      "fill": "$text-secondary",
+                      "width": 6,
+                      "height": 6
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "S8X9yc",
+                      "name": "Dot 3",
+                      "opacity": 0.3,
+                      "fill": "$text-secondary",
+                      "width": 6,
+                      "height": 6
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "B7vtp",
                   "name": "Typing text",
-                  "fill": "$text-secondary",
-                  "content": "Chi đang nhập…",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "gap": 4,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nbp0r",
+                      "name": "Typer",
+                      "fill": "$text-secondary",
+                      "content": "Chi",
+                      "lineHeight": 1.45,
+                      "fontFamily": "$font-text",
+                      "fontSize": "$type-label",
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "JI9LO",
+                      "name": "Rest",
+                      "fill": "$text-secondary",
+                      "content": "đang nhập…",
+                      "lineHeight": 1.45,
+                      "fontFamily": "$font-text",
+                      "fontSize": "$type-label",
+                      "fontWeight": "normal"
+                    }
+                  ]
                 }
               ]
             }
@@ -129942,26 +130060,85 @@
             },
             {
               "type": "frame",
-              "id": "MXpYl",
+              "id": "Timal",
               "name": "Typing",
               "width": "fill_container",
+              "gap": 12,
               "padding": [
                 4,
                 16,
                 0,
                 16
               ],
+              "alignItems": "center",
               "children": [
                 {
-                  "type": "text",
-                  "id": "xqlpM",
+                  "type": "frame",
+                  "id": "Dk0tt",
+                  "name": "Typing dots",
+                  "width": 40,
+                  "gap": 3,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "VnPzJ",
+                      "name": "Dot 1",
+                      "fill": "$text-secondary",
+                      "width": 6,
+                      "height": 6
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "BdrtR",
+                      "name": "Dot 2",
+                      "opacity": 0.6,
+                      "fill": "$text-secondary",
+                      "width": 6,
+                      "height": 6
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "DuKGS",
+                      "name": "Dot 3",
+                      "opacity": 0.3,
+                      "fill": "$text-secondary",
+                      "width": 6,
+                      "height": 6
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "EUHY8",
                   "name": "Typing text",
-                  "fill": "$text-secondary",
-                  "content": "Chi đang nhập…",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "gap": 4,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Qt0hh",
+                      "name": "Typer",
+                      "fill": "$text-secondary",
+                      "content": "Chi",
+                      "lineHeight": 1.45,
+                      "fontFamily": "$font-text",
+                      "fontSize": "$type-label",
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "VLl3y",
+                      "name": "Rest",
+                      "fill": "$text-secondary",
+                      "content": "đang nhập…",
+                      "lineHeight": 1.45,
+                      "fontFamily": "$font-text",
+                      "fontSize": "$type-label",
+                      "fontWeight": "normal"
+                    }
+                  ]
                 }
               ]
             }

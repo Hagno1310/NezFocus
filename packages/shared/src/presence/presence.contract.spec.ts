@@ -99,6 +99,7 @@ describe('READY presence', () => {
         preferred_status: 'invisible',
         settings: DEFAULT_USER_SETTINGS,
         presences: [{ user_id: '2', status: 'idle', activity: null }],
+        read_states: [],
       },
     });
     expect(e?.t === 'READY' && e.d.preferred_status).toBe('invisible');

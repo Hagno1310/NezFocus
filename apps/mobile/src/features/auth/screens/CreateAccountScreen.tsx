@@ -6,6 +6,7 @@ import type { TextInput } from 'react-native';
 import type { RootStackParamList } from '../../../app/navigation/RootNavigator';
 import { Button } from '../../../shared/ui/Button';
 import { SystemBanner } from '../../../shared/ui/Feedback';
+import { PendingInviteBanner } from '../components/PendingInviteBanner';
 import { FormMessage } from '../../../shared/ui/FormMessage';
 import { Text } from '../../../shared/ui/Text';
 import { TextField } from '../../../shared/ui/TextField';
@@ -49,7 +50,12 @@ export function CreateAccountScreen({ navigation }: Props) {
     <AuthScreen
       title={t('auth.createAccount.title')}
       onBack={navigation.goBack}
-      banner={!online && <SystemBanner kind="offline" />}
+      banner={
+        <>
+          {!online && <SystemBanner kind="offline" />}
+          <PendingInviteBanner step="signIn" />
+        </>
+      }
     >
       <Text color="text-secondary">{t('auth.createAccount.body')}</Text>
       <TextField

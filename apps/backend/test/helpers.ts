@@ -1,6 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
-import { Controller, Get, type INestApplication } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  type INestApplication,
+} from '@nestjs/common';
 import { Test, type TestingModuleBuilder } from '@nestjs/testing';
 import {
   GatewayRoutes,
@@ -10,6 +16,7 @@ import {
 import request from 'supertest';
 import WebSocket from 'ws';
 import { AppModule } from '../src/app.module.js';
+import { Idempotent } from '../src/common/idempotency.js';
 import { configureApp } from '../src/configure-app.js';
 import { AuthMailer } from '../src/modules/auth/auth-mailer.js';
 import {
@@ -24,6 +31,16 @@ class ProbeController {
   @Get()
   ok() {
     return { ok: true };
+  }
+}
+
+// REQ-MSG-09 AC2: the shared Idempotency-Key interceptor on a create endpoint of its own.
+@Controller('e2e-idempotent')
+class IdempotentProbeController {
+  @Post()
+  @Idempotent()
+  create(@Body() body: unknown) {
+    return { id: randomUUID(), body };
   }
 }
 
@@ -60,7 +77,7 @@ export async function createTestApp(
   const moduleRef = await override(
     Test.createTestingModule({
       imports: [AppModule],
-      controllers: [ProbeController],
+      controllers: [ProbeController, IdempotentProbeController],
     })
       .overrideProvider(AuthMailer)
       .useValue(mailer)

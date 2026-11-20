@@ -49,6 +49,10 @@ class RedisKeyValueStore extends KeyValueStore {
     await this.redis.set(key, value, 'EX', ttlSeconds);
   }
 
+  async setIfAbsent(key: string, value: string, ttlSeconds: number) {
+    return (await this.redis.set(key, value, 'EX', ttlSeconds, 'NX')) === 'OK';
+  }
+
   async delete(key: string) {
     await this.redis.del(key);
   }
@@ -71,7 +75,8 @@ class RedisKeyValueStore extends KeyValueStore {
       useFactory: (redis: Redis) => new RedisKeyValueStore(redis),
     },
   ],
-  exports: [KeyValueStore],
+  // REDIS: for Pub/Sub (gateway, REQ-MSG-07); everything else goes through KeyValueStore.
+  exports: [REDIS, KeyValueStore],
 })
 export class RedisModule implements OnApplicationShutdown {
   constructor(@Inject(REDIS) private readonly redis: Redis) {}

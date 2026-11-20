@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { authPrefs } from '../data/auth/authPrefs';
+import { pendingInvites } from '../data/invites';
 import { secureTokenStore } from '../data/auth/secureTokenStore';
 import {
   persistSession,
@@ -28,7 +29,9 @@ import {
 import { loadLastMethod } from '../features/auth/authFlowStore';
 import { fontFamily, useTheme, type Theme } from '../shared/theme';
 import { ToastHost } from '../shared/ui/Toast';
+import { startMessagesLifecycle } from './messagesLifecycle';
 import { startGatewayLifecycle } from './gatewayLifecycle';
+import { startTypingLifecycle } from './typingLifecycle';
 import { startHomeLifecycle } from './homeLifecycle';
 import { startPresenceLifecycle } from './presenceLifecycle';
 import { startSettingsLifecycle } from './settingsLifecycle';
@@ -54,6 +57,24 @@ function watchNavigationRestore() {
       if (state.routes.every((r) => names.includes(r.name)))
         navigationRef.resetRoot(state);
     });
+  });
+}
+
+// Spec 01 › Điều hướng sau khi vào được tài khoản: "Có lời mời đang chờ" comes before going back
+// to the screen of an ended session, so it runs after watchNavigationRestore's frame.
+function watchPendingInvite() {
+  return sessionStore.subscribe((s, prev) => {
+    if (s.status !== 'signed-in' || prev.status === 'signed-in') return;
+    const invite = pendingInvites.current();
+    if (!invite) return;
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        navigationRef.navigate('Invite', {
+          code: invite.code,
+          channel: invite.channel,
+        }),
+      ),
+    );
   });
 }
 
@@ -99,6 +120,8 @@ const sessionRestored = Promise.all([
     hasTokens: async () => !!(await secureTokenStore.get()),
   }),
   loadLastMethod(),
+  // REQ-SRV-07 AC4 / AC5: an invite kept before the app was killed (dropped after 24 hours).
+  pendingInvites.restore().catch(() => {}),
 ]).then(() =>
   persistSession((s) => void authPrefs.saveSession(s).catch(() => {})),
 );
@@ -113,8 +136,11 @@ export default function App() {
   useEffect(startHomeLifecycle, []);
   useEffect(startPresenceLifecycle, []);
   useEffect(startSettingsLifecycle, []);
+  useEffect(startMessagesLifecycle, []);
   useEffect(startGatewayLifecycle, []);
+  useEffect(startTypingLifecycle, []);
   useEffect(watchNavigationRestore, []);
+  useEffect(watchPendingInvite, []);
   useEffect(clearCacheOnSignOut, []);
   // REQ-STUDY-10 / SRS 7.3.5: the "Nhắc học tập" channel exists from launch.
   useEffect(() => {

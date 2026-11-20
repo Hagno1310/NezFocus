@@ -7,4 +7,5 @@ export * from '../modules/study/focus.schema.js';
 export * from '../modules/servers/servers.schema.js';
 export * from '../modules/attachments/attachments.schema.js';
 export * from '../modules/users/user-server-settings.schema.js';
+export * from '../modules/messaging/messages.schema.js';
 export * from '../modules/notifications/notifications.schema.js';

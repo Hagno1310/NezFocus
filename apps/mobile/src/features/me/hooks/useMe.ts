@@ -1,6 +1,11 @@
 import { ErrorCode, type CurrentUser } from '@nezfocus/shared';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from '@tanstack/react-query';
 import { accountRepository } from '../../../data/account';
+import { localKv } from '../../../data/db/kv';
 import { asApiError } from '../../../domain/auth/authFlow';
 import { attachmentRepository } from '../../../data/attachments';
 import type { ImageFile } from '../../../domain/attachments/AttachmentRepository';
@@ -14,15 +19,32 @@ import { showErrorToast } from '../../auth/hooks/useAuthActions';
 import { useGatewayEvent } from '../../gateway/hooks/useGatewayEvent';
 
 const ME = ['account', 'me'];
+const KV_KEY = 'me';
+
+// Also on the device (kv), so an offline cold start still shows my name and photo.
+const setMe = (qc: QueryClient, user: CurrentUser) => {
+  qc.setQueryData(ME, user);
+  void localKv.set(KV_KEY, user).catch(() => {});
+};
+
+async function fetchMe() {
+  const saved = await localKv.get<CurrentUser>(KV_KEY).catch(() => null);
+  try {
+    const user = await accountRepository.me();
+    void localKv.set(KV_KEY, user).catch(() => {});
+    return user;
+  } catch (err) {
+    if (saved) return saved;
+    throw err;
+  }
+}
 
 // My profile for Cá nhân. READY and USER_UPDATE keep it fresh (spec 07: no `loading`, the
 // profile is cached from READY); the fetch covers a READY that came before this mounted.
-// ponytail: in memory only, so an offline cold start shows no name until online; persist the
-// cache once op-sqlite lands (P2-A3.3 #101).
 export function useMe() {
   return useQuery({
     queryKey: ME,
-    queryFn: accountRepository.me,
+    queryFn: fetchMe,
     staleTime: Infinity,
     gcTime: Infinity,
   });
@@ -30,7 +52,7 @@ export function useMe() {
 
 export function useMeSync() {
   const qc = useQueryClient();
-  const set = (user: CurrentUser) => qc.setQueryData(ME, user);
+  const set = (user: CurrentUser) => setMe(qc, user);
   useGatewayEvent('READY', (d) => set(d.user));
   useGatewayEvent('USER_UPDATE', set);
 }
@@ -40,7 +62,7 @@ export function useSaveProfile() {
   const qc = useQueryClient();
   return useGuardedMutation(async (form: ProfileForm) => {
     try {
-      qc.setQueryData(ME, await saveProfile(accountRepository, form));
+      setMe(qc, await saveProfile(accountRepository, form));
       return { ok: true as const };
     } catch (err) {
       const api = asApiError(err);
@@ -60,7 +82,7 @@ export function useChangeAvatar() {
       attachmentRepository,
       file,
     );
-    if (result.ok) qc.setQueryData(ME, result.user);
+    if (result.ok) setMe(qc, result.user);
     return result;
   });
 }
@@ -69,8 +91,8 @@ export function useRemoveAvatar() {
   const qc = useQueryClient();
   return useGuardedMutation(async () => {
     try {
-      qc.setQueryData(
-        ME,
+      setMe(
+        qc,
         await accountRepository.updateProfile({ avatar_attachment_id: null }),
       );
       return true;

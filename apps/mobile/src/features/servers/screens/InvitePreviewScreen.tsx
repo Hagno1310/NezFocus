@@ -1,0 +1,343 @@
+import { ErrorCode, type InvitePreview } from '@nezfocus/shared';
+import { Volume2, X } from 'lucide-react-native';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useStore } from 'zustand';
+import { asApiError } from '../../../domain/auth/authFlow';
+import {
+  arriveAsMember,
+  formatCount,
+  type Destination,
+} from '../../../domain/invites/joinInvite';
+import { homeStore } from '../../../domain/servers/homeStore';
+import { radius, size, space, useTheme } from '../../../shared/theme';
+import { Button, IconButton } from '../../../shared/ui/Button';
+import { Skeleton, SystemBanner } from '../../../shared/ui/Feedback';
+import { FormMessage } from '../../../shared/ui/FormMessage';
+import { Icon } from '../../../shared/ui/Icon';
+import { Mascot } from '../../../shared/ui/Mascot';
+import { Text } from '../../../shared/ui/Text';
+import { showToast } from '../../../shared/ui/Toast';
+import { useOnline } from '../../gateway/hooks/useOnline';
+import { ServerIcon } from '../components/ServerIcon';
+import { useInvitePreview } from '../hooks/useInvitePreview';
+import { serverRepository } from '../../../data/servers';
+import { useJoinInvite } from '../hooks/useJoinInvite';
+
+const ICON = 72;
+
+function InviteCard({ preview }: { preview: InvitePreview | null }) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  return (
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: colors['surface-1'], borderColor: colors.border },
+      ]}
+    >
+      {preview ? (
+        <>
+          <ServerIcon server={preview.server} size={ICON} />
+          <View style={styles.flex}>
+            <Text variant="headline" numberOfLines={2}>
+              {preview.server.name}
+            </Text>
+            <Text variant="label" color="text-secondary">
+              {t('invites.stats', {
+                members: formatCount(preview.server.member_count),
+                online: formatCount(preview.server.online_count),
+              })}
+            </Text>
+          </View>
+        </>
+      ) : (
+        <>
+          <Skeleton width={ICON} height={ICON} />
+          <View style={[styles.flex, styles.skeletonLines]}>
+            <Skeleton width="80%" height={20} />
+            <Skeleton width="55%" height={14} />
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
+
+// S-MOD-01 · Preview lời mời (spec 10): loading, valid, room-invite, joining, expired,
+// banned, max-servers, already-member, offline, guest (signed out, P2-A1.4).
+export function InvitePreviewScreen({
+  code,
+  channelParam,
+  guest,
+  onPreview,
+  onClose,
+  onArrive,
+}: {
+  code: string;
+  channelParam?: string;
+  // Signed out: the two buttons of `guest` instead of "Tham gia" (P2-A1.4).
+  guest?: {
+    onCreateAccount: (preview: InvitePreview | null) => void;
+    onSignIn: (preview: InvitePreview | null) => void;
+  };
+  onPreview?: (preview: InvitePreview) => void;
+  onClose: () => void;
+  onArrive: (serverId: string, to: Destination | null, room?: string) => void;
+}) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const { top, bottom } = useSafeAreaInsets();
+  const online = useOnline();
+  const query = useInvitePreview(code);
+  const preview = query.data ?? null;
+  const roomName = (to: Destination | null) =>
+    to?.kind === 'room' ? preview?.channel?.name : undefined;
+  const join = useJoinInvite(code, channelParam, (server, to) =>
+    onArrive(server.id, to, roomName(to)),
+  );
+  const serversKnown = useStore(homeStore, (s) => s.servers !== null);
+  const isMember = useStore(
+    homeStore,
+    (s) => !!preview && !!s.servers?.some((x) => x.id === preview.server.id),
+  );
+  const [joinPressed, setJoinPressed] = useState(false);
+  // already-member shows no preview; until READY lists my servers it cannot be told apart.
+  const settling =
+    !guest && !joinPressed && !!preview && (!serversKnown || isMember);
+  const shown = settling ? null : preview;
+
+  // Once per loaded preview, whatever the parent's callback identity.
+  const previewed = useEffectEvent((p: InvitePreview) => onPreview?.(p));
+  useEffect(() => {
+    if (preview) previewed(preview);
+  }, [preview]);
+
+  // already-member: no preview, straight to the channel + Toast (SRV-04 AC3, SRV-07 v1.6).
+  const handled = useRef(false);
+  useEffect(() => {
+    if (!preview || !isMember || guest || handled.current) return;
+    handled.current = true;
+    void arriveAsMember(serverRepository, preview.server.id, channelParam).then(
+      (to) => {
+        onArrive(
+          preview.server.id,
+          to,
+          to?.kind === 'room' ? preview.channel?.name : undefined,
+        );
+        showToast({
+          message: t('invites.alreadyMember', { server: preview.server.name }),
+        });
+      },
+    );
+  }, [preview, isMember, guest, channelParam, onArrive, t]);
+
+  const lookupError = asApiError(query.error);
+  const rateLimited = lookupError?.code === ErrorCode.RateLimited;
+  useEffect(() => {
+    if (!rateLimited) return;
+    const wait = lookupError?.retry_after ?? 60;
+    showToast({
+      message:
+        wait < 60
+          ? t('invites.tooFastSeconds', { count: Math.ceil(wait) })
+          : t('invites.tooFastMinutes', { count: Math.ceil(wait / 60) }),
+    });
+  }, [rateLimited, lookupError?.retry_after, t]);
+  const expired =
+    lookupError?.code === ErrorCode.InviteInvalid || join.error === 'invalid';
+
+  if (expired)
+    return (
+      <View
+        style={[
+          styles.screen,
+          {
+            backgroundColor: colors.bg,
+            paddingTop: top,
+            paddingBottom: bottom,
+          },
+        ]}
+      >
+        <IconButton icon={X} label={t('invites.close')} onPress={onClose} />
+        <View style={[styles.middle, styles.center]}>
+          <Mascot mood="confused" size={96} />
+          <Text variant="title-1" style={styles.centerText}>
+            {t('invites.expiredTitle')}
+          </Text>
+          <Text color="text-secondary" style={styles.centerText}>
+            {t('invites.expiredBody')}
+          </Text>
+        </View>
+        <Button
+          variant="secondary"
+          size="L"
+          fullWidth
+          label={t('invites.close')}
+          onPress={onClose}
+        />
+      </View>
+    );
+
+  // offline: still nothing loaded (Banner + still skeleton). A preview already loaded stays.
+  const offline = !preview && !online;
+  const failed = !preview && !!query.error && !offline;
+  const title = shown
+    ? shown.inviter
+      ? t('invites.invitedBy', { name: shown.inviter.display_name })
+      : t('invites.invited')
+    : null;
+
+  const footer = (() => {
+    if (!shown)
+      return (
+        <>
+          {offline && (
+            <FormMessage tone="info" text={t('invites.previewOffline')} />
+          )}
+          {failed && !rateLimited && (
+            <FormMessage tone="error" text={t('invites.lookupFailed')} />
+          )}
+          {(offline || failed) && (
+            <Button
+              size="L"
+              fullWidth
+              label={failed ? t('invites.retry') : t('invites.join')}
+              disabled={offline}
+              onPress={() => void query.refetch()}
+            />
+          )}
+        </>
+      );
+    if (guest)
+      return (
+        <>
+          <Text
+            variant="label"
+            color="text-secondary"
+            style={styles.centerText}
+          >
+            {t('invites.guestKept')}
+          </Text>
+          <Button
+            size="L"
+            fullWidth
+            label={t('invites.guestCreate')}
+            onPress={() => guest.onCreateAccount(shown)}
+          />
+          <Button
+            variant="secondary"
+            size="L"
+            fullWidth
+            label={t('invites.guestSignIn')}
+            onPress={() => guest.onSignIn(shown)}
+          />
+        </>
+      );
+    if (join.error === 'banned')
+      return (
+        <>
+          <FormMessage
+            tone="error"
+            text={t('invites.banned', { server: shown.server.name })}
+          />
+          <Button
+            variant="secondary"
+            size="L"
+            fullWidth
+            label={t('invites.close')}
+            onPress={onClose}
+          />
+        </>
+      );
+    return (
+      <>
+        {join.error === 'max-servers' && (
+          <FormMessage tone="error" text={t('invites.maxServers')} />
+        )}
+        {/* Chỉ ghi luật: offline after the preview loaded → neutral line, card kept. */}
+        {join.error === 'network' && (
+          <FormMessage tone="info" text={t('invites.joinNeedsNetwork')} />
+        )}
+        {join.error === 'other' && (
+          <FormMessage tone="error" text={t('invites.lookupFailed')} />
+        )}
+        <Button
+          size="L"
+          fullWidth
+          label={t('invites.join')}
+          loading={join.joining}
+          disabled={join.error === 'max-servers'}
+          onPress={() => {
+            // Spec 10: a join makes me a member too, but joining shows no toast or skeleton.
+            handled.current = true;
+            setJoinPressed(true);
+            void join.join(shown);
+          }}
+        />
+      </>
+    );
+  })();
+
+  return (
+    <View
+      style={[
+        styles.screen,
+        { backgroundColor: colors.bg, paddingTop: top, paddingBottom: bottom },
+      ]}
+    >
+      <IconButton
+        icon={X}
+        label={t('invites.close')}
+        disabled={join.joining}
+        onPress={onClose}
+      />
+      {offline && (
+        <View style={styles.banner}>
+          <SystemBanner kind="offline" />
+        </View>
+      )}
+      <View style={styles.middle}>
+        {title ? (
+          <Text variant="title-1" accessibilityRole="header">
+            {title}
+          </Text>
+        ) : (
+          <Skeleton width={200} height={30} />
+        )}
+        <InviteCard preview={shown} />
+        {shown?.channel && (
+          <View style={styles.room}>
+            <Icon as={Volume2} size="sm" color="text-secondary" />
+            <Text variant="label" color="text-secondary" style={styles.flex}>
+              {t('invites.roomLine', { room: shown.channel.name })}
+            </Text>
+          </View>
+        )}
+      </View>
+      <View style={styles.footer}>{footer}</View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  screen: { flex: 1, paddingHorizontal: space[3] },
+  banner: { marginHorizontal: -space[3] },
+  middle: { flex: 1, justifyContent: 'center', gap: space[3] },
+  center: { alignItems: 'center' },
+  centerText: { textAlign: 'center' },
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[3],
+    padding: space[3],
+    borderRadius: radius.button,
+    borderWidth: size.hairline,
+  },
+  skeletonLines: { gap: space[2] },
+  room: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
+  footer: { gap: space[2] + space[1], paddingTop: space[3] },
+});

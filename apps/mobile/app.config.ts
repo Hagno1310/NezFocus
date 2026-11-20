@@ -57,6 +57,18 @@ const config: ExpoConfig = {
     predictiveBackGestureEnabled: true,
     // SRS 7.3.6: phase-change notifications on time (Android 12+ asks the user; 14+ starts off).
     permissions: ['android.permission.SCHEDULE_EXACT_ALARM'],
+    // REQ-SRV-07 AC1: https://nezfocus.app/invite/<code> opens the app (verified against
+    // /.well-known/assetlinks.json, ANDROID_CERT_SHA256 on the backend). Dev: nezfocus://invite/<code>.
+    intentFilters: [
+      {
+        action: 'VIEW',
+        autoVerify: true,
+        data: [
+          { scheme: 'https', host: 'nezfocus.app', pathPrefix: '/invite/' },
+        ],
+        category: ['BROWSABLE', 'DEFAULT'],
+      },
+    ],
   },
   platforms: ['android'],
   plugins: [

@@ -166,7 +166,12 @@ export class GatewayConnection implements SessionSocket {
     }
     if (frame.op === GatewayOp.PRESENCE_UPDATE)
       return this.presence.update(this.session, frame.d);
-    // VOICE_STATE_UPDATE (P3), FOCUS_HEARTBEAT, SUBSCRIBE (P2-B1 #18): not yet.
+    if (frame.op === GatewayOp.SUBSCRIBE) {
+      const id = frame.d.server_id;
+      // Membership is checked per event (Fanout), so subscribing needs no lookup.
+      return this.sessions.subscribe(this.session, id ? BigInt(id) : null);
+    }
+    // VOICE_STATE_UPDATE (P3), FOCUS_HEARTBEAT: not yet.
   }
 
   private async identify(auth: Authenticated, status?: PresenceStatus) {
@@ -181,6 +186,8 @@ export class GatewayConnection implements SessionSocket {
       servers,
       ...presence,
       settings,
+      // ponytail: always empty, P2-A4.2 (#104) sends the real read states.
+      read_states: [],
     });
     // SRS 5.4: IDENTIFY may carry the status the app wants (a new login keeps the saved one).
     if (status)

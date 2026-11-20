@@ -5,6 +5,7 @@ import { api, apiBaseUrl } from '../api';
 import { getDeviceInfo } from '../auth/deviceInfo';
 import { secureTokenStore } from '../auth/secureTokenStore';
 import { isFakeArea, pickRepository } from '../fake';
+import { fakeIncomingMessage } from '../messages/FakeMessageRepository';
 import { fakeServerRepository } from '../servers/FakeServerRepository';
 import { AN, createFakeGatewayClient } from './FakeGatewayClient';
 import { createGatewayClient, type GatewaySocket } from './RemoteGatewayClient';
@@ -44,6 +45,7 @@ const remote = createGatewayClient({
 // EXPO_PUBLIC_FAKE=gateway: what plays after READY. Each area adds steps for its own events here.
 // With `servers` faked too, READY lists the fake servers; otherwise none (S-HOME-02 no-server).
 // P1-B4.3: presence of the sample friends (04 › Phòng & bạn bè mẫu) for S-ME-02 and the rows.
+const incoming = fakeIncomingMessage();
 const inMin = (m: number) => new Date(Date.now() + m * 60_000).toISOString();
 const fake = createFakeGatewayClient(
   [
@@ -86,6 +88,23 @@ const fake = createFakeGatewayClient(
         },
       },
     },
+    // P2-A3.3: with `messages` and `servers` faked, Chi answers in #hoi-dap.
+    // P2-B1.3: "Chi đang nhập…" first; her message hides it (REQ-MSG-06 AC1).
+    ...(isFakeArea('messages') && incoming
+      ? [
+          {
+            after: 5000,
+            t: 'TYPING_START' as const,
+            d: {
+              channel_id: incoming.channel_id,
+              server_id: incoming.server_id,
+              user: incoming.author,
+              timestamp: new Date().toISOString(),
+            },
+          },
+          { after: 8000, t: 'MESSAGE_CREATE' as const, d: incoming },
+        ]
+      : []),
   ],
   () => (isFakeArea('servers') ? fakeServerRepository.summaries() : []),
   [

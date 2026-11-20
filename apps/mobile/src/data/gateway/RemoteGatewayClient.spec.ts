@@ -83,6 +83,7 @@ async function connected(client = createGatewayClient(deps)) {
       preferred_status: 'online',
       settings: DEFAULT_USER_SETTINGS,
       presences: [],
+      read_states: [],
     },
   });
   return client;
@@ -123,6 +124,7 @@ describe('RemoteGatewayClient', () => {
         preferred_status: 'online',
         settings: DEFAULT_USER_SETTINGS,
         presences: [],
+        read_states: [],
       },
     });
     expect(gatewayStore.getState().status).toBe('connected');
@@ -424,6 +426,45 @@ describe('RemoteGatewayClient', () => {
       client.stop();
       await connected(client);
       expect(last().ops()).not.toContain(3);
+    });
+  });
+
+  describe('SUBSCRIBE (op 8, REQ-MSG-07)', () => {
+    it('sends the open server at once, and again to a new session after READY', async () => {
+      const client = createGatewayClient(deps);
+      client.subscribe('100'); // before connecting: goes out with READY
+      await connected(client);
+      expect(last().sent.at(-1)).toEqual({ op: 8, d: { server_id: '100' } });
+      client.subscribe('100'); // unchanged: nothing
+      client.subscribe(null);
+      expect(last().sent.filter((f) => f.op === 8)).toHaveLength(2);
+      expect(last().sent.at(-1)).toEqual({ op: 8, d: { server_id: null } });
+    });
+
+    it('a server opened while disconnected goes out after RESUMED', async () => {
+      const client = await connected();
+      client.subscribe('100');
+      last().drop();
+      client.subscribe('200');
+      await vi.advanceTimersByTimeAsync(1000);
+      last().push({ op: 10, d: { heartbeat_interval: INTERVAL } });
+      await flush();
+      last().push({ op: 0, s: 2, t: 'RESUMED', d: {} });
+      expect(last().sent.at(-1)).toEqual({ op: 8, d: { server_id: '200' } });
+    });
+
+    it('a RESUMED session keeps it; stop() forgets it', async () => {
+      const client = await connected();
+      client.subscribe('100');
+      last().drop();
+      await vi.advanceTimersByTimeAsync(1000);
+      last().push({ op: 10, d: { heartbeat_interval: INTERVAL } });
+      await flush();
+      last().push({ op: 0, s: 2, t: 'RESUMED', d: {} });
+      expect(last().ops()).not.toContain(8);
+      client.stop();
+      await connected(client);
+      expect(last().ops()).not.toContain(8);
     });
   });
 });

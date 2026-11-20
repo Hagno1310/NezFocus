@@ -169,14 +169,12 @@ describe('db:seed (e2e)', () => {
     expect(holders('Quản trị')).toEqual(['tuan.hoang']);
     expect(holders('Trưởng nhóm')).toEqual(['an.nguyen', 'binh.tran']);
     expect(holders('Điều phối phòng học')).toEqual(['chi.le']);
-    expect(
-      [...new Set(held.map((h) => `${h.position} ${h.role}`))].sort(),
-    ).toEqual([
-      '0 @everyone',
-      '1 Điều phối phòng học',
-      '2 Trưởng nhóm',
-      '3 Quản trị',
-    ]);
+    // Order, not numbers: a dev DB keeps gaps from roles made and deleted by hand.
+    expect([
+      ...new Set(
+        [...held].sort((a, b) => a.position - b.position).map((h) => h.role),
+      ),
+    ]).toEqual(['@everyone', 'Điều phối phòng học', 'Trưởng nhóm', 'Quản trị']);
 
     // SRS 8.5.3: #thong-bao denies @everyone SEND_MESSAGES on its own, once.
     const news = await db

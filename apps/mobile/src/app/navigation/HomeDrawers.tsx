@@ -14,11 +14,13 @@ import type {
 import { useTranslation } from 'react-i18next';
 import { useStore } from 'zustand';
 import { homeStore, openChannel } from '../../domain/servers/homeStore';
+import { ChannelScreen } from '../../features/chat/screens/ChannelScreen';
 import {
   LeftDrawer,
   type LeftDrawerActions,
 } from '../../features/servers/screens/LeftDrawer';
 import { useTheme } from '../../shared/theme';
+import { swipeGuard } from '../../shared/ui/swipeGuard';
 import { drawerGesture, type DrawerSide } from './drawerGesture';
 import { Placeholder } from './Placeholder';
 
@@ -32,14 +34,19 @@ const Right = createDrawerNavigator<RightParamList>();
 
 type DrawerOpenState = { leftOpen: boolean; rightOpen: boolean };
 
-function drawerOptions(side: DrawerSide, open: DrawerOpenState, width: number) {
+function drawerOptions(
+  side: DrawerSide,
+  open: DrawerOpenState,
+  width: number,
+  held: boolean,
+) {
   const { swipeEnabled, failOffsetX } = drawerGesture(side, open);
   return {
     headerShown: false,
     drawerPosition: side,
     // SRS 3.1: swipe from anywhere in the content; Android keeps the edge strip for system Back itself.
     swipeEdgeWidth: width,
-    swipeEnabled,
+    swipeEnabled: swipeEnabled && !held,
     // Gotcha: drawer types say RNGH 3 `PanGesture`, but it builds a legacy Gesture.Pan() at runtime.
     configureGestureHandler: ((g: LegacyPanGesture) =>
       g.failOffsetX(failOffsetX)) as unknown as (g: PanGesture) => PanGesture,
@@ -51,33 +58,31 @@ const openFrom = (e: { data: { state: unknown } }) =>
     e.data.state as Parameters<typeof getDrawerStatusFromState>[0],
   ) === 'open';
 
-function ChannelPlaceholder() {
+// S-HOME-01; before READY opens a channel the drawers still open from the placeholder.
+function ChannelHost() {
   const { t } = useTranslation();
   const navigation = useNavigation<DrawerNavigationProp<ParamListBase>>();
   const leftDrawer = navigation.getParent<DrawerNavigationProp<ParamListBase>>(
     'LeftDrawer' as never,
   );
-  const title = useStore(homeStore, (s) => {
-    const server = s.servers?.find((x) => x.id === s.open?.serverId);
-    const channel = s.channels[s.open?.serverId ?? '']?.find(
-      (c) => c.id === s.open?.channelId,
+  const open = useStore(homeStore, (s) => s.open);
+  const openLeft = () => leftDrawer?.openDrawer();
+  const openRight = () => navigation.openDrawer();
+  if (open)
+    return (
+      <ChannelScreen
+        channelId={open.channelId}
+        serverId={open.serverId}
+        onOpenLeft={openLeft}
+        onOpenRight={openRight}
+      />
     );
-    return server && channel ? `# ${channel.name} · ${server.name}` : null;
-  });
-  // SRS 3.1: ≡ and 👥 buttons always exist as the non-gesture way to open the drawers.
-  // ponytail: S-HOME-01 (channel screen) replaces this with P2-A3 (#16).
   return (
     <Placeholder
-      title={title ?? t('screens.channel')}
+      title={t('screens.channel')}
       actions={[
-        {
-          label: t('placeholder.openLeft'),
-          onPress: () => leftDrawer?.openDrawer(),
-        },
-        {
-          label: t('placeholder.openRight'),
-          onPress: () => navigation.openDrawer(),
-        },
+        { label: t('placeholder.openLeft'), onPress: openLeft },
+        { label: t('placeholder.openRight'), onPress: openRight },
       ]}
     />
   );
@@ -117,6 +122,7 @@ export function HomeDrawers({
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
+  const held = useStore(swipeGuard, (s) => s.held);
   // Spec 02 › Drawer: 334 on a 390 frame (304 on 360): the channel shows a 56 strip.
   const drawerStyle = {
     width: width - PEEK,
@@ -131,7 +137,7 @@ export function HomeDrawers({
     <Left.Navigator
       id="LeftDrawer"
       screenOptions={{
-        ...drawerOptions('left', open, width),
+        ...drawerOptions('left', open, width, held),
         drawerStyle,
         overlayColor: colors.scrim,
       }}
@@ -147,7 +153,7 @@ export function HomeDrawers({
           <Right.Navigator
             id="RightDrawer"
             screenOptions={{
-              ...drawerOptions('right', open, width),
+              ...drawerOptions('right', open, width, held),
               drawerStyle: { width: width - PEEK },
               overlayColor: colors.scrim,
             }}
@@ -158,7 +164,7 @@ export function HomeDrawers({
               <Placeholder title={t('screens.rightDrawer')} />
             )}
           >
-            <Right.Screen name="Channel" component={ChannelPlaceholder} />
+            <Right.Screen name="Channel" component={ChannelHost} />
           </Right.Navigator>
         )}
       </Left.Screen>

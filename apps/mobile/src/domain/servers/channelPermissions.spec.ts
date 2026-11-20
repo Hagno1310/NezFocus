@@ -74,6 +74,7 @@ const ch = (
   focus_control: 'off',
   permissions_synced: synced,
   permission_overwrites: overwrites,
+  last_message_id: null,
 });
 
 describe('overwritePermissions (S-SET-06 `overwrite-edit`, `overwrite-edit-voice`)', () => {

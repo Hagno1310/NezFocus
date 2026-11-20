@@ -78,6 +78,7 @@ export const toChannelResponse = (
   permission_overwrites: [...c.overwrites]
     .sort(byTarget)
     .map(toOverwriteResponse),
+  last_message_id: c.lastMessageId?.toString() ?? null,
 });
 
 export const toRoleResponse = (r: RoleRow): RoleResponse => ({

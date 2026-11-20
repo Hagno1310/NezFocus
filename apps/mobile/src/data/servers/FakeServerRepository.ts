@@ -109,6 +109,7 @@ function buildServer(
     channels.push({
       id,
       server_id: summary.id,
+      last_message_id: null,
       type,
       name,
       parent_id: parent,
@@ -227,7 +228,11 @@ const SAMPLE_ROLES: [string, number, bigint, number][] = [
 export function createFakeServerRepository(
   delayMs = 600,
   now: () => Date = () => new Date(),
-): ServerRepository & { summaries(): ServerSummary[] } {
+): ServerRepository & {
+  summaries(): ServerSummary[];
+  channelId(serverId: string, name: string): string | undefined;
+  join(name: string, template: ServerTemplate, members: number): ServerResponse;
+} {
   let nextId = 1000;
   const id = () => String(nextId++);
   const wait = () => new Promise((r) => setTimeout(r, delayMs));
@@ -294,6 +299,19 @@ export function createFakeServerRepository(
 
   return {
     summaries: () => [...servers.values()].map(toSummary),
+    // Fake messages (data/messages) play the 02 sample in "Ôn thi Giải tích 2" › #hoi-dap.
+    channelId: (serverId, name) =>
+      servers.get(serverId)?.channels.find((c) => c.name === name)?.id,
+    // Fake invites (data/invites): a server someone else made, which the caller now joins.
+    join(name, template, members) {
+      const server = buildServer(
+        sample(id(), name, template, members, now().toISOString()),
+        id,
+      );
+      server.owner_id = '3'; // Chi, not the caller
+      servers.set(server.id, server);
+      return server;
+    },
     async listRoles(serverId) {
       await wait();
       const server = serverFor(serverId);
@@ -406,6 +424,7 @@ export function createFakeServerRepository(
       const channel: ChannelResponse = {
         id: id(),
         server_id: serverId,
+        last_message_id: null,
         type: body.type,
         name: body.name,
         parent_id,

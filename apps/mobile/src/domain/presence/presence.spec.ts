@@ -27,6 +27,7 @@ describe('presence store (REQ-AUTH-05)', () => {
           preferred_status: 'invisible',
           settings: DEFAULT_USER_SETTINGS,
           presences: [binh],
+          read_states: [],
         },
       }),
     );

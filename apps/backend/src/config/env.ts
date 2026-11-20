@@ -20,6 +20,14 @@ export const Env = z
     S3_ACCESS_KEY: z.string().default('nezfocus'),
     S3_SECRET_KEY: z.string().default('nezfocus-dev-secret'),
     S3_BUCKET: z.string().default('nezfocus'),
+    // REQ-SRV-07: the redirect page's download button (a Play listing, or an APK link for a demo)
+    APP_DOWNLOAD_URL: z
+      .string()
+      .url()
+      .default('https://play.google.com/store/apps/details?id=app.nezfocus'),
+    // REQ-SRV-07 App Links: SHA-256 fingerprints of the app signing certificates, comma separated
+    // (`eas credentials` shows them). Empty: assetlinks.json lists none, links open the browser.
+    ANDROID_CERT_SHA256: z.string().default(''),
   })
   .refine(
     (env) =>

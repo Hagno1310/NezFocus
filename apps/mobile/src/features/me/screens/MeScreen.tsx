@@ -34,6 +34,7 @@ import { useMyStatus } from '../../presence/hooks/usePresence';
 import { useStudyStats } from '../../study/hooks/useStudyStats';
 import { avatarUri } from '../avatarUri';
 import { useMe } from '../hooks/useMe';
+import { usePendingCount } from '../../chat/hooks/usePendingCount';
 
 const appVersion = Constants.expoConfig?.version ?? '0.0.0';
 
@@ -65,6 +66,7 @@ export function MeScreen({
   const [status, setStatus] = useMyStatus();
   const [picking, setPicking] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const unsent = usePendingCount(confirming);
   const logOut = useLogOut();
 
   const name = me?.display_name ?? me?.username ?? '';
@@ -198,10 +200,11 @@ export function MeScreen({
         </View>
       </BottomSheet>
 
-      {/* AUTH-07: "Tin nhắn chưa gửi…" joins the body once the outbox exists (P2-A3.3 #101). */}
+      {/* AUTH-07: the local DB, outbox included, is deleted at sign-out. */}
       <Dialog
         visible={confirming}
         title={t('me.logoutTitle')}
+        body={unsent ? t('me.logoutUnsent') : undefined}
         confirm={{
           label: t('me.logout'),
           variant: 'danger',

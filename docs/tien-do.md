@@ -109,15 +109,15 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 
 ### P2 · Hiếu
 
-- [ ] **P2-A1** [#14](https://github.com/Hagno1310/NezFocus/issues/14) Lời mời, tham gia server và deep link
+- [x] **P2-A1** [#14](https://github.com/Hagno1310/NezFocus/issues/14) Lời mời, tham gia server và deep link
   - Cần trước: P0-4, P1-A1, P1-A2, P1-A3
-- [ ] **P2-A3** [#16](https://github.com/Hagno1310/NezFocus/issues/16) Chat trong kênh: gửi tin, idempotency, lịch sử, màn chat
+- [x] **P2-A3** [#16](https://github.com/Hagno1310/NezFocus/issues/16) Chat trong kênh: gửi tin, idempotency, lịch sử, màn chat
   - Cần trước: P1-A1, P1-A2, P1-A3
   - Trong lúc làm: P2-A3.2 chờ P2-B1.1 (Hoàng); P2-A3.3 chờ P0-3.2 (Hoàng); P2-A3.3 chờ P0-5.3 (Hoàng)
-  - [ ] mốc **P2-A3.1** [#99](https://github.com/Hagno1310/NezFocus/issues/99) Hợp đồng tin nhắn và trạng thái đã đọc trong shared · hợp đồng · người kia chờ: P2-B1 (Hoàng), P2-B3 (Hoàng)
-  - [ ] mốc **P2-A3.2** [#100](https://github.com/Hagno1310/NezFocus/issues/100) Backend gửi tin, idempotency, lịch sử (MSG-09, MSG-01, SEARCH-02) · người kia chờ: P2-B3 (Hoàng), P3-B7 (Hoàng)
-  - [ ] mốc **P2-A3.3** [#101](https://github.com/Hagno1310/NezFocus/issues/101) CSDL cục bộ và kho tin nhắn trên app: cache, outbox tin nhắn, khớp nonce (MSG-09, 8.4.5, 8.7) · người kia chờ: P2-B2 (Hoàng)
-  - [ ] mốc **P2-A3.4** [#102](https://github.com/Hagno1310/NezFocus/issues/102) Màn chat kênh text (S-HOME-01) (MSG-01, MSG-09, SEARCH-02) · người kia chờ: P2-B1 (Hoàng), P2-B3 (Hoàng), P3-B7 (Hoàng)
+  - [x] mốc **P2-A3.1** [#99](https://github.com/Hagno1310/NezFocus/issues/99) Hợp đồng tin nhắn và trạng thái đã đọc trong shared · hợp đồng · người kia chờ: P2-B1 (Hoàng), P2-B3 (Hoàng)
+  - [x] mốc **P2-A3.2** [#100](https://github.com/Hagno1310/NezFocus/issues/100) Backend gửi tin, idempotency, lịch sử (MSG-09, MSG-01, SEARCH-02) · người kia chờ: P2-B3 (Hoàng), P3-B7 (Hoàng)
+  - [x] mốc **P2-A3.3** [#101](https://github.com/Hagno1310/NezFocus/issues/101) CSDL cục bộ và kho tin nhắn trên app: cache, outbox tin nhắn, khớp nonce (MSG-09, 8.4.5, 8.7) · người kia chờ: P2-B2 (Hoàng)
+  - [x] mốc **P2-A3.4** [#102](https://github.com/Hagno1310/NezFocus/issues/102) Màn chat kênh text (S-HOME-01) (MSG-01, MSG-09, SEARCH-02) · người kia chờ: P2-B1 (Hoàng), P2-B3 (Hoàng), P3-B7 (Hoàng)
 - [ ] **P2-A2** [#15](https://github.com/Hagno1310/NezFocus/issues/15) Thành viên: gán role và drawer thành viên
   - Cần trước: P1-A3, P2-A3
   - Trong lúc làm: P2-A2.3 chờ P1-B4.3 (Hoàng)
@@ -137,10 +137,10 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
   - Cần trước: P1-B2, P1-B4, P2-B4
   - Trong lúc làm: P2-B2.3 chờ P2-A3.3 (Hiếu)
   - [ ] mốc **P2-B2.1** [#110](https://github.com/Hagno1310/NezFocus/issues/110) Hợp đồng bạn bè và chặn trong shared · hợp đồng · người kia chờ: P2-A4 (Hiếu)
-- [ ] **P2-B1** [#18](https://github.com/Hagno1310/NezFocus/issues/18) Phát event có chọn lọc và đang nhập
+- [x] **P2-B1** [#18](https://github.com/Hagno1310/NezFocus/issues/18) Phát event có chọn lọc và đang nhập
   - Cần trước: P0-5, P0-6 (Hiếu)
   - Trong lúc làm: P2-B1.2 chờ P2-A3.1 (Hiếu); P2-B1.2 chờ P1-A3.2 (Hiếu); P2-B1.3 chờ P2-A3.4 (Hiếu)
-  - [ ] mốc **P2-B1.1** [#107](https://github.com/Hagno1310/NezFocus/issues/107) Hợp đồng nhắm người nhận, SUBSCRIBE và typing trong shared · hợp đồng · người kia chờ: P2-A3 (Hiếu)
+  - [x] mốc **P2-B1.1** [#107](https://github.com/Hagno1310/NezFocus/issues/107) Hợp đồng nhắm người nhận, SUBSCRIBE và typing trong shared · hợp đồng · người kia chờ: P2-A3 (Hiếu)
 - [ ] **P2-B3** [#20](https://github.com/Hagno1310/NezFocus/issues/20) Tin nhắn riêng (DM 1-1) và hồ sơ thành viên
   - Cần trước: P2-A3.1 (Hiếu), P2-B2
   - Trong lúc làm: P2-B3.2 chờ P2-A3.2 (Hiếu); P2-B3.3 chờ P2-A3.4 (Hiếu); P2-B3.3 chờ P2-A4.4 (Hiếu); P2-B3.4 chờ P2-A2.1 (Hiếu); P2-B3.4 chờ P2-A3.4 (Hiếu)

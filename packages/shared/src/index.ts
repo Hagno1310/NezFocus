@@ -26,4 +26,8 @@ export * from './servers/server.contract.js';
 export * from './servers/role-names.js';
 export * from './servers/role.contract.js';
 export * from './servers/role-rules.js';
+export * from './servers/invite.contract.js';
+export * from './idempotency.js';
+export * from './messages/message.contract.js';
+export * from './messages/typing.contract.js';
 export * from './notifications/notification.contract.js';

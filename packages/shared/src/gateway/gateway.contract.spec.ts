@@ -99,6 +99,7 @@ describe('gateway contract', () => {
         preferred_status: 'online',
         settings: DEFAULT_USER_SETTINGS,
         presences: [],
+        read_states: [],
       };
       expect(DispatchEvents.READY.parse(d)).toEqual(d);
     });
@@ -114,5 +115,47 @@ describe('gateway contract', () => {
         parseDispatch({ op: 0, s: 3, t: 'USER_UPDATE', d: { id: 'x' } }),
       ).toThrow();
     });
+  });
+});
+
+// P2-B1.1 (#107): op 8 SUBSCRIBE and TYPING_START (REQ-MSG-06, MSG-07).
+describe('SUBSCRIBE and TYPING_START', () => {
+  it('takes the open server, or null to stop, and rejects a missing server_id', () => {
+    expect(
+      ClientFrame.safeParse({ op: 8, d: { server_id: '42' } }).success,
+    ).toBe(true);
+    expect(
+      ClientFrame.safeParse({ op: 8, d: { server_id: null } }).success,
+    ).toBe(true);
+    expect(ClientFrame.safeParse({ op: 8, d: {} }).success).toBe(false);
+  });
+
+  it('parses a valid TYPING_START', () => {
+    const d = {
+      channel_id: '7',
+      server_id: '42',
+      user: { id: '3', username: 'chi', display_name: 'Chi', avatar: null },
+      timestamp: '2026-11-20T08:00:00.000Z',
+    };
+    expect(parseDispatch({ op: 0, s: 1, t: 'TYPING_START', d })).toEqual({
+      t: 'TYPING_START',
+      s: 1,
+      d,
+    });
+  });
+
+  it('rejects a TYPING_START without who is typing', () => {
+    expect(() =>
+      parseDispatch({
+        op: 0,
+        s: 1,
+        t: 'TYPING_START',
+        d: {
+          channel_id: '7',
+          server_id: null,
+          timestamp: '2026-11-20T08:00:00.000Z',
+        },
+      }),
+    ).toThrow();
   });
 });

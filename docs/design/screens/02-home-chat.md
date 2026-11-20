@@ -108,7 +108,7 @@ Dũng vào server lúc 19:58 hôm nay nên không có tin của Dũng trước g
 │▌    @An tối nay 20:30 vào Phòng học…     │
 │ (A) An  20:11                            │
 │     Ok, mình vào sớm giữ chỗ             │
-│ Chi đang nhập…                           │  dòng typing, label
+│ •••  Chi đang nhập…                      │  dòng typing (chốt 20/11/2026): 3 chấm nháy ở cột avatar, chữ label ở cột nội dung tin
 ├──────────────────────────────────────────┤
 │ [+] [ Nhắn #hoi-dap            ] [☺] [➤] │  Composer
 ├ TabBar (Home) ───────────────────────────┤
@@ -125,7 +125,7 @@ Dũng vào server lúc 19:58 hôm nay nên không có tin của Dũng trước g
 | Vạch chưa đọc | "Tin nhắn mới" |
 | Nút cuộn xuống | "3 tin mới" + `arrow-down` (khi có tin mới chưa xem) · chỉ `arrow-down` (khi chỉ đang cuộn lên) |
 | Nhảy tới chưa đọc (đầu danh sách, khi vạch nằm ngoài màn hình) | "12 tin nhắn mới từ 19:40" · "Đánh dấu đã đọc" |
-| Typing | "Chi đang nhập…" · "Chi và Dũng đang nhập…" · "Nhiều người đang nhập…" (≥ 3) |
+| Typing | "Chi đang nhập…" · "Chi và Dũng đang nhập…" · "Nhiều người đang nhập…" (≥ 3). **(20/11/2026, P2-B1.3 #109)** Tên người gõ / "Nhiều người" đậm 600, phần còn lại 400; dòng đặt như một tin: 3 chấm 6 tròn `text-secondary` nháy lần lượt (cách nhau `short`, mỗi nhịp `long`/2) ở giữa cột avatar 40, chữ thẳng cột nội dung tin; giảm chuyển động: chấm đứng yên. |
 | Đầu kênh | "Chào mừng tới #hoi-dap" · "Đây là đầu kênh. Hãy gửi tin nhắn đầu tiên." |
 | Bộ đếm ký tự (v1.9, CR-19 #4) | "còn 120" (khi còn ≤ 200) · "−12" + dòng "Tin nhắn dài quá 2000 ký tự" |
 | Toast link (v1.9, CR-19 #2, #11) | "Bạn không xem được tin nhắn này" · "Bạn không xem được kênh này" · "Tin nhắn này đã bị xóa" |
@@ -135,18 +135,18 @@ Dũng vào server lúc 19:58 hôm nay nên không có tin của Dũng trước g
 | State | Khác gì so với default | Chữ / hành động riêng |
 |---|---|---|
 | `loading` | 6 `Skeleton` hàng tin (avatar tròn + 2 dòng dài ngắn khác nhau); ô soạn vẫn dùng được | SRS 3.5 |
-| `empty` | Kênh mới chưa có tin: khối đầu kênh ở **đáy** danh sách (icon `hash` 56 trong vòng `surface-2`, tiêu đề `title-2`, `body` `text-secondary`), không mascot | "Chào mừng tới #hoi-dap" · "Đây là đầu kênh. Hãy gửi tin nhắn đầu tiên." Cuộn tới đầu lịch sử của mọi kênh cũng gặp khối này |
-| `error` | Tải lịch sử thất bại, không có cache: khối giữa vùng tin, icon `cloud-off` + chữ + `Button · secondary` | "Không tải được tin nhắn" · "Thử lại" |
+| `empty` | Kênh mới chưa có tin: khối đầu kênh ở **đáy** danh sách (vòng 56 `surface-2` chứa icon `hash` 28, tiêu đề `title-2` đậm 600 — frame vẽ 700 là lỗi vẽ, `body` `text-secondary`; 19/11/2026), không mascot | "Chào mừng tới #hoi-dap" · "Đây là đầu kênh. Hãy gửi tin nhắn đầu tiên." Cuộn tới đầu lịch sử của mọi kênh cũng gặp khối này |
+| `error` | Tải lịch sử thất bại, không có cache: khối giữa vùng tin, icon `cloud-off` + chữ + `Button · secondary` có icon `rotate-cw` (theo frame, 19/11/2026) | "Không tải được tin nhắn" · "Thử lại" |
 | `offline` | `Banner · offline` dưới header; tin từ cache; tin An gửi lúc offline ở dạng `pending` kèm icon `clock-3` + chữ "Sẽ gửi khi có mạng" | "Bạn đang offline" (SRS 3.5); vẫn soạn và gửi vào outbox |
-| `reconnecting` | `Banner · reconnecting` | "Đang kết nối lại…" (sau 3 giây mất Gateway) |
-| `forbidden` | Không có `SEND_MESSAGES` (mẫu: member thường ở `#thong-bao`): `Composer · disabled` thay ô nhập bằng dòng lý do, icon `lock` | "Bạn không có quyền gửi tin nhắn trong kênh này" (40302) |
+| `reconnecting` | `Banner · reconnecting` (vòng xoay như C-14; frame vẽ icon `loader` đứng yên) | "Đang kết nối lại…" (sau 3 giây mất Gateway) |
+| `forbidden` | Không có `SEND_MESSAGES` (mẫu: member thường ở `#thong-bao`): `Composer · disabled` thay ô nhập bằng dòng lý do, icon `lock`. Tin Bình dưới vạch "Hôm qua" có giờ "Hôm qua 21:05" theo luật giờ v1.9 (frame vẽ "21:05" là bản trước v1.9; 19/11/2026) | "Bạn không có quyền gửi tin nhắn trong kênh này" (40302) |
 | `timed-out` | (Góc nhìn thành viên thường) `Composer · disabled` icon `timer`; reaction và "Trả lời" không có trong S-HOME-04 | (v1.9, CR-17 #1) "Bạn đang bị tạm khóa đến 21:30 · chưa gửi tin được" (40307; ngày nếu khác hôm nay: "đến 21:30, 20/10") |
 | `blocked-message` | Tin của người An đã chặn thu gọn thành một dòng; nhiều tin liền nhau gộp một dòng; chạm "Hiện" mở ra tại chỗ (ẩn lại khi rời kênh) | "1 tin nhắn bị chặn · Hiện" / "3 tin nhắn bị chặn · Hiện" (FRIEND-03) |
 | `system-messages` | Đủ loại tin hệ thống của kênh text, frame ở `#viec-nhom`: (v1.9, CR-20 #3, #4) nhắc hạn 19:00 icon `alarm-clock` "Còn 2 giờ tới hạn: **Đọc tài liệu chương 5** · bạn · **Xem việc**" (hạn hôm nay 21:00, đúng mốc 2 giờ trước hạn như 06; chỉ An được giao nên ghi "bạn"; tên người là chữ thường, **không** nền mention, không cộng badge), tin của Chi 20:01, "Chi đã ghim một tin nhắn · Xem" 20:03. (v1.9, CR-17) Tin tham gia server **không** còn ở đây — xem `welcome-channel`. Tin hệ thống của phiên học **không** có ở kênh text, chỉ ở S-HOME-08 (sửa 22/10/2026) | Chữ: C-10 › Tin hệ thống. Tên việc dài cắt ở ranh giới từ, tối đa 60 ký tự + "…"; quá 3 người: "bạn, Bình, Chi và 4 người khác" |
 | `welcome-channel` 🆕 | (v1.9, CR-17 #2) Kênh tin chào mừng `#chao-mung`: tin theo bảng "Tin mẫu của `#chao-mung`" (tin tham gia 15/10/2026 21:14 và 19:58, chào hỏi của Hà, Bình, Dũng); giờ đầu tin theo luật v1.9 ("15/10/2026 21:15"); `Composer` bình thường vì mọi người gửi được | Placeholder "Nhắn #chao-mung" |
 | `message-states` | Một frame gom: tin `pending` (mờ 50%), `failed` (icon `circle-alert` + "Không gửi được · Thử lại" `danger`), (v1.9, CR-19 #7) `failed` vì tệp bị chặn ("Không gửi được · 1 tệp bị chặn", chạm → S-HOME-04 `failed-file-blocked`), "(đã chỉnh sửa)", trả lời tin đã xóa. **Bỏ** "tin có tệp bị chặn" (tệp bị chặn từ trước khi gửi — S-HOME-05 `rejected`) | 8.4.5; MSG-04 AC3; MSG-05 AC6 |
 | `new-messages` | Mở kênh có 12 tin chưa đọc mà vạch nằm ngoài màn hình: dải "12 tin nhắn mới từ 19:40" ghim dưới header. Màn hình đang ở đáy nên chỉ thấy phần cuối của 12 tin chưa đọc (Bình 20:02 → Bình 20:10 nhắc @An; v1.9 bỏ tin 19:58), không có tin nào của An sau 19:40; vạch "Tin nhắn mới" nằm phía trên, ngoài màn hình (sửa 22/10/2026) | Chạm dải → cuộn tới vạch; "Đánh dấu đã đọc" → ẩn dải, gửi `MESSAGE_ACK` |
-| `scrolled-up` | Đang xem tin cũ, có 3 tin mới đến: nút nổi tròn "3 tin mới ↓" góc phải trên `Composer`; danh sách không nhảy. Vùng tin đầy lịch sử cũ hơn (Hà 19:12 … An 19:38), tràn qua mép trên | Chạm → cuộn xuống đáy |
+| `scrolled-up` | Đang xem tin cũ, có 3 tin mới đến: nút nổi "3 tin mới ↓" góc phải trên `Composer` (hình theo frame: cao 36, `surface-3`, viền `border`, `rounded.full`; vùng chạm 48; 19/11/2026); danh sách không nhảy. Vùng tin đầy lịch sử cũ hơn (Hà 19:12 … An 19:38), tràn qua mép trên | Chạm → cuộn xuống đáy |
 | `mention-suggest` | Gõ "@": danh sách gợi ý (C-27) mọc trên ô soạn, (v1.9, CR-19 #14) có tiêu đề nhóm "THÀNH VIÊN"; tối đa 5 hàng, người online trước (online gồm cả Idle và DND), trong nhóm xếp theo tên; không gợi ý chính mình; gõ tiếp thì lọc không dấu ("@bi" → Bình). Frame: THÀNH VIÊN — Bình, Chi, Dũng, Hà, Khánh | Nhóm VAI TRÒ và `@everyone`/`@here` theo C-27; gõ "#" gợi ý kênh (tiêu đề "KÊNH") |
 | `mention-suggest-roles` 🆕 | (v1.9, CR-19 #14) Gõ "@tr": THÀNH VIÊN — Bình, Mai (khớp đầu một từ của username `binh.tran`, `mai.tran` — C-27 khớp cả tên hiển thị lẫn username; Bình online trước, Mai ngoại tuyến sau); VAI TRÒ — "Trưởng nhóm" · "2 thành viên", "Quản trị" · "1 thành viên" (An là Owner nên có `MENTION_EVERYONE` → thấy mọi vai trò trừ `@everyone`). Hàng vai trò: icon `users` 24 trong ô tròn `surface-2` + tên + số thành viên `label` `text-tertiary` | Chạm "Trưởng nhóm" → chèn chip `@Trưởng nhóm` |
 | `reply-mode` | Dải "Đang trả lời Chi" + `x` trên ô soạn; ô soạn focus, bàn phím mở | Gửi → tin có dòng trả lời; `x` → hủy |
@@ -472,8 +472,8 @@ Không áp dụng: `empty`, `loading`, `forbidden` (không có `ATTACH_FILES` th
 | `creating` | Nút "Tạo server" `loading`; ô nhập khóa | |
 | `create-error` | `FormMessage` trên nút | 40011: "Bạn đã ở 100 server, mức tối đa. Rời bớt một server để tạo server mới." · mạng: "Không tạo được server. Kiểm tra kết nối rồi thử lại." |
 | `created` | Không có màn chúc mừng riêng: vào thẳng S-HOME-01 `#chao-mung` của server mới (`empty`; v1.9, CR-17 #2 — kênh text đầu tiên xem được; server thường: `#general`), S-HOME-07 mở sẵn | Tiêu đề sheet S-HOME-07: "Mời bạn vào Ôn thi Giải tích 2" |
-| `join-by-code` | `ScreenHeader` "Nhập mã mời"; `TextField` "Mã hoặc link mời" (JetBrains Mono khi có chữ) + nút "Dán" bên trong ô; gợi ý dưới ô; nút "Tiếp tục" | Gợi ý: "VD: k7Qm2xPa hoặc https://nezfocus.app/invite/k7Qm2xPa". Dán link → app tự tách mã |
-| `join-error` | Lỗi dưới ô, giữ user ở màn này | Sai định dạng: "Mã mời gồm 8–10 chữ và số, hoặc dán cả link". 40041: "Lời mời không tồn tại hoặc đã hết hạn. Xin bạn bè gửi lời mời mới." 40306: "Bạn không thể tham gia server này". 40029: "Bạn thử quá nhiều mã. Thử lại sau 1 phút." |
+| `join-by-code` | `ScreenHeader` "Nhập mã mời"; dòng mô tả "Dán link hoặc nhập mã bạn bè gửi cho bạn."; `TextField` "Mã hoặc link mời" placeholder "Dán hoặc nhập mã" (JetBrains Mono khi có chữ) + nút "Dán" bên trong ô; gợi ý dưới ô; nút "Tiếp tục" (dòng mô tả và placeholder theo frame, 19/11/2026) | Gợi ý: "VD: k7Qm2xPa hoặc https://nezfocus.app/invite/k7Qm2xPa". Dán link → app tự tách mã |
+| `join-error` | Lỗi dưới ô, giữ user ở màn này | Sai định dạng: "Mã mời gồm 8–10 chữ và số, hoặc dán cả link". 40041: "Lời mời không tồn tại hoặc đã hết hạn. Xin bạn bè gửi lời mời mới." 40029: "Bạn thử quá nhiều mã. Thử lại sau 1 phút." (19/11/2026) Bị cấm (40306) và đủ 100 server (40011) không báo ở đây: "Tiếp tục" chỉ xem lời mời, hai lỗi này báo ở S-MOD-01 khi bấm "Tham gia". |
 | `keyboard-open` | `OS/Keyboard · text` ở `name-server` (phím "Xong") và `join-by-code` (phím "Tiếp"); nút chính nằm ngay trên bàn phím (C-02). Hai frame: `keyboard-open · name`, `keyboard-open · code` | |
 | `offline` | Nút chính `disabled` kèm dòng "Cần kết nối mạng để tạo hoặc tham gia server" (`wifi-off`) | |
 | `restore` 🆕 | (21/10/2026, area 08 Q16) An có server đã xóa trong 30 ngày: dưới "Nhập mã mời" thêm `SettingsRow` "Server đã xóa" (icon `archive-restore`, giá trị "1") | Chỉ hiện khi có |
@@ -518,16 +518,16 @@ Không áp dụng: `loading`, `empty`, `forbidden` (ai đã xác nhận email c�
 ### Trạng thái
 | State | Khác gì so với default | Chữ / hành động riêng |
 |---|---|---|
-| `loading` | Ô link là `Skeleton`; hai nút `disabled` ("Sao chép" chữ `text-tertiary`, "Chia sẻ link mời" nền `surface-3`); "Sửa" · "Thu hồi" ẩn | Dùng lại invite còn hạn của An với cùng thiết lập nếu có, không thì tạo mới |
+| `loading` | Ô link là `Skeleton`; hai nút `disabled` ("Sao chép" chữ `text-tertiary`, "Chia sẻ link mời" nền `surface-3`); "Sửa" · "Thu hồi" ẩn | Dùng lại invite còn hạn của An với cùng thiết lập nếu có, không thì tạo mới. Mỗi lần mở sheet là thiết lập mặc định (7 ngày, không giới hạn); "Sửa" chỉ áp cho link tạo lúc đó, máy không nhớ (19/11/2026). Link gắn với kênh text đầu tiên của server |
 | `default` | Như bố cục | Chữ chia sẻ soạn sẵn: "Vào server Ôn thi Giải tích 2 trên NezFocus học cùng mình nhé: https://nezfocus.app/invite/k7Qm2xPa" |
 | `copied` | `Toast` ngay trên mép trên của sheet, cách mép ≥ 8 | "Đã sao chép link mời" |
-| `edit-settings` | Sheet đổi sang 2 nhóm lựa chọn (radio chip): "Hết hạn sau" 30 phút · 1 giờ · 1 ngày · **7 ngày** · Không bao giờ; "Số lượt dùng" **Không giới hạn** · 1 · 5 · 10 · 25 · 50 · 100; nút "Tạo link mới" | Link cũ vẫn dùng được tới khi hết hạn |
+| `edit-settings` | Tiêu đề "Thiết lập link mời"; sheet đổi sang 2 nhóm lựa chọn (radio chip): "Hết hạn sau" 30 phút · 1 giờ · 1 ngày · **7 ngày** · Không bao giờ; "Số lượt dùng" **Không giới hạn** · 1 · 5 · 10 · 25 · 50 · 100; dòng ghi chú trên nút; nút "Tạo link mới" (tiêu đề và ghi chú theo frame, 19/11/2026) | Ghi chú: "Link cũ vẫn dùng được tới khi hết hạn." |
 | `revoked` 🆕 | (v1.9, CR-17 #7) Chạm "Thu hồi" (không hỏi lại): ô link thành "Link đã bị thu hồi" (`text-tertiary`, Be Vietnam Pro), "Sao chép" ẩn, dòng thiết lập giữ, "Sửa" · "Thu hồi" ẩn; nút chính thành "Tạo link mới" (cùng thiết lập) | Người tạo **hoặc** `MANAGE_SERVER` thu hồi được; sheet chỉ hiện invite của chính An nên luôn có "Thu hồi" |
 | `share-sheet` | Bảng chia sẻ của Android (`OS/ShareSheet`) phủ lên, chữ soạn sẵn ở trên | |
 | `room` | **Không có sheet trong app** (STUDY-16 AC1): chạm "Mời vào phòng" mở thẳng `OS/ShareSheet` (frame vẽ trên nền S-ROOM-02 `focus-host`) | "Mình đang học ở Phòng học im lặng (Ôn thi Giải tích 2), vào học cùng nhé: https://nezfocus.app/invite/k7Qm2xPa?channel=…" |
-| `error` | Ô link thay bằng dòng lỗi + "Thử lại" | "Không tạo được link mời. Thử lại." |
+| `error` | Ô link thay bằng dòng lỗi + "Thử lại"; còn "Sửa", không có "Thu hồi" (theo frame, 19/11/2026) | "Không tạo được link mời. Thử lại." |
 | `forbidden` | Không có `CREATE_INVITE`: nút "Mời bạn" ở S-HOME-02 / S-HOME-09 **ẩn**; biến thể `room` chia sẻ link kênh `https://nezfocus.app/channels/…` (chỉ thành viên mở được) với chữ "…vào học cùng nhé (dành cho thành viên server):" | STUDY-16 |
-| `offline` | Ô link hiện invite đã có trong cache nếu còn hạn; không có thì dòng "Cần kết nối mạng để tạo link mời"; "Thu hồi" `disabled` | |
+| `offline` | Ô link hiện invite đã có trong cache nếu còn hạn; không có thì dòng "Cần kết nối mạng để tạo link mời"; "Thu hồi" `disabled`, "Sửa" vẫn bấm được (theo frame); ở `edit-settings` khi offline nút "Tạo link mới" `disabled` (19/11/2026) | |
 
 Không áp dụng: `empty`, `os-permission`.
 
@@ -742,7 +742,7 @@ Frame nằm trong nhóm "02 · Home & Chat — Edge case", tên `S-HOME-EDGE · 
 | `removed-while-offline` 🆕 — bị mời ra / cấm lúc app đóng hoặc mất kết nối | (v1.9, CR-17 #15) Sau `READY`, mục `moderation` mời ra / cấm chưa đọc chưa từng báo trên máy này → `Toast` icon `log-out` "Bạn không còn ở Ôn thi Giải tích 2" + "Xem" (→ tab Thông báo). Frame: S-HOME-01 `#viec-nhom` của Nhóm đồ án Mobile (rail không còn G1) + toast trên `Composer`; badge tab Thông báo có mục đó | ≥ 2 mục: "Bạn không còn ở 2 server" + "Xem". Mỗi mục toast tối đa một lần trên một máy; mục đã đọc ở máy khác → không toast |
 | `channel-removed` — kênh đang xem bị xóa hoặc mất `VIEW_CHANNEL` | Chuyển về kênh text đầu tiên mình còn xem được (v1.9, CR-17: mẫu `#chao-mung`) + `Toast` "#hoi-dap không còn khả dụng" (icon `hash`). Bản nháp của kênh cũ bị bỏ | SRV-02, ROLE-08 |
 | `long-names-drawer` — tên rất dài ở drawer | Tên server 1 dòng cắt `…` ("Câu lạc bộ Ôn thi Giả…"), dòng phụ giữ nguyên; tên kênh 1 dòng cắt `…`; chữ viết tắt trên rail theo tên server ("CL"); (v1.9) danh mục THÔNG TIN có `# chao-mung` đầu | C-04, C-05, SRV-01 (≤ 100 ký tự) |
-| `long-names-chat` — tên rất dài ở header, tin nhắn | Header 1 dòng cắt `…`; tên người gửi dài cắt `…` để giờ luôn hiện; một người dùng một tên hiển thị ở mọi tin (Bình 20:02 và 20:10 đều "Nguyễn Hoàng Bình (K22 – CNTT…", avatar "N"); placeholder ô soạn theo tên kênh dài, cắt `…` ("Nhắn #hoi-dap-bai-ta…") | C-04, C-10 |
+| `long-names-chat` — tên rất dài ở header, tin nhắn | Header 1 dòng cắt `…`; tên người gửi dài cắt `…` để giờ luôn hiện (frame vẽ "20:10" tràn mép phải là lỗi vẽ, 19/11/2026); một người dùng một tên hiển thị ở mọi tin (Bình 20:02 và 20:10 đều "Nguyễn Hoàng Bình (K22 – CNTT…", avatar "N"); placeholder ô soạn theo tên kênh dài, cắt `…` ("Nhắn #hoi-dap-bai-ta…") | C-04, C-10 |
 | `many-servers` — rất nhiều server | Rail cuộn dọc (không có thanh cuộn hiện sẵn), ＋ ở cuối danh sách (cuộn tới mới thấy); badge mention lớn ghi "99+", nằm gọn trong rail 72 (lệch vào trong, không tràn mép phải); badge tab Home "99+" | NOTIF-01, C-13 |
 | `long-message` — tin 2000 ký tự, code block dài, 20 loại reaction | Tin hiện đủ, không "Xem thêm"; code block giữ mỗi dòng code trên 1 dòng, **cuộn ngang**; chip reaction xuống nhiều hàng | MSG-01 (≤ 2000), MSG-02, MSG-05 (≤ 20 emoji) |
 | `alone-in-server` — vừa tạo server, chỉ có mình | Drawer phải `members`: "TRỰC TUYẾN — 1" chỉ An (`an.nguyen`, nhãn phải "Owner" — người tạo server) + khối `EmptyState · inline` "Chỉ có mình bạn ở đây" · "Mời bạn bè để cùng học." · `Button · secondary` "Mời bạn" (→ S-HOME-07) | SRV-03, UF-02 |
@@ -761,7 +761,7 @@ Frame nằm trong nhóm "02 · Home & Chat — Edge case", tên `S-HOME-EDGE · 
 | Hai người cùng ghim tin thứ 50 | Người bấm sau nhận `Toast` 40904 như S-HOME-04 |
 | Hai người cùng xóa một tin | Người bấm sau không thấy lỗi: tin đã biến mất là kết quả mong muốn (xóa là idempotent phía app) |
 | Qua nửa đêm | Vạch ngày tính lại khi qua 00:00 theo timezone của user ("Hôm nay" thành "Hôm qua"; giờ đầu tin "20:02" thành "Hôm qua 20:02"); hai tin ở hai bên vạch ngày không gộp nhóm dù cách nhau ≤ 5 phút |
-| Đã ở đủ 100 server | Tham gia bằng mã / link cũng báo 40011: ở S-HOME-06 `join-error` "Bạn đã ở 100 server, mức tối đa. Rời bớt một server để tham gia server mới."; ở S-MOD-01 cùng chữ, nút "Tham gia" `disabled`; thẻ lời mời trong chat: S-HOME-01 `invite-cards · max` |
+| Đã ở đủ 100 server | Tham gia bằng mã / link cũng báo 40011, khi bấm "Tham gia" ở S-MOD-01 (19/11/2026: không báo ở S-HOME-06): "Bạn đã ở 100 server, mức tối đa. Rời bớt một server để tham gia server mới.", nút "Tham gia" `disabled`; thẻ lời mời trong chat: S-HOME-01 `invite-cards · max` |
 | Chip link tên dài | (v1.9, CR-19 #11) Chip rộng tối đa cột nội dung tin (306 ở khung 390); tên server co trước, tối thiểu 80, rồi "…", sau đó tới tên kênh / phòng; "› Tin nhắn" không cắt. Ví dụ "Câu lạc bộ Ôn thi Giả… › #hoi-dap-bai-tap-chuong-4" |
 
 ## Câu hỏi còn mở

@@ -29,6 +29,7 @@ const channels = [
     focus_control: 'off',
     permissions_synced: true,
     permission_overwrites: [],
+    last_message_id: null,
   },
   {
     id: '201',
@@ -40,6 +41,7 @@ const channels = [
     focus_control: 'off',
     permissions_synced: true,
     permission_overwrites: [],
+    last_message_id: null,
   },
   {
     id: '202',
@@ -51,6 +53,7 @@ const channels = [
     focus_control: 'off',
     permissions_synced: true,
     permission_overwrites: [],
+    last_message_id: null,
   },
 ];
 const server = {
@@ -215,6 +218,7 @@ describe('server and channel events (SRS 5.4)', () => {
       preferred_status: 'online',
       settings: DEFAULT_USER_SETTINGS,
       presences: [],
+      read_states: [],
     };
     expect(DispatchEvents.READY.parse(d)).toEqual(d);
   });

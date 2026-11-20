@@ -30,6 +30,7 @@ const ch = (
   focus_control: type === 'voice' ? 'everyone' : 'off',
   permissions_synced: true,
   permission_overwrites: [],
+  last_message_id: null,
 });
 
 // "Ôn thi Giải tích 2" (02 › Dữ liệu mẫu).
@@ -140,6 +141,7 @@ describe('reduceHome (Gateway events)', () => {
           preferred_status: 'online',
           settings: DEFAULT_USER_SETTINGS,
           presences: [],
+          read_states: [],
         },
       }),
     );
@@ -161,6 +163,7 @@ describe('reduceHome (Gateway events)', () => {
           preferred_status: 'online',
           settings: DEFAULT_USER_SETTINGS,
           presences: [],
+          read_states: [],
         },
       }),
     );

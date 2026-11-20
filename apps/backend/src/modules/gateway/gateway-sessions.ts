@@ -33,6 +33,7 @@ export type GatewaySession = {
   lastSeenAt: number;
   afk: boolean;
   backgroundSince: number | null;
+  subscribedServerId: bigint | null; // op 8 SUBSCRIBE (REQ-MSG-07); gone with the session
 };
 
 export type ResumeResult =
@@ -58,6 +59,7 @@ export class GatewaySessions {
       lastSeenAt: Date.now(),
       afk: false,
       backgroundSince: null,
+      subscribedServerId: null,
     };
     this.sessions.set(session.id, session);
     return session;
@@ -118,6 +120,34 @@ export class GatewaySessions {
   ) {
     for (const session of this.sessions.values())
       if (session.userId === userId) this.dispatch(session, t, d);
+  }
+
+  // REQ-MSG-07: one server per session; another id replaces it, null stops.
+  subscribe(session: GatewaySession, serverId: bigint | null) {
+    session.subscribedServerId = serverId;
+  }
+
+  // Resumable sessions count: their events go to the resume buffer (SRS 5.4).
+  userIds() {
+    return new Set([...this.sessions.values()].map((s) => s.userId));
+  }
+
+  subscriberIds(serverId: bigint) {
+    const ids = new Set<bigint>();
+    for (const s of this.sessions.values())
+      if (s.subscribedServerId === serverId) ids.add(s.userId);
+    return ids;
+  }
+
+  dispatchToSubscribers<T extends DispatchEventName>(
+    serverId: bigint,
+    userId: bigint,
+    t: T,
+    d: DispatchPayload<T>,
+  ) {
+    for (const session of this.sessions.values())
+      if (session.userId === userId && session.subscribedServerId === serverId)
+        this.dispatch(session, t, d);
   }
 
   // REQ-AUTH-04 AC2 / AUTH-07 AC1: close with 4004 + revoke_reason; the session cannot be resumed.

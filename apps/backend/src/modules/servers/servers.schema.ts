@@ -51,6 +51,7 @@ export const channels = pgTable(
     position: integer().notNull().default(0),
     focusControl: varchar({ length: 10 }).notNull().default('off'), // everyone | managers | off
     permissionsSynced: boolean().notNull().default(true),
+    lastMessageId: id(), // SRS 8.2, no FK; the app fetches after= it (7.3.2)
     createdAt: tz().notNull().defaultNow(),
     // REQ-SRV-02: deleting is a soft-delete; every read of live channels filters on it.
     deletedAt: tz(),
@@ -153,7 +154,46 @@ export const serverMemberRoles = pgTable(
   ],
 );
 
+// REQ-ROLE-07. Only read here (40306 on join); the ban API comes with P3-A3 (#23).
+export const serverBans = pgTable(
+  'server_bans',
+  {
+    serverId: id()
+      .notNull()
+      .references(() => servers.id, { onDelete: 'cascade' }),
+    userId: id()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    bannedBy: id().references(() => users.id, { onDelete: 'set null' }),
+    reason: varchar({ length: 512 }),
+    createdAt: tz().notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.serverId, t.userId] })],
+);
+
+// REQ-SRV-03 / SRV-04.
+export const invites = pgTable(
+  'invites',
+  {
+    code: varchar({ length: 16 }).primaryKey(),
+    serverId: id()
+      .notNull()
+      .references(() => servers.id, { onDelete: 'cascade' }),
+    channelId: id()
+      .notNull()
+      .references(() => channels.id, { onDelete: 'cascade' }),
+    creatorId: id().references(() => users.id, { onDelete: 'set null' }),
+    maxUses: integer().notNull().default(0), // 0 = unlimited
+    uses: integer().notNull().default(0),
+    expiresAt: tz(), // NULL = never
+    revokedAt: tz(),
+    createdAt: tz().notNull().defaultNow(),
+  },
+  (t) => [index('idx_invites_server').on(t.serverId)],
+);
+
 export type ServerRow = typeof servers.$inferSelect;
 export type ChannelRow = typeof channels.$inferSelect;
 export type RoleRow = typeof roles.$inferSelect;
 export type OverwriteRow = typeof channelPermissionOverwrites.$inferSelect;
+export type InviteRow = typeof invites.$inferSelect;

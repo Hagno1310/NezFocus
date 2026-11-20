@@ -12,6 +12,12 @@ export abstract class KeyValueStore {
   abstract peek(key: string): Promise<Window>;
   abstract get(key: string): Promise<string | null>;
   abstract set(key: string, value: string, ttlSeconds: number): Promise<void>;
+  // SET NX: false when the key already holds a live value.
+  abstract setIfAbsent(
+    key: string,
+    value: string,
+    ttlSeconds: number,
+  ): Promise<boolean>;
   abstract delete(key: string): Promise<void>;
 }
 
@@ -72,6 +78,12 @@ export class MemoryKeyValueStore extends KeyValueStore {
       value,
       expiresAt: this.clock.now().getTime() + ttlSeconds * 1000,
     });
+  }
+
+  async setIfAbsent(key: string, value: string, ttlSeconds: number) {
+    if (this.live(key)) return false;
+    await this.set(key, value, ttlSeconds);
+    return true;
   }
 
   async delete(key: string) {

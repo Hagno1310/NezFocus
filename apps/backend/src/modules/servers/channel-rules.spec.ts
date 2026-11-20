@@ -25,6 +25,7 @@ const ch = (
   focus_control: 'off',
   permissions_synced: true,
   permission_overwrites: [],
+  last_message_id: null,
 });
 
 // "Ôn thi Giải tích 2" (02 › Dữ liệu mẫu), trimmed.

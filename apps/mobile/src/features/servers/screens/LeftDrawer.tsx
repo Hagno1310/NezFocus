@@ -61,7 +61,7 @@ export type LeftDrawerActions = {
   onOpenVoice: (channel: ChannelResponse) => void; // S-ROOM-01/02 not-joined
   onDirectMessages: () => void; // S-DM-01
   onAdd: () => void; // S-HOME-06
-  onInvite: () => void; // S-HOME-07
+  onInvite: (serverId: string) => void; // S-HOME-07
   // S-HOME-09 rows (the menu itself opens here, from the server name). "Tạo kênh" opens
   // S-SET-09 here too.
   menu: Omit<ServerMenuActions, 'settings' | 'createChannel'> & {
@@ -94,7 +94,7 @@ function ServerHead({
   onServerMenu,
 }: {
   server: ServerSummary;
-  onInvite: () => void;
+  onInvite?: () => void; // undefined: no CREATE_INVITE, the button is hidden (S-HOME-07 `forbidden`)
   onServerMenu: () => void;
 }) {
   const { t } = useTranslation();
@@ -118,15 +118,17 @@ function ServerHead({
       <Text variant="label" color="text-tertiary" numberOfLines={1}>
         {subtitle}
       </Text>
-      <View style={styles.invite}>
-        <Button
-          variant="secondary"
-          size="S"
-          icon={UserPlus}
-          label={t('servers.drawer.invite')}
-          onPress={onInvite}
-        />
-      </View>
+      {onInvite && (
+        <View style={styles.invite}>
+          <Button
+            variant="secondary"
+            size="S"
+            icon={UserPlus}
+            label={t('servers.drawer.invite')}
+            onPress={onInvite}
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -278,7 +280,11 @@ function ChannelPanel({
       >
         <ServerHead
           server={server}
-          onInvite={actions.onInvite}
+          onInvite={
+            hasPermission(perms, Permission.CREATE_INVITE)
+              ? () => actions.onInvite(server.id)
+              : undefined
+          }
           onServerMenu={() => setMenuOpen(true)}
         />
         {sections && reordering ? (

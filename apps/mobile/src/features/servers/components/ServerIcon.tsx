@@ -13,7 +13,7 @@ export function ServerIcon({
   uri,
 }: {
   server: Pick<ServerSummary, 'name'> & { icon_url?: string | null };
-  size: 40 | 48 | 96;
+  size: 40 | 48 | 72 | 96; // 72: S-MOD-01 invite card
   uri?: string | null;
 }) {
   const { colors } = useTheme();
@@ -26,7 +26,7 @@ export function ServerIcon({
         {
           width: size,
           height: size,
-          borderRadius: size === 96 ? radius.sheet : radius.server,
+          borderRadius: size >= 72 ? radius.sheet : radius.server,
           backgroundColor: colors['surface-2'],
         },
       ]}
@@ -38,7 +38,7 @@ export function ServerIcon({
         />
       ) : (
         <Text
-          variant={size === 96 ? 'title-1' : 'label'}
+          variant={size === 96 ? 'title-1' : size === 72 ? 'title-2' : 'label'}
           weight="700"
           allowFontScaling={false}
         >

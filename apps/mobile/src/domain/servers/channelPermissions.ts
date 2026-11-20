@@ -237,6 +237,7 @@ export function privateHidesCreator(
     ...draft,
     id: '',
     server_id: server.id,
+    last_message_id: null,
     name: '',
     position: 0,
     focus_control: 'off',

@@ -11,6 +11,7 @@ import {
   createServer,
   type CreateServerError,
 } from '../../../domain/servers/createServer';
+import { openInviteSheet } from '../../../domain/invites/inviteSheetStore';
 import { addServer, openChannel } from '../../../domain/servers/homeStore';
 import { useGuardedMutation } from '../../../shared/hooks/useGuardedMutation';
 
@@ -53,8 +54,9 @@ export function useCreateServer(onCreated: () => void) {
     const { server, channel } = result;
     addServer(server);
     if (channel) openChannel({ serverId: server.id, channelId: channel.id });
-    // ponytail: S-HOME-07 (invite sheet, opened on arrival per the spec) comes with P2-A1 (#14).
     onCreated();
+    // S-HOME-06 `created`: the new server's first channel with S-HOME-07 already open.
+    openInviteSheet(server.id);
   };
   return {
     submit,

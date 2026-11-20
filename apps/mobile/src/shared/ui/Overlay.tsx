@@ -1,5 +1,11 @@
 import { Check, ChevronLeft } from 'lucide-react-native';
-import { useEffect, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   KeyboardAvoidingView,
@@ -8,6 +14,7 @@ import {
   ScrollView,
   StyleSheet,
   View,
+  type LayoutChangeEvent,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
@@ -46,17 +53,27 @@ import { interacted } from '../interaction';
 const DISMISS_DISTANCE = 80;
 const DISMISS_VELOCITY = 800;
 
+// `top`: window y of the row (measureInWindow); the Modal draws under the status bar too.
+export type Lifted = { top: number; node: ReactNode };
+
+// The sheet reports where it sits, so the lifted row can stay clear of it.
+const SheetLayout = createContext<((e: LayoutChangeEvent) => void) | undefined>(
+  undefined,
+);
+
 function Overlay({
   visible,
   onDismiss,
   dismissible,
   placement,
+  lifted,
   children,
 }: {
   visible: boolean;
   onDismiss: () => void;
   dismissible: boolean;
   placement: 'center' | 'bottom';
+  lifted?: Lifted;
   children: ReactNode;
 }) {
   const { colors } = useTheme();
@@ -69,6 +86,14 @@ function Overlay({
     return () => clearTimeout(id);
   }, [visible]);
   const shown = visible || lingering;
+
+  // S-HOME-04 `failed-message`: the lifted row sits just above the sheet when the sheet would cover it.
+  const [sheetTop, setSheetTop] = useState<number | null>(null);
+  const [liftedHeight, setLiftedHeight] = useState<number | null>(null);
+  const liftedTop =
+    lifted && sheetTop !== null && liftedHeight !== null
+      ? Math.min(lifted.top, sheetTop - liftedHeight)
+      : null;
 
   // S-MOD-04: no toast over a sheet or dialog, including while it fades out.
   useEffect(() => {
@@ -110,6 +135,23 @@ function Overlay({
               />
             </Animated.View>
           )}
+          {visible && lifted && (
+            <Animated.View
+              entering={fadeIn}
+              exiting={fadeOut}
+              pointerEvents="none"
+              onLayout={(e) => setLiftedHeight(e.nativeEvent.layout.height)}
+              style={[
+                styles.lifted,
+                {
+                  top: liftedTop ?? lifted.top,
+                  opacity: liftedTop === null ? 0 : 1,
+                },
+              ]}
+            >
+              {lifted.node}
+            </Animated.View>
+          )}
           <View
             pointerEvents="box-none"
             style={[
@@ -117,7 +159,11 @@ function Overlay({
               placement === 'center' ? styles.center : styles.bottom,
             ]}
           >
-            {visible && children}
+            <SheetLayout.Provider
+              value={(e) => setSheetTop(e.nativeEvent.layout.y)}
+            >
+              {visible && children}
+            </SheetLayout.Provider>
           </View>
         </KeyboardAvoidingView>
       </GestureHandlerRootView>
@@ -244,6 +290,7 @@ function SheetFrame({
   const { colors } = useTheme();
   const reduced = useReducedMotion();
   const insets = useSafeAreaInsets();
+  const onLayout = useContext(SheetLayout);
   // Render once with the fade exit before closing, so a dragged sheet does not snap back.
   const [dragged, setDragged] = useState(false);
   const dismissFromDrag = () => {
@@ -287,6 +334,7 @@ function SheetFrame({
       entering={sheetEnter(reduced)}
       exiting={sheetExit(reduced, dragged)}
       accessibilityViewIsModal
+      onLayout={onLayout}
       style={[style, { paddingBottom: insets.bottom + space[4] }, dragStyle]}
     >
       {children(handle)}
@@ -306,6 +354,7 @@ export function BottomSheet({
   icon,
   onBack,
   onDismiss,
+  above,
 }: {
   visible: boolean;
   title: string;
@@ -323,6 +372,8 @@ export function BottomSheet({
   // `chevron-left` before the title: the same sheet showing a sub-list (S-SET-09 `category-picker`).
   onBack?: () => void;
   onDismiss: () => void;
+  // Sits on the sheet's top edge, 8 above it (S-HOME-07 `copied` toast).
+  above?: ReactNode;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -334,6 +385,7 @@ export function BottomSheet({
       dismissible={!busy}
       placement="bottom"
     >
+      {above && <View style={styles.above}>{above}</View>}
       <SheetFrame
         onDismiss={onDismiss}
         dismissible={!busy}
@@ -417,6 +469,7 @@ export function ActionSheet({
   groups,
   cancel = true,
   onDismiss,
+  lifted,
 }: {
   visible: boolean;
   title?: string;
@@ -430,6 +483,8 @@ export function ActionSheet({
   // spec 08 `channel-menu`, 02 `category-menu`).
   cancel?: boolean;
   onDismiss: () => void;
+  // C-09 "Nhấn giữ một hàng": the row drawn again over the scrim, where it sits on screen.
+  lifted?: Lifted;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -444,6 +499,7 @@ export function ActionSheet({
       onDismiss={onDismiss}
       dismissible
       placement="bottom"
+      lifted={lifted}
     >
       <SheetFrame
         onDismiss={onDismiss}
@@ -575,7 +631,9 @@ function ActionRow({
 }
 
 const styles = StyleSheet.create({
+  above: { marginHorizontal: space[3], marginBottom: space[2] },
   flex: { flex: 1 },
+  lifted: { position: 'absolute', left: 0, right: 0 },
   shrink: { flexGrow: 0, flexShrink: 1 },
   center: { justifyContent: 'center', alignItems: 'center', padding: space[3] },
   bottom: { justifyContent: 'flex-end' },

@@ -2063,6 +2063,7 @@ Vùng vẽ `role="img"` có `aria-label` tóm tắt ("Người hoạt động m�
 | C-02 TextField | Tùy chọn ẩn nhãn (vẫn đọc được bằng screen reader); `maxLines` |
 | C-13 Avatar | Thêm cỡ 48 (thẻ hồ sơ S-DM-05) |
 | EmptyState | Tùy chọn cỡ mascot (96 ở S-DM-04 `empty`) |
+| C-09 ActionSheet (21/11/2026, thử trên Poco) | Một tấm `surface-1` sát hai mép và kéo tới đáy màn (qua vùng thanh điều hướng), bo hai góc trên như `BottomSheet`; bỏ kiểu thẻ nổi cách mép 8 vì lộ màn phía sau. "Hủy" (nếu có) là hàng cuối trong tấm, kẻ `border` phía trên. Board C-09 và các frame vẽ kiểu thẻ nổi chờ người sửa `.pen` cập nhật |
 
 ## Web quản trị — component P1 (đặc tả khi tới area)
 

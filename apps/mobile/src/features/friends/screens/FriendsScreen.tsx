@@ -264,14 +264,17 @@ export function FriendsScreen({
         <FriendRow
           {...common}
           right={
-            <Button
-              label={t('friends.unblock')}
-              variant="secondary"
-              size="S"
-              disabled={offline}
-              loading={busy === r.user.id}
-              onPress={() => remove(r)}
-            />
+            // Frame `blocked`: the button ends 16 from the edge; the row pads 8 for icon buttons.
+            <View style={styles.unblock}>
+              <Button
+                label={t('friends.unblock')}
+                variant="secondary"
+                size="S"
+                disabled={offline}
+                loading={busy === r.user.id}
+                onPress={() => remove(r)}
+              />
+            </View>
           }
         />
       );
@@ -570,6 +573,7 @@ function FriendItem({
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  unblock: { paddingRight: space[2] },
   segments: {
     paddingTop: space[1],
     paddingBottom: space[2],

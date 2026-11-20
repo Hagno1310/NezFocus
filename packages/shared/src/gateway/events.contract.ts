@@ -1,5 +1,9 @@
 import { z } from 'zod';
 import { UserSettings } from '../account/settings.contract.js';
+import {
+  Notification,
+  NotificationDeleted,
+} from '../notifications/notification.contract.js';
 import { CurrentUser } from '../auth/auth.contract.js';
 import {
   Relationship,
@@ -66,6 +70,8 @@ export const DispatchEvents = {
   RELATIONSHIP_ADD: Relationship, // REQ-FRIEND-01..03: to every session of the user whose list changed
   RELATIONSHIP_REMOVE: RelationshipRemove, // decline: only the decliner (FRIEND-02 AC3); block: as an unfriend for the blocked
   TYPING_START: TypingStart, // REQ-MSG-06: to sessions SUBSCRIBEd to the server that can view the channel, not the typer
+  NOTIFICATION_CREATE: Notification, // REQ-NOTIF-05: to every session of the recipient
+  NOTIFICATION_DELETE: NotificationDeleted, // REQ-NOTIF-05: its source is gone (message, task, friend request)
 } satisfies Record<string, z.ZodType>;
 
 export type DispatchEventName = keyof typeof DispatchEvents;

@@ -355,6 +355,7 @@ export function BottomSheet({
   onBack,
   onDismiss,
   above,
+  titleRight,
 }: {
   visible: boolean;
   title: string;
@@ -374,6 +375,8 @@ export function BottomSheet({
   onDismiss: () => void;
   // Sits on the sheet's top edge, 8 above it (S-HOME-07 `copied` toast).
   above?: ReactNode;
+  // Right of the title (S-STUDY-02 `friends-sheet` "6 bạn", chốt 20/11/2026).
+  titleRight?: ReactNode;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -428,6 +431,7 @@ export function BottomSheet({
                 >
                   {title}
                 </Text>
+                {titleRight}
               </View>
               <ScrollView
                 style={styles.shrink}
@@ -488,11 +492,6 @@ export function ActionSheet({
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const card = [
-    styles.actionCard,
-    { backgroundColor: colors['surface-1'] },
-    sheetShadow(colors),
-  ];
   return (
     <Overlay
       visible={visible}
@@ -505,11 +504,17 @@ export function ActionSheet({
         onDismiss={onDismiss}
         dismissible
         handleGap={space[1]}
-        style={styles.actionSheet}
+        // Chốt 21/11/2026: one sheet edge to edge and down to the screen bottom, nothing shows under it.
+        style={[
+          styles.sheet,
+          styles.actionSheet,
+          { backgroundColor: colors['surface-1'] },
+          sheetShadow(colors),
+        ]}
       >
         {(handle) => (
           <>
-            <View style={[card, styles.actionGroups]}>
+            <View style={styles.actionGroups}>
               {handle}
               {(title || subtitle) && (
                 <View
@@ -580,9 +585,9 @@ export function ActionSheet({
                 accessibilityLabel={t('ui.cancel')}
                 onPress={onDismiss}
                 style={({ pressed }) => [
-                  card,
                   styles.actionCancel,
-                  pressed && { backgroundColor: colors['surface-2'] },
+                  { borderTopColor: colors.border },
+                  pressed && { backgroundColor: colors['overlay-pressed'] },
                 ]}
               >
                 <Text weight="600">{t('ui.cancel')}</Text>
@@ -679,14 +684,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   centerText: { textAlign: 'center' },
-  // Board ActionSheet: outer padding 8 (24 at the bottom), cards radius 24, gap 8.
-  actionSheet: {
-    maxHeight: '90%',
-    paddingHorizontal: space[2],
-    paddingTop: space[2],
-    gap: space[2],
-  },
-  actionCard: { borderRadius: radius.sheet },
+  // Chốt 21/11/2026 (00-components): one edge-to-edge sheet, not the board's floating cards.
+  actionSheet: { paddingHorizontal: 0 },
   actionGroups: { paddingBottom: space[2], flexShrink: 1 },
   actionHead: {
     paddingHorizontal: space[3],
@@ -703,6 +702,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   actionCancel: {
+    borderTopWidth: size.hairline,
     height: size.actionRow,
     alignItems: 'center',
     justifyContent: 'center',

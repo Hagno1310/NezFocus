@@ -2,10 +2,12 @@
 
 import journal from './meta/_journal.json';
 import m0000 from './0000_safe_ben_grimm.sql';
+import m0001 from './0001_strange_purple_man.sql';
 
 export default {
   journal,
   migrations: {
     m0000,
+    m0001,
   },
 };

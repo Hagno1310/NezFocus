@@ -180,7 +180,7 @@ export const size = {
   // Boards (TextField help, PasswordRules, Segment/item): icon–text gap 6 in small rows.
   iconGap: 6,
   // C-13 Avatar sizes; DESIGN.md › Presence: dot 10 on every avatar size, cut 2.
-  avatar: [20, 24, 32, 40, 56, 96] as const,
+  avatar: [20, 24, 32, 40, 48, 56, 96] as const, // 48: S-DM-05 card (chốt 20/11/2026)
   presence: { dot: 10, cut: 2 },
   avatarStackOverlap: -6,
   // DESIGN.md › Mascot: empty state 96–120; board EmptyState draws 112.

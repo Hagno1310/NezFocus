@@ -2050,6 +2050,21 @@ Vùng vẽ `role="img"` có `aria-label` tóm tắt ("Người hoạt động m�
 
 ---
 
+## Chốt 20/11/2026 cho component dùng chung (bảng hỏi P2-B2 #19)
+
+| Component | Thêm / đổi |
+| --- | --- |
+| C-33 FriendRow | Chế độ không `PresenceDot` (hàng lời mời, hàng đã chặn); hàng lời mời avatar căn trên |
+| C-09 ActionSheet | Cho phép không có "Hủy" (S-DM-04 `row-menu`); tiêu đề giữ kiểu hiện có |
+| C-09 Dialog | Ngoại lệ hai nút ngang: S-DM-04 `unfriend-confirm` ("Giữ lại" · "Hủy kết bạn") |
+| C-09 BottomSheet | Đầu sheet có chỗ bên phải (S-STUDY-02 `friends-sheet`: "6 bạn") |
+| C-20 SegmentedControl | Tùy chọn số đếm `danger` 700 ("· 1"); 4 mục: padding mục 4 (2 ở 360) |
+| C-30 FilterChip | Giữ viền 2 khi chọn |
+| C-02 TextField | Tùy chọn ẩn nhãn (vẫn đọc được bằng screen reader); `maxLines` |
+| C-13 Avatar | Thêm cỡ 48 (thẻ hồ sơ S-DM-05) |
+| EmptyState | Tùy chọn cỡ mascot (96 ở S-DM-04 `empty`) |
+| C-09 ActionSheet (21/11/2026, thử trên Poco) | Một tấm `surface-1` sát hai mép và kéo tới đáy màn (qua vùng thanh điều hướng), bo hai góc trên như `BottomSheet`; bỏ kiểu thẻ nổi cách mép 8 vì lộ màn phía sau. "Hủy" (nếu có) là hàng cuối trong tấm, kẻ `border` phía trên. Board C-09 và các frame vẽ kiểu thẻ nổi chờ người sửa `.pen` cập nhật |
+
 ## Web quản trị — component P1 (đặc tả khi tới area)
 
 | ID | Component | Quyết định |

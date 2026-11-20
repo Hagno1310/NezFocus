@@ -219,6 +219,7 @@ describe('server and channel events (SRS 5.4)', () => {
       settings: DEFAULT_USER_SETTINGS,
       presences: [],
       read_states: [],
+      relationships: [],
     };
     expect(DispatchEvents.READY.parse(d)).toEqual(d);
   });

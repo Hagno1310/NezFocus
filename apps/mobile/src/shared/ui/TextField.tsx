@@ -33,6 +33,9 @@ export type TextFieldProps = BaseProps & {
   trailing?: ReactNode; // status icon at the end of the field (S-ONB-01 username ✓)
   minLines?: number; // multiline: height kept for this many lines (S-ME-01 bio: 3)
   mono?: boolean; // JetBrains Mono once there is text (S-HOME-06 invite code)
+  // No visible label; screen readers still read it (S-DM-05 username, chốt 20/11/2026).
+  hideLabel?: boolean;
+  maxLines?: number; // multiline: grows to this many lines, then scrolls (S-DM-05: 3)
 };
 
 // C-02: the label sits above the field, never floating inside (floating labels clip Vietnamese marks).
@@ -49,6 +52,8 @@ export function TextField({
   multiline,
   minLines = 1,
   mono = false,
+  hideLabel = false,
+  maxLines = MULTILINE_MAX_LINES,
   value,
   onFocus,
   onBlur,
@@ -79,21 +84,23 @@ export function TextField({
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.labelRow}>
-        <Text
-          variant="label"
-          weight="600"
-          color="text-secondary"
-          style={styles.flex}
-        >
-          {label}
-        </Text>
-        {counterMax !== undefined && (
-          <Text variant="label" color="text-tertiary">
-            {(value ?? '').length}/{counterMax}
+      {(!hideLabel || counterMax !== undefined) && (
+        <View style={styles.labelRow}>
+          <Text
+            variant="label"
+            weight="600"
+            color="text-secondary"
+            style={styles.flex}
+          >
+            {hideLabel ? '' : label}
           </Text>
-        )}
-      </View>
+          {counterMax !== undefined && (
+            <Text variant="label" color="text-tertiary">
+              {(value ?? '').length}/{counterMax}
+            </Text>
+          )}
+        </View>
+      )}
       <View
         style={[
           styles.field,
@@ -151,8 +158,7 @@ export function TextField({
             },
             mono && !!value && { fontFamily: typography.mono.fontFamily },
             multiline && {
-              maxHeight:
-                typography.body.lineHeight * MULTILINE_MAX_LINES + space[3],
+              maxHeight: typography.body.lineHeight * maxLines + space[3],
               paddingVertical: space[2],
             },
           ]}

@@ -30,4 +30,5 @@ export * from './servers/invite.contract.js';
 export * from './idempotency.js';
 export * from './messages/message.contract.js';
 export * from './messages/typing.contract.js';
+export * from './friends/relationship.contract.js';
 export * from './notifications/notification.contract.js';

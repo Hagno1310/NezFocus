@@ -34,6 +34,7 @@ import { startGatewayLifecycle } from './gatewayLifecycle';
 import { startTypingLifecycle } from './typingLifecycle';
 import { startHomeLifecycle } from './homeLifecycle';
 import { startPresenceLifecycle } from './presenceLifecycle';
+import { startFriendsLifecycle } from './friendsLifecycle';
 import { startSettingsLifecycle } from './settingsLifecycle';
 import { interacted } from '../shared/interaction';
 import { linking } from './navigation/linking';
@@ -135,6 +136,7 @@ export default function App() {
   // Before the Gateway starts, so READY reaches the Home tab.
   useEffect(startHomeLifecycle, []);
   useEffect(startPresenceLifecycle, []);
+  useEffect(startFriendsLifecycle, []);
   useEffect(startSettingsLifecycle, []);
   useEffect(startMessagesLifecycle, []);
   useEffect(startGatewayLifecycle, []);

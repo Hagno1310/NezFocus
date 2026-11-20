@@ -498,6 +498,31 @@ Frame nằm trong nhóm "09 · DM, bạn bè & cuộc gọi — Edge case", tên
 | Cuộc gọi video và camera bật / tắt giữa chừng | Tin hệ thống theo loại lúc bắt đầu: "Bình đã gọi video · 12 phút" (icon `video`); gọi thoại rồi bật camera vẫn ghi "đã gọi · …" (icon `phone`) |
 | Nhóm chỉ còn 1 người (GDM-02 AC2) | Nhóm ẩn khỏi S-DM-01 của người còn lại, giữ lịch sử, hiện lại khi có người được thêm |
 
+## Chốt 20/11/2026 (bảng hỏi P2-B2 #19, theo khuyến nghị)
+
+Frame đối chiếu bằng pen.dev trước khi code; frame thắng trừ khi là lỗi vẽ.
+
+| Chỗ | Chốt |
+| --- | --- |
+| S-DM-04 hàng lời mời, hàng đã chặn | `FriendRow` không có `PresenceDot`; giờ cách mép phải 16 (frame vẽ 8 là lỗi vẽ); avatar căn trên |
+| S-DM-04 `row-menu` | `ActionSheet` không có "Hủy" |
+| S-DM-04 `unfriend-confirm` | "Giữ lại" · "Hủy kết bạn" đặt ngang (ngoại lệ C-09) |
+| S-DM-04 tab | Số "· 1" `danger` 700; 4 tab: padding mục 4 (2 ở 360); chip chọn viền 2 (frame vẽ 1 là lỗi vẽ) |
+| S-DM-04 `search` | Tiêu đề phẳng "KẾT QUẢ — N" ở mọi tab và chip |
+| S-DM-04 `empty` | Không có ô tìm; mascot 96 |
+| S-DM-04 trống từng tab | Trực tuyến / Đang chờ theo frame; **Tất cả** (có lời mời hoặc người bị chặn nhưng chưa có bạn): "Chưa có bạn bè"; **Đã chặn**: "Bạn chưa chặn ai" — cùng kiểu chữ inline của `pending-empty`. `EmptyState` chỉ khi không có bạn nào ở Trực tuyến / Tất cả |
+| S-DM-04 thứ tự tên | `localeCompare` tiếng Việt |
+| S-DM-04 số đếm | Quá 99 → "99+" |
+| S-DM-04 `offline` | Dòng "Cần kết nối mạng" ở mọi tab; 👤+ `disabled` |
+| S-DM-04 icon cuối hàng | `ellipsis-vertical` |
+| S-DM-05 ô username | Ẩn nhãn (screen reader vẫn đọc "Username") |
+| S-DM-05 ô lời nhắn | Tối đa 3 dòng |
+| S-DM-05 thẻ | Avatar 48; nút trong thẻ cỡ S (40); nút chính `disabled` ở các trạng thái như frame |
+| S-DM-05 `sending` | Không đóng được sheet, ô chỉ đọc |
+| S-DM-05 lỗi khác | Cùng kiểu lỗi dưới ô; hết 50 lời mời / ngày → "Gửi lời mời" `disabled` tới hết ngày |
+| S-DM-EDGE `large-text-friends` | Hàng lời mời: nút xếp dọc như spec (frame chưa vẽ) |
+| Dữ liệu mẫu trong frame | `many-friends-sheet` tính cả Phong (đã bị chặn), `auto-accepted` dùng Giang (đã mời An): lỗi dữ liệu mẫu, code theo luật |
+
 ## Câu hỏi còn mở
 
 Không còn. 21 câu chốt 20/10/2026 (chủ dự án đồng ý cả 21); hành vi mới ở `SRS_v1.2_change_notes.md` mục 11 (CR-06, đã áp vào SRS v1.6 ngày 21/10/2026). Cập nhật 30/10/2026 theo CR-12, CR-15, CR-19, CR-21, CR-24, CR-25 (đã áp vào SRS v1.9, Phụ lục 11.13).

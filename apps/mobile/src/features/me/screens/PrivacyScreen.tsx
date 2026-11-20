@@ -2,6 +2,7 @@ import { Ban, Info } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useStore } from 'zustand';
+import { countOf, friendsStore } from '../../../domain/friends/friends';
 import { homeStore } from '../../../domain/servers/homeStore';
 import { space, useTheme } from '../../../shared/theme';
 import { NoteLine } from '../../../shared/ui/NoteLine';
@@ -23,6 +24,8 @@ export function PrivacyScreen({
   onOpenBlocked: () => void;
 }) {
   const { t } = useTranslation();
+  // P2-B2.3 (#112): S-ME-04 row value = people I blocked.
+  const blockedCount = useStore(friendsStore, (s) => countOf(s, 'blocked'));
   const { colors } = useTheme();
   const online = useOnline();
   const { settings: s, canSave } = useSettings();
@@ -90,11 +93,10 @@ export function PrivacyScreen({
         <SectionLabel style={styles.section}>
           {t('me.blockSection')}
         </SectionLabel>
-        {/* ponytail: no count and a placeholder until the Friends screen, P2-B2.3 (#112),
-            opens its "Đã chặn" tab here with the number of blocked people. */}
         <SettingsRow
           label={t('me.blocked')}
           icon={Ban}
+          value={blockedCount ? String(blockedCount) : undefined}
           onPress={onOpenBlocked}
           disabled={!online}
         />

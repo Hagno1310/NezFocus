@@ -142,6 +142,7 @@ describe('reduceHome (Gateway events)', () => {
           settings: DEFAULT_USER_SETTINGS,
           presences: [],
           read_states: [],
+          relationships: [],
         },
       }),
     );
@@ -164,6 +165,7 @@ describe('reduceHome (Gateway events)', () => {
           settings: DEFAULT_USER_SETTINGS,
           presences: [],
           read_states: [],
+          relationships: [],
         },
       }),
     );

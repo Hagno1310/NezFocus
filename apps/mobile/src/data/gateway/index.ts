@@ -7,6 +7,7 @@ import { secureTokenStore } from '../auth/secureTokenStore';
 import { isFakeArea, pickRepository } from '../fake';
 import { fakeIncomingMessage } from '../messages/FakeMessageRepository';
 import { fakeServerRepository } from '../servers/FakeServerRepository';
+import { fakeFriendRepository } from '../friends/FakeFriendRepository';
 import { AN, createFakeGatewayClient } from './FakeGatewayClient';
 import { createGatewayClient, type GatewaySocket } from './RemoteGatewayClient';
 
@@ -110,7 +111,10 @@ const fake = createFakeGatewayClient(
   [
     { user_id: '2', status: 'online', activity: null },
     { user_id: '3', status: 'dnd', activity: null },
+    { user_id: '4', status: 'online', activity: null },
+    { user_id: '13', status: 'idle', activity: null },
   ],
+  () => (isFakeArea('friends') ? fakeFriendRepository.snapshot() : []),
 );
 
 export const gatewayClient = pickRepository('gateway', { remote, fake });

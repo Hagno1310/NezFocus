@@ -1,7 +1,7 @@
 import { Check, Slash, X } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import {
   disabledOpacity,
   fontScale,
@@ -17,12 +17,15 @@ import { Text } from './Text';
 import { Tooltip } from './Tooltip';
 
 const GAP = size.segmentInset;
+const NARROW = 380; // the 360 frames
 const slop = touchSlop(size.segment);
 
 export type Segment<K extends string> = {
   key: K;
   label: string;
-  count?: number;
+  count?: number | string; // a string for "99+"
+  // S-DM-04 "Đang chờ · 1": incoming requests in `danger` 700 (chốt 20/11/2026).
+  countTone?: 'danger';
   icon?: IconComponent;
   disabled?: boolean;
 };
@@ -40,6 +43,7 @@ export function SegmentedControl<K extends string>({
   const { t } = useTranslation();
   const { colors } = useTheme();
   const [tip, setTip] = useState<K | null>(null);
+  const { width } = useWindowDimensions();
   return (
     <View
       accessibilityRole="tablist"
@@ -54,7 +58,8 @@ export function SegmentedControl<K extends string>({
             : 'text-secondary';
         return (
           <Pressable
-            key={s.key}
+            // Remount on fit ↔ even: Fabric kept the old width when "· 1" went away (S-DM-04, Poco).
+            key={`${s.key}:${s.count === undefined ? 'even' : 'fit'}`}
             accessibilityRole="tab"
             accessibilityLabel={
               s.count === undefined ? s.label : `${s.label}, ${s.count}`
@@ -73,8 +78,10 @@ export function SegmentedControl<K extends string>({
               styles.segment,
               // C-20: a segment with a count is as wide as its text; the rest share the width.
               s.count === undefined ? styles.even : styles.fit,
-              // ponytail: khi the 4-item C-20 frame is redrawn: re-check this 8 side padding (fits labels at 360).
-              segments.length >= 4 && styles.tight,
+              // 4 items: padding 4, 2 on a 360 screen (S-DM-04, chốt 20/11/2026).
+              segments.length >= 4 && {
+                paddingHorizontal: width < NARROW ? 2 : 4,
+              },
               selected && { backgroundColor: colors['surface-1'] },
               pressed &&
                 !selected && { backgroundColor: colors['overlay-pressed'] },
@@ -95,8 +102,8 @@ export function SegmentedControl<K extends string>({
             {s.count !== undefined && (
               <Text
                 variant="body-sm"
-                weight={selected ? '600' : '500'}
-                color={fg}
+                weight={s.countTone ? '700' : selected ? '600' : '500'}
+                color={s.countTone && !s.disabled ? s.countTone : fg}
                 maxFontSizeMultiplier={fontScale.narrowLabel}
               >
                 {`· ${s.count}`}
@@ -195,7 +202,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
   },
   even: { flex: 1, minWidth: 0 },
-  tight: { paddingHorizontal: space[2] },
   fit: { flexShrink: 0 },
   shrink: { flexShrink: 1 },
   tri: { alignSelf: 'flex-start' },

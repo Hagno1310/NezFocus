@@ -10,6 +10,9 @@ import {
 } from '../../shared/ui/People';
 import type { StudyActivity } from '@nezfocus/shared';
 import { ActivityLine } from '../../shared/ui/ActivityLine';
+import { Button } from '../../shared/ui/Button';
+import { FriendRow } from '../../shared/ui/FriendRow';
+import { Text } from '../../shared/ui/Text';
 import { SettingsRow } from '../../shared/ui/SettingsRow';
 import { Caption, Row, Section } from './kit';
 
@@ -222,9 +225,70 @@ function Activities() {
   );
 }
 
+function Friends() {
+  return (
+    <>
+      <Caption>friend · đang học / vắng mặt / ngoại tuyến</Caption>
+      <FriendRow
+        name="Bình"
+        username="binh.tran"
+        presence="online"
+        line2={<ActivityLine activity={ACTIVITIES[0]!} form="full" now={AT} />}
+      />
+      <FriendRow
+        name="Tuấn"
+        username="tuan.hoang"
+        presence="idle"
+        line2={
+          <Text variant="label" weight="500" color="text-secondary">
+            Vắng mặt
+          </Text>
+        }
+      />
+      <FriendRow
+        name="Lan"
+        username="lan.vu"
+        presence="offline"
+        dim
+        line2={
+          <Text variant="label" weight="500" color="text-secondary">
+            Ngoại tuyến
+          </Text>
+        }
+      />
+      <Caption>lời mời đến · không PresenceDot</Caption>
+      <FriendRow
+        name="Giang"
+        username="giang.vo"
+        time="19:48"
+        line2={
+          <Text variant="body-sm" color="text-secondary">
+            “Mình là Giang lớp K22, xin vào nhóm ôn cùng nhé”
+          </Text>
+        }
+        below={
+          <>
+            <Button label="Chấp nhận" size="S" />
+            <Button label="Từ chối" variant="secondary" size="S" />
+          </>
+        }
+      />
+      <Caption>đã chặn · một dòng</Caption>
+      <FriendRow
+        name="Phong"
+        username="phong.vu"
+        right={<Button label="Bỏ chặn" variant="secondary" size="S" />}
+      />
+    </>
+  );
+}
+
 export function PeopleSections() {
   return (
     <>
+      <Section title="C-33 · FriendRow">
+        <Friends />
+      </Section>
       <Section title="C-13 · Avatar, PresenceDot, Badge">
         <People />
       </Section>

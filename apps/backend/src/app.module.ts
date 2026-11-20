@@ -13,6 +13,7 @@ import { PermissionsModule } from './modules/permissions/permissions.module.js';
 import { ServersModule } from './modules/servers/servers.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
 import { StudyModule } from './modules/study/study.module.js';
+import { FriendsModule } from './modules/friends/friends.module.js';
 import { RedisModule } from './redis/redis.module.js';
 
 @Module({
@@ -30,6 +31,7 @@ import { RedisModule } from './redis/redis.module.js';
     StudyModule,
     ServersModule,
     MessagingModule,
+    FriendsModule,
     NotificationsModule,
   ],
 })

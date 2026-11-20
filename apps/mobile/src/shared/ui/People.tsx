@@ -22,6 +22,7 @@ const initialType: Record<AvatarSize, TypeVariant> = {
   24: 'tab',
   32: 'label',
   40: 'body',
+  48: 'headline', // S-DM-05 card
   56: 'title-2',
   96: 'display', // board C-13
 };

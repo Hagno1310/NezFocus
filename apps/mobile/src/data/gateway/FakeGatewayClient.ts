@@ -1,6 +1,7 @@
 import { DEFAULT_USER_SETTINGS } from '@nezfocus/shared';
 import type {
   PresenceEvent,
+  Relationship,
   CurrentUser,
   ServerSummary,
   DispatchEvent,
@@ -35,6 +36,7 @@ export function createFakeGatewayClient(
   scenario: ScenarioStep[],
   servers: () => ServerSummary[] = () => [],
   presences: PresenceEvent[] = [],
+  relationships: () => Relationship[] = () => [],
 ): GatewayClient {
   let timers: ReturnType<typeof setTimeout>[] = [];
   let seq = 0;
@@ -56,6 +58,7 @@ export function createFakeGatewayClient(
           settings: DEFAULT_USER_SETTINGS,
           presences,
           read_states: [],
+          relationships: relationships(),
         },
       });
       timers = scenario.map((step) => setTimeout(() => emit(step), step.after));

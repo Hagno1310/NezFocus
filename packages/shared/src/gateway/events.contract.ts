@@ -6,6 +6,10 @@ import {
 } from '../notifications/notification.contract.js';
 import { CurrentUser } from '../auth/auth.contract.js';
 import {
+  Relationship,
+  RelationshipRemove,
+} from '../friends/relationship.contract.js';
+import {
   MessageAck,
   MessageCreateEvent,
   ReadState,
@@ -39,6 +43,7 @@ export const Ready = z.object({
   presences: z.array(PresenceEvent), // people whose presence I receive (AUTH-05 AC1), as they see now
   settings: UserSettings, // SRS 5.4: my settings (the app reads them cache-first)
   read_states: z.array(ReadState), // REQ-NOTIF-01: every channel I can view and every DM (P2-A4.2)
+  relationships: z.array(Relationship), // REQ-FRIEND-04: friends, requests both ways, people I blocked
 });
 export type Ready = z.infer<typeof Ready>;
 
@@ -62,6 +67,8 @@ export const DispatchEvents = {
   CHANNEL_DELETE: ChannelDeleted,
   MESSAGE_CREATE: MessageCreateEvent, // REQ-MSG-01: to who can view the channel, nonce echoed (MSG-09)
   MESSAGE_ACK: MessageAck, // REQ-NOTIF-01: to every session of the user who acked
+  RELATIONSHIP_ADD: Relationship, // REQ-FRIEND-01..03: to every session of the user whose list changed
+  RELATIONSHIP_REMOVE: RelationshipRemove, // decline: only the decliner (FRIEND-02 AC3); block: as an unfriend for the blocked
   TYPING_START: TypingStart, // REQ-MSG-06: to sessions SUBSCRIBEd to the server that can view the channel, not the typer
   NOTIFICATION_CREATE: Notification, // REQ-NOTIF-05: to every session of the recipient
   NOTIFICATION_DELETE: NotificationDeleted, // REQ-NOTIF-05: its source is gone (message, task, friend request)

@@ -112,7 +112,7 @@ describe('Fanout (REQ-MSG-07)', () => {
         kind: 'subscribers',
         serverId: SERVER.toString(),
         channelId: channelId?.toString() ?? null,
-        except: except?.toString() ?? null,
+        except: except ? [except.toString()] : [],
       }) as const;
 
     it('reaches only sessions subscribed to the server, filtered by VIEW_CHANNEL, minus `except`', async () => {

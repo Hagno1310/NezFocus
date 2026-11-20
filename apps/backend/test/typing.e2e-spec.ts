@@ -4,6 +4,7 @@ import {
   ErrorCode,
   GatewayOp,
   Permission as P,
+  RelationshipRoutes,
   ServerRoutes,
   TypingRoutes,
   type ServerResponse,
@@ -155,5 +156,26 @@ describe('Typing (e2e)', () => {
     await settle();
     expect(typings(gAn)).toHaveLength(0);
     gAn.close();
+  });
+
+  it('S-HOME-01: someone who blocked the typer does not get TYPING_START', async () => {
+    const [chi, binh, dung] = await Promise.all(
+      ['Chi', 'Bình', 'Dũng'].map(signedIn),
+    );
+    const server = await serverOf(chi, binh, dung);
+    await binh
+      .put(RelationshipRoutes.byUser.replace(':userId', chi.id))
+      .send({ type: 'blocked' })
+      .expect(200);
+    const [gBinh, gDung] = await Promise.all([
+      subscribed(binh, server.id),
+      subscribed(dung, server.id),
+    ]);
+    await settle();
+    await chi.post(typingIn(server.channelId)).expect(204);
+    await gDung.next('TYPING_START');
+    await settle();
+    expect(typings(gBinh)).toHaveLength(0);
+    for (const g of [gBinh, gDung]) g.close();
   });
 });

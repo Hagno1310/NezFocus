@@ -16,7 +16,7 @@ export type FanoutTarget =
       kind: 'subscribers';
       serverId: string;
       channelId: string | null;
-      except: string | null;
+      except: string[];
     };
 
 export type Envelope = {
@@ -61,13 +61,13 @@ export class Fanout {
 
     const serverId = BigInt(target.serverId);
     const channelId = target.channelId ? BigInt(target.channelId) : null;
-    const except = target.except ? BigInt(target.except) : null;
+    const except = new Set(target.except.map(BigInt));
     const subscribers = this.sessions.subscriberIds(serverId);
     if (!subscribers.size) return;
     const members = new Set(await this.servers.memberIds(serverId));
     for (const userId of subscribers)
       if (
-        userId !== except &&
+        !except.has(userId) &&
         members.has(userId) &&
         (!channelId || (await this.sees(userId, channelId)))
       )

@@ -40,7 +40,7 @@ export abstract class EventPublisher {
     channelId: bigint | null,
     t: T,
     d: DispatchPayload<T>,
-    except?: bigint,
+    except?: readonly bigint[], // the sender, people who blocked them
   ): Promise<void>;
 }
 
@@ -124,14 +124,14 @@ export class GatewayEventPublisher
     channelId: bigint | null,
     t: T,
     d: DispatchPayload<T>,
-    except?: bigint,
+    except: readonly bigint[] = [],
   ) {
     return this.publish(
       {
         kind: 'subscribers',
         serverId: serverId.toString(),
         channelId: channelId?.toString() ?? null,
-        except: except?.toString() ?? null,
+        except: except.map(String),
       },
       t,
       d,

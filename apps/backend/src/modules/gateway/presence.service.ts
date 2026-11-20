@@ -10,6 +10,7 @@ import type {
   SoloSession,
   StudyActivity,
 } from '@nezfocus/shared';
+import { BlockQuery } from '../friends/block-query.js';
 import { GatewaySessions, type GatewaySession } from './gateway-sessions.js';
 import {
   aggregate,
@@ -28,6 +29,8 @@ export abstract class PresenceSink {
   abstract soloChanged(userId: bigint, solo: SoloSession | null): void;
   // P1-A5.1 (#76) calls this when preferred_status or show_study_activity changes by REST.
   abstract settingsChanged(userId: bigint): Promise<void>;
+  // P2-B2.2 (#111): friend added / removed, block added / removed between a and b.
+  abstract relationshipChanged(a: bigint, b: bigint): Promise<void>;
 }
 
 // Read side for other modules: how many of these users others see online right now
@@ -62,6 +65,7 @@ export class PresenceService
   constructor(
     private readonly sessions: GatewaySessions,
     private readonly repo: PresenceRepository,
+    private readonly blocks: BlockQuery,
   ) {
     super();
   }
@@ -78,8 +82,9 @@ export class PresenceService
   // READY: my chosen status and who is not offline among the people I receive.
   async ready(userId: bigint) {
     const me = await this.load(userId);
+    const hidden = await this.blockedEitherWay(userId);
     const presences = (await this.repo.receivers(userId))
-      .map((id) => this.event(id))
+      .map((id) => this.eventFor(id, hidden.has(id)))
       .filter((e) => e.status !== 'offline');
     return { preferred_status: me.settings.preferred, presences };
   }
@@ -116,6 +121,7 @@ export class PresenceService
   async changed(userId: bigint) {
     if (this.unchanged(userId)) return this.forgetIfGone(userId);
     const receivers = await this.repo.receivers(userId);
+    const hidden = await this.blockedEitherWay(userId);
     // Computed again after the await: a newer call may have sent meanwhile, and a stale event must not
     // go out after it.
     const me = this.users.get(userId);
@@ -123,8 +129,27 @@ export class PresenceService
     const event = this.event(userId);
     me.sent = JSON.stringify(event);
     for (const receiver of receivers)
-      await this.sessions.dispatchToUser(receiver, 'PRESENCE_UPDATE', event);
+      await this.sessions.dispatchToUser(
+        receiver,
+        'PRESENCE_UPDATE',
+        hidden.has(receiver) ? { ...event, activity: null } : event,
+      );
     this.forgetIfGone(userId);
+  }
+
+  // Each one's presence as the other may now see it; nothing when they no longer share anything.
+  async relationshipChanged(a: bigint, b: bigint) {
+    const blocked = await this.blocks.isBlockedEitherWay(a, b);
+    for (const [from, to] of [
+      [a, b],
+      [b, a],
+    ] as const)
+      if ((await this.repo.receivers(from)).includes(to))
+        await this.sessions.dispatchToUser(
+          to,
+          'PRESENCE_UPDATE',
+          this.eventFor(from, blocked),
+        );
   }
 
   onlineCount(userIds: readonly bigint[]) {
@@ -146,6 +171,20 @@ export class PresenceService
       !this.sessions.devicesOf(userId).length
     )
       this.users.delete(userId);
+  }
+
+  // AUTH-05 AC5: a block either way hides the activity, not the status.
+  private async blockedEitherWay(userId: bigint) {
+    const [blocked, blockers] = await Promise.all([
+      this.blocks.blockedIds(userId),
+      this.blocks.blockerIds(userId),
+    ]);
+    return new Set([...blocked, ...blockers]);
+  }
+
+  private eventFor(userId: bigint, hideActivity: boolean): PresenceEvent {
+    const event = this.event(userId);
+    return hideActivity ? { ...event, activity: null } : event;
   }
 
   private event(userId: bigint): PresenceEvent {

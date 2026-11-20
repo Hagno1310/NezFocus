@@ -10,6 +10,7 @@ import type {
   PresenceSettings,
 } from './presence.repository.js';
 import { PresenceService } from './presence.service.js';
+import type { BlockQuery } from '../friends/block-query.js';
 
 // An (1) and Bình (2) share a server; Chi (3) shares none with An.
 const shared: Record<string, bigint[]> = { '1': [2n], '2': [1n], '3': [] };
@@ -24,6 +25,17 @@ const repo = {
   },
   receivers: async (u: bigint) => shared[u.toString()] ?? [],
 } as unknown as PresenceRepository;
+
+// [blocker, blocked]
+let blocks: [bigint, bigint][];
+const blockQuery = {
+  isBlockedEitherWay: async (a: bigint, b: bigint) =>
+    blocks.some(([x, y]) => (x === a && y === b) || (x === b && y === a)),
+  blockedIds: async (u: bigint) =>
+    blocks.filter(([a]) => a === u).map(([, b]) => b),
+  blockerIds: async (u: bigint) =>
+    blocks.filter(([, b]) => b === u).map(([a]) => a),
+} as unknown as BlockQuery;
 
 let nextId = 1n;
 let sessions: GatewaySessions;
@@ -52,9 +64,12 @@ beforeEach(() => {
   vi.setSystemTime(new Date('2026-10-18T14:47:00Z'));
   settings = new Map();
   saved = [];
+  blocks = [];
+  shared['1'] = [2n];
+  shared['3'] = [];
   inbox.clear();
   sessions = new GatewaySessions({ next: () => nextId++ });
-  presence = new PresenceService(sessions, repo);
+  presence = new PresenceService(sessions, repo, blockQuery);
   presence.onModuleInit();
 });
 afterEach(() => {
@@ -227,6 +242,55 @@ describe('PresenceService (REQ-AUTH-05)', () => {
     await older;
     repo.receivers = receivers;
     expect(lastSeenBy(2n)?.status).toBe('online');
+  });
+
+  it('AC5 (blocks): a block either way hides the activity from that one receiver, status stays', async () => {
+    shared['1'] = [2n, 3n];
+    blocks = [[3n, 1n]]; // Chi blocked An
+    await connect(2n);
+    await connect(3n);
+    await connect(1n);
+    presence.soloChanged(1n, solo);
+    await flush();
+    expect(lastSeenBy(2n)?.activity?.kind).toBe('solo');
+    expect(lastSeenBy(3n)).toEqual({
+      user_id: '1',
+      status: 'online',
+      activity: null,
+    });
+  });
+
+  it('AC5 (blocks): READY of the blocked one carries no activity of the blocker', async () => {
+    shared['3'] = [1n];
+    blocks = [[1n, 3n]]; // An blocked Chi
+    await connect(1n);
+    presence.soloChanged(1n, solo);
+    await flush();
+    const { ready } = await connect(3n);
+    expect(ready.presences).toEqual([
+      { user_id: '1', status: 'online', activity: null },
+    ]);
+  });
+
+  it('relationshipChanged: a new friend gets the presence at once, both ways', async () => {
+    await connect(1n);
+    await connect(3n);
+    expect(inbox.get(3n)).toBeUndefined();
+    shared['1'] = [2n, 3n];
+    shared['3'] = [1n];
+    await presence.relationshipChanged(1n, 3n);
+    expect(lastSeenBy(3n)?.user_id).toBe('1');
+    expect(lastSeenBy(1n)?.user_id).toBe('3');
+  });
+
+  it('relationshipChanged: a new block while sharing a server takes the activity away at once', async () => {
+    await connect(2n);
+    await connect(1n);
+    presence.soloChanged(1n, solo);
+    await flush();
+    blocks = [[2n, 1n]];
+    await presence.relationshipChanged(2n, 1n);
+    expect(lastSeenBy(2n)?.activity).toBeNull();
   });
 
   it('sends nothing when nothing visible changed', async () => {

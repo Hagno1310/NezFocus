@@ -14,6 +14,7 @@ import { Clock } from '../../common/clock.js';
 import { isUniqueViolation } from '../../common/db-errors.js';
 import { SnowflakeGenerator } from '../../common/snowflake.js';
 import { KeyValueStore } from '../../redis/key-value-store.js';
+import { BlockQuery } from '../friends/block-query.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
 import { PermissionService } from '../permissions/permission.service.js';
 import { ServersRepository } from '../servers/servers.repository.js';
@@ -42,6 +43,7 @@ export class MessagesService {
     private readonly ids: SnowflakeGenerator,
     private readonly store: KeyValueStore,
     private readonly clock: Clock,
+    private readonly blocks: BlockQuery,
   ) {}
 
   async send(
@@ -110,7 +112,6 @@ export class MessagesService {
     if (!fresh || !channel.serverId) return;
     const author = await this.repo.author(userId);
     if (!author) return;
-    // ponytail: skip receivers who blocked the typer once blocking lands, P2-B2.2 (#111).
     await this.events.toServerSubscribers(
       channel.serverId,
       channelId,
@@ -121,7 +122,8 @@ export class MessagesService {
         user: toMessageAuthor(author),
         timestamp: this.clock.now().toISOString(),
       },
-      userId,
+      // S-HOME-01 (chốt 20/11/2026): not shown to people who blocked the typer.
+      [userId, ...(await this.blocks.blockerIds(userId))],
     );
   }
 

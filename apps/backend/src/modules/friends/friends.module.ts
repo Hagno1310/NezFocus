@@ -1,10 +1,18 @@
 import { Global, Module } from '@nestjs/common';
-import { BlockQuery, NoBlockQuery } from './block-query.js';
+import { BlockQuery, DbBlockQuery } from './block-query.js';
+import { FriendsController } from './friends.controller.js';
+import { FriendsRepository } from './friends.repository.js';
+import { FriendsService } from './friends.service.js';
 
-// WORKFLOW 4.3: other modules inject BlockQuery.
+// WORKFLOW 4.3: other modules inject BlockQuery; the Gateway reads FriendsService.list for READY.
 @Global()
 @Module({
-  providers: [{ provide: BlockQuery, useClass: NoBlockQuery }],
-  exports: [BlockQuery],
+  controllers: [FriendsController],
+  providers: [
+    FriendsRepository,
+    FriendsService,
+    { provide: BlockQuery, useClass: DbBlockQuery },
+  ],
+  exports: [BlockQuery, FriendsService],
 })
 export class FriendsModule {}

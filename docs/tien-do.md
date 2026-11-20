@@ -131,7 +131,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 
 ### P2 · Hoàng
 
-- [ ] **P2-B4** [#118](https://github.com/Hagno1310/NezFocus/issues/118) NotificationService.create: hợp đồng mục Hộp thư và phần lưu (NOTIF-05, nền)
+- [x] **P2-B4** [#118](https://github.com/Hagno1310/NezFocus/issues/118) NotificationService.create: hợp đồng mục Hộp thư và phần lưu (NOTIF-05, nền)
   - Cần trước: P0-5
 - [x] **P2-B2** [#19](https://github.com/Hagno1310/NezFocus/issues/19) Bạn bè và chặn
   - Cần trước: P1-B2, P1-B4, P2-B4

@@ -136,7 +136,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 - [ ] **P2-B2** [#19](https://github.com/Hagno1310/NezFocus/issues/19) Bạn bè và chặn
   - Cần trước: P1-B2, P1-B4, P2-B4
   - Trong lúc làm: P2-B2.3 chờ P2-A3.3 (Hiếu)
-  - [ ] mốc **P2-B2.1** [#110](https://github.com/Hagno1310/NezFocus/issues/110) Hợp đồng bạn bè và chặn trong shared · hợp đồng · người kia chờ: P2-A4 (Hiếu)
+  - [x] mốc **P2-B2.1** [#110](https://github.com/Hagno1310/NezFocus/issues/110) Hợp đồng bạn bè và chặn trong shared · hợp đồng · người kia chờ: P2-A4 (Hiếu)
 - [x] **P2-B1** [#18](https://github.com/Hagno1310/NezFocus/issues/18) Phát event có chọn lọc và đang nhập
   - Cần trước: P0-5, P0-6 (Hiếu)
   - Trong lúc làm: P2-B1.2 chờ P2-A3.1 (Hiếu); P2-B1.2 chờ P1-A3.2 (Hiếu); P2-B1.3 chờ P2-A3.4 (Hiếu)

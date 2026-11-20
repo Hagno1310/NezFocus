@@ -100,6 +100,7 @@ describe('gateway contract', () => {
         settings: DEFAULT_USER_SETTINGS,
         presences: [],
         read_states: [],
+        relationships: [],
       };
       expect(DispatchEvents.READY.parse(d)).toEqual(d);
     });

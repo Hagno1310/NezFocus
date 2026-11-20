@@ -188,6 +188,8 @@ export class GatewayConnection implements SessionSocket {
       settings,
       // ponytail: always empty, P2-A4.2 (#104) sends the real read states.
       read_states: [],
+      // ponytail: always empty, P2-B2.2 (#111) sends the real relationships.
+      relationships: [],
     });
     // SRS 5.4: IDENTIFY may carry the status the app wants (a new login keeps the saved one).
     if (status)

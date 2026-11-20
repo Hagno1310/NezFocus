@@ -378,6 +378,13 @@ Frame nằm trong nhóm "04 · Tab Học — Edge case", tên `S-STUDY-EDGE · <
 | Chọn kỳ ở S-STUDY-03 (v1.9, CR-23) | Theo REQ-STUDY-17 và S-STUDY-03 › Thể hiện kỳ và lịch sử: "›" tắt ở kỳ hiện tại, "‹" tắt ở kỳ đầu tiên có dữ liệu; đổi Tuần ↔ Tháng giữ ngày đang xem; không khoảng ngày tự chọn, không xem theo năm |
 | Qua nửa đêm khi đang mở Thống kê (v1.9, CR-23) | Giữ kỳ đang xem (kể cả khi kỳ hiện tại đổi sang tuần / tháng mới: "›" bật lại); chuỗi và tiến độ hôm nay tính lại ngay ("Hôm nay 0 / 15 phút") |
 
+## Chốt 20/11/2026 (bảng hỏi P2-B2 #19, theo khuyến nghị)
+
+| Chỗ | Chốt |
+| --- | --- |
+| S-STUDY-02 dòng "{N} bạn đang học lúc này" | Avatar chồng cỡ 24 (frame vẽ 22); 3 avatar đầu theo thứ tự của sheet |
+| S-STUDY-02 `friends-sheet` | Đầu sheet có số ("6 bạn") bên phải; nút "Vào" cỡ S (40) theo spec (frame vẽ M); hàng dùng `PhaseBadge` màu như frame |
+
 ## Câu hỏi còn mở
 
 Không còn.

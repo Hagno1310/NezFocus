@@ -58,7 +58,8 @@ export function SegmentedControl<K extends string>({
             : 'text-secondary';
         return (
           <Pressable
-            key={s.key}
+            // Remount on fit ↔ even: Fabric kept the old width when "· 1" went away (S-DM-04, Poco).
+            key={`${s.key}:${s.count === undefined ? 'even' : 'fit'}`}
             accessibilityRole="tab"
             accessibilityLabel={
               s.count === undefined ? s.label : `${s.label}, ${s.count}`

@@ -44,6 +44,7 @@ import { useChatClock } from '../../chat/hooks/useChatClock';
 import { ConnectionBanner } from '../../gateway/components/ConnectionBanner';
 import { usePresence } from '../../presence/hooks/usePresence';
 import { BlockDialog } from '../components/BlockDialog';
+import { AddFriendSheet } from './AddFriendSheet';
 
 export type FriendsTab = 'online' | 'all' | 'pending' | 'blocked';
 type Chip = 'incoming' | 'outgoing';
@@ -468,7 +469,26 @@ export function FriendsScreen({
         onDismiss={() => setUnfriend(null)}
       />
       <BlockDialog user={block} onDismiss={() => setBlock(null)} />
-      {/* S-DM-05 Thêm bạn: P2-B2.4 (#113). */}
+      <AddFriendSheet
+        key={addKey}
+        visible={adding}
+        onDismiss={() => setAdding(false)}
+        onSent={() => {
+          setAdding(false);
+          setTab('pending');
+          setChip('outgoing');
+          setQuery('');
+        }}
+        onBecameFriends={() => {
+          setAdding(false);
+          setTab('all');
+          setQuery('');
+        }}
+        onOpenDm={(id) => {
+          setAdding(false);
+          onOpenDm?.(id);
+        }}
+      />
     </View>
   );
 }

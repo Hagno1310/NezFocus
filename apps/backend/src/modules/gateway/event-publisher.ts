@@ -9,22 +9,37 @@ import { ServersRepository } from '../servers/servers.repository.js';
 import { GatewaySessions } from './gateway-sessions.js';
 
 // SRS 5.4 DISPATCH. Owner: gateway (B). Other modules inject this and never touch sockets.
+// The caller picks the target; the Gateway works out who receives it (REQ-MSG-07) and does the
+// permission check itself, so a caller never loops over members. Example (messaging):
+//   await this.events.toChannel(channelId, 'MESSAGE_CREATE', { ...message, server_id });
 export abstract class EventPublisher {
+  // Every session of one user (their own data: USER_UPDATE, SOLO_SESSION_UPDATE…).
   abstract toUser<T extends DispatchEventName>(
     userId: bigint,
     t: T,
     d: DispatchPayload<T>,
   ): Promise<void>;
-  // Members who can VIEW_CHANNEL (REQ-ROLE-03); the real fanout is P2-B1 (#18).
+  // Server channel: members who can VIEW_CHANNEL it (REQ-ROLE-03); DM: its members (P2-B3.2 #115).
+  // Required for every event about a channel's content: MESSAGE_*, CHANNEL_CREATE of a private one.
   abstract toChannel<T extends DispatchEventName>(
     channelId: bigint,
     t: T,
     d: DispatchPayload<T>,
   ): Promise<void>;
+  // Every member, no permission filter: SERVER_*, roles, CHANNEL_DELETE.
   abstract toServer<T extends DispatchEventName>(
     serverId: bigint,
     t: T,
     d: DispatchPayload<T>,
+  ): Promise<void>;
+  // Only sessions that SUBSCRIBEd (op 8) to this server; with a channel, only those that can
+  // VIEW_CHANNEL it. For detail events: TYPING_START, member-list presence. `except` skips a user.
+  abstract toServerSubscribers<T extends DispatchEventName>(
+    serverId: bigint,
+    channelId: bigint | null,
+    t: T,
+    d: DispatchPayload<T>,
+    except?: bigint,
   ): Promise<void>;
 }
 
@@ -81,5 +96,14 @@ export class GatewayEventPublisher extends EventPublisher {
   ) {
     for (const userId of await this.servers.memberIds(serverId))
       await this.sessions.dispatchToUser(userId, t, d);
+  }
+
+  // ponytail: stand-in until the subscription map of P2-B1.2 (#108): nobody is subscribed yet.
+  async toServerSubscribers<T extends DispatchEventName>(
+    serverId: bigint,
+    _channelId: bigint | null,
+    t: T,
+  ) {
+    this.logger.debug(`${t} to subscribers of ${serverId} dropped`);
   }
 }

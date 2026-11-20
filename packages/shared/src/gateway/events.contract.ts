@@ -6,6 +6,7 @@ import {
   MessageCreateEvent,
   ReadState,
 } from '../messages/message.contract.js';
+import { TypingStart } from '../messages/typing.contract.js';
 import {
   PresenceEvent,
   PresenceStatus,
@@ -57,6 +58,7 @@ export const DispatchEvents = {
   CHANNEL_DELETE: ChannelDeleted,
   MESSAGE_CREATE: MessageCreateEvent, // REQ-MSG-01: to who can view the channel, nonce echoed (MSG-09)
   MESSAGE_ACK: MessageAck, // REQ-NOTIF-01: to every session of the user who acked
+  TYPING_START: TypingStart, // REQ-MSG-06: to sessions SUBSCRIBEd to the server that can view the channel, not the typer
 } satisfies Record<string, z.ZodType>;
 
 export type DispatchEventName = keyof typeof DispatchEvents;

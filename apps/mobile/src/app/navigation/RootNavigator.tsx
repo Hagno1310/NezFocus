@@ -422,6 +422,8 @@ function HomeTab() {
         </HomeStack.Screen>
         <HomeStack.Screen name="Friends">
           {({ navigation, route }) => (
+            // ponytail: onOpenDm (💬, row, "Nhắn tin") comes with S-DM-02, P2-B3.3 (#116);
+            // onOpenProfile (avatar → S-HOME-10) with P2-B3.4 (#117).
             <FriendsScreen
               initialTab={route.params?.tab}
               onBack={navigation.goBack}

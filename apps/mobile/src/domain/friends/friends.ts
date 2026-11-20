@@ -12,9 +12,14 @@ import { searchKey } from '../servers/channelPermissions';
 export type FriendsState = {
   byUser: Record<string, Relationship>; // one relationship per user (8.4.2)
   loaded: boolean; // READY or the local cache has filled it
+  sendBlockedUntil: number; // 40029 on send: "Gửi lời mời" off until then (S-DM-05)
 };
 
-export const emptyFriends: FriendsState = { byUser: {}, loaded: false };
+export const emptyFriends: FriendsState = {
+  byUser: {},
+  loaded: false,
+  sendBlockedUntil: 0,
+};
 
 export const friendsStore = createStore<FriendsState>(() => emptyFriends);
 
@@ -23,6 +28,7 @@ export function setRelationships(
   list: readonly Relationship[],
 ): FriendsState {
   return {
+    ...state,
     byUser: Object.fromEntries(list.map((r) => [r.user.id, r])),
     loaded: true,
   };

@@ -114,13 +114,13 @@ const styles = StyleSheet.create({
   // Board: pad [10, 8, 10, 16], gap 12. Request rows: time 16 from the edge (chốt 20/11/2026).
   row: {
     flexDirection: 'row',
-    gap: space[3],
-    paddingVertical: 10,
-    paddingLeft: space[4],
+    gap: 12, // board `Jpcbk`, off the space scale like C-40
+    paddingVertical: 10, // board `Jpcbk`
+    paddingLeft: space[3],
     paddingRight: space[2],
   },
   center: { alignItems: 'center' },
-  top: { alignItems: 'flex-start', paddingRight: space[4] },
+  top: { alignItems: 'flex-start', paddingRight: space[3] },
   body: { flex: 1, minWidth: 0, gap: 2 },
   line: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
   // C-33 › Cắt: the username gives way before the name.

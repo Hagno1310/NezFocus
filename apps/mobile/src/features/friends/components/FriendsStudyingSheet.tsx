@@ -9,7 +9,7 @@ import {
   studyingFriends,
 } from '../../../domain/friends/friends';
 import { presenceStore } from '../../../domain/presence/presence';
-import { space, useTheme } from '../../../shared/theme';
+import { size, space, useTheme } from '../../../shared/theme';
 import { PhaseBadge } from '../../../shared/ui/Focus';
 import { BottomSheet } from '../../../shared/ui/Overlay';
 import { Avatar, AvatarStack } from '../../../shared/ui/People';
@@ -81,8 +81,17 @@ export function FriendsStudyingSheet({
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const rows = useStudyingFriends();
+  const live = useStudyingFriends();
   const now = useNow();
+  // 04 › Bạn bè đang học: the order is taken when the sheet opens, not re-sorted while read.
+  const [order, setOrder] = useState<string[] | null>(null);
+  if (visible && !order) setOrder(live.map((x) => x.r.user.id));
+  if (!visible && order) setOrder(null);
+  const at = (id: string) => {
+    const i = order?.indexOf(id) ?? -1;
+    return i < 0 ? Number.MAX_SAFE_INTEGER : i;
+  };
+  const rows = [...live].sort((a, b) => at(a.r.user.id) - at(b.r.user.id));
   return (
     <BottomSheet
       visible={visible}
@@ -108,7 +117,7 @@ export function FriendsStudyingSheet({
               </Text>
               <Where activity={activity} now={now} />
             </View>
-            {/* ponytail: "Vào" joins the room with voice, P3-B1 (#26); hidden until then. */}
+            {/* ponytail: "Vào" joins the room with voice, P3-B1.3 (#139); hidden until then. */}
           </View>
         );
       })}
@@ -170,13 +179,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space[2],
     alignSelf: 'center',
-    minHeight: 48,
+    minHeight: size.touch,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space[3],
-    paddingVertical: space[3],
+    gap: 12, // frame `inejM` rows: pad [12, 0], gap 12
+    paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   info: { flex: 1, minWidth: 0, gap: 2 },

@@ -21,7 +21,6 @@ import {
   incomingCount,
   nameOf,
   pendingRows,
-  removeRelationship,
   requestTime,
 } from '../../../domain/friends/friends';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
@@ -53,6 +52,7 @@ type Person = { id: string; name: string };
 type Item =
   | { kind: 'header'; key: string; text: string }
   | { kind: 'note'; key: string; text: string }
+  | { kind: 'offline'; key: string }
   | { kind: 'friend'; key: string; r: Relationship }
   | { kind: 'request'; key: string; r: Relationship; firstIncoming: boolean }
   | { kind: 'blocked'; key: string; r: Relationship };
@@ -115,12 +115,9 @@ export function FriendsScreen({
       return true;
     } catch (err) {
       // Accepting a request the sender cancelled meanwhile (09 › Edge case).
-      if (err instanceof ApiError && err.code === ErrorCode.NotFound) {
-        friendsStore.setState(
-          removeRelationship(friendsStore.getState(), userId),
-        );
+      if (err instanceof ApiError && err.code === ErrorCode.NotFound)
         showToast({ message: t('friends.toast.gone') });
-      } else showToast({ message: t('friends.addSheet.errors.generic') });
+      else showToast({ message: t('friends.addSheet.errors.generic') });
       return false;
     } finally {
       setBusy(null);
@@ -143,6 +140,10 @@ export function FriendsScreen({
   const friendCount = countOf(state, 'friend');
   const nothingAtAll = state.loaded && Object.keys(state.byUser).length === 0;
   const items = buildItems();
+  // Chốt 20/11/2026: "Cần kết nối mạng" on every tab; under the first request's buttons when
+  // there is one (frame `offline`), otherwise on top of the list.
+  if (offline && !items.some((i) => i.kind === 'request' && i.firstIncoming))
+    items.unshift({ kind: 'offline', key: 'offline' });
 
   function buildItems(): Item[] {
     const list: Item[] = [];
@@ -228,6 +229,12 @@ export function FriendsScreen({
   const renderItem = ({ item }: { item: Item }) => {
     if (item.kind === 'header')
       return <SectionLabel style={styles.header}>{item.text}</SectionLabel>;
+    if (item.kind === 'offline')
+      return (
+        <Text variant="label" color="text-secondary" style={styles.note}>
+          {t('friends.needNetwork')}
+        </Text>
+      );
     if (item.kind === 'note')
       return (
         <Text color="text-secondary" style={styles.note}>
@@ -248,6 +255,7 @@ export function FriendsScreen({
           r={r}
           {...common}
           onOpenDm={onOpenDm}
+          menuDisabled={offline}
           onMenu={() => setMenu(person(r))}
         />
       );
@@ -484,10 +492,13 @@ export function FriendsScreen({
           setTab('all');
           setQuery('');
         }}
-        onOpenDm={(id) => {
-          setAdding(false);
-          onOpenDm?.(id);
-        }}
+        onOpenDm={
+          onOpenDm &&
+          ((id) => {
+            setAdding(false);
+            onOpenDm(id);
+          })
+        }
       />
     </View>
   );
@@ -500,6 +511,7 @@ function FriendItem({
   r,
   onOpenDm,
   onMenu,
+  menuDisabled,
   ...common
 }: {
   r: Relationship;
@@ -508,6 +520,7 @@ function FriendItem({
   avatar: string | null;
   onPressAvatar?: () => void;
   onOpenDm?: (userId: string) => void;
+  menuDisabled: boolean; // offline: unfriend / block need the network
   onMenu: () => void;
 }) {
   const { t } = useTranslation();
@@ -546,6 +559,7 @@ function FriendItem({
           <IconButton
             icon={EllipsisVertical}
             label={t('friends.more')}
+            disabled={menuDisabled}
             onPress={onMenu}
           />
         </>
@@ -559,20 +573,20 @@ const styles = StyleSheet.create({
   segments: {
     paddingTop: space[1],
     paddingBottom: space[2],
-    paddingHorizontal: space[4],
+    paddingHorizontal: space[3],
   },
-  search: { paddingBottom: space[2], paddingHorizontal: space[4] },
-  chips: { paddingBottom: space[2], paddingHorizontal: space[4] },
+  search: { paddingBottom: space[2], paddingHorizontal: space[3] },
+  chips: { paddingBottom: space[2], paddingHorizontal: space[3] },
   header: {
-    paddingTop: space[3],
+    paddingTop: 12, // frame group header pad [12, 16, 4, 16]
     paddingBottom: space[1],
-    paddingHorizontal: space[4],
+    paddingHorizontal: space[3],
   },
-  note: { paddingVertical: space[2], paddingHorizontal: space[4] },
+  note: { paddingVertical: space[2], paddingHorizontal: space[3] },
   // Under the first request's buttons, in line with its text column (16 + 40 + 12).
   offlineNote: {
-    paddingLeft: 68,
-    paddingRight: space[4],
+    paddingLeft: space[3] + 40 + 12,
+    paddingRight: space[3],
     paddingBottom: space[1],
   },
   empty: { flex: 1, justifyContent: 'center', paddingBottom: 80 },

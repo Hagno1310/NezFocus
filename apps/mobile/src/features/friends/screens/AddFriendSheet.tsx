@@ -1,4 +1,5 @@
 import {
+  ErrorCode,
   normalizeUsernameQuery,
   REQUEST_MESSAGE_MAX,
   type UserLookupResponse,
@@ -16,7 +17,8 @@ import {
   primaryAction,
   type AddFriendErrorKey,
 } from '../../../domain/friends/addFriend';
-import { nameOf } from '../../../domain/friends/friends';
+import { friendsStore, nameOf } from '../../../domain/friends/friends';
+import { useStore } from 'zustand';
 import { radius, space, useTheme } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import { BottomSheet } from '../../../shared/ui/Overlay';
@@ -26,11 +28,7 @@ import { TextField } from '../../../shared/ui/TextField';
 import { showToast } from '../../../shared/ui/Toast';
 import { useMe } from '../../me/hooks/useMe';
 
-type Problem = { key: AddFriendErrorKey | 'self'; until?: number };
-
-// Chốt 20/11/2026: after 40029 on send, "Gửi lời mời" stays off until the window ends, even
-// if the sheet is closed and opened again.
-let sendBlockedUntil = 0;
+type Problem = { key: AddFriendErrorKey | 'self' | 'gone'; until?: number };
 
 // S-DM-05 Thêm bạn (REQ-FRIEND-01 v1.9): look up, see the card, then send. The caller gives it a
 // new `key` on each opening, so it starts empty.
@@ -45,11 +43,12 @@ export function AddFriendSheet({
   onDismiss: () => void;
   onSent: () => void;
   onBecameFriends: () => void;
-  onOpenDm: (userId: string) => void;
+  onOpenDm?: (userId: string) => void; // absent until S-DM-02, P2-B3.3 (#116)
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const me = useMe().data;
+  const sendBlockedUntil = useStore(friendsStore, (s) => s.sendBlockedUntil);
   const [input, setInput] = useState('');
   const [card, setCard] = useState<UserLookupResponse | null>(null);
   const [message, setMessage] = useState('');
@@ -64,7 +63,7 @@ export function AddFriendSheet({
     if (limitedUntil <= Date.now() && sendBlockedUntil <= Date.now()) return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [limitedUntil]);
+  }, [limitedUntil, sendBlockedUntil]);
 
   const lookupLimited = problem?.key === 'lookupLimited' && limitedUntil > now;
   const secondsLeft = Math.max(0, Math.ceil((limitedUntil - now) / 1000));
@@ -74,7 +73,12 @@ export function AddFriendSheet({
       step,
     );
     const until = e.seconds ? Date.now() + e.seconds * 1000 : undefined;
-    if (e.key === 'dailyLimit' && until) sendBlockedUntil = until;
+    // Chốt 20/11/2026: "Gửi lời mời" stays off until the window ends, sheet closed or not.
+    if (e.key === 'dailyLimit' && until)
+      friendsStore.setState({
+        ...friendsStore.getState(),
+        sendBlockedUntil: until,
+      });
     setProblem({ key: e.key, until });
     setNow(Date.now());
   };
@@ -139,7 +143,11 @@ export function AddFriendSheet({
       friendsToast(nameOf(card.user));
       onBecameFriends();
     } catch (err) {
-      fail(err, 'send');
+      // 09 › Edge case: they cancelled between the lookup and "Chấp nhận".
+      if (err instanceof ApiError && err.code === ErrorCode.NotFound) {
+        setCard({ ...card, relationship: 'none' });
+        setProblem({ key: 'gone' });
+      } else fail(err, 'send');
     } finally {
       setBusy(null);
     }
@@ -163,10 +171,12 @@ export function AddFriendSheet({
   const errorText = problem
     ? problem.key === 'self'
       ? t('friends.addSheet.errors.self')
-      : t(`friends.addSheet.errors.${problem.key}`, {
-          seconds: secondsLeft,
-          username: card?.user.username ?? '',
-        })
+      : problem.key === 'gone'
+        ? t('friends.toast.gone')
+        : t(`friends.addSheet.errors.${problem.key}`, {
+            seconds: secondsLeft,
+            username: card?.user.username ?? '',
+          })
     : null;
   const name = card ? nameOf(card.user) : '';
   const relationLine =
@@ -268,7 +278,7 @@ export function AddFriendSheet({
                   {t(`friends.addSheet.${mutual.key}`, mutual.params)}
                 </Text>
               )}
-              {card.relationship === 'friend' && (
+              {card.relationship === 'friend' && onOpenDm && (
                 <Button
                   label={t('friends.message')}
                   variant="text"
@@ -307,11 +317,11 @@ export function AddFriendSheet({
 }
 
 const styles = StyleSheet.create({
-  form: { gap: space[3] },
+  form: { gap: 12 }, // frame S-DM-05 Add form gap 12
   card: {
     flexDirection: 'row',
-    gap: space[3],
-    padding: space[4],
+    gap: 12,
+    padding: space[3],
     borderRadius: radius.input,
   },
   cardBody: { flex: 1, minWidth: 0, gap: 2 },

@@ -3,7 +3,7 @@ import type { LocalRelationships } from '../../domain/friends/FriendRepository';
 import { relationships } from '../db/schema';
 import { padId, unpadId, type LocalDb } from '../db/types';
 
-// ponytail: rewrites every row on each change (≤ a few hundred); per-row upsert when lists grow.
+// ponytail: khi một lần ghi lại toàn bộ bảng chậm hơn 50 ms trên máy thật (vài nghìn quan hệ): ghi từng dòng theo event.
 export function createLocalRelationships(
   db: () => Promise<LocalDb>,
 ): LocalRelationships {

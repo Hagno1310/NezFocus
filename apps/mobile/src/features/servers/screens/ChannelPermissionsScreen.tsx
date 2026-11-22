@@ -1,5 +1,6 @@
 import {
   categoryTitle,
+  searchKey,
   type PermissionOverwrite,
   type RoleResponse,
 } from '@nezfocus/shared';
@@ -12,7 +13,6 @@ import {
   addTargets,
   canEditTarget,
   channelLabel,
-  searchKey,
   overwriteSummary,
   shownOverwrites,
 } from '../../../domain/servers/channelPermissions';

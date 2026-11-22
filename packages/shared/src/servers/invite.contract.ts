@@ -104,16 +104,4 @@ export const ServerInviteList = z.array(
 );
 export type ServerInviteList = z.infer<typeof ServerInviteList>;
 
-// SRS 5.4 SERVER_MEMBER_ADD, to the members (REQ-SRV-04 AC1). P2-A2 (#15) may add fields.
-export const ServerMemberAdd = z.object({
-  server_id: SnowflakeId,
-  user: z.object({
-    id: SnowflakeId,
-    username: z.string().nullable(),
-    display_name: z.string().nullable(),
-    avatar: AvatarUrls.nullable(),
-  }),
-  role_ids: z.array(SnowflakeId), // without @everyone
-  joined_at: z.iso.datetime(),
-});
-export type ServerMemberAdd = z.infer<typeof ServerMemberAdd>;
+// SERVER_MEMBER_ADD carries a ServerMemberEvent (member.contract.ts).

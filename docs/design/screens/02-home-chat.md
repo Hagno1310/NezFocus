@@ -318,7 +318,7 @@ Không áp dụng: `error` (danh sách server/kênh luôn có cache từ `READY`
 | `pins` | Tin ghim mới nhất trên cùng, mỗi tin dạng `MessageBubble · pinned` (tên, giờ theo luật v1.9, 3 dòng đầu, cắt `…`). Mẫu của `#hoi-dap` (sửa 22/10/2026 — bản cũ trùng tin của `#thong-bao` mà lệch ngày; v1.9, CR-19 #3 cách ghi giờ): Bình "Hôm qua 21:05" "Lời giải đề giữa kỳ 2024 đã có ở #tai-lieu…", Chi "16/10/2026 19:40" công thức tọa độ cực, Tuấn "12/10/2026 08:30" "Hỏi bài nhớ ghi rõ chương và số câu…" | Nhấn giữ (có `MANAGE_MESSAGES`) → "Bỏ ghim" |
 | `pins-empty` | Chưa có tin ghim | "Chưa có tin nhắn được ghim" · "Người quản lý kênh nhấn giữ một tin nhắn để ghim." |
 | `loading` | `Skeleton` 8 hàng thành viên / 4 hàng task | |
-| `offline` | Dữ liệu cache, `Banner · offline`; "Thêm việc" và ô trạng thái `disabled` (CR-28: outbox ở MVP chỉ cho tin nhắn); tìm việc chỉ trong dữ liệu đã lưu, dòng `label` dưới ô tìm | "Đang offline · chỉ tìm trong việc đã lưu trên máy" · dòng lý do "Cần kết nối mạng để thêm hoặc đổi việc" |
+| `offline` | Dữ liệu cache, `Banner · offline` ngay dưới `SegmentedControl` (mục Thành viên dùng cùng chỗ, không vẽ riêng — chốt 22/11/2026); "Thêm việc" và ô trạng thái `disabled` (CR-28: outbox ở MVP chỉ cho tin nhắn); tìm việc chỉ trong dữ liệu đã lưu, dòng `label` dưới ô tìm | "Đang offline · chỉ tìm trong việc đã lưu trên máy" · dòng lý do "Cần kết nối mạng để thêm hoặc đổi việc" |
 
 Mục đang chọn của `SegmentedControl` nhớ theo kênh trong phiên mở app; mở lần đầu là "Thành viên". Kênh voice (S-HOME-08): chỉ 2 mục "Thành viên" · "Ghim", nhóm đầu là "TRONG PHÒNG — 9".
 

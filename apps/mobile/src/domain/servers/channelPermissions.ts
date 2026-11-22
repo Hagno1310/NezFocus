@@ -261,15 +261,6 @@ export function privateHidesCreator(
   );
 }
 
-// NFR-I18N-03: search ignores Vietnamese marks ("đ" = "d") and case.
-export const searchKey = (text: string) =>
-  text
-    .normalize('NFD')
-    .replace(/\p{M}/gu, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .toLocaleLowerCase('vi');
-
 // "#thong-bao" for a text channel, the name for a voice room, capitals for a category.
 export const channelLabel = (c: Pick<ChannelResponse, 'type' | 'name'>) =>
   c.type === 'text'

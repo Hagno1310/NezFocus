@@ -17,7 +17,6 @@ import {
   privateViewers,
   saveOverwrite,
   withSteps,
-  searchKey,
   shownOverwrites,
   triOf,
   withTri,
@@ -226,10 +225,6 @@ describe('privateViewers (S-SET-09 `private-roles`, `private-self-warning`)', ()
         [],
       ),
     ).toBe(false);
-  });
-
-  it('searchKey ignores marks and case ("đ" = "d")', () => {
-    expect(searchKey('Điều phối')).toBe(searchKey('dieu PHOI'));
   });
 });
 

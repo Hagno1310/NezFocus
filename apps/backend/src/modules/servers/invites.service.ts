@@ -164,6 +164,7 @@ export class InvitesService {
         },
         role_ids: [],
         joined_at: now.toISOString(),
+        timeout_until: null,
       });
     }
     return server;

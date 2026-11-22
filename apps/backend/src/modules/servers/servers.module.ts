@@ -10,6 +10,9 @@ import { InviteCodes, RandomInviteCodes } from './invite-rules.js';
 import { InvitesController } from './invites.controller.js';
 import { InvitesRepository } from './invites.repository.js';
 import { InvitesService } from './invites.service.js';
+import { MembersController } from './members.controller.js';
+import { MembersRepository } from './members.repository.js';
+import { MembersService } from './members.service.js';
 import { RolesController } from './roles.controller.js';
 import { RolesRepository } from './roles.repository.js';
 import { RolesService } from './roles.service.js';
@@ -23,6 +26,7 @@ import { ServersService } from './servers.service.js';
     ServersController,
     ChannelsController,
     RolesController,
+    MembersController,
     InvitesController,
     InvitePageController,
   ],
@@ -35,6 +39,8 @@ import { ServersService } from './servers.service.js';
     ChannelOverwritesService,
     RolesRepository,
     RolesService,
+    MembersRepository,
+    MembersService,
     InvitesRepository,
     InvitesService,
     { provide: InviteCodes, useClass: RandomInviteCodes },

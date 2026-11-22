@@ -60,7 +60,7 @@ const fromPlace = (p: { id: string; position: number }) => ({
 });
 
 // The caller as SRS 8.5.2 sees them, from what the lock read.
-function actorOf(serverId: bigint, userId: bigint, locked: LockedRoles) {
+export function actorOf(serverId: bigint, userId: bigint, locked: LockedRoles) {
   const server: PermissionServer = {
     id: serverId.toString(),
     ownerId: locked.caller.ownerId.toString(),
@@ -191,6 +191,14 @@ export class RolesService {
       server_id: serverId.toString(),
       role: response,
     });
+    // Its bits may give or take VIEW_CHANNEL: channels again to everyone (P2-B1.2 #108).
+    if (body.permissions !== undefined) {
+      const channels = await this.channels.listForServer(serverId);
+      await this.channelEvents.updated(
+        serverId,
+        channels.map(toChannelResponse),
+      );
+    }
     return response;
   }
 

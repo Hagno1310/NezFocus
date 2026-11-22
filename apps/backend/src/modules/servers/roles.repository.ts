@@ -20,6 +20,7 @@ export type RoleWithCount = RoleRow & { memberCount: number };
 export class LockedRoles {
   constructor(
     private readonly tx: Tx,
+    private readonly serverId: bigint,
     readonly rows: RoleRow[],
     readonly caller: Caller, // read under the lock, like the rows
   ) {}
@@ -70,6 +71,55 @@ export class LockedRoles {
       .returning({ channelId: channelPermissionOverwrites.channelId });
     await this.tx.delete(roles).where(eq(roles.id, role.id));
     return dropped.map((d) => d.channelId);
+  }
+
+  // REQ-ROLE-04: a member's roles without @everyone; null when they are not in the server.
+  async memberRoleIds(userId: bigint): Promise<bigint[] | null> {
+    const serverId = this.serverId;
+    const [member] = await this.tx
+      .select({ userId: serverMembers.userId })
+      .from(serverMembers)
+      .where(
+        and(
+          eq(serverMembers.serverId, serverId),
+          eq(serverMembers.userId, userId),
+        ),
+      );
+    if (!member) return null;
+    const rows = await this.tx
+      .select({ roleId: serverMemberRoles.roleId })
+      .from(serverMemberRoles)
+      .where(
+        and(
+          eq(serverMemberRoles.serverId, serverId),
+          eq(serverMemberRoles.userId, userId),
+        ),
+      );
+    return rows.map((r) => r.roleId);
+  }
+
+  // false: nothing changed (already given / already gone).
+  async giveRole(userId: bigint, roleId: bigint): Promise<boolean> {
+    const added = await this.tx
+      .insert(serverMemberRoles)
+      .values({ serverId: this.serverId, userId, roleId })
+      .onConflictDoNothing()
+      .returning({ roleId: serverMemberRoles.roleId });
+    return added.length > 0;
+  }
+
+  async takeRole(userId: bigint, roleId: bigint): Promise<boolean> {
+    const removed = await this.tx
+      .delete(serverMemberRoles)
+      .where(
+        and(
+          eq(serverMemberRoles.serverId, this.serverId),
+          eq(serverMemberRoles.userId, userId),
+          eq(serverMemberRoles.roleId, roleId),
+        ),
+      )
+      .returning({ roleId: serverMemberRoles.roleId });
+    return removed.length > 0;
   }
 
   async byIds(ids: bigint[]): Promise<RoleRow[]> {
@@ -132,7 +182,7 @@ export class RolesRepository {
         ownerId: server!.ownerId,
         roleIds: mine.map((r) => r.roleId),
       };
-      return work(new LockedRoles(tx, rows, caller));
+      return work(new LockedRoles(tx, serverId, rows, caller));
     });
   }
 }

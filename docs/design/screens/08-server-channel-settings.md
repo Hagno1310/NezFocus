@@ -272,8 +272,8 @@ Lưu tổng quan xong → về danh sách + `Toast` "Đã lưu thay đổi". (09
 | `role-readonly` | Tuấn mở "Quản trị" (vai trò của chính mình, ngang mình): mọi ô `disabled` nhưng vẫn thấy giá trị thật (Quản lý kênh, Quản lý vai trò, Mời ra, Cấm, Tạm khóa thành viên bật), không "Lưu" / "Xóa"; dòng trên cùng | "Vai trò này ngang hoặc cao hơn vai trò cao nhất của bạn nên bạn chỉ xem được." (`40301`) |
 | `permission-locked` | Tuấn sửa "Điều phối phòng học": công tắc của quyền Tuấn không có `disabled` (chữ `text-tertiary`, công tắc mờ) + mô tả. Frame vẽ phần đầu (Quản trị viên, Quản lý server khóa); frame `permission-locked-lower` vẽ phần cuộn xuống: Tắt mic người khác, Ngắt / chuyển người khỏi phòng, **Quản lý phòng học** (đang bật, khóa — Tuấn không gỡ được) và Quản lý việc khóa; Quản lý tin nhắn, Vào phòng thoại, Nói, Bật camera, Tạo việc sửa được (Tuấn có qua Quản trị hoặc @everyone) | "Bạn cần có quyền này để cấp cho người khác" (ROLE-01 AC2, `40302`) |
 | `admin-on` | Bật "Quản trị viên": các công tắc khác vẫn giữ giá trị nhưng mờ; dòng dưới hàng | "Vai trò có mọi quyền và bỏ qua quyền riêng của kênh. Vẫn không quản lý được vai trò cao hơn." |
-| `role-members` | Màn con "Thành viên · Quản trị": danh sách `MemberRow` + nút "Thêm thành viên" (→ danh sách chọn có `Checkbox` + tìm kiếm); mỗi hàng có `x` để gỡ (lưu ngay, `Toast` "Đã gỡ Quản trị khỏi Tuấn · Hoàn tác") | — |
-| `role-members-add` | "Thêm thành viên" → `BottomSheet` "Thêm vào Quản trị": `SearchField` + danh sách `MemberRow · username` + `Checkbox` (người đã có role chọn sẵn, mờ, nhãn "Đã có vai trò" — Tuấn); mẫu đang chọn Dũng và Giang; nút "Thêm (2)" | — |
+| `role-members` | Màn con "Thành viên · Quản trị": nhãn nhóm "1 THÀNH VIÊN", danh sách `MemberRow` + nút `secondary` rộng hết hàng "Thêm thành viên" dưới danh sách (theo frame, chốt 22/11/2026) (→ danh sách chọn có `Checkbox` + tìm kiếm); mỗi hàng có `x` để gỡ (lưu ngay, `Toast` "Đã gỡ Quản trị khỏi Tuấn · Hoàn tác") | — |
+| `role-members-add` | "Thêm thành viên" → `BottomSheet` "Thêm vào Quản trị": `SearchField` "Tìm thành viên" + danh sách `MemberRow · username` + `Checkbox` (người đã có role chọn sẵn, mờ, nhãn "Đã có vai trò" — Tuấn); mẫu đang chọn Dũng và Giang; nút "Thêm (2)" | — |
 | `delete-confirm` | Danh sách cuộn tới cuối (HỌC TẬP + "Xóa vai trò") + `Dialog` | "Xóa vai trò Quản trị?" · "1 thành viên sẽ mất các quyền của vai trò này. Không hoàn tác được." · "Hủy" / "Xóa vai trò" (`danger`) |
 | `limit` | Đã có 250 role: dòng giải thích đầu màn đổi thành dòng giới hạn, thêm nhãn nhóm "250 VAI TRÒ", không có nút "Tạo vai trò" (cuối danh sách). Frame vẽ đầu danh sách: Quản trị, Trưởng nhóm, "Nhóm ôn đề 248", 247… (sửa 22/10/2026: frame cũ chỉ có 3 role, không khớp con số 250) | "Server đã có 250 vai trò, mức tối đa. Xóa bớt vai trò để tạo vai trò mới." (ROLE-01) |
 | `save-error` | Công tắc trả về giá trị cũ + `Toast` | "Chưa lưu được thay đổi · Thử lại" |
@@ -306,7 +306,8 @@ Thứ tự: theo tên (bảng chữ cái tiếng Việt), phá hòa bằng usern
 ### Màn thành viên (`member-detail`, Khánh, góc nhìn An)
 ```
 │ ‹  Khánh                                 │
-│ (Avatar 64)● Khánh · khanh.le            │
+│ (Avatar 64)● Khánh                       │
+│              khanh.le                    │  username dòng riêng (theo frame, chốt 22/11/2026)
 │ Thành viên từ 05/10/2026                 │  label
 │ VAI TRÒ                                  │
 │ ☐ Quản trị                               │  Checkbox (C-23), lưu ngay; thứ tự theo position
@@ -323,7 +324,7 @@ Thứ tự: theo tên (bảng chữ cái tiếng Việt), phá hòa bằng usern
 |---|---|---|
 | `list` | Như bố cục | — |
 | `search` | Gõ "kh": lọc không dấu theo tên và username, bàn phím mở | "1 KẾT QUẢ" |
-| `search-empty` | Không khớp | "Không có thành viên nào tên “xyz”" |
+| `search-empty` | Không khớp; nhãn nhóm "0 KẾT QUẢ" vẫn hiện (theo frame, chốt 22/11/2026) | "Không có thành viên nào tên “xyz”" |
 | `member-detail` | Như bố cục | — |
 | `member-blocked` | Tuấn mở An (Owner): không có nhóm KIỂM DUYỆT; mọi checkbox role `disabled` (giữ giá trị: An có Trưởng nhóm); dòng lý do có icon `lock`. Cùng luật khi người xem mở người có role cao nhất ngang / cao hơn mình (vd Bình mở Tuấn): không có KIỂM DUYỆT; nếu người xem có `MANAGE_ROLES` thì checkbox role `disabled` (không quản lý vai trò thì nhóm VAI TRÒ ẩn như luật hiện theo quyền) | "An là Owner của server nên bạn không gán vai trò hay kiểm duyệt được." / "Tuấn có vai trò cao hơn bạn nên bạn không gán vai trò hay kiểm duyệt được." (`40301`, ROLE-05) |
 | `timed-out` | Quân: dòng `ChipStatus` "Tạm khóa tới 21:12 · Gửi tin liên tục" dưới tên; hàng "Tạm khóa" thay bằng hai hàng (v1.9, CR-17 #12): "Đổi thời hạn tạm khóa ›" (→ `timeout-change-sheet`) và "Gỡ tạm khóa" | Gỡ → lưu ngay + `Toast` "Đã gỡ tạm khóa cho Quân" |

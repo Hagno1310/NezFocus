@@ -1,13 +1,13 @@
-import type {
-  DispatchEvent,
-  PresenceEvent,
-  Relationship,
-  RelationshipType,
+import {
+  searchKey,
+  type DispatchEvent,
+  type PresenceEvent,
+  type Relationship,
+  type RelationshipType,
 } from '@nezfocus/shared';
 import { createStore } from 'zustand/vanilla';
 import { lastActive } from '../account/sessions';
 import { localTime } from '../study/stats';
-import { searchKey } from '../servers/channelPermissions';
 
 export type FriendsState = {
   byUser: Record<string, Relationship>; // one relationship per user (8.4.2)

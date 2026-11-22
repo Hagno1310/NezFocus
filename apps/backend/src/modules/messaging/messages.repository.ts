@@ -1,8 +1,23 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { MessageHistoryQuery } from '@nezfocus/shared';
-import { and, asc, desc, eq, gt, gte, lt, type SQL } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  gte,
+  inArray,
+  lt,
+  type SQL,
+} from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
-import { channels } from '../servers/servers.schema.js';
+import {
+  channels,
+  roles,
+  serverMemberRoles,
+  serverMembers,
+} from '../servers/servers.schema.js';
 import { users } from '../users/users.schema.js';
 import type { AuthorRow } from './messages.dto.js';
 import { messages, type MessageRow } from './messages.schema.js';
@@ -88,5 +103,43 @@ export class MessagesRepository {
       ];
     }
     return newest(undefined, limit);
+  }
+
+  // REQ-MSG-03: which of these users are in the server.
+  async memberIds(serverId: bigint, userIds: bigint[]): Promise<bigint[]> {
+    if (!userIds.length) return [];
+    const rows = await this.db
+      .select({ userId: serverMembers.userId })
+      .from(serverMembers)
+      .where(
+        and(
+          eq(serverMembers.serverId, serverId),
+          inArray(serverMembers.userId, userIds),
+        ),
+      );
+    return rows.map((r) => r.userId);
+  }
+
+  serverRoles(serverId: bigint) {
+    return this.db
+      .select({ id: roles.id, isMentionable: roles.isMentionable })
+      .from(roles)
+      .where(eq(roles.serverId, serverId));
+  }
+
+  async roleMembers(serverId: bigint, roleIds: bigint[]) {
+    if (!roleIds.length) return [];
+    return this.db
+      .select({
+        roleId: serverMemberRoles.roleId,
+        userId: serverMemberRoles.userId,
+      })
+      .from(serverMemberRoles)
+      .where(
+        and(
+          eq(serverMemberRoles.serverId, serverId),
+          inArray(serverMemberRoles.roleId, roleIds),
+        ),
+      );
   }
 }

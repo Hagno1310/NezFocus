@@ -1,3 +1,5 @@
+import type { EventEmitter2 } from '@nestjs/event-emitter';
+import { MEMBER_JOINED } from './member-events.js';
 import { ErrorCode, Permission } from '@nezfocus/shared';
 import { AppError } from '../../common/app-error.js';
 import { fixedClock } from '../../common/clock.js';
@@ -135,6 +137,10 @@ function setup(
     new MemoryKeyValueStore(clock),
     clock,
     { next: () => `code${String(nextCode++).padStart(4, '0')}` },
+    {
+      emit: (t: string, d: { userId: bigint }) =>
+        void events.push({ to: 'internal', id: d.userId, t, d }),
+    } as unknown as EventEmitter2,
   );
   return { service, repo, events, asked, clock, members };
 }
@@ -284,7 +290,9 @@ describe('REQ-SRV-04 accept', () => {
     expect(events.map((e) => [e.to, e.id, e.t])).toEqual([
       ['user', CHI, 'SERVER_CREATE'],
       ['server', SERVER, 'SERVER_MEMBER_ADD'],
+      ['internal', CHI, MEMBER_JOINED],
     ]);
+    expect(events[2]!.d).toEqual({ serverId: SERVER, userId: CHI });
     expect(events[1]!.d).toMatchObject({
       server_id: SERVER.toString(),
       user: { id: CHI.toString() },

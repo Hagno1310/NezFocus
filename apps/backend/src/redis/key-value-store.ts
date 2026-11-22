@@ -1,6 +1,7 @@
 import type { Clock } from '../common/clock.js';
 
 export type Window = { count: number; resetIn: number };
+export type SlidingWindow = { key: string; limit: number; windowMs: number };
 
 // The slice of Redis that counters and short-lived values need (SRS 8.1).
 // Abstract class = DI token; unit tests use MemoryKeyValueStore.
@@ -19,6 +20,9 @@ export abstract class KeyValueStore {
     ttlSeconds: number,
   ): Promise<boolean>;
   abstract delete(key: string): Promise<void>;
+  // Sliding-window log (REQ-MSG-08): records one hit in every window when all have room and
+  // returns 0; otherwise records nothing and returns the ms until each window has room.
+  abstract hitWindows(windows: readonly SlidingWindow[]): Promise<number>;
 }
 
 export class MemoryKeyValueStore extends KeyValueStore {
@@ -88,5 +92,23 @@ export class MemoryKeyValueStore extends KeyValueStore {
 
   async delete(key: string) {
     this.entries.delete(key);
+  }
+
+  private readonly logs = new Map<string, number[]>();
+
+  async hitWindows(windows: readonly SlidingWindow[]) {
+    const now = this.clock.now().getTime();
+    let wait = 0;
+    for (const w of windows) {
+      const log = (this.logs.get(w.key) ?? []).filter(
+        (t) => t > now - w.windowMs,
+      );
+      this.logs.set(w.key, log);
+      if (log.length >= w.limit)
+        wait = Math.max(wait, log[0]! + w.windowMs - now);
+    }
+    if (wait) return wait;
+    for (const w of windows) this.logs.get(w.key)!.push(now);
+    return 0;
   }
 }

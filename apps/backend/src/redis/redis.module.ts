@@ -1,7 +1,31 @@
 import { Global, Inject, Module, OnApplicationShutdown } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Redis } from 'ioredis';
-import { KeyValueStore, type Window } from './key-value-store.js';
+import {
+  KeyValueStore,
+  type SlidingWindow,
+  type Window,
+} from './key-value-store.js';
+
+// KEYS = the windows, ARGV = now, member, then limit and window ms per key.
+const HIT_WINDOWS = `
+local now = tonumber(ARGV[1])
+local wait = 0
+for i, key in ipairs(KEYS) do
+  local limit = tonumber(ARGV[1 + i * 2])
+  local ms = tonumber(ARGV[2 + i * 2])
+  redis.call('ZREMRANGEBYSCORE', key, '-inf', now - ms)
+  if redis.call('ZCARD', key) >= limit then
+    local oldest = redis.call('ZRANGE', key, 0, 0, 'WITHSCORES')
+    wait = math.max(wait, tonumber(oldest[2]) + ms - now)
+  end
+end
+if wait > 0 then return wait end
+for i, key in ipairs(KEYS) do
+  redis.call('ZADD', key, now, ARGV[2])
+  redis.call('PEXPIRE', key, tonumber(ARGV[2 + i * 2]))
+end
+return 0`;
 
 export const REDIS = Symbol('REDIS');
 
@@ -55,6 +79,21 @@ class RedisKeyValueStore extends KeyValueStore {
 
   async delete(key: string) {
     await this.redis.del(key);
+  }
+
+  async hitWindows(windows: readonly SlidingWindow[]) {
+    const now = Date.now();
+    const member = `${now}:${Math.random()}`;
+    return Number(
+      await this.redis.eval(
+        HIT_WINDOWS,
+        windows.length,
+        ...windows.map((w) => w.key),
+        now,
+        member,
+        ...windows.flatMap((w) => [w.limit, w.windowMs]),
+      ),
+    );
   }
 }
 

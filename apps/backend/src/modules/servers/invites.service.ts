@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   CreateInviteRequest,
   ErrorCode,
@@ -18,6 +19,7 @@ import { PresenceReader } from '../gateway/presence.service.js';
 import { PermissionService } from '../permissions/permission.service.js';
 import { InviteCodes, isLive, maxAgeOf } from './invite-rules.js';
 import { InvitesRepository } from './invites.repository.js';
+import { MEMBER_JOINED, type MemberJoined } from './member-events.js';
 import { ChannelTypeCode, type InviteRow } from './servers.schema.js';
 import { ServersService } from './servers.service.js';
 
@@ -51,6 +53,7 @@ export class InvitesService {
     private readonly kv: KeyValueStore,
     private readonly clock: Clock,
     private readonly codes: InviteCodes,
+    private readonly emitter: EventEmitter2,
   ) {}
 
   async create(
@@ -151,7 +154,6 @@ export class InvitesService {
       );
     const server = await this.servers.get(userId, invite.serverId);
     if (result === 'joined') {
-      // ponytail: the "X đã tham gia" system message in the welcome channel is P2-A4.1 (#103).
       const user = await this.repo.user(userId);
       await this.events.toUser(userId, 'SERVER_CREATE', server);
       await this.events.toServer(invite.serverId, 'SERVER_MEMBER_ADD', {
@@ -166,6 +168,8 @@ export class InvitesService {
         joined_at: now.toISOString(),
         timeout_until: null,
       });
+      const joined: MemberJoined = { serverId: invite.serverId, userId };
+      this.emitter.emit(MEMBER_JOINED, joined);
     }
     return server;
   }

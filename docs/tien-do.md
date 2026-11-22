@@ -118,11 +118,11 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
   - [x] mốc **P2-A3.2** [#100](https://github.com/Hagno1310/NezFocus/issues/100) Backend gửi tin, idempotency, lịch sử (MSG-09, MSG-01, SEARCH-02) · người kia chờ: P2-B3 (Hoàng), P3-B7 (Hoàng)
   - [x] mốc **P2-A3.3** [#101](https://github.com/Hagno1310/NezFocus/issues/101) CSDL cục bộ và kho tin nhắn trên app: cache, outbox tin nhắn, khớp nonce (MSG-09, 8.4.5, 8.7) · người kia chờ: P2-B2 (Hoàng)
   - [x] mốc **P2-A3.4** [#102](https://github.com/Hagno1310/NezFocus/issues/102) Màn chat kênh text (S-HOME-01) (MSG-01, MSG-09, SEARCH-02) · người kia chờ: P2-B1 (Hoàng), P2-B3 (Hoàng), P3-B7 (Hoàng)
-- [ ] **P2-A2** [#15](https://github.com/Hagno1310/NezFocus/issues/15) Thành viên: gán role và drawer thành viên
+- [x] **P2-A2** [#15](https://github.com/Hagno1310/NezFocus/issues/15) Thành viên: gán role và drawer thành viên
   - Cần trước: P1-A3, P2-A3
   - Trong lúc làm: P2-A2.3 chờ P1-B4.3 (Hoàng)
-  - [ ] mốc **P2-A2.1** [#96](https://github.com/Hagno1310/NezFocus/issues/96) Backend danh sách thành viên và gán role (ROLE-04) · người kia chờ: P2-B3 (Hoàng)
-  - [ ] mốc **P2-A2.3** [#98](https://github.com/Hagno1310/NezFocus/issues/98) Drawer phải: Thành viên (S-HOME-03 phần Thành viên) · người kia chờ: P3-B7 (Hoàng)
+  - [x] mốc **P2-A2.1** [#96](https://github.com/Hagno1310/NezFocus/issues/96) Backend danh sách thành viên và gán role (ROLE-04) · người kia chờ: P2-B3 (Hoàng)
+  - [x] mốc **P2-A2.3** [#98](https://github.com/Hagno1310/NezFocus/issues/98) Drawer phải: Thành viên (S-HOME-03 phần Thành viên) · người kia chờ: P3-B7 (Hoàng)
 - [ ] **P2-A4** [#17](https://github.com/Hagno1310/NezFocus/issues/17) Mention, giới hạn gửi, tin hệ thống, chưa đọc và badge
   - Cần trước: P2-A1, P2-A2, P2-A3, P2-B4 (Hoàng)
   - Trong lúc làm: P2-A4.3 chờ P2-B2.1 (Hoàng)

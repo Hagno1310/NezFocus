@@ -64,28 +64,38 @@ export class MessagesService {
       { channelId },
       Permission.SEND_MESSAGES,
     );
+    // ponytail: timed-out members get 40302 instead of 40307 until P3-A3.1 (#126).
+    // A retry of a message already saved gets it back without touching the rate limit.
+    const sent = await this.repo.byNonce(userId, body.nonce);
+    if (sent) return this.replay(sent, channelId, body.content);
     // REQ-MSG-08 AC1: a refused message does not count toward either window.
     const wait = await this.store.hitWindows([
       { key: `msg-rate:${userId}:${channelId}`, ...PER_CHANNEL },
       { key: `msg-rate:${userId}`, ...PER_USER },
     ]);
     if (wait) throw rateLimited(wait / 1000);
-    // ponytail: timed-out members get 40302 instead of 40307 until P3-A3.1 (#126).
-    const sent = await this.repo.byNonce(userId, body.nonce);
-    if (sent) return this.replay(sent, channelId, body.content);
 
     const mentions = await this.mentions.resolve(userId, channel, body.content);
+    const concerned = await this.mentions.recipients(
+      userId,
+      channel,
+      body.content,
+      mentions,
+    );
     let saved: MessageWithAuthor;
     try {
-      saved = await this.repo.create({
-        id: this.ids.next(),
-        channelId,
-        authorId: userId,
-        type: messageTypeCode.default,
-        content: body.content,
-        nonce: body.nonce,
-        ...mentions,
-      });
+      saved = await this.repo.create(
+        {
+          id: this.ids.next(),
+          channelId,
+          authorId: userId,
+          type: messageTypeCode.default,
+          content: body.content,
+          nonce: body.nonce,
+          ...mentions,
+        },
+        [...concerned.keys()].map(BigInt),
+      );
     } catch (err) {
       if (!isUniqueViolation(err, 'uq_messages_author_nonce')) throw err;
       const raced = await this.repo.byNonce(userId, body.nonce);
@@ -93,7 +103,7 @@ export class MessagesService {
       return this.replay(raced, channelId, body.content);
     }
     // ponytail: push for mentions / DMs out of the foreground (NOTIF-02) is P3-B5 (#29).
-    return this.publish(saved, channel);
+    return this.publish(saved, channel, concerned);
   }
 
   // REQ-MSG-11: a system message is stored as kind + parameters (CR-24) and sent like any
@@ -114,12 +124,20 @@ export class MessagesService {
       type: messageTypeCode[type],
       systemData,
     });
-    return this.publish(saved, channel);
+    return this.publish(saved, channel, new Map());
   }
 
-  private publish(saved: MessageWithAuthor, channel: ChannelRow) {
+  private publish(
+    saved: MessageWithAuthor,
+    channel: ChannelRow,
+    concerned: MessageCreated['concerned'],
+  ) {
     const message = toMessageResponse(saved.message, saved.author);
-    const created: MessageCreated = { message, serverId: channel.serverId };
+    const created: MessageCreated = {
+      message,
+      serverId: channel.serverId,
+      concerned,
+    };
     this.emitter.emit(MESSAGE_CREATED, created);
     // The sender has its 201 already; the fanout must not hold it (SRS 7.5.1).
     void this.events

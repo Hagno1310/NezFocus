@@ -4,7 +4,6 @@ import { NotificationService } from '../notifications/notification-service.js';
 import { MEMBER_JOINED, type MemberJoined } from '../servers/member-events.js';
 import { ServersRepository } from '../servers/servers.repository.js';
 import { MESSAGE_CREATED, type MessageCreated } from './message-events.js';
-import { MentionsService } from './mentions.service.js';
 import { MessagesService } from './messages.service.js';
 import { ReadStatesService } from './read-states.service.js';
 
@@ -15,7 +14,6 @@ export class MessagingListener {
   private readonly logger = new Logger('MessagingListener');
 
   constructor(
-    private readonly mentions: MentionsService,
     private readonly notifications: NotificationService,
     private readonly servers: ServersRepository,
     private readonly messages: MessagesService,
@@ -25,7 +23,7 @@ export class MessagingListener {
   // REQ-MSG-03 AC2 / NOTIF-05: one `mention` item and +1 mention_count per person (NOTIF-01
   // AC2). DMs and system messages: neither. My own message marks the channel read for me.
   @OnEvent(MESSAGE_CREATED, { promisify: true })
-  async created({ message, serverId }: MessageCreated) {
+  async created({ message, serverId, concerned }: MessageCreated) {
     try {
       // Also a system message: my own "X đã tham gia server" is not unread for me.
       await this.readStates.read(
@@ -33,14 +31,8 @@ export class MessagingListener {
         BigInt(message.channel_id),
         BigInt(message.id),
       );
-      if (!serverId || message.type !== 'default') return;
-      const to = await this.mentions.recipients(message, serverId);
-      await this.readStates.addMention(
-        BigInt(message.channel_id),
-        BigInt(message.id),
-        [...to.keys()].map(BigInt),
-      );
-      for (const [userId, via] of to)
+      if (!serverId) return;
+      for (const [userId, via] of concerned)
         await this.notifications.create(BigInt(userId), 'mention', {
           actor_id: message.author.id,
           server_id: String(serverId),

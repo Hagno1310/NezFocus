@@ -12,6 +12,7 @@ import {
   parseMessage,
   type Block,
   type Inline,
+  rawMention,
   type MentionNode,
 } from '../../domain/messages/markdown';
 import {
@@ -38,7 +39,7 @@ export type MentionView = {
 };
 
 const plainMentions: MentionView = {
-  label: (m) => (m.kind === 'everyone' ? `@${m.id}` : '@'),
+  label: rawMention,
   chip: () => false,
   isMe: () => false,
   onPress: () => {},

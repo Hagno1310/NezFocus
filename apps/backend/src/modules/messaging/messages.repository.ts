@@ -9,6 +9,7 @@ import {
   gte,
   inArray,
   lt,
+  sql,
   type SQL,
 } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
@@ -20,7 +21,7 @@ import {
 } from '../servers/servers.schema.js';
 import { users } from '../users/users.schema.js';
 import type { AuthorRow } from './messages.dto.js';
-import { messages, type MessageRow } from './messages.schema.js';
+import { messages, readStates, type MessageRow } from './messages.schema.js';
 
 export type MessageWithAuthor = { message: MessageRow; author: AuthorRow };
 export type NewMessage = typeof messages.$inferInsert;
@@ -62,13 +63,35 @@ export class MessagesRepository {
   }
 
   // Throws a unique violation on uq_messages_author_nonce when the same nonce raced in.
-  async create(row: NewMessage): Promise<MessageWithAuthor> {
+  // `concerned` get +1 mention_count in the same transaction, so an ack recounting at the same
+  // time (ReadStatesRepository.ack) never counts the message twice (CR-12).
+  async create(
+    row: NewMessage,
+    concerned: readonly bigint[] = [],
+  ): Promise<MessageWithAuthor> {
     await this.db.transaction(async (tx) => {
       await tx.insert(messages).values(row);
       await tx
         .update(channels)
         .set({ lastMessageId: row.id })
         .where(eq(channels.id, row.channelId));
+      if (concerned.length)
+        await tx
+          .insert(readStates)
+          .values(
+            concerned.map((userId) => ({
+              userId,
+              channelId: row.channelId,
+              mentionCount: 1,
+            })),
+          )
+          .onConflictDoUpdate({
+            target: [readStates.userId, readStates.channelId],
+            set: {
+              mentionCount: sql`${readStates.mentionCount} + 1`,
+              updatedAt: sql`now()`,
+            },
+          });
     });
     const [saved] = await this.select().where(eq(messages.id, row.id));
     return saved!;

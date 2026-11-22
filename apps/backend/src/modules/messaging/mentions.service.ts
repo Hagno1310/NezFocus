@@ -1,9 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  Permission,
-  parseMentions,
-  type MessageResponse,
-} from '@nezfocus/shared';
+import { Permission, parseMentions } from '@nezfocus/shared';
 import { PresenceReader } from '../gateway/presence.service.js';
 import { PermissionService } from '../permissions/permission.service.js';
 import { ServersRepository } from '../servers/servers.repository.js';
@@ -19,6 +15,12 @@ const MAX_BIGINT = 2n ** 63n - 1n;
 // A token may carry any 20 digits; only ids Postgres can hold are looked up.
 const ids = (list: readonly string[]) =>
   list.map(BigInt).filter((id) => id <= MAX_BIGINT);
+
+export type Resolved = {
+  mentionUserIds: bigint[];
+  mentionRoleIds: bigint[];
+  mentionEveryone: boolean;
+};
 
 // REQ-MSG-03: what a message really mentions, and who it concerns.
 @Injectable()
@@ -41,7 +43,11 @@ export class MentionsService {
   }
 
   // Saved on the message: only mentions that work; the rest stays text (AC1).
-  async resolve(senderId: bigint, channel: ChannelRow, content: string) {
+  async resolve(
+    senderId: bigint,
+    channel: ChannelRow,
+    content: string,
+  ): Promise<Resolved> {
     const parsed = parseMentions(content);
     const serverId = channel.serverId!;
     const canMentionEveryone = await this.permissions.can(
@@ -72,33 +78,35 @@ export class MentionsService {
     };
   }
 
-  // CR-12: the people a saved message concerns, one way each. @here (chốt 22/11/2026): the
+  // CR-12: the people a message concerns, one way each. @here (chốt 22/11/2026): the
   // members not offline right now.
   async recipients(
-    message: MessageResponse,
-    serverId: bigint,
+    senderId: bigint,
+    channel: ChannelRow,
+    content: string,
+    found: Resolved,
   ): Promise<Map<string, MentionVia>> {
-    const channelId = BigInt(message.channel_id);
+    const serverId = channel.serverId!;
     const roleMembers = await this.repo.roleMembers(
       serverId,
-      message.mention_role_ids.map(BigInt),
+      found.mentionRoleIds,
     );
-    const everyone = parseMentions(message.content).mention_everyone;
+    const everyone = parseMentions(content).mention_everyone;
     let everyoneIds: bigint[] = [];
-    if (message.mention_everyone) {
+    if (found.mentionEveryone) {
       everyoneIds = await this.servers.memberIds(serverId);
       if (!everyone)
         everyoneIds = everyoneIds.filter(
           (id) => this.presence.onlineCount([id]) > 0,
         );
     }
-    const seen = await this.viewers(channelId, [
+    const seen = await this.viewers(channel.id, [
       ...roleMembers.map((m) => m.userId),
       ...everyoneIds,
     ]);
     return mentionRecipients({
-      authorId: message.author.id,
-      userIds: message.mention_user_ids,
+      authorId: String(senderId),
+      userIds: found.mentionUserIds.map(String),
       roleMembers: roleMembers
         .filter((m) => seen.has(m.userId))
         .map((m) => ({ roleId: String(m.roleId), userId: String(m.userId) })),

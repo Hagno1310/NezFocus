@@ -198,7 +198,8 @@ export function parseMessage(s: string): Block[] {
 }
 
 type Speak = (m: MentionNode) => string;
-const rawMention: Speak = (m) => (m.kind === 'everyone' ? `@${m.id}` : '@');
+export const rawMention: Speak = (m) =>
+  m.kind === 'everyone' ? `@${m.id}` : m.kind === 'channel' ? '#' : '@';
 
 const spokenRuns = (nodes: Inline[], spoiler: string, speak: Speak): string =>
   nodes

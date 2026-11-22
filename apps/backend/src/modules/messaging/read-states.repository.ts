@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { messageTypeCode } from '@nezfocus/shared';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
 import {
@@ -46,7 +47,7 @@ export class ReadStatesRepository {
             eq(messages.channelId, channelId),
             sql`${messages.id} > ${lastRead}`,
             sql`${messages.authorId} <> ${userId}`,
-            eq(messages.type, 0),
+            eq(messages.type, messageTypeCode.default),
             sql`${channels.serverId} IS NOT NULL`,
             // REQ-MSG-03 (CR-12): mentioned me, everyone, or a role I have.
             // ponytail: a @here counts here even if I was offline then (chốt 22/11/2026).
@@ -71,23 +72,7 @@ export class ReadStatesRepository {
     });
   }
 
-  // CR-12: +1 for each person the new message concerns, unless they already read past it.
-  async addMention(channelId: bigint, messageId: bigint, userIds: bigint[]) {
-    if (!userIds.length) return;
-    await this.db
-      .insert(readStates)
-      .values(userIds.map((userId) => ({ userId, channelId, mentionCount: 1 })))
-      .onConflictDoUpdate({
-        target: [readStates.userId, readStates.channelId],
-        set: {
-          mentionCount: sql`${readStates.mentionCount} + 1`,
-          updatedAt: sql`now()`,
-        },
-        setWhere: sql`${readStates.lastReadMessageId} < ${messageId}`,
-      });
-  }
-
-  // Chốt 22/11/2026: what was in the server before I joined counts as read.
+  // Chốt 22/11/2026: what was in the server before I joined counts as read, a rejoin too.
   async markServerRead(userId: bigint, serverId: bigint) {
     await this.db
       .insert(readStates)
@@ -107,7 +92,14 @@ export class ReadStatesRepository {
             and(eq(channels.serverId, serverId), isNull(channels.deletedAt)),
           ),
       )
-      .onConflictDoNothing();
+      .onConflictDoUpdate({
+        target: [readStates.userId, readStates.channelId],
+        set: {
+          lastReadMessageId: sql`excluded.last_read_message_id`,
+          mentionCount: 0,
+          updatedAt: sql`now()`,
+        },
+      });
   }
 
   // READY: every live text channel of my servers, read state or not; the caller filters by view.

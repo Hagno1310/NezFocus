@@ -45,15 +45,12 @@ export class ReadStatesService {
     this.emitter.emit(CHANNEL_READ, read);
   }
 
-  addMention(channelId: bigint, messageId: bigint, userIds: bigint[]) {
-    return this.repo.addMention(channelId, messageId, userIds);
-  }
-
   markServerRead(userId: bigint, serverId: bigint) {
     return this.repo.markServerRead(userId, serverId);
   }
 
   // READY (chốt 22/11/2026): one per channel I can view, read or not.
+  // ponytail: one permission check per channel; khi READY chậm với nhiều server: tính quyền theo lô.
   async forReady(userId: bigint): Promise<ReadState[]> {
     const out: ReadState[] = [];
     for (const r of await this.repo.forUser(userId))

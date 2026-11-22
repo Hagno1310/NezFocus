@@ -19,8 +19,11 @@ export type UnreadEvent =
   | { t: 'MESSAGE_CREATE'; d: MessageCreateEvent }
   | { t: 'MESSAGE_ACK'; d: MessageAck };
 
+// Snowflakes order by time; nothing yet (null) is older than anything.
+export const newerId = (a: string, b: string | null | undefined) =>
+  !b || BigInt(a) > BigInt(b);
 const newer = (a: string | null, b: string | null) =>
-  a !== null && (b === null || BigInt(a) > BigInt(b));
+  a !== null && newerId(a, b);
 const max = (a: string | null, b: string | null) => (newer(a, b) ? a : b);
 
 export const isUnread = (u: Unread | undefined) =>

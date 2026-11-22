@@ -31,7 +31,7 @@ export type ChatRow =
       time: LastActive;
     }
   // C-10 `blocked` (FRIEND-03 AC2): a run of messages from people I blocked, folded.
-  | { kind: 'blocked'; key: string; count: number }
+  | { kind: 'blocked'; key: string; count: number; lastId: string | null }
   // Divider/new "Tin nhắn mới" (NOTIF-01): before the first unread message; cuts the group.
   | { kind: 'new'; key: 'new' };
 
@@ -116,8 +116,12 @@ export function chatRows(
       fold.open = revealed.has(fold.key);
       const last = rows.at(-1);
       if (!fold.open) {
-        if (last?.kind === 'blocked' && last.key === fold.key) last.count++;
-        else rows.push({ kind: 'blocked', key: fold.key, count: 1 });
+        const id = item.kind === 'message' ? item.message.id : null;
+        if (last?.kind === 'blocked' && last.key === fold.key) {
+          last.count++;
+          last.lastId = id ?? last.lastId;
+        } else
+          rows.push({ kind: 'blocked', key: fold.key, count: 1, lastId: id });
         group = null;
         continue;
       }

@@ -71,8 +71,6 @@ import { useSendMessage } from '../hooks/useSendMessage';
 import { dayText, timeText } from '../chatText';
 
 const RATE_LIMITED = String(ErrorCode.RateLimited);
-// SRS 7.3.3: a message counts as seen when ≥ 50% of it shows.
-const SEEN = { itemVisiblePercentThreshold: 50 };
 
 // Offset from the bottom (the list is inverted) under which the list counts as "at the bottom".
 const AT_BOTTOM = 48;
@@ -381,8 +379,7 @@ export function ChatView({
         renderItem={renderRow}
         onScroll={onScroll}
         scrollEventThrottle={100}
-        viewabilityConfig={SEEN}
-        onViewableItemsChanged={reading.onViewable}
+        viewabilityConfigCallbackPairs={reading.viewPairs}
         // Rows not laid out yet: go near by the average height, then try again.
         onScrollToIndexFailed={(info) => {
           list.current?.scrollToOffset({

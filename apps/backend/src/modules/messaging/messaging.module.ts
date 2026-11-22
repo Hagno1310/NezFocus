@@ -8,8 +8,8 @@ import { MessagingListener } from './messaging.listener.js';
 import { ReadStatesRepository } from './read-states.repository.js';
 import { ReadStatesService } from './read-states.service.js';
 
-// WORKFLOW 4.3: the Gateway reads ReadStatesService for READY; calls, reminders and room
-// sessions write system messages through MessagesService.createSystemMessage.
+// Global like FriendsModule: the Gateway reads ReadStatesService for READY; calls, reminders
+// and room sessions write system messages through MessagesService.createSystemMessage.
 @Global()
 @Module({
   imports: [ServersModule],

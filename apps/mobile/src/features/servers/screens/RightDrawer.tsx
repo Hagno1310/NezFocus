@@ -148,6 +148,7 @@ function ChannelMembers({
           ]}
           value={tab}
           onChange={onTab}
+          dense
         />
       </View>
       {offline && <SystemBanner kind="offline" />}

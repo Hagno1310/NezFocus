@@ -240,7 +240,8 @@ function AddSheet({
         placeholder={t('servers.members.addSearch')}
       />
       <ScrollView
-        style={{ maxHeight: height * 0.55 }}
+        // Rows run edge to edge: MemberRow has its own 16 (frame `role-members-add`).
+        style={{ maxHeight: height * 0.55, marginHorizontal: -space[3] }}
         keyboardShouldPersistTaps="handled"
       >
         {shown.map((m) => {

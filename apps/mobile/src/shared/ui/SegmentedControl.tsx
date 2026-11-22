@@ -35,10 +35,12 @@ export function SegmentedControl<K extends string>({
   segments,
   value,
   onChange,
+  dense = false,
 }: {
   segments: Segment<K>[];
   value: K;
   onChange: (key: K) => void;
+  dense?: boolean; // padding 8 instead of 16: the 3 items of the drawer (frame S-HOME-03)
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -78,6 +80,7 @@ export function SegmentedControl<K extends string>({
               styles.segment,
               // C-20: a segment with a count is as wide as its text; the rest share the width.
               s.count === undefined ? styles.even : styles.fit,
+              dense && { paddingHorizontal: space[2] },
               // 4 items: padding 4, 2 on a 360 screen (S-DM-04, chốt 20/11/2026).
               segments.length >= 4 && {
                 paddingHorizontal: width < NARROW ? 2 : 4,

@@ -21,6 +21,7 @@ import {
 } from '../../features/servers/screens/LeftDrawer';
 import { useTheme } from '../../shared/theme';
 import { swipeGuard } from '../../shared/ui/swipeGuard';
+import { RightDrawer } from '../../features/servers/screens/RightDrawer';
 import { drawerGesture, type DrawerSide } from './drawerGesture';
 import { Placeholder } from './Placeholder';
 
@@ -119,7 +120,6 @@ export function HomeDrawers({
 }: {
   actions: Omit<LeftDrawerActions, 'onOpenChannel'>;
 }) {
-  const { t } = useTranslation();
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const held = useStore(swipeGuard, (s) => s.held);
@@ -160,9 +160,7 @@ export function HomeDrawers({
             screenListeners={{
               state: (e) => setOpen((o) => ({ ...o, rightOpen: openFrom(e) })),
             }}
-            drawerContent={() => (
-              <Placeholder title={t('screens.rightDrawer')} />
-            )}
+            drawerContent={() => <RightDrawer open={open.rightOpen} />}
           >
             <Right.Screen name="Channel" component={ChannelHost} />
           </Right.Navigator>

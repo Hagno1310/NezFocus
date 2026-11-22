@@ -9,7 +9,9 @@ import {
   type ServerResponse,
 } from '@nezfocus/shared';
 import { SnowflakeGenerator } from '../src/common/snowflake.js';
+import type { Redis } from 'ioredis';
 import { DB, type Db } from '../src/db/db.module.js';
+import { REDIS } from '../src/redis/redis.module.js';
 import { serverMembers } from '../src/modules/servers/servers.schema.js';
 import { users } from '../src/modules/users/users.schema.js';
 import {
@@ -101,17 +103,22 @@ describe('Selective fanout (e2e)', () => {
           deny: P.VIEW_CHANNEL.toString(),
         })
         .expect(200);
+    // REQ-MSG-08 is not what this measures: open the rate-limit windows before each message.
     const send = async (content: string) =>
-      (
-        await an
-          .post(MessageRoutes.list.replace(':id', text.id))
-          .send({ content, nonce: randomUUID() })
-          .expect(201)
-      ).body as { id: string };
+      (await clearRateLimit(),
+      await an
+        .post(MessageRoutes.list.replace(':id', text.id))
+        .send({ content, nonce: randomUUID() })
+        .expect(201)).body as { id: string };
     return { id: server.id, channelId: text.id, hideFrom, send };
   };
 
   const settle = () => new Promise((r) => setTimeout(r, 300));
+  const clearRateLimit = async () => {
+    const redis = app.get<Redis>(REDIS);
+    const keys = await redis.keys('msg-rate:*');
+    if (keys.length) await redis.del(...keys);
+  };
   const got = (g: Gateway, messageId: string) =>
     g.dispatches.some(
       (x) => x.t === 'MESSAGE_CREATE' && isMessage(messageId)(x.d),

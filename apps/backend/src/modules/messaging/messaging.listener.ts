@@ -6,6 +6,7 @@ import { ServersRepository } from '../servers/servers.repository.js';
 import { MESSAGE_CREATED, type MessageCreated } from './message-events.js';
 import { MentionsService } from './mentions.service.js';
 import { MessagesService } from './messages.service.js';
+import { ReadStatesService } from './read-states.service.js';
 
 // After the 201: what a new message or a new member sets off. A failure here is logged; the
 // message itself is saved already.
@@ -18,14 +19,27 @@ export class MessagingListener {
     private readonly notifications: NotificationService,
     private readonly servers: ServersRepository,
     private readonly messages: MessagesService,
+    private readonly readStates: ReadStatesService,
   ) {}
 
-  // REQ-MSG-03 AC2 / NOTIF-05: one `mention` item per person. DMs and system messages: none.
+  // REQ-MSG-03 AC2 / NOTIF-05: one `mention` item and +1 mention_count per person (NOTIF-01
+  // AC2). DMs and system messages: neither. My own message marks the channel read for me.
   @OnEvent(MESSAGE_CREATED, { promisify: true })
   async created({ message, serverId }: MessageCreated) {
-    if (!serverId || message.type !== 'default') return;
     try {
+      // Also a system message: my own "X đã tham gia server" is not unread for me.
+      await this.readStates.read(
+        BigInt(message.author.id),
+        BigInt(message.channel_id),
+        BigInt(message.id),
+      );
+      if (!serverId || message.type !== 'default') return;
       const to = await this.mentions.recipients(message, serverId);
+      await this.readStates.addMention(
+        BigInt(message.channel_id),
+        BigInt(message.id),
+        [...to.keys()].map(BigInt),
+      );
       for (const [userId, via] of to)
         await this.notifications.create(BigInt(userId), 'mention', {
           actor_id: message.author.id,
@@ -43,6 +57,8 @@ export class MessagingListener {
   @OnEvent(MEMBER_JOINED, { promisify: true })
   async joined({ serverId, userId }: MemberJoined) {
     try {
+      // Before the join message, so it is the first thing unread for everyone else.
+      await this.readStates.markServerRead(userId, serverId);
       const server = await this.servers.summary(serverId);
       if (!server?.systemChannelId) return;
       await this.messages.createSystemMessage(

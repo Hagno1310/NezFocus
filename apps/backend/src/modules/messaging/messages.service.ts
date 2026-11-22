@@ -196,10 +196,7 @@ export class MessagesService {
   // REQ-ROLE-03 AC3: a channel one cannot view does not exist for them (40401).
   // ponytail: text channels only; DMs wait for DmAccessPolicy, P2-B3.1 (#114), and voice
   // channel chat for P3-B7 (#160) — both open here.
-  private async viewable(
-    userId: bigint,
-    channelId: bigint,
-  ): Promise<ChannelRow> {
+  async viewable(userId: bigint, channelId: bigint): Promise<ChannelRow> {
     const channel = await this.servers.findChannel(channelId);
     if (
       channel?.type !== ChannelTypeCode.text ||

@@ -7,6 +7,7 @@ import {
   type PresenceEvent,
   type PresenceStatus,
   type PresenceUpdate,
+  type ReadState,
   type Relationship,
   type ServerSummary,
   type SessionEndReason,
@@ -37,6 +38,8 @@ export type LoadServers = (userId: bigint) => Promise<ServerSummary[]>;
 export type LoadSettings = (userId: bigint) => Promise<UserSettings>;
 // READY's relationships (REQ-FRIEND-04).
 export type LoadRelationships = (userId: bigint) => Promise<Relationship[]>;
+// READY's read states (REQ-NOTIF-01).
+export type LoadReadStates = (userId: bigint) => Promise<ReadState[]>;
 
 // REQ-AUTH-05, implemented by PresenceService; the default keeps a connection test free of it.
 export interface PresenceHooks {
@@ -85,6 +88,7 @@ export class GatewayConnection implements SessionSocket {
     private readonly loadSettings: LoadSettings = async () =>
       DEFAULT_USER_SETTINGS,
     private readonly loadRelationships: LoadRelationships = async () => [],
+    private readonly loadReadStates: LoadReadStates = async () => [],
   ) {}
 
   open() {
@@ -183,6 +187,7 @@ export class GatewayConnection implements SessionSocket {
     const settings = await this.loadSettings(auth.userId);
     const presence = await this.presence.ready(auth.userId);
     const relationships = await this.loadRelationships(auth.userId);
+    const readStates = await this.loadReadStates(auth.userId);
     if (this.isClosed) return;
     this.session = this.sessions.create(auth.userId, auth.authSessionId, this);
     this.sessions.dispatch(this.session, 'READY', {
@@ -191,8 +196,7 @@ export class GatewayConnection implements SessionSocket {
       servers,
       ...presence,
       settings,
-      // ponytail: always empty, P2-A4.2 (#104) sends the real read states.
-      read_states: [],
+      read_states: readStates,
       relationships,
     });
     // SRS 5.4: IDENTIFY may carry the status the app wants (a new login keeps the saved one).

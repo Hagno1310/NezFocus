@@ -140,10 +140,14 @@ export const MessageHistoryQuery = z
   );
 export type MessageHistoryQuery = z.infer<typeof MessageHistoryQuery>;
 
-// REQ-NOTIF-01. last_read_message_id null = nothing read yet.
+// REQ-NOTIF-01. last_read_message_id null = nothing read yet. READY sends one per channel I
+// can view (chốt 22/11/2026): server_id and last_message_id let the app badge every server
+// on the rail without loading its channels.
 export const ReadState = z.object({
   channel_id: SnowflakeId,
+  server_id: SnowflakeId.nullable(), // null in a DM
   last_read_message_id: SnowflakeId.nullable(),
+  last_message_id: SnowflakeId.nullable(),
   mention_count: z.number().int().min(0),
 });
 export type ReadState = z.infer<typeof ReadState>;

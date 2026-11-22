@@ -137,7 +137,10 @@ describe('Invites (e2e)', () => {
     const joined = await binh.post(accept(invite.code)).expect(200);
     expect((joined.body as ServerResponse).id).toBe(server.id);
     expect(await usesOf(invite.code)).toBe(1);
-    expect(events.map((e) => [e.to, e.t])).toEqual([
+    // The join message's MESSAGE_ACK to the newcomer (P2-A4) may come in after.
+    expect(
+      events.filter((e) => e.t !== 'MESSAGE_ACK').map((e) => [e.to, e.t]),
+    ).toEqual([
       ['user', 'SERVER_CREATE'],
       ['server', 'SERVER_MEMBER_ADD'],
     ]);

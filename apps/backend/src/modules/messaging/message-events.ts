@@ -9,3 +9,13 @@ export type MessageCreated = {
   message: MessageResponse;
   serverId: bigint | null; // null in a DM
 };
+
+// REQ-NOTIF-05 AC5 (P4-B1 #36): I read up to messageId in channelId (an ack, or my own message).
+// The inbox marks its mention items read here; nothing here calls the inbox back (CR-21).
+export const CHANNEL_READ = 'channel.read';
+
+export type ChannelRead = {
+  userId: bigint;
+  channelId: bigint;
+  messageId: bigint;
+};

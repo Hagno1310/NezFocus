@@ -14,6 +14,7 @@ import type { Server } from 'node:http';
 import { WebSocketServer } from 'ws';
 import { toCurrentUser } from '../users/users.dto.js';
 import { FriendsService } from '../friends/friends.service.js';
+import { ReadStatesService } from '../messaging/read-states.service.js';
 import { SessionRepository } from '../auth/session.repository.js';
 import { TokenService } from '../auth/token.service.js';
 import { ServersService } from '../servers/servers.service.js';
@@ -40,6 +41,7 @@ export class GatewayListener
     private readonly presence: PresenceService,
     private readonly settings: SettingsService,
     private readonly friends: FriendsService,
+    private readonly readStates: ReadStatesService,
   ) {}
 
   onApplicationBootstrap() {
@@ -61,6 +63,7 @@ export class GatewayListener
         this.presence,
         (userId) => this.settings.get(userId),
         (userId) => this.friends.list(userId),
+        (userId) => this.readStates.forReady(userId),
       );
       ws.on('message', (data, isBinary) => {
         // A binary frame is not JSON text: receive('') closes with 4002.

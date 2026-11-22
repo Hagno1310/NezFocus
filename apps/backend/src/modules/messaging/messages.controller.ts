@@ -19,11 +19,15 @@ import {
 import { ZodValidationPipe } from '../../common/zod-validation.pipe.js';
 import { CurrentUser, type AuthUser } from '../auth/auth.decorators.js';
 import { MessagesService } from './messages.service.js';
+import { ReadStatesService } from './read-states.service.js';
 
-// SRS 5.3 Message. The ack route (REQ-NOTIF-01) arrives with P2-A4.2 (#104).
+// SRS 5.3 Message.
 @Controller()
 export class MessagesController {
-  constructor(private readonly messages: MessagesService) {}
+  constructor(
+    private readonly messages: MessagesService,
+    private readonly readStates: ReadStatesService,
+  ) {}
 
   @Post(MessageRoutes.list)
   send(
@@ -43,6 +47,17 @@ export class MessagesController {
     query: MessageHistoryQuery,
   ): Promise<MessageListResponse> {
     return this.messages.history(user.userId, BigInt(id), query);
+  }
+
+  // REQ-NOTIF-01: also "Đánh dấu đã đọc" (ack to the channel's last_message_id).
+  @Post(MessageRoutes.ack)
+  @HttpCode(204)
+  async ack(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ZodValidationPipe(SnowflakeId)) id: string,
+    @Param('messageId', new ZodValidationPipe(SnowflakeId)) messageId: string,
+  ): Promise<void> {
+    await this.readStates.ack(user.userId, BigInt(id), BigInt(messageId));
   }
 
   @Post(TypingRoutes.start)

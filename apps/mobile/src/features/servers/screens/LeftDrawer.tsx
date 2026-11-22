@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from 'zustand';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
+import { isUnread, unreadStore } from '../../../domain/messages/unread';
 import {
   dropTarget,
   reorderEntries,
@@ -218,6 +219,7 @@ function ChannelPanel({
   const collapsed = useStore(homeStore, (s) => s.collapsed[server.id]);
   const open = useStore(homeStore, (s) => s.open);
   const offline = useStore(gatewayStore, (s) => s.banner === 'offline');
+  const unread = useStore(unreadStore);
   const selectedId = open?.serverId === server.id ? open.channelId : null;
   const sections = useMemo(
     () =>
@@ -330,6 +332,8 @@ function ChannelPanel({
                     key={channel.id}
                     channel={channel}
                     selected={channel.id === selectedId}
+                    unread={isUnread(unread[channel.id])}
+                    mentions={unread[channel.id]?.mentions}
                     onPress={() =>
                       channel.type === 'text'
                         ? actions.onOpenChannel(channel)

@@ -65,6 +65,7 @@ function fakeRemote(messages: MessageResponse[] = []) {
     },
     send: (_channelId, body) =>
       new Promise((resolve, reject) => sends.push({ body, resolve, reject })),
+    ack: async () => {},
   };
   return {
     remote,

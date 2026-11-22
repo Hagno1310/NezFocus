@@ -8,8 +8,9 @@ import {
   type CreateMessageRequest,
   type MessageHistoryQuery,
   type MessageResponse,
+  type MessageType,
 } from '@nezfocus/shared';
-import { AppError } from '../../common/app-error.js';
+import { AppError, rateLimited } from '../../common/app-error.js';
 import { Clock } from '../../common/clock.js';
 import { isUniqueViolation } from '../../common/db-errors.js';
 import { SnowflakeGenerator } from '../../common/snowflake.js';
@@ -19,6 +20,7 @@ import { EventPublisher } from '../gateway/event-publisher.js';
 import { PermissionService } from '../permissions/permission.service.js';
 import { ServersRepository } from '../servers/servers.repository.js';
 import { ChannelTypeCode, type ChannelRow } from '../servers/servers.schema.js';
+import { MentionsService } from './mentions.service.js';
 import { MESSAGE_CREATED, type MessageCreated } from './message-events.js';
 import { toMessageAuthor, toMessageResponse } from './messages.dto.js';
 import {
@@ -28,6 +30,10 @@ import {
 
 const unknownChannel = () =>
   new AppError(ErrorCode.NotFound, 'Unknown channel');
+
+// REQ-MSG-08: 5 messages / 5 s / channel and 30 / minute across every channel, per user.
+const PER_CHANNEL = { limit: 5, windowMs: 5_000 };
+const PER_USER = { limit: 30, windowMs: 60_000 };
 
 // REQ-MSG-01, MSG-09, SEARCH-02 (SRS 7.5.1).
 @Injectable()
@@ -44,6 +50,7 @@ export class MessagesService {
     private readonly store: KeyValueStore,
     private readonly clock: Clock,
     private readonly blocks: BlockQuery,
+    private readonly mentions: MentionsService,
   ) {}
 
   async send(
@@ -57,41 +64,90 @@ export class MessagesService {
       { channelId },
       Permission.SEND_MESSAGES,
     );
-    // ponytail: rate limit (REQ-MSG-08, 40029) goes here, P2-A4.1 (#103).
     // ponytail: timed-out members get 40302 instead of 40307 until P3-A3.1 (#126).
+    // A retry of a message already saved gets it back without touching the rate limit.
     const sent = await this.repo.byNonce(userId, body.nonce);
     if (sent) return this.replay(sent, channelId, body.content);
+    // REQ-MSG-08 AC1: a refused message does not count toward either window.
+    const wait = await this.store.hitWindows([
+      { key: `msg-rate:${userId}:${channelId}`, ...PER_CHANNEL },
+      { key: `msg-rate:${userId}`, ...PER_USER },
+    ]);
+    if (wait) throw rateLimited(wait / 1000);
 
+    const mentions = await this.mentions.resolve(userId, channel, body.content);
+    const concerned = await this.mentions.recipients(
+      userId,
+      channel,
+      body.content,
+      mentions,
+    );
     let saved: MessageWithAuthor;
     try {
-      saved = await this.repo.create({
-        id: this.ids.next(),
-        channelId,
-        authorId: userId,
-        type: messageTypeCode.default,
-        content: body.content,
-        nonce: body.nonce,
-      });
+      saved = await this.repo.create(
+        {
+          id: this.ids.next(),
+          channelId,
+          authorId: userId,
+          type: messageTypeCode.default,
+          content: body.content,
+          nonce: body.nonce,
+          ...mentions,
+        },
+        [...concerned.keys()].map(BigInt),
+      );
     } catch (err) {
       if (!isUniqueViolation(err, 'uq_messages_author_nonce')) throw err;
       const raced = await this.repo.byNonce(userId, body.nonce);
       if (!raced) throw err;
       return this.replay(raced, channelId, body.content);
     }
+    // ponytail: push for mentions / DMs out of the foreground (NOTIF-02) is P3-B5 (#29).
+    return this.publish(saved, channel, concerned);
+  }
 
+  // REQ-MSG-11: a system message is stored as kind + parameters (CR-24) and sent like any
+  // other. Calls (P3-B6 #156), reminders (P4-A1 #164) and room sessions (P3-B7 #160) add
+  // their type to MessageResponse and call this.
+  async createSystemMessage<T extends Exclude<MessageType, 'default'>>(
+    channelId: bigint,
+    authorId: bigint,
+    type: T,
+    systemData: Extract<MessageResponse, { type: T }>['system_data'],
+  ): Promise<MessageResponse> {
+    const channel = await this.servers.findChannel(channelId);
+    if (!channel) throw unknownChannel();
+    const saved = await this.repo.create({
+      id: this.ids.next(),
+      channelId,
+      authorId,
+      type: messageTypeCode[type],
+      systemData,
+    });
+    return this.publish(saved, channel, new Map());
+  }
+
+  private publish(
+    saved: MessageWithAuthor,
+    channel: ChannelRow,
+    concerned: MessageCreated['concerned'],
+  ) {
     const message = toMessageResponse(saved.message, saved.author);
-    const created: MessageCreated = { message, serverId: channel.serverId };
+    const created: MessageCreated = {
+      message,
+      serverId: channel.serverId,
+      concerned,
+    };
     this.emitter.emit(MESSAGE_CREATED, created);
     // The sender has its 201 already; the fanout must not hold it (SRS 7.5.1).
     void this.events
-      .toChannel(channelId, 'MESSAGE_CREATE', {
+      .toChannel(channel.id, 'MESSAGE_CREATE', {
         ...message,
         server_id: channel.serverId?.toString() ?? null,
       })
       .catch((err: unknown) =>
         this.logger.error(`MESSAGE_CREATE ${message.id}`, err),
       );
-    // ponytail: push for mentions / DMs out of the foreground (NOTIF-02) is P3-B5 (#29).
     return message;
   }
 
@@ -158,10 +214,7 @@ export class MessagesService {
   // REQ-ROLE-03 AC3: a channel one cannot view does not exist for them (40401).
   // ponytail: text channels only; DMs wait for DmAccessPolicy, P2-B3.1 (#114), and voice
   // channel chat for P3-B7 (#160) — both open here.
-  private async viewable(
-    userId: bigint,
-    channelId: bigint,
-  ): Promise<ChannelRow> {
+  async viewable(userId: bigint, channelId: bigint): Promise<ChannelRow> {
     const channel = await this.servers.findChannel(channelId);
     if (
       channel?.type !== ChannelTypeCode.text ||

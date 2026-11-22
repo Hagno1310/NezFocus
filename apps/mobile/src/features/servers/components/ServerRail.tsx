@@ -9,6 +9,7 @@ import { radius, size, space, useTheme } from '../../../shared/theme';
 import { Icon } from '../../../shared/ui/Icon';
 import { Badge } from '../../../shared/ui/People';
 import { Text } from '../../../shared/ui/Text';
+import { useUnreadTotals } from '../../chat/hooks/useUnread';
 
 // C-26 sizes (board `C-10 · … · Chat`, RailItem).
 export const RAIL_WIDTH = 72;
@@ -101,6 +102,7 @@ export function ServerRail({
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const unread = useUnreadTotals().servers;
   return (
     <ScrollView
       style={[styles.rail, { backgroundColor: colors.bg }]}
@@ -118,6 +120,8 @@ export function ServerRail({
           key={server.id}
           label={server.name}
           selected={server.id === selectedId}
+          unread={unread[server.id]?.unread}
+          mentions={unread[server.id]?.mentions}
           onPress={() => onSelect(server.id)}
         >
           {server.icon_url ? (

@@ -22,4 +22,12 @@ export const remoteMessageRepository: MessageRepository = {
     MessageResponse.parse(
       await api.request(path(channelId), { method: 'POST', body }),
     ),
+  async ack(channelId, messageId) {
+    await api.request(
+      MessageRoutes.ack
+        .replace(':id', channelId)
+        .replace(':messageId', messageId),
+      { method: 'POST' },
+    );
+  },
 };

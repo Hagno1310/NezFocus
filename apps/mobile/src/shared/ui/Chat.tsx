@@ -1,5 +1,6 @@
 import {
   ArrowDown,
+  ArrowUp,
   CircleAlert,
   Clock3,
   Hash,
@@ -255,6 +256,123 @@ function StatusLine({
   );
 }
 
+// S-HOME-01 `new-messages`: 40 high, `surface-2`, under the header. The text jumps to the
+// "Tin nhắn mới" line; the action marks the channel read.
+export function UnreadStrip({
+  text,
+  action,
+  onJump,
+  onMarkRead,
+}: {
+  text: string;
+  action: string;
+  onJump: () => void;
+  onMarkRead: () => void;
+}) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.strip, { backgroundColor: colors['surface-2'] }]}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onJump}
+        style={styles.stripJump}
+      >
+        <Icon as={ArrowUp} size="sm" color="text-primary" />
+        <Text
+          variant="label"
+          weight="600"
+          numberOfLines={1}
+          style={styles.shrink}
+        >
+          {text}
+        </Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onMarkRead}
+        hitSlop={touchSlop(size.banner)}
+      >
+        <Text variant="label" weight="600" color="primary">
+          {action}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+// C-10 `system` (REQ-MSG-11): icon 16 in the avatar column, `label` text with the names
+// bold `text-primary`, then the time. `parts`: bold runs at odd positions.
+export function SystemLine({
+  icon,
+  parts,
+  time,
+  accessibilityLabel,
+}: {
+  icon: IconComponent;
+  parts: string[];
+  time: string;
+  accessibilityLabel: string;
+}) {
+  return (
+    <View
+      accessible
+      accessibilityLabel={accessibilityLabel}
+      style={[styles.message, styles.systemRow]}
+    >
+      <View style={[styles.avatarCell, styles.systemIcon]}>
+        <Icon as={icon} size="sm" color="text-tertiary" />
+      </View>
+      <Text
+        variant="label"
+        weight="400"
+        color="text-secondary"
+        style={styles.shrink}
+      >
+        {parts.map((part, i) =>
+          i % 2 ? (
+            <Text key={i} variant="label" weight="600">
+              {part}
+            </Text>
+          ) : (
+            part
+          ),
+        )}
+      </Text>
+      <Text variant="label" weight="400" color="text-tertiary">
+        {time}
+      </Text>
+    </View>
+  );
+}
+
+// C-10 `blocked` (FRIEND-03 AC2): "1 tin nhắn bị chặn · Hiện", under the content column.
+export function BlockedLine({
+  text,
+  show,
+  onShow,
+}: {
+  text: string;
+  show: string;
+  onShow: () => void;
+}) {
+  return (
+    <View style={styles.blocked}>
+      <Text variant="label" weight="400" color="text-tertiary">
+        {text}
+      </Text>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onShow}
+        hitSlop={touchSlop(19)}
+      >
+        <Text variant="label" weight="600" color="primary">
+          {show}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
 // Divider/date (board): "Hôm nay", "Thứ Năm, 15/10/2026". `danger` = Divider/new (P2-A4.4).
 export function DateDivider({
   label,
@@ -349,6 +467,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[3],
   },
   pending: { opacity: 0.5 },
+  strip: {
+    height: size.banner,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2],
+    paddingHorizontal: space[3],
+  },
+  stripJump: {
+    flex: 1,
+    height: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2],
+  },
+  systemRow: { paddingVertical: 6, alignItems: 'center' },
+  systemIcon: { alignItems: 'center' },
+  blocked: {
+    flexDirection: 'row',
+    gap: space[1],
+    paddingVertical: 6,
+    paddingRight: space[3],
+    // Under the content column: 16 + avatar 40 + 12.
+    paddingLeft: space[3] + size.avatar[3] + 12,
+  },
   avatarCell: { width: size.avatar[3] },
   collapsed: { height: 0 },
   messageBody: { flex: 1, gap: 2 },

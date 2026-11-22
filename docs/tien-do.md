@@ -123,11 +123,11 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
   - Trong lúc làm: P2-A2.3 chờ P1-B4.3 (Hoàng)
   - [x] mốc **P2-A2.1** [#96](https://github.com/Hagno1310/NezFocus/issues/96) Backend danh sách thành viên và gán role (ROLE-04) · người kia chờ: P2-B3 (Hoàng)
   - [x] mốc **P2-A2.3** [#98](https://github.com/Hagno1310/NezFocus/issues/98) Drawer phải: Thành viên (S-HOME-03 phần Thành viên) · người kia chờ: P3-B7 (Hoàng)
-- [ ] **P2-A4** [#17](https://github.com/Hagno1310/NezFocus/issues/17) Mention, giới hạn gửi, tin hệ thống, chưa đọc và badge
+- [x] **P2-A4** [#17](https://github.com/Hagno1310/NezFocus/issues/17) Mention, giới hạn gửi, tin hệ thống, chưa đọc và badge
   - Cần trước: P2-A1, P2-A2, P2-A3, P2-B4 (Hoàng)
   - Trong lúc làm: P2-A4.3 chờ P2-B2.1 (Hoàng)
-  - [ ] mốc **P2-A4.1** [#103](https://github.com/Hagno1310/NezFocus/issues/103) Backend mention, rate limit, tin hệ thống (MSG-03, MSG-08, MSG-11) · người kia chờ: P3-B7 (Hoàng)
-  - [ ] mốc **P2-A4.4** [#106](https://github.com/Hagno1310/NezFocus/issues/106) App: chưa đọc, đánh dấu đã đọc, badge (S-HOME-01, S-HOME-02, TabBar) (NOTIF-01) · người kia chờ: P2-B3 (Hoàng), P3-B7 (Hoàng)
+  - [x] mốc **P2-A4.1** [#103](https://github.com/Hagno1310/NezFocus/issues/103) Backend mention, rate limit, tin hệ thống (MSG-03, MSG-08, MSG-11) · người kia chờ: P3-B7 (Hoàng)
+  - [x] mốc **P2-A4.4** [#106](https://github.com/Hagno1310/NezFocus/issues/106) App: chưa đọc, đánh dấu đã đọc, badge (S-HOME-01, S-HOME-02, TabBar) (NOTIF-01) · người kia chờ: P2-B3 (Hoàng), P3-B7 (Hoàng)
 
 ### P2 · Hoàng
 

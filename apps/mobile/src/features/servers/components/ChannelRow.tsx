@@ -15,8 +15,8 @@ export const channelIcon = (c: Row) =>
 const ROW = 40; // C-05: 40 high, 4 apart; slop grows the target to 48
 const UNREAD_DOT = { width: 4, height: 8 };
 
-// C-05 ChannelRow. P1 draws default / selected / pressed; unread and mention come with
-// read state (P2-A4 #17), the Room Session line with P3-B3 (#28).
+// C-05 ChannelRow: default / selected / pressed / unread / mention; the Room Session line
+// comes with P3-B3 (#28).
 const noop = () => {};
 
 export function ChannelRow({

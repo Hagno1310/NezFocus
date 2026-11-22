@@ -14,6 +14,7 @@ import type {
 import { useTranslation } from 'react-i18next';
 import { useStore } from 'zustand';
 import { homeStore, openChannel } from '../../domain/servers/homeStore';
+import { chatCover } from '../../features/chat/hooks/useReadTracking';
 import { ChannelScreen } from '../../features/chat/screens/ChannelScreen';
 import {
   LeftDrawer,
@@ -132,6 +133,10 @@ export function HomeDrawers({
     leftOpen: false,
     rightOpen: false,
   });
+  // NOTIF-01: a drawer over the chat stops it from marking messages read.
+  useEffect(() => {
+    chatCover.setState({ covered: open.leftOpen || open.rightOpen });
+  }, [open]);
 
   return (
     <Left.Navigator

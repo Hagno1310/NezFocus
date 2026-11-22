@@ -3,8 +3,10 @@ import {
   bigint,
   boolean,
   index,
+  integer,
   jsonb,
   pgTable,
+  primaryKey,
   smallint,
   timestamp,
   uniqueIndex,
@@ -56,3 +58,23 @@ export const messages = pgTable(
 );
 
 export type MessageRow = typeof messages.$inferSelect;
+
+// SRS 8.2 read_states (REQ-NOTIF-01). 0 = nothing read; the contract says null.
+export const readStates = pgTable(
+  'read_states',
+  {
+    userId: id()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    channelId: id()
+      .notNull()
+      .references(() => channels.id, { onDelete: 'cascade' }),
+    lastReadMessageId: id()
+      .notNull()
+      .default(sql`0`),
+    // CR-12: +1 per unread message that concerns me, server channels only.
+    mentionCount: integer().notNull().default(0),
+    updatedAt: tz().notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.channelId] })],
+);

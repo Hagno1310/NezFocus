@@ -32,6 +32,7 @@ import { ToastHost } from '../shared/ui/Toast';
 import { startMessagesLifecycle } from './messagesLifecycle';
 import { startGatewayLifecycle } from './gatewayLifecycle';
 import { startTypingLifecycle } from './typingLifecycle';
+import { startUnreadLifecycle } from './unreadLifecycle';
 import { startHomeLifecycle } from './homeLifecycle';
 import { startPresenceLifecycle } from './presenceLifecycle';
 import { startFriendsLifecycle } from './friendsLifecycle';
@@ -141,6 +142,7 @@ export default function App() {
   useEffect(startMessagesLifecycle, []);
   useEffect(startGatewayLifecycle, []);
   useEffect(startTypingLifecycle, []);
+  useEffect(startUnreadLifecycle, []);
   useEffect(watchNavigationRestore, []);
   useEffect(watchPendingInvite, []);
   useEffect(clearCacheOnSignOut, []);

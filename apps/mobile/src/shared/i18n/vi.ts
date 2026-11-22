@@ -931,6 +931,32 @@ export const vi = {
     spoiler: 'Nội dung bị ẩn, chạm để hiện',
     openChannels: 'Mở danh sách kênh',
     openMembers: 'Mở danh sách thành viên',
+    // C-27 MentionSuggest (REQ-MSG-03)
+    suggest: {
+      members: 'THÀNH VIÊN',
+      roles: 'VAI TRÒ',
+      channels: 'KÊNH',
+      roleMembers_one: '{{count}} thành viên',
+      roleMembers_other: '{{count}} thành viên',
+    },
+    // A mention whose person / role / channel this device does not know (22/11/2026).
+    unknownMention: 'không rõ',
+    // REQ-MSG-08, S-HOME-01 `rate-limited`
+    rateLimited_one: 'Bạn gửi quá nhanh · tự gửi lại sau {{count}} giây',
+    rateLimited_other: 'Bạn gửi quá nhanh · tự gửi lại sau {{count}} giây',
+    // REQ-MSG-11, C-10 › Tin hệ thống
+    memberJoin: '{{name}} đã tham gia server',
+    // FRIEND-03 AC2, S-HOME-01 `blocked-message`
+    blocked_one: '{{count}} tin nhắn bị chặn ·',
+    blocked_other: '{{count}} tin nhắn bị chặn ·',
+    showBlocked: 'Hiện',
+    // REQ-NOTIF-01, S-HOME-01 `new-messages`
+    newLine: 'Tin nhắn mới',
+    unreadStrip_one: '{{count}} tin nhắn mới từ {{time}}',
+    unreadStrip_other: '{{count}} tin nhắn mới từ {{time}}',
+    // Chốt 22/11/2026: more than 100 unread, the first is not loaded.
+    unreadStripMany: '99+ tin nhắn mới',
+    markRead: 'Đánh dấu đã đọc',
     // REQ-MSG-06, S-HOME-01 Nội dung chữ › Typing
     typing: {
       one: '{{name}} đang nhập…',

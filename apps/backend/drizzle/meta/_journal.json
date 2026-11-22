@@ -106,6 +106,13 @@
       "when": 1795189239777,
       "tag": "0014_rainy_blue_blade",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1795364844671,
+      "tag": "0015_stiff_slipstream",
+      "breakpoints": true
     }
   ]
 }

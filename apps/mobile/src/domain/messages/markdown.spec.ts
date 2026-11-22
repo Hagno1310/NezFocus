@@ -213,3 +213,33 @@ describe('spoken text and links (C-10 accessibility)', () => {
     ).toEqual(['https://a.vn', 'https://c.vn']);
   });
 });
+
+describe('parseInline: mentions (REQ-MSG-03, tokens of P2-A3.1)', () => {
+  it('<@id>, <@&id>, <#id>, @everyone, @here become mention nodes', () => {
+    expect(parseInline('<@2> <@&21> ở <#9> @everyone @here')).toEqual([
+      { t: 'mention', kind: 'user', id: '2' },
+      text(' '),
+      { t: 'mention', kind: 'role', id: '21' },
+      text(' ở '),
+      { t: 'mention', kind: 'channel', id: '9' },
+      text(' '),
+      { t: 'mention', kind: 'everyone', id: 'everyone' },
+      text(' '),
+      { t: 'mention', kind: 'everyone', id: 'here' },
+    ]);
+  });
+
+  it('an e-mail or a word before @ is not a mention; inside code it stays text', () => {
+    expect(parseInline('an@everyone.vn')).toEqual([text('an@everyone.vn')]);
+    expect(parseInline('`<@2>`')).toEqual([{ t: 'code', text: '<@2>' }]);
+  });
+
+  it('spoken with the names the screen gives', () => {
+    const blocks = parseMessage('<@2> ơi, xem <#9>');
+    expect(
+      spokenText(blocks, 'ẩn', (m) =>
+        m.kind === 'channel' ? '#tai-lieu' : '@Bình',
+      ),
+    ).toBe('@Bình ơi, xem #tai-lieu');
+  });
+});

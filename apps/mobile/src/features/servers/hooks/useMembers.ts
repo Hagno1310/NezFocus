@@ -21,6 +21,7 @@ export function useMembers(serverId: string, channelId?: string) {
   const query = useQuery({
     queryKey: membersKey(serverId, channelId),
     queryFn: () => serverRepository.listMembers(serverId, channelId),
+    enabled: !!serverId, // a DM has no server (S-DM-02)
   });
   useEffect(() => {
     const key = membersKey(serverId, channelId);

@@ -4,6 +4,7 @@ import { localTime } from '../study/stats';
 import type { ChatItem } from './messageStore';
 
 const GROUP_MS = 5 * 60 * 1000;
+const NONE: ReadonlySet<string> = new Set();
 const DAY_MS = 24 * 60 * 60 * 1000;
 const COUNTER_FROM = 200;
 
@@ -21,7 +22,18 @@ export type ChatRow =
       authorId: string;
       head: boolean; // first of its group: avatar, name and time
       time: LastActive; // also read out for a grouped message (C-10 accessibility)
-    };
+    }
+  // C-10 `system` (REQ-MSG-11): no avatar, never grouped.
+  | {
+      kind: 'system';
+      key: string;
+      message: Extract<ChatItem, { kind: 'message' }>['message'];
+      time: LastActive;
+    }
+  // C-10 `blocked` (FRIEND-03 AC2): a run of messages from people I blocked, folded.
+  | { kind: 'blocked'; key: string; count: number; lastId: string | null }
+  // Divider/new "Tin nhắn mới" (NOTIF-01): before the first unread message; cuts the group.
+  | { kind: 'new'; key: 'new' };
 
 // MSG-09 AC3: the sent copy takes its pending copy's key, so the row is updated, not replaced.
 export const itemKey = (item: ChatItem) =>
@@ -61,11 +73,26 @@ function dayLabel(date: string, now: number, timeZone: string): DayLabel {
 // 02 › Dữ liệu nhất quán (CR-19): a group = same sender, ≤ 5 min from its first, nothing between.
 export function chatRows(
   items: readonly ChatItem[],
-  { now, timeZone, myId }: { now: number; timeZone: string; myId: string },
+  {
+    now,
+    timeZone,
+    myId,
+    blocked = NONE,
+    revealed = NONE,
+    newFrom = null,
+  }: {
+    now: number;
+    timeZone: string;
+    myId: string;
+    blocked?: ReadonlySet<string>; // author ids
+    revealed?: ReadonlySet<string>; // keys of folded runs opened with "Hiện"
+    newFrom?: string | null; // id of the first unread message
+  },
 ): ChatRow[] {
   const rows: ChatRow[] = [];
   let day: string | null = null;
   let group: { author: string; at: number } | null = null;
+  let fold: { key: string; open: boolean } | null = null;
   for (const item of items) {
     const at = timeOf(item);
     const date = localTime(new Date(at).toISOString(), timeZone).date;
@@ -78,15 +105,44 @@ export function chatRows(
         day: dayLabel(date, now, timeZone),
       });
     }
+    if (item.kind === 'message' && item.message.id === newFrom) {
+      rows.push({ kind: 'new', key: 'new' });
+      group = null;
+      fold = null;
+    }
     const author = authorOf(item, myId);
+    if (blocked.has(author) && !isSystem(item)) {
+      fold ??= { key: `b${itemKey(item)}`, open: false };
+      fold.open = revealed.has(fold.key);
+      const last = rows.at(-1);
+      if (!fold.open) {
+        const id = item.kind === 'message' ? item.message.id : null;
+        if (last?.kind === 'blocked' && last.key === fold.key) {
+          last.count++;
+          last.lastId = id ?? last.lastId;
+        } else
+          rows.push({ kind: 'blocked', key: fold.key, count: 1, lastId: id });
+        group = null;
+        continue;
+      }
+    } else fold = null;
+    if (isSystem(item) && item.kind === 'message') {
+      group = null;
+      rows.push({
+        kind: 'system',
+        key: itemKey(item),
+        message: item.message,
+        time: lastActive(new Date(at).toISOString(), now, timeZone),
+      });
+      continue;
+    }
     const head =
       !group ||
       group.author !== author ||
       // Outbox entries sit below sent messages, so one can be older than the group head.
       at < group.at ||
-      at - group.at > GROUP_MS ||
-      isSystem(item);
-    if (head) group = isSystem(item) ? null : { author, at };
+      at - group.at > GROUP_MS;
+    if (head) group = { author, at };
     rows.push({
       kind: 'message',
       key: itemKey(item),

@@ -29,8 +29,10 @@ import { ServerIcon } from '../components/ServerIcon';
 import { useServerAccess, useServerListLoaded } from '../hooks/useServerAccess';
 
 // Where each placeholder row gets its real screen.
-const TICKETS: Record<Exclude<Row, 'overview' | 'roles'>, string> = {
-  members: 'P2-A2 (#15)',
+const TICKETS: Record<
+  Exclude<Row, 'overview' | 'roles' | 'members'>,
+  string
+> = {
   invites: 'P3-A3 (#23)',
   bans: 'P3-A3 (#23)',
   reports: 'P3-A5 (#25)',
@@ -48,14 +50,15 @@ const ICONS = {
   transfer: Crown,
 };
 
-// S-SET-01 `owner` / `offline`. Rows follow permission (Q17); every row but Tổng quan and
-// Vai trò opens a placeholder until its ticket (Thành viên P2-A2 #15, Lời mời /
+// S-SET-01 `owner` / `offline`. Rows follow permission (Q17); every row but Tổng quan,
+// Vai trò and Thành viên opens a placeholder until its ticket (Lời mời /
 // Danh sách cấm P3-A3 #23, Báo cáo P3-A5 #25, Chuyển quyền / Xóa server P3-A4 #24).
 export function ServerSettingsScreen({
   serverId,
   onBack,
   onOverview,
   onRoles,
+  onMembers,
   onRow,
   onLostAccess,
 }: {
@@ -63,6 +66,7 @@ export function ServerSettingsScreen({
   onBack: () => void;
   onOverview: () => void;
   onRoles: () => void;
+  onMembers: () => void;
   onRow: (title: string, ticket: string) => void;
   onLostAccess: () => void; // back to the drawer
 }) {
@@ -133,7 +137,9 @@ export function ServerSettingsScreen({
                 ? onOverview()
                 : row === 'roles'
                   ? onRoles()
-                  : onRow(label(row), TICKETS[row])
+                  : row === 'members'
+                    ? onMembers()
+                    : onRow(label(row), TICKETS[row])
             }
           />
         ))}

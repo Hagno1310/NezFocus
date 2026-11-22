@@ -11,7 +11,9 @@ import {
 import type { StudyActivity } from '@nezfocus/shared';
 import { ActivityLine } from '../../shared/ui/ActivityLine';
 import { Button } from '../../shared/ui/Button';
+import { Checkbox } from '../../shared/ui/Checkbox';
 import { FriendRow } from '../../shared/ui/FriendRow';
+import { MemberRow } from '../../shared/ui/MemberRow';
 import { Text } from '../../shared/ui/Text';
 import { SettingsRow } from '../../shared/ui/SettingsRow';
 import { Caption, Row, Section } from './kit';
@@ -283,9 +285,63 @@ function Friends() {
   );
 }
 
+function Members() {
+  return (
+    <>
+      <Caption>C-28 · drawer: Owner / role / hoạt động / ngoại tuyến</Caption>
+      <MemberRow
+        name="An"
+        username="an.nguyen"
+        presence="online"
+        label="Owner"
+      />
+      <MemberRow
+        name="Chi"
+        username="chi.le"
+        presence="idle"
+        label="Điều phối phòng học"
+      />
+      <MemberRow
+        name="Dũng"
+        username="dung.pham"
+        presence="online"
+        line2={<ActivityLine activity={ACTIVITIES[0]!} form="short" now={AT} />}
+      />
+      <MemberRow name="Giang" username="giang.vo" presence="offline" />
+      <Caption>username · S-SET-03, thêm vào vai trò</Caption>
+      <MemberRow
+        variant="username"
+        name="Quân"
+        username="quan.ng"
+        presence="offline"
+        label="Tạm khóa tới 21:12"
+        labelColor="text-secondary"
+      />
+      <MemberRow
+        variant="username"
+        name="Tuấn"
+        username="tuan.hoang"
+        presence="online"
+        label="Đã có vai trò"
+        right={<Checkbox boxOnly label="Tuấn" checked locked />}
+      />
+      <MemberRow
+        variant="username"
+        name="Dũng"
+        username="dung.pham"
+        presence="online"
+        right={<Checkbox boxOnly label="Dũng" checked />}
+      />
+    </>
+  );
+}
+
 export function PeopleSections() {
   return (
     <>
+      <Section title="C-28 · MemberRow">
+        <Members />
+      </Section>
       <Section title="C-33 · FriendRow">
         <Friends />
       </Section>

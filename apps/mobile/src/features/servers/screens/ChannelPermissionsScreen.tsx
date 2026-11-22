@@ -1,8 +1,9 @@
 import {
   categoryTitle,
+  matchesMember,
+  memberName,
   searchKey,
   type PermissionOverwrite,
-  type RoleResponse,
 } from '@nezfocus/shared';
 import { Lock, Shield, User, Users } from 'lucide-react-native';
 import { useState } from 'react';
@@ -10,26 +11,26 @@ import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  addMemberTargets,
   addTargets,
   canEditTarget,
   channelLabel,
   overwriteSummary,
   shownOverwrites,
 } from '../../../domain/servers/channelPermissions';
+import { avatarUri } from '../../me/avatarUri';
 import { useOnOpen } from '../../../shared/hooks/useOnOpen';
 import { size, space, useTheme } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import { SystemBanner } from '../../../shared/ui/Feedback';
+import { Icon } from '../../../shared/ui/Icon';
+import { MemberRow } from '../../../shared/ui/MemberRow';
 import { BottomSheet } from '../../../shared/ui/Overlay';
 import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { SettingsRow } from '../../../shared/ui/SettingsRow';
 import { Text } from '../../../shared/ui/Text';
 import { SearchField } from '../../../shared/ui/TextField';
-import {
-  useOverwrites,
-  useTargetName,
-  type Target,
-} from '../hooks/useOverwrites';
+import { useOverwrites, useTargets, type Target } from '../hooks/useOverwrites';
 import { NoteLine } from '../../../shared/ui/NoteLine';
 
 // S-SET-06 `overwrites`, `overwrites-synced`, `category-overwrites`, `add-target`.
@@ -53,7 +54,8 @@ export function ChannelPermissionsScreen({
   const { colors } = useTheme();
   const { bottom } = useSafeAreaInsets();
   const o = useOverwrites(serverId, channelId, onClose);
-  const nameOf = useTargetName(o.access?.roles);
+  const targets = useTargets(serverId, o.access?.roles);
+  const { nameOf } = targets;
   const [adding, setAdding] = useState(false);
   const { channel, parent, access } = o;
   if (!channel || !access?.userId) return null;
@@ -141,7 +143,13 @@ export function ChannelPermissionsScreen({
           {group}
         </Text>
         {rows.map((row) => {
-          const editable = canEditTarget(access.server, roles, actor, row);
+          const editable = canEditTarget(
+            access.server,
+            roles,
+            actor,
+            row,
+            targets.roleIdsOf,
+          );
           const everyone = row.target_id === serverId;
           return (
             <SettingsRow
@@ -204,34 +212,44 @@ export function ChannelPermissionsScreen({
       <AddTargetSheet
         visible={adding}
         targets={addTargets(access.server, roles, channel, actor)}
+        members={addMemberTargets(
+          access.server,
+          roles,
+          channel,
+          actor,
+          targets.members,
+        )}
         onDismiss={() => setAdding(false)}
-        onPick={(role) => {
+        onPick={(target) => {
           setAdding(false);
-          onEdit({ target_id: role.id, target_type: 'role' });
+          onEdit(target);
         }}
       />
     </View>
   );
 }
 
-// `add-target`: VAI TRÒ by rank, a role level with or above the caller disabled.
-// ponytail: the THÀNH VIÊN group (MemberRow · username) needs the member list, P2-A2 (#15).
+// `add-target`: VAI TRÒ by rank, THÀNH VIÊN by name (MemberRow · username); a target level
+// with or above the caller disabled.
 function AddTargetSheet({
   visible,
   targets,
+  members,
   onDismiss,
   onPick,
 }: {
   visible: boolean;
   targets: ReturnType<typeof addTargets>;
+  members: ReturnType<typeof addMemberTargets>;
   onDismiss: () => void;
-  onPick: (role: RoleResponse) => void;
+  onPick: (target: Target) => void;
 }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
   useOnOpen(visible, () => setQuery(''));
   const q = searchKey(query.trim());
   const shown = targets.filter((x) => searchKey(x.role.name).includes(q));
+  const people = members.filter((x) => matchesMember(x.member, query));
   return (
     <BottomSheet
       visible={visible}
@@ -257,7 +275,37 @@ function AddTargetSheet({
           icon={locked ? Lock : Shield}
           label={role.name}
           disabled={locked}
-          onPress={() => onPick(role)}
+          onPress={() => onPick({ target_id: role.id, target_type: 'role' })}
+        />
+      ))}
+      {people.length > 0 && (
+        <Text
+          variant="label"
+          weight="600"
+          color="text-tertiary"
+          style={styles.group}
+        >
+          {t('servers.overwrites.membersGroup')}
+        </Text>
+      )}
+      {people.map(({ member, locked }) => (
+        <MemberRow
+          key={member.user.id}
+          name={memberName(member)}
+          username={member.user.username}
+          avatar={avatarUri(member.user.avatar, '128')}
+          variant="username"
+          right={
+            locked ? (
+              <Icon as={Lock} size="base" color="text-tertiary" />
+            ) : undefined
+          }
+          onPress={
+            locked
+              ? undefined
+              : () =>
+                  onPick({ target_id: member.user.id, target_type: 'member' })
+          }
         />
       ))}
     </BottomSheet>

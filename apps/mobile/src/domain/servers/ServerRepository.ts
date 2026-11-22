@@ -7,6 +7,7 @@ import type {
   PutChannelPermissionRequest,
   RoleListResponse,
   RoleResponse,
+  ServerMember,
   ServerResponse,
   ServerSummary,
   UpdateChannelPositionsRequest,
@@ -57,4 +58,13 @@ export interface ServerRepository {
     body: PutChannelPermissionRequest,
   ): Promise<PermissionOverwrite>;
   deleteChannelPermission(channelId: string, targetId: string): Promise<void>;
+  // REQ-ROLE-04: every member (every page), by name; `channelId`: only who can view it.
+  listMembers(serverId: string, channelId?: string): Promise<ServerMember[]>;
+  // CR-28 #23: one role given (`give`) or taken.
+  setMemberRole(
+    serverId: string,
+    userId: string,
+    roleId: string,
+    give: boolean,
+  ): Promise<void>;
 }

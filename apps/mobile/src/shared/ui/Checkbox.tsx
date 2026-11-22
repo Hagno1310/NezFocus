@@ -24,6 +24,7 @@ export function Checkbox({
   error,
   disabled = false,
   locked = false,
+  boxOnly = false,
 }: {
   checked: boolean;
   onChange?: (next: boolean) => void;
@@ -35,6 +36,8 @@ export function Checkbox({
   disabled?: boolean;
   // `checked-locked`: ticked and cannot be cleared; `description` says why.
   locked?: boolean;
+  // The box alone, on the right of a picker row (C-28 "chọn nhiều người"); `label` still names it.
+  boxOnly?: boolean;
 }) {
   const { colors } = useTheme();
   const inactive = disabled || locked;
@@ -73,18 +76,20 @@ export function Checkbox({
             {on && <Icon as={Check} size="sm" color={tick} />}
           </View>
         </View>
-        <View style={styles.text}>
-          {children ?? (
-            <Text color={disabled ? 'text-tertiary' : 'text-primary'}>
-              {label}
-            </Text>
-          )}
-          {description && (
-            <Text variant="label" color="text-tertiary">
-              {description}
-            </Text>
-          )}
-        </View>
+        {!boxOnly && (
+          <View style={styles.text}>
+            {children ?? (
+              <Text color={disabled ? 'text-tertiary' : 'text-primary'}>
+                {label}
+              </Text>
+            )}
+            {description && (
+              <Text variant="label" color="text-tertiary">
+                {description}
+              </Text>
+            )}
+          </View>
+        )}
       </Pressable>
       {/* Board CB error sits under the sentence; outside the Pressable so TalkBack reads it. */}
       {error && (

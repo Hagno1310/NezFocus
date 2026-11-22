@@ -1,6 +1,9 @@
 import {
   ChannelResponse,
   ChannelRoutes,
+  MEMBER_PAGE_MAX,
+  MemberListResponse,
+  MemberRoutes,
   PermissionOverwrite,
   RoleListResponse,
   RoleResponse,
@@ -8,6 +11,7 @@ import {
   ServerResponse,
   ServerRoutes,
   ServerSummary,
+  type ServerMember,
 } from '@nezfocus/shared';
 import type { ServerRepository } from '../../domain/servers/ServerRepository';
 import { api } from '../api';
@@ -94,5 +98,32 @@ export const remoteServerRepository: ServerRepository = {
     ),
   deleteChannelPermission: async (channelId, targetId) => {
     await api.request(permission(channelId, targetId), { method: 'DELETE' });
+  },
+  // ponytail: loads every page up front (MVP servers are small); page on scroll past ~1000.
+  listMembers: async (serverId, channelId) => {
+    const all: ServerMember[] = [];
+    let after: string | null = null;
+    do {
+      const params = new URLSearchParams({ limit: String(MEMBER_PAGE_MAX) });
+      if (channelId) params.set('channel_id', channelId);
+      if (after) params.set('after', after);
+      const page = MemberListResponse.parse(
+        await api.request(
+          `${MemberRoutes.list.replace(':id', serverId)}?${params}`,
+        ),
+      );
+      all.push(...page.members);
+      after = page.next_cursor;
+    } while (after);
+    return all;
+  },
+  setMemberRole: async (serverId, userId, roleId, give) => {
+    await api.request(
+      MemberRoutes.role
+        .replace(':id', serverId)
+        .replace(':userId', userId)
+        .replace(':roleId', roleId),
+      { method: give ? 'PUT' : 'DELETE' },
+    );
   },
 };

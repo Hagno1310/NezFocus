@@ -1,6 +1,7 @@
 import {
   Permission,
   hasPermission,
+  memberName,
   type ChannelResponse,
   type PermissionName,
   type PermissionOverwrite,
@@ -20,20 +21,31 @@ import {
 import { homeStore, upsertChannel } from '../../../domain/servers/homeStore';
 import { roleErrorOf } from '../../../domain/servers/roles';
 import { showToast } from '../../../shared/ui/Toast';
+import { useMembers } from './useMembers';
 import { useServerAccess } from './useServerAccess';
 
 export type Target = Pick<PermissionOverwrite, 'target_id' | 'target_type'>;
 const same = (a: Target) => (b: Target) =>
   a.target_id === b.target_id && a.target_type === b.target_type;
 
-// The name of an overwrite's target, as the rows show it.
-export function useTargetName(roles: readonly RoleResponse[] | undefined) {
+// An overwrite's target as the rows show it, and a member target's roles (8.5.2 hierarchy).
+export function useTargets(
+  serverId: string,
+  roles: readonly RoleResponse[] | undefined,
+) {
   const { t } = useTranslation();
-  // ponytail: a member target shows their name with the member list, P2-A2 (#15).
-  return (o: Target) =>
-    o.target_type === 'role'
-      ? (roles?.find((r) => r.id === o.target_id)?.name ?? '')
-      : t('servers.overwrites.member');
+  const members = useMembers(serverId).data;
+  const memberOf = (id: string) => members?.find((m) => m.user.id === id);
+  return {
+    members: members ?? [],
+    nameOf: (o: Target) => {
+      if (o.target_type === 'role')
+        return roles?.find((r) => r.id === o.target_id)?.name ?? '';
+      const m = memberOf(o.target_id);
+      return m ? memberName(m) : t('servers.overwrites.member');
+    },
+    roleIdsOf: (id: string) => memberOf(id)?.role_ids ?? [],
+  };
 }
 
 // S-SET-06 `overwrites` / `overwrite-edit`: the channel (or category) as the drawer knows

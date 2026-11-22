@@ -302,6 +302,28 @@ describe('reduceHome (Gateway events)', () => {
     expect(state.open).toEqual({ serverId: '100', channelId: '11' });
   });
 
+  it('ROLE-04 AC2: SERVER_MEMBER_UPDATE about me replaces my roles; about others, nothing', () => {
+    const update = (userId: string) =>
+      event({
+        t: 'SERVER_MEMBER_UPDATE',
+        d: {
+          server_id: '100',
+          user: {
+            id: userId,
+            username: 'an.nguyen',
+            display_name: 'An',
+            avatar: null,
+          },
+          role_ids: ['r1'],
+          joined_at: '2026-10-01T00:00:00Z',
+          timeout_until: null,
+        },
+      });
+    const { state } = reduceHome(loaded, update('me'), 'me');
+    expect(state.myRoleIds['100']).toEqual(['r1']);
+    expect(reduceHome(loaded, update('other'), 'me').state).toBe(loaded);
+  });
+
   it('other events leave the state alone', () => {
     const r = reduceHome(loaded, event({ t: 'USER_UPDATE', d: {} as never }));
     expect(r).toEqual({ state: loaded });

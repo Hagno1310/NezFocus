@@ -78,7 +78,10 @@ import { ChannelOverviewScreen } from '../../features/servers/screens/ChannelOve
 import { ChannelPermissionsScreen } from '../../features/servers/screens/ChannelPermissionsScreen';
 import { ChannelSettingsScreen } from '../../features/servers/screens/ChannelSettingsScreen';
 import { OverwriteEditScreen } from '../../features/servers/screens/OverwriteEditScreen';
+import { MemberDetailScreen } from '../../features/servers/screens/MemberDetailScreen';
+import { MembersScreen } from '../../features/servers/screens/MembersScreen';
 import { RoleEditScreen } from '../../features/servers/screens/RoleEditScreen';
+import { RoleMembersScreen } from '../../features/servers/screens/RoleMembersScreen';
 import { RolesScreen } from '../../features/servers/screens/RolesScreen';
 import { ServerOverviewScreen } from '../../features/servers/screens/ServerOverviewScreen';
 import { ServerSettingsScreen } from '../../features/servers/screens/ServerSettingsScreen';
@@ -137,6 +140,9 @@ type HomeParamList = {
   ServerOverview: { serverId: string; cropped?: ImageFile }; // S-SET-01 overview
   Roles: { serverId: string }; // S-SET-02
   RoleEdit: { serverId: string; roleId: string }; // S-SET-02 edit-role
+  RoleMembers: { serverId: string; roleId: string }; // S-SET-02 role-members
+  Members: { serverId: string }; // S-SET-03
+  MemberDetail: { serverId: string; userId: string }; // S-SET-03 member-detail
   ChannelSettings: { serverId: string; channelId: string }; // S-SET-06
   // S-SET-06 `overwrites` (a category: `category-overwrites`)
   ChannelPermissions: { serverId: string; channelId: string };
@@ -265,6 +271,11 @@ function HomeTab() {
                   serverId: route.params.serverId,
                 })
               }
+              onMembers={() =>
+                navigation.navigate('Members', {
+                  serverId: route.params.serverId,
+                })
+              }
               onRow={(title, ticket) =>
                 navigation.navigate('HomePlaceholder', { title, ticket })
               }
@@ -293,18 +304,40 @@ function HomeTab() {
           {({ navigation, route }) => (
             <RoleEditScreen
               {...route.params}
-              onMembers={(title) =>
-                navigation.navigate('HomePlaceholder', {
-                  title,
-                  ticket: 'P2-A2 (#15)',
-                })
-              }
+              onMembers={() => navigation.navigate('RoleMembers', route.params)}
               onLostAccess={() =>
                 navigation.popTo('ServerSettings', {
                   serverId: route.params.serverId,
                 })
               }
             />
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen name="RoleMembers">
+          {({ navigation, route }) => (
+            <RoleMembersScreen {...route.params} onBack={navigation.goBack} />
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen name="Members">
+          {({ navigation, route }) => (
+            <MembersScreen
+              serverId={route.params.serverId}
+              onBack={navigation.goBack}
+              onOpen={(userId) =>
+                navigation.navigate('MemberDetail', {
+                  serverId: route.params.serverId,
+                  userId,
+                })
+              }
+              onLostAccess={() =>
+                navigation.popTo('ServerSettings', route.params)
+              }
+            />
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen name="MemberDetail">
+          {({ navigation, route }) => (
+            <MemberDetailScreen {...route.params} onBack={navigation.goBack} />
           )}
         </HomeStack.Screen>
         <HomeStack.Screen name="ServerOverview">

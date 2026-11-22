@@ -3,6 +3,7 @@ import {
   Permission,
   canEditOverwrite,
   categoryTitle,
+  compareMembers,
   privateChannelOverwrites,
   computeBasePermissions,
   computeChannelPermissions,
@@ -17,6 +18,7 @@ import {
   type PermissionName,
   type PermissionOverwrite,
   type RoleResponse,
+  type ServerMember,
   type ServerSummary,
 } from '@nezfocus/shared';
 import type { ServerRepository } from './ServerRepository';
@@ -156,13 +158,13 @@ export function canEditTarget(
   roles: readonly RoleResponse[],
   actor: PermissionMember,
   o: Pick<PermissionOverwrite, 'target_id' | 'target_type'>,
+  roleIdsOf: (userId: string) => readonly string[] = () => [], // from the member list
 ): boolean {
   const s = toPermissionServer(server, roles);
   if (o.target_type === 'member')
-    // ponytail: a member's own roles come with the member list, P2-A2 (#15).
     return canEditOverwrite(s, actor, {
       type: 'member',
-      member: { userId: o.target_id, roleIds: [] },
+      member: { userId: o.target_id, roleIds: [...roleIdsOf(o.target_id)] },
     });
   const role = roles.find((r) => r.id === o.target_id);
   return !!role && editable(server, roles, actor, role);
@@ -186,6 +188,33 @@ export function addTargets(
     .map((role) => ({
       role,
       locked: !editable(server, roles, actor, role),
+    }));
+}
+
+// `add-target` › THÀNH VIÊN: members with no overwrite here yet, by name; locked when the
+// Owner or level with / above the caller.
+export function addMemberTargets(
+  server: Pick<ServerSummary, 'id' | 'owner_id'>,
+  roles: readonly RoleResponse[],
+  channel: ChannelResponse,
+  actor: PermissionMember,
+  members: readonly ServerMember[],
+) {
+  const taken = new Set(
+    channel.permission_overwrites
+      .filter((o) => o.target_type === 'member')
+      .map((o) => o.target_id),
+  );
+  const s = toPermissionServer(server, roles);
+  return [...members]
+    .sort(compareMembers)
+    .filter((m) => !taken.has(m.user.id))
+    .map((member) => ({
+      member,
+      locked: !canEditOverwrite(s, actor, {
+        type: 'member',
+        member: { userId: member.user.id, roleIds: member.role_ids },
+      }),
     }));
 }
 

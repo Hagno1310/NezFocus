@@ -29,7 +29,7 @@ import { SystemBanner } from '../../../shared/ui/Feedback';
 import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { TriState } from '../../../shared/ui/SegmentedControl';
 import { Text } from '../../../shared/ui/Text';
-import { useOverwrites, useTargetName } from '../hooks/useOverwrites';
+import { useOverwrites, useTargets } from '../hooks/useOverwrites';
 
 import { NoteLine } from '../../../shared/ui/NoteLine';
 
@@ -58,7 +58,7 @@ export function OverwriteEditScreen({
   const { bottom } = useSafeAreaInsets();
   const { fontScale } = useWindowDimensions();
   const o = useOverwrites(serverId, channelId, onClose);
-  const nameOf = useTargetName(o.access?.roles);
+  const { nameOf, roleIdsOf } = useTargets(serverId, o.access?.roles);
   const { channel, access } = o;
   if (!channel || !access?.userId) return null;
   const target = { target_id: targetId, target_type: targetType };
@@ -74,6 +74,7 @@ export function OverwriteEditScreen({
       access.roles ?? [],
       { userId: access.userId, roleIds: access.roleIds },
       target,
+      roleIdsOf,
     );
   const name = nameOf(target);
   // `overwrite-large-text`: the channel name moves to its own line, never cut at a "-".

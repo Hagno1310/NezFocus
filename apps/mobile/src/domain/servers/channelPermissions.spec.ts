@@ -9,7 +9,9 @@ import {
 } from '@nezfocus/shared';
 import { describe, expect, it } from 'vitest';
 import {
+  addMemberTargets,
   addTargets,
+  canEditTarget,
   myChannelPermissions,
   overwritePermissions,
   overwriteSummary,
@@ -183,6 +185,49 @@ describe('addTargets (`add-target`)', () => {
       { role: COORD, locked: false },
       { role: EVERYONE, locked: false },
     ]);
+  });
+});
+
+describe('member targets (P2-A2: the member list gives their roles)', () => {
+  const m = (id: string, name: string, roleIds: string[]) => ({
+    user: {
+      id,
+      username: name.toLowerCase(),
+      display_name: name,
+      avatar: null,
+    },
+    role_ids: roleIds,
+    joined_at: '2026-10-01T00:00:00Z',
+    timeout_until: null,
+  });
+  const tuan = { userId: '9', roleIds: ['103'] };
+  const members = [
+    m('10', 'Khánh', []),
+    m('1', 'An', ['102']),
+    m('11', 'Bình', ['103']),
+  ];
+
+  it('add-target THÀNH VIÊN: by name, without an overwrite yet; Owner and level locked', () => {
+    const channel = ch('12', 'text', null, false, [
+      ow('10', P.SEND_MESSAGES, 0n, 'member'),
+    ]);
+    expect(
+      addMemberTargets(server, ROLES, channel, tuan, members).map((x) => [
+        x.member.user.display_name,
+        x.locked,
+      ]),
+    ).toEqual([
+      ['An', true],
+      ['Bình', true],
+    ]);
+  });
+
+  it('canEditTarget: a member overwrite is judged by their real roles', () => {
+    const o = { target_id: '11', target_type: 'member' } as const;
+    expect(canEditTarget(server, ROLES, tuan, o)).toBe(true);
+    const roleIdsOf = (id: string) =>
+      members.find((x) => x.user.id === id)?.role_ids ?? [];
+    expect(canEditTarget(server, ROLES, tuan, o, roleIdsOf)).toBe(false);
   });
 });
 

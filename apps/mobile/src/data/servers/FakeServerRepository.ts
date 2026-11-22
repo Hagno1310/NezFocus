@@ -24,6 +24,7 @@ import {
   toPermissionBitmap,
   type ChannelResponse,
   type RoleResponse,
+  type ServerMember,
   type ServerResponse,
   type ServerSummary,
   type ServerTemplate,
@@ -261,6 +262,25 @@ export function createFakeServerRepository(
   }
   const setRoles = (server: ServerResponse, roles: RoleResponse[]) =>
     servers.set(server.id, { ...server, roles });
+  const members = new Map<string, ServerMember[]>();
+  const membersOf = (serverId: string) => {
+    const server = serverFor(serverId);
+    if (!members.has(serverId))
+      members.set(serverId, [
+        {
+          user: {
+            id: '1',
+            username: 'an.nguyen',
+            display_name: 'An',
+            avatar: null,
+          },
+          role_ids: server.me.role_ids,
+          joined_at: '2026-10-01T00:00:00Z',
+          timeout_until: null,
+        },
+      ]);
+    return members.get(serverId)!;
+  };
   const serverFor = (serverId: string) => {
     const server = servers.get(serverId);
     if (!server) throw fail(404, ErrorCode.NotFound);
@@ -558,6 +578,27 @@ export function createFakeServerRepository(
             ? null
             : server.system_channel_id,
       });
+    },
+    // ponytail: the fake lists only An (id 1); the 24 members of 08 come from the backend seed.
+    async listMembers(serverId) {
+      await wait();
+      return membersOf(serverId);
+    },
+    async setMemberRole(serverId, userId, roleId, give) {
+      await wait();
+      const list = membersOf(serverId);
+      const m = list.find((x) => x.user.id === userId);
+      if (!m || !serverFor(serverId).roles.some((r) => r.id === roleId))
+        throw fail(404, ErrorCode.NotFound);
+      const roleIds = m.role_ids.filter((id) => id !== roleId);
+      members.set(
+        serverId,
+        list.map((x) =>
+          x === m
+            ? { ...m, role_ids: give ? [...roleIds, roleId] : roleIds }
+            : x,
+        ),
+      );
     },
     async setChannelPositions(serverId, body) {
       await wait();

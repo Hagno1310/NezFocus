@@ -93,7 +93,7 @@ const upsert = <T extends { id: string }>(list: readonly T[], item: T) =>
     ? list.map((x) => (x.id === item.id ? item : x))
     : [...list, item];
 
-function apply(s: HomeState, e: DispatchEvent): HomeState {
+function apply(s: HomeState, e: DispatchEvent, meId: string | null): HomeState {
   switch (e.t) {
     case 'READY': {
       const servers = e.d.servers;
@@ -150,6 +150,13 @@ function apply(s: HomeState, e: DispatchEvent): HomeState {
         },
       };
     }
+    // REQ-ROLE-04 AC2: my new roles recompute every permission at once, no restart.
+    case 'SERVER_MEMBER_UPDATE':
+      if (e.d.user.id !== meId) return s;
+      return {
+        ...s,
+        myRoleIds: { ...s.myRoleIds, [e.d.server_id]: e.d.role_ids },
+      };
     case 'SERVER_UPDATE':
       return s.servers ? { ...s, servers: upsert(s.servers, e.d) } : s;
     case 'CHANNEL_CREATE':
@@ -173,8 +180,9 @@ function apply(s: HomeState, e: DispatchEvent): HomeState {
 export function reduceHome(
   prev: HomeState,
   e: DispatchEvent,
+  meId: string | null = null,
 ): { state: HomeState; removed?: string } {
-  const state = apply(prev, e);
+  const state = apply(prev, e, meId);
   if (state === prev) return { state };
   const open = state.open;
   const before = open && prev.channels[open.serverId];

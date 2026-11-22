@@ -5,6 +5,7 @@ import type {
   ServerResponse,
 } from '@nezfocus/shared';
 import { createStore } from 'zustand/vanilla';
+import { sessionStore } from '../session/sessionStore';
 import {
   emptyHome,
   reduceHome,
@@ -81,7 +82,11 @@ export const toggleCategory = (serverId: string, categoryId: string) => {
 
 // Returns the name of the open channel when the event took it away (`channel-removed`).
 export function applyGatewayEvent(event: DispatchEvent): string | undefined {
-  const { state, removed } = reduceHome(homeStore.getState(), event);
+  const { state, removed } = reduceHome(
+    homeStore.getState(),
+    event,
+    sessionStore.getState().user?.id ?? null,
+  );
   homeStore.setState(state, true);
   return removed;
 }

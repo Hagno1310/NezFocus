@@ -40,7 +40,7 @@ export function RoleEditScreen({
 }: {
   serverId: string;
   roleId: string;
-  onMembers: (title: string) => void; // ponytail: `role-members` with P2-A2 (#15)
+  onMembers: () => void; // S-SET-02 `role-members`
   onLostAccess: () => void; // back to S-SET-01
 }) {
   const { t } = useTranslation();
@@ -244,7 +244,7 @@ export function RoleEditScreen({
                   ? undefined
                   : t('servers.roles.people', { count })
               }
-              onPress={() => onMembers(t('servers.roles.members'))}
+              onPress={onMembers}
             />
           </>
         )}

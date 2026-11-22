@@ -113,10 +113,10 @@ export function ChatView({
   const outbox = useSendMessage(channelId);
 
   const draft = useStore(drafts.state, (s) => s[channelId] ?? '');
-  const [cursor, setCursor] = useState(0);
-  // Set once to put the cursor after an inserted mention, then left to the input.
-  const [selection, setSelection] = useState<{ start: number; end: number }>();
-  const trigger = activeTrigger(draft, Math.min(cursor, draft.length));
+  // Gotcha: setState in onSelectionChange makes Android drop the '' after ➤ (text piles up),
+  // so suggestions follow the @ / # at the end of the text.
+  // ponytail: an @ typed mid-text gets no suggestions; khi cần: theo con trỏ bằng ref.
+  const trigger = activeTrigger(draft, draft.length);
   const mentions = useChatMentions(serverId, channelId, trigger);
   const [picked, setPicked] = useState<PickedMention[]>([]);
   const toSend = encodeMentions(messageToSend(draft), picked);
@@ -214,11 +214,9 @@ export function ChatView({
   };
   const pick = (key: string) => {
     if (!mentions.suggestion) return;
-    const next = mentions.suggestion.pick(key, draft, cursor);
+    const next = mentions.suggestion.pick(key, draft, draft.length);
     setPicked((p) => [...p, next.picked]);
     drafts.set(channelId, next.text);
-    setCursor(next.cursor);
-    setSelection({ start: next.cursor, end: next.cursor });
   };
 
   const [failed, setFailed] = useState<{
@@ -450,11 +448,6 @@ export function ChatView({
       <Composer
         value={draft}
         onChangeText={(text) => drafts.set(channelId, text)}
-        selection={selection}
-        onSelectionChange={(at) => {
-          setCursor(at);
-          setSelection(undefined);
-        }}
         placeholder={placeholder}
         counter={count.counter}
         canSend={count.canSend}

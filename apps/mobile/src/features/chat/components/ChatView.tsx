@@ -1,5 +1,12 @@
-import { CloudOff, RotateCw, Trash2 } from 'lucide-react-native';
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { ArrowRight, CloudOff, RotateCw, Trash2 } from 'lucide-react-native';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   FlatList,
@@ -10,6 +17,7 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
+import { ErrorCode } from '@nezfocus/shared';
 import { useStore } from 'zustand';
 import {
   chatRows,
@@ -22,6 +30,11 @@ import {
 } from '../../../domain/messages/chatRows';
 import { drafts } from '../../../domain/messages/drafts';
 import {
+  activeTrigger,
+  encodeMentions,
+  type PickedMention,
+} from '../../../domain/messages/mentions';
+import {
   linksOf,
   parseMessage,
   spokenText,
@@ -30,15 +43,18 @@ import type { ChatItem } from '../../../domain/messages/messageStore';
 import { size, space, useTheme } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import {
+  BlockedLine,
   ChannelStart,
   DateDivider,
   JumpPill,
   MessageBubble,
+  SystemLine,
   type MessageStatus,
 } from '../../../shared/ui/Chat';
 import { Composer, type ComposerBlock } from '../../../shared/ui/Composer';
 import { Skeleton } from '../../../shared/ui/Feedback';
 import { Icon } from '../../../shared/ui/Icon';
+import { MentionSuggest } from '../../../shared/ui/MentionSuggest';
 import { MessageText } from '../../../shared/ui/MessageText';
 import { ActionSheet, type Lifted } from '../../../shared/ui/Overlay';
 import { Text } from '../../../shared/ui/Text';
@@ -46,9 +62,12 @@ import { useOnline } from '../../gateway/hooks/useOnline';
 import { useMe } from '../../me/hooks/useMe';
 import { avatarUri } from '../../me/avatarUri';
 import { useChannelMessages } from '../hooks/useChannelMessages';
+import { useChatMentions } from '../hooks/useChatMentions';
 import { useChatClock } from '../hooks/useChatClock';
 import { useSendMessage } from '../hooks/useSendMessage';
 import { dayText, timeText } from '../chatText';
+
+const RATE_LIMITED = String(ErrorCode.RateLimited);
 
 // Offset from the bottom (the list is inverted) under which the list counts as "at the bottom".
 const AT_BOTTOM = 48;
@@ -89,10 +108,40 @@ export function ChatView({
   const { now, timeZone } = useChatClock();
   const view = useChannelMessages(channelId, serverId);
   const outbox = useSendMessage(channelId);
+
+  const draft = useStore(drafts.state, (s) => s[channelId] ?? '');
+  const [cursor, setCursor] = useState(0);
+  // Set once to put the cursor after an inserted mention, then left to the input.
+  const [selection, setSelection] = useState<{ start: number; end: number }>();
+  const trigger = activeTrigger(draft, Math.min(cursor, draft.length));
+  const mentions = useChatMentions(serverId, channelId, trigger);
+  const [picked, setPicked] = useState<PickedMention[]>([]);
+  const toSend = encodeMentions(messageToSend(draft), picked);
+
+  // FRIEND-03 AC2: "Hiện" opens a folded run until the channel is left (this view unmounts).
+  const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set());
   const rows = useMemo(
-    () => chatRows(view.items, { now, timeZone, myId }).reverse(),
-    [view.items, now, timeZone, myId],
+    () =>
+      chatRows(view.items, {
+        now,
+        timeZone,
+        myId,
+        blocked: mentions.blocked,
+        revealed,
+      }).reverse(),
+    [view.items, now, timeZone, myId, mentions.blocked, revealed],
   );
+
+  // REQ-MSG-08: "tự gửi lại sau N giây" counts down while a message waits out a 40029.
+  const waiting = view.items.some(
+    (i) => i.kind === 'outbox' && i.entry.lastError === RATE_LIMITED,
+  );
+  const [tick, setTick] = useState(Date.now);
+  useEffect(() => {
+    if (!waiting) return;
+    const id = setInterval(() => setTick(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [waiting]);
 
   const list = useRef<FlatList<ChatRow>>(null);
   // Newest row seen while at the bottom; null = at the bottom now.
@@ -118,13 +167,22 @@ export function ChatView({
       .finally(() => setLoadingOlder(false));
   };
 
-  const draft = useStore(drafts.state, (s) => s[channelId] ?? '');
-  const count = composerCount(draft);
+  // Counted as sent: with the tokens, as the backend counts.
+  const count = composerCount(toSend);
   const send = () => {
     if (!count.canSend) return;
-    void outbox.send(messageToSend(draft));
+    void outbox.send(toSend);
     drafts.set(channelId, '');
+    setPicked([]);
     toBottom();
+  };
+  const pick = (key: string) => {
+    if (!mentions.suggestion) return;
+    const next = mentions.suggestion.pick(key, draft, cursor);
+    setPicked((p) => [...p, next.picked]);
+    drafts.set(channelId, next.text);
+    setCursor(next.cursor);
+    setSelection({ start: next.cursor, end: next.cursor });
   };
 
   const [failed, setFailed] = useState<{
@@ -149,8 +207,15 @@ export function ChatView({
 
   const statusOf = (item: ChatItem): MessageStatus | undefined => {
     if (item.kind !== 'outbox') return undefined;
-    // ponytail: 40029 shows as failed until the countdown line of `rate-limited`, P2-A4.3 (#105).
-    return item.entry.status === 'failed'
+    const { status, lastError, nextAttemptAt } = item.entry;
+    if (status === 'failed' && lastError === RATE_LIMITED && nextAttemptAt)
+      return {
+        kind: 'failed',
+        text: t('chat.rateLimited', {
+          count: Math.max(1, Math.ceil((nextAttemptAt - tick) / 1000)),
+        }),
+      };
+    return status === 'failed'
       ? { kind: 'failed', text: t('chat.failed') }
       : { kind: 'pending', offline: !online };
   };
@@ -161,7 +226,9 @@ export function ChatView({
   ) => {
     const who = author(row);
     const blocks = parseMessage(contentOf(row.item));
-    const content = spokenText(blocks, t('chat.spoiler'));
+    const message = row.item.kind === 'message' ? row.item.message : null;
+    const mentionView = message ? mentions.viewOf(message) : undefined;
+    const content = spokenText(blocks, t('chat.spoiler'), mentionView?.label);
     const time = timeText(t, row.time);
     const status = statusOf(row.item);
     const isFailed = status?.kind === 'failed';
@@ -175,6 +242,7 @@ export function ChatView({
         time={time}
         head={row.head}
         status={status}
+        mention={!!message && mentions.concerns(message)}
         surface={lifted ? 'surface-2' : undefined}
         liftedTime={lifted ? row.time.time : undefined}
         actions={linksOf(blocks).map((url) => ({
@@ -206,17 +274,46 @@ export function ChatView({
             : undefined
         }
       >
-        <MessageText content={contentOf(row.item)} />
+        <MessageText content={contentOf(row.item)} mentions={mentionView} />
       </MessageBubble>
     );
   };
 
-  const renderRow = ({ item: row }: { item: ChatRow }) =>
-    row.kind === 'day' ? (
-      <DateDivider label={dayText(t, row.day)} />
-    ) : (
-      bubble(row)
+  const renderRow = ({ item: row }: { item: ChatRow }) => {
+    switch (row.kind) {
+      case 'day':
+        return <DateDivider label={dayText(t, row.day)} />;
+      case 'message':
+        return bubble(row);
+      case 'blocked':
+        return (
+          <BlockedLine
+            text={t('chat.blocked', { count: row.count })}
+            show={t('chat.showBlocked')}
+            onShow={() => setRevealed((s) => new Set(s).add(row.key))}
+          />
+        );
+      case 'system':
+        return systemLine(row);
+    }
+  };
+
+  // C-10 › Tin hệ thống, worded for the viewer in the app's language (CR-24).
+  const systemLine = (row: Extract<ChatRow, { kind: 'system' }>) => {
+    const m = row.message;
+    if (m.type !== 'member_join') return null;
+    const name =
+      m.author.display_name ?? m.author.username ?? t('ui.deletedUser');
+    const parts = t('chat.memberJoin', { name: '\u0000' }).split('\u0000');
+    return (
+      <SystemLine
+        icon={ArrowRight}
+        parts={[parts[0] ?? '', name, parts[1] ?? '']}
+        time={timeText(t, row.time)}
+        accessibilityLabel={`${t('chat.memberJoin', { name })}, ${timeText(t, row.time, true)}`}
+      />
     );
+  };
 
   const empty = view.items.length === 0;
   let body: ReactNode;
@@ -280,9 +377,17 @@ export function ChatView({
         )}
       </View>
       {aboveComposer}
+      {mentions.suggestion && !disabled && (
+        <MentionSuggest sections={mentions.suggestion.sections} onPick={pick} />
+      )}
       <Composer
         value={draft}
         onChangeText={(text) => drafts.set(channelId, text)}
+        selection={selection}
+        onSelectionChange={(at) => {
+          setCursor(at);
+          setSelection(undefined);
+        }}
         placeholder={placeholder}
         counter={count.counter}
         canSend={count.canSend}

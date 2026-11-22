@@ -32,6 +32,8 @@ export function Composer({
   onEmoji,
   disabled,
   above,
+  selection,
+  onSelectionChange,
 }: {
   value: string;
   onChangeText: (text: string) => void;
@@ -45,6 +47,9 @@ export function Composer({
   disabled?: ComposerBlock;
   // Context strip / tray over the input (reply, edit, attachments: P3).
   above?: ReactNode;
+  // C-27: where the cursor is, to suggest for the @ / # being typed and to put it after one.
+  selection?: { start: number; end: number };
+  onSelectionChange?: (cursor: number) => void;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -99,6 +104,10 @@ export function Composer({
           <TextInput
             value={value}
             onChangeText={onChangeText}
+            selection={selection}
+            onSelectionChange={(e) =>
+              onSelectionChange?.(e.nativeEvent.selection.end)
+            }
             placeholder={placeholder}
             placeholderTextColor={colors['text-tertiary']}
             multiline

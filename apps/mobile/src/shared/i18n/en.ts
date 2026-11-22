@@ -935,6 +935,21 @@ export const en: Strings = {
     spoiler: 'Hidden text, tap to show',
     openChannels: 'Open channel list',
     openMembers: 'Open member list',
+    suggest: {
+      members: 'MEMBERS',
+      roles: 'ROLES',
+      channels: 'CHANNELS',
+      roleMembers_one: '{{count}} member',
+      roleMembers_other: '{{count}} members',
+    },
+    unknownMention: 'unknown',
+    rateLimited_one: 'You are sending too fast · retrying in {{count}} second',
+    rateLimited_other:
+      'You are sending too fast · retrying in {{count}} seconds',
+    memberJoin: '{{name}} joined the server',
+    blocked_one: '{{count}} blocked message ·',
+    blocked_other: '{{count}} blocked messages ·',
+    showBlocked: 'Show',
     // REQ-MSG-06, S-HOME-01 Nội dung chữ › Typing
     typing: {
       one: '{{name}} is typing…',

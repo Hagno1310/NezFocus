@@ -4,7 +4,12 @@ export type Inline =
   | { t: 'text'; text: string }
   | { t: 'bold' | 'italic' | 'strike' | 'spoiler'; children: Inline[] }
   | { t: 'code'; text: string }
-  | { t: 'link'; url: string };
+  | { t: 'link'; url: string }
+  // REQ-MSG-03: the tokens of P2-A3.1 (#99); id of `everyone` is 'everyone' or 'here'.
+  | { t: 'mention'; kind: MentionKind; id: string };
+
+export type MentionKind = 'user' | 'role' | 'channel' | 'everyone';
+export type MentionNode = Extract<Inline, { t: 'mention' }>;
 
 export type Block =
   | { t: 'paragraph'; children: Inline[] }
@@ -85,6 +90,25 @@ function linkAt(s: string, i: number): string | null {
   return /^https?:\/\/./.test(url) ? url : null;
 }
 
+const TOKEN = /^<(@&|@|#)(\d{1,20})>/;
+const EVERYONE = /^@(everyone|here)(?![\p{L}\p{N}_])/u;
+
+function mentionAt(s: string, i: number): [MentionNode, number] | null {
+  const token = TOKEN.exec(s.slice(i, i + 25));
+  if (token) {
+    const kind =
+      token[1] === '@&' ? 'role' : token[1] === '#' ? 'channel' : 'user';
+    return [{ t: 'mention', kind, id: token[2]! }, token[0].length];
+  }
+  // Same rule as parseMentions in shared: not after a word, a dot or another @.
+  if (s[i] !== '@' || isWord(s[i - 1]) || s[i - 1] === '.' || s[i - 1] === '@')
+    return null;
+  const word = EVERYONE.exec(s.slice(i));
+  return word
+    ? [{ t: 'mention', kind: 'everyone', id: word[1]! }, word[0].length]
+    : null;
+}
+
 export function parseInline(s: string): Inline[] {
   const out: Inline[] = [];
   let plain = '';
@@ -112,6 +136,12 @@ export function parseInline(s: string): Inline[] {
       push({ t, children: parseInline(s.slice(i + mark.length, close)) });
       i = close + mark.length;
       continue outer;
+    }
+    const mention = mentionAt(s, i);
+    if (mention) {
+      push(mention[0]);
+      i += mention[1];
+      continue;
     }
     const url = linkAt(s, i);
     if (url) {
@@ -167,24 +197,33 @@ export function parseMessage(s: string): Block[] {
   return blocks;
 }
 
-const spokenRuns = (nodes: Inline[], spoiler: string): string =>
+type Speak = (m: MentionNode) => string;
+const rawMention: Speak = (m) => (m.kind === 'everyone' ? `@${m.id}` : '@');
+
+const spokenRuns = (nodes: Inline[], spoiler: string, speak: Speak): string =>
   nodes
     .map((n) =>
       n.t === 'text' || n.t === 'code'
         ? n.text
         : n.t === 'link'
           ? n.url
-          : n.t === 'spoiler'
-            ? spoiler
-            : spokenRuns(n.children, spoiler),
+          : n.t === 'mention'
+            ? speak(n)
+            : n.t === 'spoiler'
+              ? spoiler
+              : spokenRuns(n.children, spoiler, speak),
     )
     .join('');
 
 // C-10: the message is read as one element, marks dropped and spoilers still covered.
-export const spokenText = (blocks: Block[], spoiler: string) =>
+export const spokenText = (
+  blocks: Block[],
+  spoiler: string,
+  speak: Speak = rawMention,
+) =>
   blocks
     .map((b) =>
-      b.t === 'codeblock' ? b.text : spokenRuns(b.children, spoiler),
+      b.t === 'codeblock' ? b.text : spokenRuns(b.children, spoiler, speak),
     )
     .join('\n');
 

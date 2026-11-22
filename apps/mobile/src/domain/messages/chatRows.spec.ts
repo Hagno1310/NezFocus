@@ -67,7 +67,7 @@ const rows = (items: ChatItem[]) =>
   chatRows(items, { now: NOW, timeZone: TZ, myId: AN });
 
 const heads = (r: ChatRow[]) =>
-  r.map((x) => (x.kind === 'message' ? x.head : 'day'));
+  r.map((x) => (x.kind === 'message' ? x.head : x.kind));
 
 describe('chatRows: gộp nhóm (v1.9, CR-19 #13)', () => {
   it('counts the 5 minutes from the head of the group: 21:07, 21:10 | 21:13, 21:16', () => {
@@ -97,7 +97,7 @@ describe('chatRows: gộp nhóm (v1.9, CR-19 #13)', () => {
       } as Partial<MessageResponse>),
       sent('2', 18, '20:02'),
     ]);
-    expect(heads(r)).toEqual(['day', true, true, true]);
+    expect(heads(r)).toEqual(['day', true, 'system', true]);
   });
 
   it('my outbox entries group with my sent messages (message-states)', () => {
@@ -159,10 +159,11 @@ describe('chatRows: vạch ngày và giờ đầu tin', () => {
       timeZone: TZ,
       myId: AN,
     });
-    expect(later.map((x) => (x.kind === 'day' ? x.day : x.time))).toEqual([
-      { kind: 'yesterday' },
-      { kind: 'yesterday', time: '20:02' },
-    ]);
+    expect(
+      later.map((x) =>
+        x.kind === 'day' ? x.day : x.kind === 'message' && x.time,
+      ),
+    ).toEqual([{ kind: 'yesterday' }, { kind: 'yesterday', time: '20:02' }]);
   });
 
   it('an outbox entry is mine, dated when it was written', () => {
@@ -266,5 +267,69 @@ describe('composerCount (MSG-01 AC5, C-11 bộ đếm)', () => {
 
   it('blank text cannot be sent and shows nothing', () => {
     expect(composerCount('  \n ')).toEqual({ counter: null, canSend: false });
+  });
+});
+
+describe('chatRows: system messages and blocked senders (P2-A4.3)', () => {
+  const opts = { now: NOW, timeZone: TZ, myId: AN };
+  const shape = (rows: ChatRow[]) =>
+    rows.map((r) =>
+      r.kind === 'day'
+        ? 'day'
+        : r.kind === 'blocked'
+          ? `blocked ${r.count}`
+          : r.kind === 'message'
+            ? `${r.kind} ${r.head ? 'head' : 'grouped'}`
+            : r.kind,
+    );
+
+  it('MSG-11: a member_join is its own row and ends a group', () => {
+    const rows = chatRows(
+      [
+        sent('2', 18, '19:56'),
+        sent('4', 18, '19:58', {
+          type: 'member_join',
+          system_data: { user_id: '4' },
+        } as Partial<MessageResponse>),
+        sent('2', 18, '19:59'),
+      ],
+      opts,
+    );
+    expect(shape(rows)).toEqual([
+      'day',
+      'message head',
+      'system',
+      'message head',
+    ]);
+  });
+
+  it('FRIEND-03 AC2: consecutive messages of blocked people fold into one row', () => {
+    const items = [
+      sent('2', 18, '20:02'),
+      sent('9', 18, '20:03'),
+      sent('9', 18, '20:04'),
+      sent('8', 18, '20:05'),
+      sent('2', 18, '20:06'),
+    ];
+    const blocked = new Set(['8', '9']);
+    const rows = chatRows(items, { ...opts, blocked });
+    expect(shape(rows)).toEqual([
+      'day',
+      'message head',
+      'blocked 3',
+      'message head',
+    ]);
+    // "Hiện" opens that run in place.
+    const key = rows.find((r) => r.kind === 'blocked')!.key;
+    expect(
+      shape(chatRows(items, { ...opts, blocked, revealed: new Set([key]) })),
+    ).toEqual([
+      'day',
+      'message head',
+      'message head',
+      'message grouped',
+      'message head',
+      'message head',
+    ]);
   });
 });

@@ -70,7 +70,7 @@ export function MemberDetailScreen({
   );
   const block = memberBlock(access.server, actor, shown);
   const canRoles = hasPermission(access.perms, Permission.MANAGE_ROLES);
-  const rows = memberRoleRows(serverId, access.roles, actor, shown);
+  const rows = memberRoleRows(access.server, access.roles, actor, shown);
 
   const toggle = async (role: RoleResponse, give: boolean) => {
     const r = await setRole(userId, role.id, give);

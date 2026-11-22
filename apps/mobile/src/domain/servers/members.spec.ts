@@ -94,7 +94,7 @@ describe('memberBlock (ROLE-04 AC1, `member-blocked`)', () => {
 describe('memberRoleRows (`member-detail`: by position, locked above the viewer)', () => {
   it('Tuấn on Khánh: highest first, Quản trị locked, others free', () => {
     expect(
-      memberRoleRows(S, roles, actorOf(tuan), khanh).map((r) => [
+      memberRoleRows(server, roles, actorOf(tuan), khanh).map((r) => [
         r.role.name,
         r.checked,
         r.locked,
@@ -108,7 +108,7 @@ describe('memberRoleRows (`member-detail`: by position, locked above the viewer)
 
   it('Tuấn on An (Owner): every row locked, values kept', () => {
     expect(
-      memberRoleRows(S, roles, actorOf(tuan), an).map((r) => [
+      memberRoleRows(server, roles, actorOf(tuan), an).map((r) => [
         r.checked,
         r.locked,
       ]),

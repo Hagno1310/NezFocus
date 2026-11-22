@@ -25,8 +25,11 @@ export function useMembers(serverId: string, channelId?: string) {
   useEffect(() => {
     const key = membersKey(serverId, channelId);
     return onGatewayEvent((e) => {
-      // A newcomer may not see this channel: ask again rather than guess.
-      if (channelId && e.t === 'SERVER_MEMBER_ADD')
+      // A newcomer or new roles may change who sees this channel: ask again, don't guess.
+      if (
+        channelId &&
+        (e.t === 'SERVER_MEMBER_ADD' || e.t === 'SERVER_MEMBER_UPDATE')
+      )
         void qc.invalidateQueries({ queryKey: key });
       else
         qc.setQueryData<List>(key, (list) =>

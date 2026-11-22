@@ -579,7 +579,7 @@ export function createFakeServerRepository(
             : server.system_channel_id,
       });
     },
-    // ponytail: the fake lists only An (id 1); the 24 members of 08 come from the backend seed.
+    // ponytail: khi cần thử S-SET-03 không có backend: thêm 24 thành viên của 08; giờ chỉ có An (id 1).
     async listMembers(serverId) {
       await wait();
       return membersOf(serverId);

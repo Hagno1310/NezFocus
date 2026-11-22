@@ -99,7 +99,7 @@ export const remoteServerRepository: ServerRepository = {
   deleteChannelPermission: async (channelId, targetId) => {
     await api.request(permission(channelId, targetId), { method: 'DELETE' });
   },
-  // ponytail: loads every page up front (MVP servers are small); page on scroll past ~1000.
+  // ponytail: khi server > 1000 thành viên: tải theo trang khi cuộn thay vì tải hết một lần.
   listMembers: async (serverId, channelId) => {
     const all: ServerMember[] = [];
     let after: string | null = null;

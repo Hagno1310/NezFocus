@@ -191,7 +191,7 @@ export class RolesService {
       server_id: serverId.toString(),
       role: response,
     });
-    // Its bits may give or take VIEW_CHANNEL: channels again to everyone (P2-B1.2 #108).
+    // Its bits may give or take VIEW_CHANNEL: channels again to everyone P2-B1.2 (#108).
     if (body.permissions !== undefined) {
       const channels = await this.channels.listForServer(serverId);
       await this.channelEvents.updated(

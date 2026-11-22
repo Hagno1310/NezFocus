@@ -235,7 +235,11 @@ const styles = StyleSheet.create({
   },
   soon: { padding: space[3] },
   loading: { paddingHorizontal: space[3], gap: space[3], paddingTop: space[3] },
-  skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  skeletonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2] + space[1],
+  },
   alone: {
     alignItems: 'center',
     gap: space[2],

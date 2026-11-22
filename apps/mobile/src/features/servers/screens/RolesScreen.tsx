@@ -27,7 +27,7 @@ import { useRoles } from '../hooks/useRoles';
 
 // S-SET-02 `list`, `reorder`, `hierarchy-blocked`, `limit`, `offline`, `create-sheet`,
 // `create-name-taken`; Edge case `long-role-name`, `roles-empty`.
-// ponytail: role colours and hoist are v1.x (Q1); members of a role open P2-A2 (#15).
+// ponytail: role colours and hoist are v1.x (Q1).
 export function RolesScreen({
   serverId,
   onBack,

@@ -62,7 +62,7 @@ export const DispatchEvents = {
   SERVER_CREATE: ServerResponse, // REQ-SRV-01 / SRV-04: to every session of the creator, or of who joins
   SERVER_UPDATE: ServerSummary, // to the members
   SERVER_MEMBER_ADD: ServerMemberEvent, // REQ-SRV-04 AC1: to the members, the newcomer included
-  SERVER_MEMBER_UPDATE: ServerMemberEvent, // REQ-ROLE-04 AC2: roles (timeout with P3-A3), to the members
+  SERVER_MEMBER_UPDATE: ServerMemberEvent, // REQ-ROLE-04 AC2: roles (timeout with P3-A3.1 (#126)), to the members
   SERVER_MEMBER_REMOVE: ServerMemberRemove, // leave / kick / ban (P3-A4.1 #130, P3-A3.1 #126), to the members
   SERVER_ROLE_CREATE: ServerRoleEvent, // REQ-ROLE-01: to the members
   SERVER_ROLE_UPDATE: ServerRoleEvent, // also one per role moved by a reorder

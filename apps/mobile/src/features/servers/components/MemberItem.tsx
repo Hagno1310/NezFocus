@@ -23,6 +23,7 @@ export function MemberItem({
   activity = false,
   right,
   label: own,
+  timeout = false,
   onPress,
 }: {
   member: ServerMember;
@@ -34,12 +35,13 @@ export function MemberItem({
   activity?: boolean; // S-HOME-03: line 2 when they are studying
   right?: ReactNode;
   label?: string; // replaces the role label ("Đã có vai trò")
+  timeout?: boolean; // S-SET-03: "Tạm khóa tới …" in place of the role
   onPress?: () => void;
 }) {
   const { t } = useTranslation();
   const presence = useShownPresence(member.user.id);
   const name = memberName(member);
-  const side = memberRightLabel(server, roles, member, now);
+  const side = memberRightLabel(server, roles, member, timeout ? now : null);
   const label =
     own ??
     (side?.kind === 'owner'

@@ -24,10 +24,10 @@ export function memberRightLabel(
   server: Server,
   roles: readonly RoleResponse[],
   m: ServerMember,
-  now: number,
+  now: number | null, // null: no timeout label (C-28 in the drawer shows the role)
 ): RightLabel {
   if (m.user.id === server.owner_id) return { kind: 'owner' };
-  if (m.timeout_until && Date.parse(m.timeout_until) > now)
+  if (now !== null && m.timeout_until && Date.parse(m.timeout_until) > now)
     return { kind: 'timeout', until: m.timeout_until };
   const top = ranked(server.id, roles).find((r) => m.role_ids.includes(r.id));
   return top && top.id !== server.id ? { kind: 'role', name: top.name } : null;
@@ -55,19 +55,14 @@ export type MemberRoleRow = {
 
 // `member-detail` VAI TRÒ: by position, highest first, without @everyone.
 export function memberRoleRows(
-  serverId: string,
+  server: Server,
   roles: readonly RoleResponse[],
   actor: RoleActor,
   target: ServerMember,
 ): MemberRoleRow[] {
-  const blocked =
-    memberBlock(
-      { id: serverId, owner_id: actor.server.ownerId },
-      actor,
-      target,
-    ) !== null;
-  return ranked(serverId, roles)
-    .filter((r) => r.id !== serverId)
+  const blocked = memberBlock(server, actor, target) !== null;
+  return ranked(server.id, roles)
+    .filter((r) => r.id !== server.id)
     .map((role) => ({
       role,
       checked: target.role_ids.includes(role.id),

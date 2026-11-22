@@ -101,6 +101,7 @@ export function MembersScreen({
             now={now}
             timeZone={timeZone}
             variant="username"
+            timeout
             onPress={() => onOpen(item.user.id)}
           />
         )}
@@ -119,5 +120,9 @@ const styles = StyleSheet.create({
   },
   empty: { textAlign: 'center', paddingTop: space[4] },
   loading: { paddingHorizontal: space[3], gap: space[3], paddingTop: space[3] },
-  skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  skeletonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2] + space[1],
+  },
 });

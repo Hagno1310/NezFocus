@@ -70,7 +70,7 @@ export class MembersService {
         !(await this.permissions.can(userId, scope, Permission.VIEW_CHANNEL))
       )
         throw notFound('Unknown channel');
-      // ponytail: one cached check per member; past ~1000 members compute from one read of roles and overwrites.
+      // ponytail: khi server > 1000 thành viên: tính quyền kênh từ một lần đọc role và overwrite, không hỏi từng người.
       const sees = await Promise.all(
         rows.map((m) =>
           this.permissions.can(

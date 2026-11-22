@@ -60,18 +60,19 @@ export function MemberRow({
       {username}
     </Text>
   ) : null;
+  // C-28: inline, the role belongs to line 1 so line 2 (activity) runs the full width; at 200%
+  // it drops under the username. `username` keeps it centred on the right of the row.
+  const inline = variant === 'inline';
   const labelText = label ? (
     <Text
       variant="label"
       color={labelColor}
       numberOfLines={1}
-      style={styles.label}
+      style={[styles.label, inline && !stacked && styles.end]}
     >
       {label}
     </Text>
   ) : null;
-  // At 200% the inline row puts the role under the username (C-28).
-  const wrapLabel = variant === 'inline' && stacked;
   return (
     <Pressable
       disabled={!onPress}
@@ -89,17 +90,18 @@ export function MemberRow({
           <>
             {nameText}
             {usernameText}
-            {wrapLabel && labelText}
+            {inline && labelText}
           </>
         ) : (
           <View style={styles.line}>
             {nameText}
             {usernameText}
+            {inline && labelText}
           </View>
         )}
         {line2}
       </View>
-      {!wrapLabel && labelText}
+      {!inline && labelText}
       {right}
     </Pressable>
   );
@@ -119,5 +121,6 @@ const styles = StyleSheet.create({
   // C-28 › Thiếu chỗ: the username gives way first, then the name; the role after the username.
   name: { flexShrink: 1 },
   username: { flexShrink: 1000 },
-  label: { flexShrink: 100, maxWidth: '45%' },
+  label: { flexShrink: 100 },
+  end: { marginLeft: 'auto' },
 });

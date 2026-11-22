@@ -286,7 +286,7 @@ function AddSheet({
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   group: {
-    height: size.groupTitle,
+    minHeight: size.groupTitle,
     paddingTop: space[2],
     paddingHorizontal: space[3],
   },

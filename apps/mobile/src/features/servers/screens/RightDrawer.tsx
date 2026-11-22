@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   },
   title: { flexDirection: 'row', alignItems: 'center', gap: space[1] },
   group: {
-    height: size.groupTitle,
+    minHeight: size.groupTitle,
     paddingTop: space[2],
     paddingHorizontal: space[3],
   },

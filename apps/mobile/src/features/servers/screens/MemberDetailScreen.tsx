@@ -167,5 +167,5 @@ const styles = StyleSheet.create({
     gap: space[3],
     paddingVertical: space[3],
   },
-  group: { height: size.groupTitle, paddingTop: space[2] },
+  group: { minHeight: size.groupTitle, paddingTop: space[2] },
 });

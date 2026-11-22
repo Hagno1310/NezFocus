@@ -1,5 +1,6 @@
 import {
   ArrowDown,
+  ArrowUp,
   CircleAlert,
   Clock3,
   Hash,
@@ -255,6 +256,50 @@ function StatusLine({
   );
 }
 
+// S-HOME-01 `new-messages`: 40 high, `surface-2`, under the header. The text jumps to the
+// "Tin nhắn mới" line; the action marks the channel read.
+export function UnreadStrip({
+  text,
+  action,
+  onJump,
+  onMarkRead,
+}: {
+  text: string;
+  action: string;
+  onJump: () => void;
+  onMarkRead: () => void;
+}) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.strip, { backgroundColor: colors['surface-2'] }]}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onJump}
+        style={styles.stripJump}
+      >
+        <Icon as={ArrowUp} size="sm" color="text-primary" />
+        <Text
+          variant="label"
+          weight="600"
+          numberOfLines={1}
+          style={styles.shrink}
+        >
+          {text}
+        </Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onMarkRead}
+        hitSlop={touchSlop(size.banner)}
+      >
+        <Text variant="label" weight="600" color="primary">
+          {action}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
 // C-10 `system` (REQ-MSG-11): icon 16 in the avatar column, `label` text with the names
 // bold `text-primary`, then the time. `parts`: bold runs at odd positions.
 export function SystemLine({
@@ -422,6 +467,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[3],
   },
   pending: { opacity: 0.5 },
+  strip: {
+    height: size.banner,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2],
+    paddingHorizontal: space[3],
+  },
+  stripJump: {
+    flex: 1,
+    height: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2],
+  },
   systemRow: { paddingVertical: 6, alignItems: 'center' },
   systemIcon: { alignItems: 'center' },
   blocked: {

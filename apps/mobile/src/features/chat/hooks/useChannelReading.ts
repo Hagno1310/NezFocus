@@ -1,0 +1,161 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { messageRepository } from '../../../data/messages';
+import { createAckBatcher } from '../../../domain/messages/ackBatcher';
+import type { ChatRow } from '../../../domain/messages/chatRows';
+import type { ChatItem } from '../../../domain/messages/messageStore';
+import {
+  firstUnread,
+  isUnread,
+  unreadStore,
+} from '../../../domain/messages/unread';
+import { markChannelRead } from './useUnread';
+import { useReadTracking } from './useReadTracking';
+
+// Chốt 22/11/2026: back to the last read, at most 100 messages (two pages).
+const MAX_PAGES_BACK = 1;
+const NEVER_READ = '0';
+
+const newer = (a: string, b: string) => BigInt(a) > BigInt(b);
+const lastReadOf = (channelId: string) =>
+  unreadStore.getState()[channelId]?.lastRead ?? null;
+
+// Where the line was when the channel opened (null = nothing unread then).
+const anchorOf = (channelId: string) => {
+  const u = unreadStore.getState()[channelId];
+  return isUnread(u) ? (u!.lastRead ?? NEVER_READ) : null;
+};
+
+// REQ-NOTIF-01 in an open channel: the "Tin nhắn mới" line, the `new-messages` strip, and
+// acks only for what is really seen (SRS 7.3.3).
+export function useChannelReading({
+  channelId,
+  items,
+  myId,
+  loading,
+  reachedStart,
+  loadOlder,
+}: {
+  channelId: string;
+  items: readonly ChatItem[];
+  myId: string;
+  loading: boolean;
+  reachedStart: boolean;
+  loadOlder: () => Promise<void>;
+}) {
+  const { active, canAck } = useReadTracking();
+  // The line stays where it was until the channel is left (02 › Đã đọc)…
+  const [anchor, setAnchor] = useState(() => anchorOf(channelId));
+  // S-HOME-01 `new-messages`: the strip shows while the line is off screen.
+  const [dividerShown, setDividerShown] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+
+  const sent = useMemo(
+    () =>
+      items.flatMap((i) =>
+        i.kind === 'message'
+          ? [
+              {
+                id: i.message.id,
+                authorId: i.message.author.id,
+                at: i.message.created_at,
+              },
+            ]
+          : [],
+      ),
+    [items],
+  );
+  const newFrom = anchor === null ? null : firstUnread(sent, anchor, myId);
+  // The first unread is older than what is loaded.
+  const before =
+    anchor !== null && !reachedStart && !!sent[0] && newer(sent[0].id, anchor);
+
+  // …except back in the foreground with new unread: it moves to the first of them.
+  const wasActive = useRef(active);
+  useEffect(() => {
+    if (
+      active &&
+      !wasActive.current &&
+      isUnread(unreadStore.getState()[channelId])
+    ) {
+      setAnchor(anchorOf(channelId));
+      setDismissed(false);
+    }
+    wasActive.current = active;
+  }, [active, channelId]);
+
+  // Opening with unread further back than the first page: one more page (100 in all).
+  const pagesBack = useRef(0);
+  useEffect(() => {
+    if (loading || !before || pagesBack.current >= MAX_PAGES_BACK) return;
+    pagesBack.current++;
+    void loadOlder().catch(() => {});
+  }, [loading, before, loadOlder]);
+
+  const acks = useMemo(
+    () =>
+      createAckBatcher({
+        send: (c, m) => void messageRepository.ack(c, m).catch(() => {}),
+        setTimer: (fn, ms) => {
+          const id = setTimeout(fn, ms);
+          return () => clearTimeout(id);
+        },
+      }),
+    [],
+  );
+  useEffect(() => () => acks.cancel(), [acks]);
+
+  const newestVisible = useRef<string | null>(null);
+  const canAckNow = useRef(canAck);
+  useEffect(() => {
+    canAckNow.current = canAck;
+    if (!canAck) return acks.cancel();
+    // Back in front / drawer closed: one ack for what is on screen.
+    if (newestVisible.current)
+      acks.seen(channelId, newestVisible.current, lastReadOf(channelId));
+  }, [canAck, acks, channelId]);
+
+  // FlatList `onViewableItemsChanged` (≥ 50% shown). Stable, as FlatList requires.
+  // ponytail: a message taller than the list counts once 50% of it shows; "phủ hết vùng" exactly
+  // needs measuring each row (chốt 22/11/2026).
+  const onViewable = useCallback(
+    ({ viewableItems }: { viewableItems: { item: ChatRow }[] }) => {
+      let newest: string | null = null;
+      setDividerShown(viewableItems.some((v) => v.item.kind === 'new'));
+      for (const { item: r } of viewableItems) {
+        const id =
+          r.kind === 'system'
+            ? r.message.id
+            : r.kind === 'message' && r.item.kind === 'message'
+              ? r.item.message.id
+              : null;
+        if (id && (!newest || newer(id, newest))) newest = id;
+      }
+      newestVisible.current = newest;
+      if (newest && canAckNow.current)
+        acks.seen(channelId, newest, lastReadOf(channelId));
+    },
+    [acks, channelId],
+  );
+
+  const unreadCount = newFrom
+    ? sent.filter((m) => m.authorId !== myId && !newer(newFrom, m.id)).length
+    : 0;
+  const strip =
+    !dismissed && !dividerShown && (newFrom !== null || before)
+      ? {
+          many: before,
+          count: unreadCount,
+          from: sent.find((m) => m.id === newFrom)?.at ?? null,
+        }
+      : null;
+
+  return {
+    newFrom,
+    strip,
+    onViewable,
+    markRead: () => {
+      setDismissed(true);
+      markChannelRead(channelId);
+    },
+  };
+}

@@ -333,3 +333,28 @@ describe('chatRows: system messages and blocked senders (P2-A4.3)', () => {
     ]);
   });
 });
+
+describe('chatRows: "Tin nhắn mới" line (NOTIF-01, P2-A4.4)', () => {
+  it('goes right before the first unread message and starts a new group', () => {
+    const items = [
+      sent('2', 18, '20:02'),
+      sent('2', 18, '20:03'),
+      sent('2', 18, '20:04'),
+    ];
+    const first = (items[1] as Extract<ChatItem, { kind: 'message' }>).message
+      .id;
+    const rows = chatRows(items, {
+      now: NOW,
+      timeZone: TZ,
+      myId: AN,
+      newFrom: first,
+    });
+    expect(rows.map((r) => (r.kind === 'message' ? r.head : r.kind))).toEqual([
+      'day',
+      true,
+      'new',
+      true,
+      false,
+    ]);
+  });
+});

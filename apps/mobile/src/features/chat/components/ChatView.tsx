@@ -49,6 +49,7 @@ import {
   JumpPill,
   MessageBubble,
   SystemLine,
+  UnreadStrip,
   type MessageStatus,
 } from '../../../shared/ui/Chat';
 import { Composer, type ComposerBlock } from '../../../shared/ui/Composer';
@@ -61,13 +62,17 @@ import { Text } from '../../../shared/ui/Text';
 import { useOnline } from '../../gateway/hooks/useOnline';
 import { useMe } from '../../me/hooks/useMe';
 import { avatarUri } from '../../me/avatarUri';
+import { lastActive } from '../../../domain/account/sessions';
 import { useChannelMessages } from '../hooks/useChannelMessages';
+import { useChannelReading } from '../hooks/useChannelReading';
 import { useChatMentions } from '../hooks/useChatMentions';
 import { useChatClock } from '../hooks/useChatClock';
 import { useSendMessage } from '../hooks/useSendMessage';
 import { dayText, timeText } from '../chatText';
 
 const RATE_LIMITED = String(ErrorCode.RateLimited);
+// SRS 7.3.3: a message counts as seen when ≥ 50% of it shows.
+const SEEN = { itemVisiblePercentThreshold: 50 };
 
 // Offset from the bottom (the list is inverted) under which the list counts as "at the bottom".
 const AT_BOTTOM = 48;
@@ -118,6 +123,15 @@ export function ChatView({
   const [picked, setPicked] = useState<PickedMention[]>([]);
   const toSend = encodeMentions(messageToSend(draft), picked);
 
+  const reading = useChannelReading({
+    channelId,
+    items: view.items,
+    myId,
+    loading: view.loading,
+    reachedStart: view.reachedStart,
+    loadOlder: view.loadOlder,
+  });
+
   // FRIEND-03 AC2: "Hiện" opens a folded run until the channel is left (this view unmounts).
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set());
   const rows = useMemo(
@@ -128,9 +142,19 @@ export function ChatView({
         myId,
         blocked: mentions.blocked,
         revealed,
+        newFrom: reading.newFrom,
       }).reverse(),
-    [view.items, now, timeZone, myId, mentions.blocked, revealed],
+    [
+      view.items,
+      now,
+      timeZone,
+      myId,
+      mentions.blocked,
+      revealed,
+      reading.newFrom,
+    ],
   );
+  const lineAt = rows.findIndex((r) => r.kind === 'new');
 
   // REQ-MSG-08: "tự gửi lại sau N giây" counts down while a message waits out a 40029.
   const waiting = view.items.some(
@@ -156,6 +180,20 @@ export function ChatView({
     list.current?.scrollToOffset({ offset: 0, animated: true });
     setLeftAt(null);
   }, []);
+
+  // 02 › Thứ tự tin: opening with unread goes to the line, once. The list is inverted, so
+  // viewPosition 1 puts the line at the top of the screen.
+  const toLine = useCallback(
+    (index: number, animated: boolean) =>
+      list.current?.scrollToIndex({ index, viewPosition: 1, animated }),
+    [],
+  );
+  const jumped = useRef(false);
+  useEffect(() => {
+    if (jumped.current || lineAt < 0) return;
+    jumped.current = true;
+    toLine(lineAt, false);
+  }, [lineAt, toLine]);
 
   const [loadingOlder, setLoadingOlder] = useState(false);
   const onTop = () => {
@@ -283,6 +321,8 @@ export function ChatView({
     switch (row.kind) {
       case 'day':
         return <DateDivider label={dayText(t, row.day)} />;
+      case 'new':
+        return <DateDivider label={t('chat.newLine')} tone="danger" />;
       case 'message':
         return bubble(row);
       case 'blocked':
@@ -341,6 +381,16 @@ export function ChatView({
         renderItem={renderRow}
         onScroll={onScroll}
         scrollEventThrottle={100}
+        viewabilityConfig={SEEN}
+        onViewableItemsChanged={reading.onViewable}
+        // Rows not laid out yet: go near by the average height, then try again.
+        onScrollToIndexFailed={(info) => {
+          list.current?.scrollToOffset({
+            offset: info.averageItemLength * info.index,
+            animated: false,
+          });
+          setTimeout(() => toLine(info.index, false), 100);
+        }}
         onEndReached={onTop}
         onEndReachedThreshold={0.5}
         // `scrolled-up`: new messages do not move what is being read; at the bottom they show.
@@ -368,6 +418,26 @@ export function ChatView({
     >
       {header}
       {belowHeader}
+      {reading.strip && (
+        <UnreadStrip
+          text={
+            reading.strip.many || !reading.strip.from
+              ? t('chat.unreadStripMany')
+              : t('chat.unreadStrip', {
+                  count: reading.strip.count,
+                  time: timeText(
+                    t,
+                    lastActive(reading.strip.from, now, timeZone),
+                  ),
+                })
+          }
+          action={t('chat.markRead')}
+          onJump={() =>
+            lineAt >= 0 ? toLine(lineAt, true) : list.current?.scrollToEnd()
+          }
+          onMarkRead={reading.markRead}
+        />
+      )}
       <View style={styles.flex}>
         {body}
         {leftAt !== null && (

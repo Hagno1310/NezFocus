@@ -37,6 +37,7 @@ import {
   SoloNotificationOpener,
 } from '../../features/study/components/SoloMiniPlayer';
 import { useSolo, useSoloSync } from '../../features/study/hooks/useSolo';
+import { useUnreadTotals } from '../../features/chat/hooks/useUnread';
 import { AskNotifications } from '../../features/study/screens/AskNotifications';
 import { SoloScreen } from '../../features/study/screens/SoloScreen';
 import { StatsScreen } from '../../features/study/screens/StatsScreen';
@@ -747,16 +748,18 @@ function MainTabs() {
   const gallery = useGalleryAction();
   const rootNav =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  // ponytail: sample badges for comparing with the C-03 board; real counts come with P2-A4.4 (#106).
+  // Dev only: sample badges for comparing with the C-03 board (Tasks, Inbox: P4).
   const [sampleBadges, setSampleBadges] = useState(false);
   useSoloSync();
   useStudyStatsSync();
   useMeSync();
   const solo = useSolo();
+  const home = useUnreadTotals().home;
   // C-03 / SRS 3.1: dot on Học while the user is in a Focus Session.
   const studying = !!solo && !endingOf(solo);
   const tabs = {
-    Home: { icon: House, badge: sampleBadges ? 3 : undefined },
+    // REQ-NOTIF-01: mentions of every server + unread DMs.
+    Home: { icon: House, badge: sampleBadges ? 3 : home || undefined },
     Study: {
       icon: Timer,
       badge: studying || sampleBadges ? ('dot' as const) : undefined,

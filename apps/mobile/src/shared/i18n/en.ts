@@ -950,6 +950,11 @@ export const en: Strings = {
     blocked_one: '{{count}} blocked message ·',
     blocked_other: '{{count}} blocked messages ·',
     showBlocked: 'Show',
+    newLine: 'New messages',
+    unreadStrip_one: '{{count}} new message since {{time}}',
+    unreadStrip_other: '{{count}} new messages since {{time}}',
+    unreadStripMany: '99+ new messages',
+    markRead: 'Mark as read',
     // REQ-MSG-06, S-HOME-01 Nội dung chữ › Typing
     typing: {
       one: '{{name}} is typing…',

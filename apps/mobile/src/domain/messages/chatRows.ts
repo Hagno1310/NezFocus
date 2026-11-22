@@ -31,7 +31,9 @@ export type ChatRow =
       time: LastActive;
     }
   // C-10 `blocked` (FRIEND-03 AC2): a run of messages from people I blocked, folded.
-  | { kind: 'blocked'; key: string; count: number };
+  | { kind: 'blocked'; key: string; count: number }
+  // Divider/new "Tin nhắn mới" (NOTIF-01): before the first unread message; cuts the group.
+  | { kind: 'new'; key: 'new' };
 
 // MSG-09 AC3: the sent copy takes its pending copy's key, so the row is updated, not replaced.
 export const itemKey = (item: ChatItem) =>
@@ -77,12 +79,14 @@ export function chatRows(
     myId,
     blocked = NONE,
     revealed = NONE,
+    newFrom = null,
   }: {
     now: number;
     timeZone: string;
     myId: string;
     blocked?: ReadonlySet<string>; // author ids
     revealed?: ReadonlySet<string>; // keys of folded runs opened with "Hiện"
+    newFrom?: string | null; // id of the first unread message
   },
 ): ChatRow[] {
   const rows: ChatRow[] = [];
@@ -100,6 +104,11 @@ export function chatRows(
         key: `d${date}`,
         day: dayLabel(date, now, timeZone),
       });
+    }
+    if (item.kind === 'message' && item.message.id === newFrom) {
+      rows.push({ kind: 'new', key: 'new' });
+      group = null;
+      fold = null;
     }
     const author = authorOf(item, myId);
     if (blocked.has(author) && !isSystem(item)) {

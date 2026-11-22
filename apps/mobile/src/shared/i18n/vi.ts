@@ -950,6 +950,13 @@ export const vi = {
     blocked_one: '{{count}} tin nhắn bị chặn ·',
     blocked_other: '{{count}} tin nhắn bị chặn ·',
     showBlocked: 'Hiện',
+    // REQ-NOTIF-01, S-HOME-01 `new-messages`
+    newLine: 'Tin nhắn mới',
+    unreadStrip_one: '{{count}} tin nhắn mới từ {{time}}',
+    unreadStrip_other: '{{count}} tin nhắn mới từ {{time}}',
+    // Chốt 22/11/2026: more than 100 unread, the first is not loaded.
+    unreadStripMany: '99+ tin nhắn mới',
+    markRead: 'Đánh dấu đã đọc',
     // REQ-MSG-06, S-HOME-01 Nội dung chữ › Typing
     typing: {
       one: '{{name}} đang nhập…',

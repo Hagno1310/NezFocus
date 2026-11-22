@@ -163,6 +163,8 @@ export function createFakeMessageRepository(delayMs = 400): MessageRepository {
       list.push(created);
       return created;
     },
+    // No other device in the Fake: nothing to sync.
+    async ack() {},
   };
 }
 

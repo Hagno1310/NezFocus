@@ -11,4 +11,6 @@ export interface MessageRepository {
     query: Partial<MessageHistoryQuery>,
   ): Promise<MessageResponse[]>; // oldest first
   send(channelId: string, body: CreateMessageRequest): Promise<MessageResponse>;
+  // REQ-NOTIF-01: read up to messageId; MESSAGE_ACK comes back to every session.
+  ack(channelId: string, messageId: string): Promise<void>;
 }

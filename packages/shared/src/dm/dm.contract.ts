@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { MessageAuthor } from '../messages/message.contract.js';
+import {
+  MessageAuthor,
+  MessageResponse,
+} from '../messages/message.contract.js';
 import { SnowflakeId } from '../snowflake.js';
 
 // Paths are relative to /api/v1 (SRS 5.3 DM). Group DM (GDM-*) is v1.x.
@@ -26,5 +29,6 @@ export const DmChannel = z.object({
   type: z.literal('dm'),
   recipient: DmRecipient,
   last_message_id: SnowflakeId.nullable(),
+  last_message: MessageResponse.nullable(), // S-DM-01 line 2: "Bạn: …", "Đã gửi một ảnh"
 });
 export type DmChannel = z.infer<typeof DmChannel>;

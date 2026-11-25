@@ -667,6 +667,19 @@ Rời server khi đang ở phòng: rời phòng luôn, phút đã học giữ nh
 - [ ] Quan hệ ngoài "Kết bạn" / "Chấp nhận" là `ChipStatus`, không phải nút.
 - [ ] Ngoài server: không vai trò, không ngày vào, không Kiểm duyệt.
 
+
+### Chốt 25/11/2026 (bảng hỏi P2-B3 #20, theo khuyến nghị)
+
+| Chỗ | Chốt |
+| --- | --- |
+| Tên | `title-2` đậm 700 (như frame) |
+| Hàng nút | Nút M (44); `ChipStatus` giữ đệm 16 (frame vẽ 12 là lỗi vẽ) |
+| SERVER CHUNG | Icon 32, nền `surface-3`, chữ 600 |
+| `cannot-message` mở ngoài server | Ẩn `PresenceDot` (như mọi màn `40303`); mở trong server vẫn hiện |
+| Menu ⋯ → "Hủy kết bạn" / "Chặn" | Đóng `ActionSheet`, dialog chồng lên sheet hồ sơ, sheet giữ nguyên |
+| Offline | Mọi thao tác gọi API (Kết bạn, Chấp nhận, mục menu theo quan hệ, Chặn) `disabled`; "Sao chép username" vẫn dùng được |
+| Tiêu đề menu ⋯ | `headline` (C-09) |
+
 ---
 
 ## S-HOME-11 · Trình xem tệp 🆕 (v1.9, CR-19 #8)

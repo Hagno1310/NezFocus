@@ -4,6 +4,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import { DB, type Db } from '../../db/db.module.js';
 import { pairKey } from '../friends/friends.repository.js';
 import { FriendshipStatus, friendships } from '../friends/friends.schema.js';
+import { messages } from '../messaging/messages.schema.js';
 import {
   ChannelTypeCode,
   channels,
@@ -45,14 +46,24 @@ export class DmRepository {
   // My DMs as I see them: the other person, newest activity first. One channel or all open.
   async seenBy(userId: bigint, only?: bigint) {
     const other = alias(channelRecipients, 'other');
+    const lastAuthor = alias(users, 'last_author');
     return this.db
       .select({
         channelId: channels.id,
         lastMessageId: channels.lastMessageId,
         user: recipientColumns,
+        last: messages,
+        lastAuthor: {
+          id: lastAuthor.id,
+          username: lastAuthor.username,
+          displayName: lastAuthor.displayName,
+          avatarKey: lastAuthor.avatarKey,
+        },
       })
       .from(channelRecipients)
       .innerJoin(channels, eq(channels.id, channelRecipients.channelId))
+      .leftJoin(messages, eq(messages.id, channels.lastMessageId))
+      .leftJoin(lastAuthor, eq(lastAuthor.id, messages.authorId))
       .innerJoin(
         other,
         and(

@@ -14,6 +14,7 @@ import { ServersModule } from './modules/servers/servers.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
 import { StudyModule } from './modules/study/study.module.js';
 import { FriendsModule } from './modules/friends/friends.module.js';
+import { DmModule } from './modules/channels/dm.module.js';
 import { RedisModule } from './redis/redis.module.js';
 
 @Module({
@@ -32,6 +33,7 @@ import { RedisModule } from './redis/redis.module.js';
     ServersModule,
     MessagingModule,
     FriendsModule,
+    DmModule,
     NotificationsModule,
   ],
 })

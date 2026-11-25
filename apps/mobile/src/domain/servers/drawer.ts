@@ -162,6 +162,7 @@ function apply(s: HomeState, e: DispatchEvent, meId: string | null): HomeState {
     case 'CHANNEL_CREATE':
     case 'CHANNEL_UPDATE':
     case 'CHANNEL_DELETE': {
+      if (!('server_id' in e.d)) return s; // a DM (REQ-DM-03): the DM list handles it
       const list = s.channels[e.d.server_id];
       if (!list) return s; // fetched in full when the server is shown
       const next =

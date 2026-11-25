@@ -35,6 +35,7 @@ import { ServerResponse, ServerSummary } from '../servers/server.contract.js';
 import { SnowflakeId } from '../snowflake.js';
 import { SoloSessionResponse } from '../study/solo.contract.js';
 import { StreakState } from '../study/stats.contract.js';
+import { DmChannel } from '../dm/dm.contract.js';
 import type { DispatchFrame } from './gateway.contract.js';
 
 // SRS 5.4 READY. DMs and relationships are added by the area that owns them.
@@ -47,6 +48,7 @@ export const Ready = z.object({
   settings: UserSettings, // SRS 5.4: my settings (the app reads them cache-first)
   read_states: z.array(ReadState), // REQ-NOTIF-01: every channel I can view and every DM (P2-A4.2)
   relationships: z.array(Relationship), // REQ-FRIEND-04: friends, requests both ways, people I blocked
+  private_channels: z.array(DmChannel), // REQ-DM-03: my DMs not closed on my side
 });
 export type Ready = z.infer<typeof Ready>;
 
@@ -67,7 +69,9 @@ export const DispatchEvents = {
   SERVER_ROLE_CREATE: ServerRoleEvent, // REQ-ROLE-01: to the members
   SERVER_ROLE_UPDATE: ServerRoleEvent, // also one per role moved by a reorder
   SERVER_ROLE_DELETE: ServerRoleDeleted,
-  CHANNEL_CREATE: ChannelResponse, // REQ-SRV-02: only to members who can view it
+  // REQ-SRV-02: only to members who can view it. A DM (DM-03): to both when created, and to
+  // whoever had it closed when a new message reopens it.
+  CHANNEL_CREATE: z.union([ChannelResponse, DmChannel]),
   CHANNEL_UPDATE: ChannelResponse, // also when its overwrites or sync change (REQ-ROLE-03)
   CHANNEL_DELETE: ChannelDeleted,
   MESSAGE_CREATE: MessageCreateEvent, // REQ-MSG-01: to who can view the channel, nonce echoed (MSG-09)

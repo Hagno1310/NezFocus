@@ -59,6 +59,7 @@ export function createFakeGatewayClient(
           presences,
           read_states: [],
           relationships: relationships(),
+          private_channels: [],
         },
       });
       timers = scenario.map((step) => setTimeout(() => emit(step), step.after));

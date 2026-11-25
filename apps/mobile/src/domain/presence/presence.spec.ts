@@ -29,6 +29,7 @@ describe('presence store (REQ-AUTH-05)', () => {
           presences: [binh],
           read_states: [],
           relationships: [],
+          private_channels: [],
         },
       }),
     );

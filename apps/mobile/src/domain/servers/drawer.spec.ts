@@ -143,6 +143,7 @@ describe('reduceHome (Gateway events)', () => {
           presences: [],
           read_states: [],
           relationships: [],
+          private_channels: [],
         },
       }),
     );
@@ -166,6 +167,7 @@ describe('reduceHome (Gateway events)', () => {
           presences: [],
           read_states: [],
           relationships: [],
+          private_channels: [],
         },
       }),
     );

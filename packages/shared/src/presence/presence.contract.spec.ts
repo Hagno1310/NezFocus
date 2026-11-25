@@ -101,6 +101,7 @@ describe('READY presence', () => {
         presences: [{ user_id: '2', status: 'idle', activity: null }],
         read_states: [],
         relationships: [],
+        private_channels: [],
       },
     });
     expect(e?.t === 'READY' && e.d.preferred_status).toBe('invisible');

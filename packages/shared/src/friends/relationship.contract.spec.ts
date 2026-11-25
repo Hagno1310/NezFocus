@@ -115,6 +115,7 @@ describe('relationship contract', () => {
         settings: DEFAULT_USER_SETTINGS,
         read_states: [],
         relationships: [rel],
+        private_channels: [],
       },
     });
     expect(ready?.t === 'READY' && ready.d.relationships).toEqual([rel]);

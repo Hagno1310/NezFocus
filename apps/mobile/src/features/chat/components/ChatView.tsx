@@ -121,6 +121,8 @@ export function ChatView({
   const [picked, setPicked] = useState<PickedMention[]>([]);
   const toSend = encodeMentions(messageToSend(draft), picked);
 
+  // Newest row seen while at the bottom; null = at the bottom now.
+  const [leftAt, setLeftAt] = useState<string | null>(null);
   const reading = useChannelReading({
     channelId,
     items: view.items,
@@ -128,6 +130,7 @@ export function ChatView({
     loading: view.loading,
     reachedStart: view.reachedStart,
     loadOlder: view.loadOlder,
+    atBottom: leftAt === null,
   });
 
   // FRIEND-03 AC2: "Hiện" opens a folded run until the channel is left (this view unmounts).
@@ -166,8 +169,6 @@ export function ChatView({
   }, [waiting]);
 
   const list = useRef<FlatList<ChatRow>>(null);
-  // Newest row seen while at the bottom; null = at the bottom now.
-  const [leftAt, setLeftAt] = useState<string | null>(null);
   const newest = view.items.at(-1);
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const away = e.nativeEvent.contentOffset.y > AT_BOTTOM;

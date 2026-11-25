@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { messageRepository } from '../../../data/messages';
-import { createAckBatcher } from '../../../domain/messages/ackBatcher';
+import {
+  createAckBatcher,
+  seenAtBottom,
+} from '../../../domain/messages/ackBatcher';
 import type { ChatRow } from '../../../domain/messages/chatRows';
 import type { ChatItem } from '../../../domain/messages/messageStore';
 import {
@@ -44,6 +47,7 @@ export function useChannelReading({
   loading,
   reachedStart,
   loadOlder,
+  atBottom,
 }: {
   channelId: string;
   items: readonly ChatItem[];
@@ -51,8 +55,18 @@ export function useChannelReading({
   loading: boolean;
   reachedStart: boolean;
   loadOlder: () => Promise<void>;
+  atBottom: boolean;
 }) {
   const { active, canAck } = useReadTracking();
+  // 02 › Thứ tự tin: opened with unread, the list starts at the bottom and then goes to the
+  // line; what showed at the bottom before the line is on screen was not read.
+  const [openedUnread] = useState(() => anchorOf(channelId) !== null);
+  // The line has been on screen, or (unread further back than the 100 loaded) there is none.
+  const lineReached = useRef(false);
+  const settled = useCallback(
+    () => !openedUnread || lineReached.current,
+    [openedUnread],
+  );
   // The line stays where it was until the channel is left (02 › Đã đọc)…
   const [anchor, setAnchor] = useState(() => anchorOf(channelId));
   // S-HOME-01 `new-messages`: the strip shows while the line is off screen.
@@ -128,25 +142,47 @@ export function useChannelReading({
     canAckNow.current = canAck;
     if (!canAck) return acks.cancel();
     // Back in front / drawer closed: one ack for what is on screen.
-    if (newestVisible.current)
+    if (newestVisible.current && settled())
       acks.seen(channelId, newestVisible.current, lastReadOf(channelId));
-  }, [canAck, acks, channelId]);
+  }, [canAck, settled, acks, channelId]);
+  useEffect(() => {
+    if (many) lineReached.current = true;
+    if (many && canAckNow.current && newestVisible.current)
+      acks.seen(channelId, newestVisible.current, lastReadOf(channelId));
+  }, [many, acks, channelId]);
+
+  const newestId = sent.at(-1)?.id ?? null;
+  const shown = useRef({ newestId, canAck });
+  useEffect(() => {
+    const id = seenAtBottom(shown.current, {
+      newestId,
+      canAck,
+      atBottom,
+      loading,
+      settled: settled(),
+    });
+    shown.current = { newestId, canAck };
+    if (id) acks.seen(channelId, id, lastReadOf(channelId));
+  }, [newestId, canAck, atBottom, loading, settled, acks, channelId]);
 
   // Seen = ≥ 50% shown, or (taller than the list) covering all of it: SRS 7.3.3.
   const onViewable = useCallback(
     (viewableItems: { item: ChatRow }[], tracksLine: boolean) => {
       let newest: string | null = null;
-      if (tracksLine)
-        setDividerShown(viewableItems.some((v) => v.item.kind === 'new'));
+      if (tracksLine) {
+        const line = viewableItems.some((v) => v.item.kind === 'new');
+        if (line) lineReached.current = true;
+        setDividerShown(line);
+      }
       for (const { item: r } of viewableItems) {
         const id = idOf(r);
         if (id && (!newest || newerId(id, newest))) newest = id;
       }
       if (tracksLine || newest) newestVisible.current = newest;
-      if (newest && canAckNow.current)
+      if (newest && canAckNow.current && settled())
         acks.seen(channelId, newest, lastReadOf(channelId));
     },
-    [acks, channelId],
+    [acks, channelId, settled],
   );
   // FlatList `viewabilityConfigCallbackPairs`, which must never change after mount.
   const viewPairs = useMemo(

@@ -38,3 +38,23 @@ export function createAckBatcher({
     },
   };
 }
+
+// FlatList's `maintainVisibleContentPosition` holds viewability callbacks until a scroll event,
+// and at the bottom none comes: what arrives there, or is there on coming back, is on screen.
+export function seenAtBottom(
+  before: { newestId: string | null; canAck: boolean },
+  now: {
+    newestId: string | null;
+    canAck: boolean;
+    atBottom: boolean;
+    loading: boolean;
+    settled: boolean; // opened with unread: the list has gone to the line (02 › Thứ tự tin)
+  },
+): string | null {
+  if (!now.atBottom || !now.canAck || now.loading || !now.settled) return null;
+  // No newest before = the first page: opening goes to the line, viewability acks from there.
+  if (!now.newestId || !before.newestId) return null;
+  return now.newestId !== before.newestId || !before.canAck
+    ? now.newestId
+    : null;
+}

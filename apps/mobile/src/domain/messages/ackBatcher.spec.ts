@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createAckBatcher } from './ackBatcher';
+import { createAckBatcher, seenAtBottom } from './ackBatcher';
 
 // A clock driven by hand: timers fire when `advance` passes them.
 function fakeClock() {
@@ -62,5 +62,32 @@ describe('REQ-NOTIF-01 / SRS 7.3.3: one ack per second, for the newest message s
     acks.cancel();
     clock.advance(1000);
     expect(sent).toEqual([]);
+  });
+});
+
+describe('seenAtBottom', () => {
+  const shown = { newestId: '10', canAck: true };
+  const at = { newestId: '11', canAck: true, atBottom: true, loading: false };
+
+  it('a message arriving at the bottom is seen', () => {
+    expect(seenAtBottom(shown, at)).toBe('11');
+  });
+
+  it('coming back to the foreground at the bottom sees the newest (NOTIF-01 AC3)', () => {
+    expect(seenAtBottom({ newestId: '11', canAck: false }, at)).toBe('11');
+  });
+
+  it('nothing new and nothing changed: no ack', () => {
+    expect(seenAtBottom({ newestId: '11', canAck: true }, at)).toBeNull();
+  });
+
+  it('scrolled up, in the background or covered: no ack', () => {
+    expect(seenAtBottom(shown, { ...at, atBottom: false })).toBeNull();
+    expect(seenAtBottom(shown, { ...at, canAck: false })).toBeNull();
+  });
+
+  it('the first page loading in is left to the "Tin nhắn mới" line', () => {
+    expect(seenAtBottom({ newestId: null, canAck: true }, at)).toBeNull();
+    expect(seenAtBottom(shown, { ...at, loading: true })).toBeNull();
   });
 });

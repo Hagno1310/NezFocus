@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { messageRepository } from '../../../data/messages';
-import { createAckBatcher } from '../../../domain/messages/ackBatcher';
+import {
+  createAckBatcher,
+  seenAtBottom,
+} from '../../../domain/messages/ackBatcher';
 import type { ChatRow } from '../../../domain/messages/chatRows';
 import type { ChatItem } from '../../../domain/messages/messageStore';
 import {
@@ -44,6 +47,7 @@ export function useChannelReading({
   loading,
   reachedStart,
   loadOlder,
+  atBottom,
 }: {
   channelId: string;
   items: readonly ChatItem[];
@@ -51,6 +55,7 @@ export function useChannelReading({
   loading: boolean;
   reachedStart: boolean;
   loadOlder: () => Promise<void>;
+  atBottom: boolean;
 }) {
   const { active, canAck } = useReadTracking();
   // The line stays where it was until the channel is left (02 › Đã đọc)…
@@ -131,6 +136,19 @@ export function useChannelReading({
     if (newestVisible.current)
       acks.seen(channelId, newestVisible.current, lastReadOf(channelId));
   }, [canAck, acks, channelId]);
+
+  const newestId = sent.at(-1)?.id ?? null;
+  const shown = useRef({ newestId, canAck });
+  useEffect(() => {
+    const id = seenAtBottom(shown.current, {
+      newestId,
+      canAck,
+      atBottom,
+      loading,
+    });
+    shown.current = { newestId, canAck };
+    if (id) acks.seen(channelId, id, lastReadOf(channelId));
+  }, [newestId, canAck, atBottom, loading, acks, channelId]);
 
   // Seen = ≥ 50% shown, or (taller than the list) covering all of it: SRS 7.3.3.
   const onViewable = useCallback(

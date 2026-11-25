@@ -29,7 +29,7 @@ import {
 } from '../../../domain/friends/profileSheet';
 import { profileView } from '../../../domain/friends/profileView';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
-import { hideDmList } from '../../../domain/dm/dmStore';
+import { dmWith, hideDmList } from '../../../domain/dm/dmStore';
 import {
   homeStore,
   openChannel,
@@ -46,7 +46,9 @@ import { Icon } from '../../../shared/ui/Icon';
 import { ActionSheet, BottomSheet, Dialog } from '../../../shared/ui/Overlay';
 import { Avatar } from '../../../shared/ui/People';
 import { Text } from '../../../shared/ui/Text';
-import { showToast } from '../../../shared/ui/Toast';
+import { showToast, ToastCard } from '../../../shared/ui/Toast';
+
+const COPIED_MS = 4000; // C-14 toast without an action
 import { useChatClock } from '../../chat/hooks/useChatClock';
 import { openDmWith } from '../../dm/openDm';
 import { avatarUri } from '../../me/avatarUri';
@@ -114,13 +116,20 @@ function ProfileSheet({
   const [unfriend, setUnfriend] = useState(false);
   const [blocking, setBlocking] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
 
+  // Until the profile loads: what the friends list or the DM already knows.
+  const known = useStore(
+    friendsStore,
+    (s) => s.byUser[userId]?.user ?? dmWith(userId)?.recipient,
+  );
+  const user = profile?.user ?? known;
   const self = userId === meId;
   const relationship = live ?? profile?.relationship ?? 'none';
   const deleted = !!profile?.deleted;
   const name = deleted
     ? t('dm.deleted')
-    : (profile?.user.display_name ?? profile?.user.username ?? '');
+    : (user?.display_name ?? user?.username ?? '');
   const v = profileView({
     self,
     deleted,
@@ -179,9 +188,11 @@ function ProfileSheet({
       icon: Copy,
       onPress: () => {
         setMenu(false);
-        void Clipboard.setStringAsync(profile?.user.username ?? '').then(() =>
-          showToast({ message: t('profile.menu.copied') }),
-        );
+        // Over the sheet, like S-HOME-07 `copied`: a plain Toast would sit under it.
+        void Clipboard.setStringAsync(user?.username ?? '').then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), COPIED_MS);
+        });
       },
     },
     ...(relationship === 'friend'
@@ -246,22 +257,32 @@ function ProfileSheet({
 
   return (
     <>
-      <BottomSheet visible={visible} onDismiss={closeMemberProfile}>
+      <BottomSheet
+        visible={visible}
+        onDismiss={closeMemberProfile}
+        above={
+          copied ? (
+            <ToastCard
+              toast={{ message: t('profile.menu.copied'), icon: Check }}
+            />
+          ) : undefined
+        }
+      >
         <View style={styles.block}>
           <Avatar
             name={name}
-            uri={avatarUri(profile?.user.avatar ?? null, '256')}
+            uri={avatarUri(user?.avatar ?? null, '256')}
             deleted={deleted}
             size={96}
             ring="surface-1"
-            presence={v.dot && profile ? presence.status : undefined}
+            presence={v.dot && user ? presence.status : undefined}
           />
           <View style={styles.gap} />
           <Text variant="title-2" weight="700" accessibilityRole="header">
             {name}
           </Text>
-          {!deleted && profile?.user.username && (
-            <Text color="text-secondary">{profile.user.username}</Text>
+          {!deleted && user?.username && (
+            <Text color="text-secondary">{user.username}</Text>
           )}
           {!deleted && profile?.user.bio && (
             <Text numberOfLines={3}>{profile.user.bio}</Text>

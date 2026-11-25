@@ -23,5 +23,7 @@ export function useUserProfile(userId: string | null) {
     queryKey: profileKey(userId ?? ''),
     queryFn: () => fetchProfile(userId!),
     enabled: !!userId,
+    // Try once even when NetInfo says offline: it can be wrong behind a captive Wi-Fi.
+    networkMode: 'offlineFirst',
   });
 }

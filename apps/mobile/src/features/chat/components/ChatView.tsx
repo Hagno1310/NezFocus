@@ -74,6 +74,7 @@ import { useChatMentions } from '../hooks/useChatMentions';
 import { useChatClock } from '../hooks/useChatClock';
 import { useSendMessage } from '../hooks/useSendMessage';
 import { dayText, timeText } from '../chatText';
+import { openMemberProfile } from '../../../domain/friends/profileSheet';
 
 const RATE_LIMITED = String(ErrorCode.RateLimited);
 const CANNOT_MESSAGE = String(ErrorCode.CannotMessageUser);
@@ -317,6 +318,12 @@ export function ChatView({
         status={status}
         mention={!!message && mentions.concerns(message)}
         surface={lifted ? 'surface-2' : undefined}
+        onPressAuthor={() =>
+          openMemberProfile(row.authorId, {
+            serverId,
+            fromTheirDm: !serverId,
+          })
+        }
         liftedTime={lifted ? row.time.time : undefined}
         actions={linksOf(blocks).map((url) => ({
           label: url,

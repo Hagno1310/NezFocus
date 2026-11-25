@@ -29,6 +29,7 @@ import type { SuggestSection } from '../../../shared/ui/MentionSuggest';
 import { avatarUri } from '../../me/avatarUri';
 import { useMembers } from '../../servers/hooks/useMembers';
 import { useServerAccess } from '../../servers/hooks/useServerAccess';
+import { openMemberProfile } from '../../../domain/friends/profileSheet';
 
 const NO_IDS: string[] = [];
 
@@ -205,9 +206,11 @@ export function useChatMentions(
         : n.kind === 'role'
           ? myRoleIds.includes(n.id)
           : n.kind === 'everyone',
-    // Tapping @Bình opens S-HOME-10 with P2-B3.4 (#117); until then nothing.
     onPress: (n) => {
-      if (
+      // S-HOME-10: in a server with its role; in a DM, outside a server (CR-25 #11).
+      if (n.kind === 'user')
+        openMemberProfile(n.id, { serverId, fromTheirDm: !serverId });
+      else if (
         n.kind === 'channel' &&
         serverId &&
         channels?.some((c) => c.id === n.id)

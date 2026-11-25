@@ -13,6 +13,8 @@ export interface LocalMessages {
     serverId: string | null,
     now: number,
   ): Promise<void>;
+  // S-HOME-10 › SERVER CHUNG: "mở server đó ở kênh mở gần nhất" (AUTH-06 v1.9).
+  lastOpened(serverId: string): Promise<string | null>;
   // Keep the newest `keep` of each channel but `open`, and only the `maxChannels` most recent.
   prune(keep: number, maxChannels: number, open?: string): Promise<void>;
 

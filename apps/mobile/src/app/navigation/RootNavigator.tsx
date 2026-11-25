@@ -92,6 +92,8 @@ import {
 } from '../../features/friends/screens/FriendsScreen';
 import { dmView, showDmList } from '../../domain/dm/dmStore';
 import { openDmWith } from '../../features/dm/openDm';
+import { openMemberProfile } from '../../domain/friends/profileSheet';
+import { ProfileSheetHost } from '../../features/friends/components/ProfileSheet';
 import { HomeDrawers } from './HomeDrawers';
 import { InviteRoute } from './InviteRoute';
 import { Placeholder } from './Placeholder';
@@ -463,11 +465,11 @@ function HomeTab() {
         </HomeStack.Screen>
         <HomeStack.Screen name="Friends">
           {({ navigation, route }) => (
-            // ponytail: onOpenProfile (avatar → S-HOME-10) comes with P2-B3.4 (#117).
             <FriendsScreen
               initialTab={route.params?.tab}
               onBack={navigation.goBack}
               onOpenDm={(userId) => openDmWith(userId, navigation.popToTop)}
+              onOpenProfile={(userId) => openMemberProfile(userId)}
             />
           )}
         </HomeStack.Screen>
@@ -785,41 +787,57 @@ function MainTabs() {
         }),
       )
     : [];
+  const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const toHome = () =>
+    nav.navigate('Main', { screen: 'Home', params: { screen: 'HomeRoot' } });
   return (
-    // CR-15: Back at the root of any other tab returns to Home, keeping that tab's state.
-    <Tab.Navigator
-      backBehavior="firstRoute"
-      tabBar={(props) => <MainTabBar {...props} tabs={tabs} />}
-    >
-      <Tab.Screen
-        name="Home"
-        component={HomeTab}
-        options={{ title: t('tabs.home'), headerShown: false }}
+    <>
+      {/* S-HOME-10: one sheet over every tab. */}
+      <ProfileSheetHost
+        onOpenedDm={toHome}
+        onOpenedServer={toHome}
+        onEditProfile={() =>
+          nav.navigate('Main', {
+            screen: 'Me',
+            params: { screen: 'EditProfile' },
+          })
+        }
       />
-      <Tab.Screen
-        name="Study"
-        component={StudyTab}
-        options={{ title: t('tabs.study'), headerShown: false }}
-      />
-      <Tab.Screen name="Tasks" options={{ title: t('tabs.tasks') }}>
-        {() => <Placeholder title={t('tabs.tasks')} />}
-      </Tab.Screen>
-      <Tab.Screen name="Inbox" options={{ title: t('tabs.inbox') }}>
-        {() => <Placeholder title={t('tabs.inbox')} />}
-      </Tab.Screen>
-      <Tab.Screen
-        name="Me"
-        options={{ title: t('tabs.me'), headerShown: false }}
+      {/* CR-15: Back at the root of any other tab returns to Home, keeping that tab's state. */}
+      <Tab.Navigator
+        backBehavior="firstRoute"
+        tabBar={(props) => <MainTabBar {...props} tabs={tabs} />}
       >
-        {() => (
-          <MeTab
-            devActions={
-              __DEV__ ? [...gallery, ...badgeToggle, ...endedActions] : []
-            }
-          />
-        )}
-      </Tab.Screen>
-    </Tab.Navigator>
+        <Tab.Screen
+          name="Home"
+          component={HomeTab}
+          options={{ title: t('tabs.home'), headerShown: false }}
+        />
+        <Tab.Screen
+          name="Study"
+          component={StudyTab}
+          options={{ title: t('tabs.study'), headerShown: false }}
+        />
+        <Tab.Screen name="Tasks" options={{ title: t('tabs.tasks') }}>
+          {() => <Placeholder title={t('tabs.tasks')} />}
+        </Tab.Screen>
+        <Tab.Screen name="Inbox" options={{ title: t('tabs.inbox') }}>
+          {() => <Placeholder title={t('tabs.inbox')} />}
+        </Tab.Screen>
+        <Tab.Screen
+          name="Me"
+          options={{ title: t('tabs.me'), headerShown: false }}
+        >
+          {() => (
+            <MeTab
+              devActions={
+                __DEV__ ? [...gallery, ...badgeToggle, ...endedActions] : []
+              }
+            />
+          )}
+        </Tab.Screen>
+      </Tab.Navigator>
+    </>
   );
 }
 

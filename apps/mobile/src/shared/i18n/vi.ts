@@ -1001,6 +1001,27 @@ export const vi = {
       dnd: 'Không làm phiền',
     },
   },
+  // S-HOME-10 (spec 02 › Hồ sơ thành viên)
+  profile: {
+    message: 'Nhắn tin',
+    add: 'Kết bạn',
+    accept: 'Chấp nhận',
+    edit: 'Sửa hồ sơ',
+    chips: { friend: 'Bạn bè', sent: 'Đã gửi lời mời', blocked: 'Đã chặn' },
+    wantsFriend: '{{name}} muốn kết bạn với bạn',
+    mutual: 'SERVER CHUNG — {{count}}',
+    noMutual: 'Chưa ở chung server nào',
+    more: 'Thêm',
+    menu: {
+      copy: 'Sao chép username',
+      copied: 'Đã sao chép',
+      unfriend: 'Hủy kết bạn',
+      cancelRequest: 'Hủy lời mời',
+      decline: 'Từ chối lời mời',
+      unblock: 'Bỏ chặn',
+      block: 'Chặn',
+    },
+  },
   friends: {
     title: 'Bạn bè',
     add: 'Thêm bạn',

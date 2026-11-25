@@ -26,6 +26,7 @@ import { usePresence } from '../../presence/hooks/usePresence';
 import { TypingLine } from '../../typing/components/TypingLine';
 import { DmStrip } from '../components/DmStrip';
 import { dmName } from './DmList';
+import { openMemberProfile } from '../../../domain/friends/profileSheet';
 
 const asMember = (u: ServerMember['user']): ServerMember => ({
   user: u,
@@ -38,11 +39,9 @@ const asMember = (u: ServerMember['user']): ServerMember => ({
 export function DmScreen({
   channelId,
   onOpenLeft,
-  onOpenProfile,
 }: {
   channelId: string;
   onOpenLeft: () => void;
-  onOpenProfile?: (userId: string) => void; // S-HOME-10 outside a server (P2-B3.4 #117)
 }) {
   const { t } = useTranslation();
   const dm = useStore(dmStore, (s) => s.byId[channelId]);
@@ -173,8 +172,8 @@ export function DmScreen({
             }
             onMenu={onOpenLeft}
             // ponytail: 📞 🎥 on the right come with P3-B6.3 (#157); hidden until then.
-            onPressTitle={
-              onOpenProfile ? () => onOpenProfile(other.id) : undefined
+            onPressTitle={() =>
+              openMemberProfile(other.id, { fromTheirDm: true })
             }
           />
         }

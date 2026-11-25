@@ -116,6 +116,18 @@ export function createLocalMessages(db: () => Promise<LocalDb>): LocalMessages {
         .onConflictDoUpdate({ target: cachedChannels.channelId, set: values });
     },
 
+    async lastOpened(serverId) {
+      const [hit] = await (
+        await db()
+      )
+        .select({ id: cachedChannels.channelId })
+        .from(cachedChannels)
+        .where(eq(cachedChannels.serverId, padId(serverId)))
+        .orderBy(desc(cachedChannels.openedAt))
+        .limit(1);
+      return hit ? unpadId(hit.id) : null;
+    },
+
     async prune(keep, maxChannels, open) {
       const d = await db();
       const channels = await d

@@ -358,7 +358,7 @@ export function BottomSheet({
   titleRight,
 }: {
   visible: boolean;
-  title: string;
+  title?: string; // none: S-HOME-10 starts with the avatar
   children?: ReactNode;
   action?: ButtonProps;
   // Under the main button (S-MOD-03 "Hủy").
@@ -416,23 +416,25 @@ export function BottomSheet({
                 ) : (
                   <Icon as={icon.as} size="hero" color={icon.color} />
                 ))}
-              <View style={styles.sheetTitle}>
-                {onBack && (
-                  <IconButton
-                    icon={ChevronLeft}
-                    label={t('ui.back')}
-                    onPress={onBack}
-                  />
-                )}
-                <Text
-                  variant="title-2"
-                  accessibilityRole="header"
-                  style={[styles.flex, icon?.circle && styles.centerText]}
-                >
-                  {title}
-                </Text>
-                {titleRight}
-              </View>
+              {title !== undefined && (
+                <View style={styles.sheetTitle}>
+                  {onBack && (
+                    <IconButton
+                      icon={ChevronLeft}
+                      label={t('ui.back')}
+                      onPress={onBack}
+                    />
+                  )}
+                  <Text
+                    variant="title-2"
+                    accessibilityRole="header"
+                    style={[styles.flex, icon?.circle && styles.centerText]}
+                  >
+                    {title}
+                  </Text>
+                  {titleRight}
+                </View>
+              )}
               <ScrollView
                 style={styles.shrink}
                 keyboardShouldPersistTaps="handled"

@@ -34,7 +34,10 @@ export function ChannelHeader({
   icon = Hash,
   leading,
   title,
+  username,
   subtitle,
+  subline,
+  onPressTitle,
   onMenu,
   onMembers,
   right,
@@ -44,7 +47,10 @@ export function ChannelHeader({
   // In place of the icon, e.g. the DM avatar (S-DM-02, P2-B3.3).
   leading?: ReactNode;
   title: string;
+  username?: string; // C-04 `dm`: beside the name, gives way first (CR-25 #14)
   subtitle?: string;
+  subline?: ReactNode; // C-04 `dm`: the full ActivityLine in place of the text
+  onPressTitle?: () => void; // S-DM-02: avatar / name → S-HOME-10
   onMenu?: () => void;
   onMembers?: () => void;
   right?: ReactNode;
@@ -72,10 +78,12 @@ export function ChannelHeader({
           onPress={onMenu}
         />
       )}
-      <View
+      <Pressable
         accessible
         accessibilityRole="header"
         accessibilityLabel={subtitle ? `${title}, ${subtitle}` : title}
+        disabled={!onPressTitle}
+        onPress={onPressTitle}
         style={styles.headerTitle}
       >
         <View style={styles.titleRow}>
@@ -83,13 +91,24 @@ export function ChannelHeader({
           <Text variant="headline" numberOfLines={1} style={styles.shrink}>
             {title}
           </Text>
+          {username && (
+            <Text
+              variant="label"
+              color="text-tertiary"
+              numberOfLines={1}
+              style={styles.giveWay}
+            >
+              {username}
+            </Text>
+          )}
         </View>
-        {subtitle && (
-          <Text variant="label" color="text-secondary" numberOfLines={1}>
-            {subtitle}
-          </Text>
-        )}
-      </View>
+        {subline ??
+          (subtitle && (
+            <Text variant="label" color="text-secondary" numberOfLines={1}>
+              {subtitle}
+            </Text>
+          ))}
+      </Pressable>
       {right}
       {onMembers && (
         <IconButton
@@ -454,6 +473,7 @@ export function ChannelStart({ name }: { name: string }) {
 
 const styles = StyleSheet.create({
   shrink: { flexShrink: 1 },
+  giveWay: { flexShrink: 1000 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

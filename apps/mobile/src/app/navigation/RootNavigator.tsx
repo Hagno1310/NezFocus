@@ -90,6 +90,10 @@ import {
   FriendsScreen,
   type FriendsTab,
 } from '../../features/friends/screens/FriendsScreen';
+import { dmView, showDmList } from '../../domain/dm/dmStore';
+import { openDmWith } from '../../features/dm/openDm';
+import { openMemberProfile } from '../../domain/friends/profileSheet';
+import { ProfileSheetHost } from '../../features/friends/components/ProfileSheet';
 import { HomeDrawers } from './HomeDrawers';
 import { InviteRoute } from './InviteRoute';
 import { Placeholder } from './Placeholder';
@@ -190,6 +194,8 @@ function HomeTab() {
   const { t } = useTranslation();
   // S-HOME-02 `no-server`: READY listed none; the drawer becomes the Home root.
   const noServer = useStore(homeStore, (s) => s.servers?.length === 0);
+  // A DM on screen needs the drawers even with no server (S-DM-02 is a Home root like a channel).
+  const dmOpen = useStore(dmView, (s) => s.open !== null);
   return (
     <>
       <HomeStack.Navigator screenOptions={{ headerShown: false }}>
@@ -197,12 +203,14 @@ function HomeTab() {
           {({ navigation }) => {
             const placeholder = (title: string, ticket?: string) => () =>
               navigation.navigate('HomePlaceholder', { title, ticket });
-            const dm = placeholder(t('screens.directMessages'), 'P2-B3 (#20)');
-            return noServer ? (
+            const dm = showDmList;
+            const friends = () => navigation.navigate('Friends');
+            return noServer && !dmOpen ? (
               <NoServerHome
                 onCreate={() => navigation.navigate('CreateServer')}
                 onJoinByCode={() => navigation.navigate('JoinByCode')}
                 onDirectMessages={dm}
+                onFriends={friends}
               />
             ) : (
               <HomeDrawers
@@ -211,6 +219,7 @@ function HomeTab() {
                   onOpenVoice: (channel) =>
                     placeholder(channel.name, 'P3-B1 (#26)')(),
                   onDirectMessages: dm,
+                  onFriends: friends,
                   onInvite: openInviteSheet,
                   menu: {
                     invite: () => {
@@ -456,11 +465,11 @@ function HomeTab() {
         </HomeStack.Screen>
         <HomeStack.Screen name="Friends">
           {({ navigation, route }) => (
-            // ponytail: onOpenDm (💬, row, "Nhắn tin") comes with S-DM-02, P2-B3.3 (#116);
-            // onOpenProfile (avatar → S-HOME-10) with P2-B3.4 (#117).
             <FriendsScreen
               initialTab={route.params?.tab}
               onBack={navigation.goBack}
+              onOpenDm={(userId) => openDmWith(userId, navigation.popToTop)}
+              onOpenProfile={(userId) => openMemberProfile(userId)}
             />
           )}
         </HomeStack.Screen>
@@ -746,8 +755,6 @@ function Welcome({
 function MainTabs() {
   const { t } = useTranslation();
   const gallery = useGalleryAction();
-  const rootNav =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   // Dev only: sample badges for comparing with the C-03 board (Tasks, Inbox: P4).
   const [sampleBadges, setSampleBadges] = useState(false);
   useSoloSync();
@@ -771,17 +778,6 @@ function MainTabs() {
   const badgeToggle = __DEV__
     ? [{ label: 'Badge mẫu', onPress: () => setSampleBadges((b) => !b) }]
     : [];
-  // ponytail: S-DM-04's real entry is the "Bạn bè" row of S-DM-01, P2-B3.3 (#116).
-  const friendsEntry = [
-    {
-      label: t('friends.title'),
-      onPress: () =>
-        rootNav.navigate('Main', {
-          screen: 'Home',
-          params: { screen: 'Friends' },
-        }),
-    },
-  ];
   // Dev: the Fake cannot end a session, so these stand in for 40100 / 40103 / Gateway 4004.
   const endedActions = __DEV__
     ? (['password_reset', 'revoked', 'reuse_detected', 'expired'] as const).map(
@@ -791,43 +787,57 @@ function MainTabs() {
         }),
       )
     : [];
+  const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const toHome = () =>
+    nav.navigate('Main', { screen: 'Home', params: { screen: 'HomeRoot' } });
   return (
-    // CR-15: Back at the root of any other tab returns to Home, keeping that tab's state.
-    <Tab.Navigator
-      backBehavior="firstRoute"
-      tabBar={(props) => <MainTabBar {...props} tabs={tabs} />}
-    >
-      <Tab.Screen
-        name="Home"
-        component={HomeTab}
-        options={{ title: t('tabs.home'), headerShown: false }}
+    <>
+      {/* S-HOME-10: one sheet over every tab. */}
+      <ProfileSheetHost
+        onOpenedDm={toHome}
+        onOpenedServer={toHome}
+        onEditProfile={() =>
+          nav.navigate('Main', {
+            screen: 'Me',
+            params: { screen: 'EditProfile' },
+          })
+        }
       />
-      <Tab.Screen
-        name="Study"
-        component={StudyTab}
-        options={{ title: t('tabs.study'), headerShown: false }}
-      />
-      <Tab.Screen name="Tasks" options={{ title: t('tabs.tasks') }}>
-        {() => <Placeholder title={t('tabs.tasks')} />}
-      </Tab.Screen>
-      <Tab.Screen name="Inbox" options={{ title: t('tabs.inbox') }}>
-        {() => <Placeholder title={t('tabs.inbox')} />}
-      </Tab.Screen>
-      <Tab.Screen
-        name="Me"
-        options={{ title: t('tabs.me'), headerShown: false }}
+      {/* CR-15: Back at the root of any other tab returns to Home, keeping that tab's state. */}
+      <Tab.Navigator
+        backBehavior="firstRoute"
+        tabBar={(props) => <MainTabBar {...props} tabs={tabs} />}
       >
-        {() => (
-          <MeTab
-            devActions={
-              __DEV__
-                ? [...friendsEntry, ...gallery, ...badgeToggle, ...endedActions]
-                : []
-            }
-          />
-        )}
-      </Tab.Screen>
-    </Tab.Navigator>
+        <Tab.Screen
+          name="Home"
+          component={HomeTab}
+          options={{ title: t('tabs.home'), headerShown: false }}
+        />
+        <Tab.Screen
+          name="Study"
+          component={StudyTab}
+          options={{ title: t('tabs.study'), headerShown: false }}
+        />
+        <Tab.Screen name="Tasks" options={{ title: t('tabs.tasks') }}>
+          {() => <Placeholder title={t('tabs.tasks')} />}
+        </Tab.Screen>
+        <Tab.Screen name="Inbox" options={{ title: t('tabs.inbox') }}>
+          {() => <Placeholder title={t('tabs.inbox')} />}
+        </Tab.Screen>
+        <Tab.Screen
+          name="Me"
+          options={{ title: t('tabs.me'), headerShown: false }}
+        >
+          {() => (
+            <MeTab
+              devActions={
+                __DEV__ ? [...gallery, ...badgeToggle, ...endedActions] : []
+              }
+            />
+          )}
+        </Tab.Screen>
+      </Tab.Navigator>
+    </>
   );
 }
 

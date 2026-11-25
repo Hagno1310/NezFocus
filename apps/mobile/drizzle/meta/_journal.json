@@ -15,6 +15,13 @@
       "when": 1795190943334,
       "tag": "0001_strange_purple_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1795610590978,
+      "tag": "0002_outstanding_cassandra_nova",
+      "breakpoints": true
     }
   ]
 }

@@ -36,6 +36,7 @@ import { startUnreadLifecycle } from './unreadLifecycle';
 import { startHomeLifecycle } from './homeLifecycle';
 import { startPresenceLifecycle } from './presenceLifecycle';
 import { startFriendsLifecycle } from './friendsLifecycle';
+import { startDmLifecycle } from './dmLifecycle';
 import { startSettingsLifecycle } from './settingsLifecycle';
 import { interacted } from '../shared/interaction';
 import { linking } from './navigation/linking';
@@ -138,6 +139,7 @@ export default function App() {
   useEffect(startHomeLifecycle, []);
   useEffect(startPresenceLifecycle, []);
   useEffect(startFriendsLifecycle, []);
+  useEffect(startDmLifecycle, []);
   useEffect(startSettingsLifecycle, []);
   useEffect(startMessagesLifecycle, []);
   useEffect(startGatewayLifecycle, []);

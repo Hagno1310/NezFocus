@@ -13,8 +13,10 @@ export const messageRepository = pickRepository('messages', {
 
 // One store for the whole app: the cache and outbox on the local DB (SRS 8.7), the network
 // behind messageRepository. Fake or not, messages still go through the real outbox.
+export const localMessages = createLocalMessages(localDb);
+
 export const messageStore = createMessageStore({
-  local: createLocalMessages(localDb),
+  local: localMessages,
   remote: messageRepository,
   now: Date.now,
   newNonce: randomUUID,

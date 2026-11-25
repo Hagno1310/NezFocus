@@ -93,23 +93,32 @@ export function ServerRail({
   onSelect,
   onDirectMessages,
   onAdd,
+  dmSelected = false,
 }: {
   servers: readonly ServerSummary[];
   selectedId: string | null;
   onSelect: (serverId: string) => void;
   onDirectMessages: () => void;
   onAdd: () => void;
+  dmSelected?: boolean; // S-DM-01 is showing
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const unread = useUnreadTotals().servers;
+  const totals = useUnreadTotals();
+  const unread = totals.servers;
   return (
     <ScrollView
       style={[styles.rail, { backgroundColor: colors.bg }]}
       contentContainerStyle={styles.railContent}
       showsVerticalScrollIndicator={false}
     >
-      <RailItem label={t('servers.drawer.dm')} onPress={onDirectMessages}>
+      {/* Spec 09 › Badge: 💬 = number of DMs with unread messages. */}
+      <RailItem
+        label={t('servers.drawer.dm')}
+        selected={dmSelected}
+        mentions={totals.dms}
+        onPress={onDirectMessages}
+      >
         <Icon as={MessageCircle} size="lg" color="text-primary" />
       </RailItem>
       <View style={styles.dividerRow}>

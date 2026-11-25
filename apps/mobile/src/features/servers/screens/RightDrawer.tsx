@@ -22,6 +22,7 @@ import { Text } from '../../../shared/ui/Text';
 import { MemberItem } from '../components/MemberItem';
 import { useMembers } from '../hooks/useMembers';
 import { useServerAccess } from '../hooks/useServerAccess';
+import { openMemberProfile } from '../../../domain/friends/profileSheet';
 
 type Tab = 'members' | 'tasks' | 'pins';
 
@@ -204,7 +205,11 @@ function ChannelMembers({
                 now={now}
                 timeZone={timeZone}
                 activity
-                // ponytail: S-HOME-10 opens from here with P2-B3.4 (#117); until then a tap does nothing.
+                onPress={() =>
+                  openMemberProfile(item.member.user.id, {
+                    serverId: access.server.id,
+                  })
+                }
               />
             )
           }

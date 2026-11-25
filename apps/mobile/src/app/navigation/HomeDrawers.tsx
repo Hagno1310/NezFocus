@@ -16,6 +16,8 @@ import { useStore } from 'zustand';
 import { homeStore, openChannel } from '../../domain/servers/homeStore';
 import { chatCover } from '../../features/chat/hooks/useReadTracking';
 import { ChannelScreen } from '../../features/chat/screens/ChannelScreen';
+import { dmView } from '../../domain/dm/dmStore';
+import { DmScreen } from '../../features/dm/screens/DmScreen';
 import {
   LeftDrawer,
   type LeftDrawerActions,
@@ -68,8 +70,11 @@ function ChannelHost() {
     'LeftDrawer' as never,
   );
   const open = useStore(homeStore, (s) => s.open);
+  const dm = useStore(dmView, (s) => s.open);
   const openLeft = () => leftDrawer?.openDrawer();
   const openRight = () => navigation.openDrawer();
+  // S-DM-02 is a Home root like a channel (CR-15): Back leaves the app, ≡ opens S-DM-01.
+  if (dm) return <DmScreen channelId={dm} onOpenLeft={openLeft} />;
   if (open)
     return (
       <ChannelScreen
@@ -101,6 +106,13 @@ function LeftDrawerContent({
     () =>
       homeStore.subscribe((s, prev) => {
         if (s.open !== prev.open) navigation.closeDrawer();
+      }),
+    [navigation],
+  );
+  useEffect(
+    () =>
+      dmView.subscribe((s, prev) => {
+        if (s.open && s.open !== prev.open) navigation.closeDrawer();
       }),
     [navigation],
   );

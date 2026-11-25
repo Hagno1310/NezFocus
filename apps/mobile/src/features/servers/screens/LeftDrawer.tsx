@@ -56,11 +56,14 @@ import { useServerAccess } from '../hooks/useServerAccess';
 import { ChannelRow } from '../components/ChannelRow';
 import { ServerMenu, type ServerMenuActions } from '../components/ServerMenu';
 import { ServerRail } from '../components/ServerRail';
+import { dmView, hideDmList } from '../../../domain/dm/dmStore';
+import { DmList } from '../../dm/screens/DmList';
 
 export type LeftDrawerActions = {
   onOpenChannel: (channel: ChannelResponse) => void; // text: closes the drawer onto it
   onOpenVoice: (channel: ChannelResponse) => void; // S-ROOM-01/02 not-joined
   onDirectMessages: () => void; // S-DM-01
+  onFriends: () => void; // S-DM-04, from S-DM-01's "Bạn bè"
   onAdd: () => void; // S-HOME-06
   onInvite: (serverId: string) => void; // S-HOME-07
   // S-HOME-09 rows (the menu itself opens here, from the server name). "Tạo kênh" opens
@@ -424,17 +427,24 @@ export function LeftDrawer({ actions }: { actions: LeftDrawerActions }) {
   const insets = useSafeAreaInsets();
   const servers = useStore(homeStore, (s) => s.servers) ?? [];
   const selectedId = useStore(homeStore, (s) => s.selectedServerId);
+  const dmShown = useStore(dmView, (s) => s.listShown);
   const server = servers.find((s) => s.id === selectedId);
   return (
     <View style={[styles.drawer, { paddingTop: insets.top }]}>
       <ServerRail
         servers={servers}
-        selectedId={selectedId}
-        onSelect={selectServer}
+        selectedId={dmShown ? null : selectedId}
+        dmSelected={dmShown}
+        onSelect={(id) => {
+          hideDmList();
+          selectServer(id);
+        }}
         onDirectMessages={actions.onDirectMessages}
         onAdd={actions.onAdd}
       />
-      {server ? (
+      {dmShown ? (
+        <DmList onFriends={actions.onFriends} />
+      ) : server ? (
         <ChannelPanel server={server} actions={actions} />
       ) : (
         <ChannelPanelLoading />
@@ -464,14 +474,17 @@ export function NoServerHome({
   onCreate,
   onJoinByCode,
   onDirectMessages,
+  onFriends,
 }: {
   onCreate: () => void;
   onJoinByCode: () => void;
   onDirectMessages: () => void;
+  onFriends: () => void;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const dmShown = useStore(dmView, (s) => s.listShown);
   return (
     <View
       style={[
@@ -482,25 +495,33 @@ export function NoServerHome({
       <ServerRail
         servers={[]}
         selectedId={null}
+        dmSelected={dmShown}
         onSelect={() => {}}
         onDirectMessages={onDirectMessages}
         onAdd={onCreate}
       />
-      <View style={[styles.empty, { backgroundColor: colors['surface-1'] }]}>
-        <EmptyState
-          mascot
-          title={t('servers.drawer.noServerTitle')}
-          body={t('servers.drawer.noServerBody')}
-        />
-        <View style={styles.emptyActions}>
-          <Button label={t('servers.drawer.createStudy')} onPress={onCreate} />
-          <Button
-            variant="secondary"
-            label={t('servers.drawer.join')}
-            onPress={onJoinByCode}
+      {dmShown ? (
+        <DmList onFriends={onFriends} />
+      ) : (
+        <View style={[styles.empty, { backgroundColor: colors['surface-1'] }]}>
+          <EmptyState
+            mascot
+            title={t('servers.drawer.noServerTitle')}
+            body={t('servers.drawer.noServerBody')}
           />
+          <View style={styles.emptyActions}>
+            <Button
+              label={t('servers.drawer.createStudy')}
+              onPress={onCreate}
+            />
+            <Button
+              variant="secondary"
+              label={t('servers.drawer.join')}
+              onPress={onJoinByCode}
+            />
+          </View>
         </View>
-      </View>
+      )}
     </View>
   );
 }

@@ -125,4 +125,14 @@ describe('createLocalMessages (SRS 8.7)', () => {
     expect(await db.messages('8')).toHaveLength(1);
     expect((await db.outbox()).map((e) => e.nonce)).toEqual(['b']);
   });
+
+  it('S-HOME-10: the channel of a server opened most recently', async () => {
+    const db = createTestDb();
+    const local = createLocalMessages(async () => db);
+    expect(await local.lastOpened('1')).toBeNull();
+    await local.touchChannel('7', '1', 100);
+    await local.touchChannel('8', '1', 300);
+    await local.touchChannel('9', '2', 400);
+    expect(await local.lastOpened('1')).toBe('8');
+  });
 });

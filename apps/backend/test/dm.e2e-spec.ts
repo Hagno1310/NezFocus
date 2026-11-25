@@ -207,6 +207,7 @@ describe('DM (e2e)', () => {
             deleted: false,
           }),
           last_message_id: null,
+          last_message: null,
         },
       ]);
       before.close();
@@ -292,7 +293,15 @@ describe('DM (e2e)', () => {
       const sent = (await send(binh, dm, 'Mai đi thư viện không?').expect(201))
         .body as { id: string };
       const reopened = await gw.next('CHANNEL_CREATE');
-      expect(reopened.d).toMatchObject({ id: dm, last_message_id: sent.id });
+      expect(reopened.d).toMatchObject({
+        id: dm,
+        last_message_id: sent.id,
+        last_message: {
+          id: sent.id,
+          content: 'Mai đi thư viện không?',
+          author: { id: binh.id },
+        },
+      });
       gw.close();
       const [row] = await db
         .select()

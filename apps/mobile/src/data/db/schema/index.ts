@@ -2,3 +2,4 @@
 export * from './kv';
 export * from './messages';
 export * from './friends';
+export * from './dm';

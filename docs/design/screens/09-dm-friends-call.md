@@ -537,6 +537,22 @@ Frame đối chiếu bằng pen.dev trước khi code; frame thắng trừ khi l
 | READY | `private_channels` và read state chỉ gồm DM chưa đóng ở phía mình |
 | Seed | Tin cuối của Tuấn là tin chữ (tin cuộc gọi đến với P3-B6.3 #157) |
 
+## Chốt 25/11/2026 (bảng hỏi P2-B3 #20, phần màn hình, theo khuyến nghị)
+
+Frame đối chiếu bằng pen.dev trước khi code; frame thắng trừ khi là lỗi vẽ.
+
+| Chỗ | Chốt |
+| --- | --- |
+| `ChannelHeader · dm` | Cao 56 kể cả có dòng phụ (giữ chốt C-04 19/11; frame vẽ 64); avatar **28**; bên phải trống ở MVP (board vẽ 👥 / "Đang hoạt động" là bản cũ, dùng "Trực tuyến") |
+| `deleted-account` | "Tài khoản đã bị xóa" ở chỗ tên, không dòng phụ |
+| `blocked-by-me` | Header không `PresenceDot`, không dòng phụ |
+| `DMRow` ngoại tuyến | Có chấm vòng ngoại tuyến (như frame) |
+| `close-dm` | Tiêu đề `ActionSheet` giữ `headline` (C-09); hàng không nhấc lên; "Đánh dấu đã đọc" chỉ khi có tin chưa đọc; DM của tài khoản đã xóa không có "Chặn" |
+| Dải `not-friend` / `not-friend-sent` / `blocked-by-me` | Nút `Button · S` (40) |
+| `empty` | Không badge 💬 (frame vẽ "1" là lỗi dữ liệu mẫu) |
+| `offline` | `Banner` trong panel, giữa tiêu đề và hàng "Bạn bè"; mọi thao tác gọi API trong `close-dm` `disabled` |
+| Header DM `deleted-account` | Chạm vẫn mở S-HOME-10 dạng `deleted` |
+
 ## Câu hỏi còn mở
 
 Không còn. 21 câu chốt 20/10/2026 (chủ dự án đồng ý cả 21); hành vi mới ở `SRS_v1.2_change_notes.md` mục 11 (CR-06, đã áp vào SRS v1.6 ngày 21/10/2026). Cập nhật 30/10/2026 theo CR-12, CR-15, CR-19, CR-21, CR-24, CR-25 (đã áp vào SRS v1.9, Phụ lục 11.13).

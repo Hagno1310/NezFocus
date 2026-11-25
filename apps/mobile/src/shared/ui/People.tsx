@@ -20,6 +20,7 @@ export type Presence = 'online' | 'idle' | 'dnd' | 'offline';
 const initialType: Record<AvatarSize, TypeVariant> = {
   20: 'tab',
   24: 'tab',
+  28: 'tab',
   32: 'label',
   40: 'body',
   48: 'headline', // S-DM-05 card

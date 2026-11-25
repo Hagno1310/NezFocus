@@ -15,6 +15,7 @@ const dm: DmChannel = {
   type: 'dm',
   recipient: binh,
   last_message_id: null,
+  last_message: null,
 };
 
 // P2-B3.1 (#114): REQ-DM-01..03, AUTH-06 AC5, SRS 5.3 DM / Account, 5.4.

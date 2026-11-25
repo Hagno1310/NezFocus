@@ -1,5 +1,5 @@
 {
-  "version": "2.22",
+  "version": "2.25",
   "children": [
     {
       "type": "frame",
@@ -160557,7 +160557,7 @@
           "id": "cpa7A",
           "layoutPosition": "absolute",
           "x": 0,
-          "y": 502,
+          "y": 368,
           "name": "Sheet",
           "width": 390,
           "fill": "$surface-1",
@@ -160585,6 +160585,16 @@
             0
           ],
           "children": [
+            {
+              "id": "YRx4S",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-1"
+            },
             {
               "type": "frame",
               "id": "hhmBo",
@@ -160617,6 +160627,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                60,
+                24,
                 8,
                 24
               ],
@@ -160629,6 +160641,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "RoiFa",
+                      "x": -6,
+                      "y": -6,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 108,
+                      "height": 108
+                    },
                     {
                       "id": "S11Yjt",
                       "type": "ref",
@@ -160670,7 +160692,7 @@
                   "id": "D3XkT",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -160695,28 +160717,98 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "JXiY1",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "NHuhg",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Bán tài liệu ôn thi giá rẻ · inbox mình",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "MnOav",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Thành viên từ 12/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "W9fRPG",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "jvKsU",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "B3dMXr",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "GIỚI THIỆU",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "JXiY1",
+                              "name": "Pf bio",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Bán tài liệu ôn thi giá rẻ · inbox mình",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-body",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "JnJPK",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "G5tpc",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "TRONG SERVER",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "MnOav",
+                              "name": "Pf line",
+                              "fill": "$text-secondary",
+                              "content": "Thành viên từ 12/10/2026",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -160763,18 +160855,6 @@
                           "content": "Kết bạn"
                         }
                       }
-                    },
-                    {
-                      "id": "MqN15",
-                      "type": "ref",
-                      "ref": "WNKGn",
-                      "name": "Btn more",
-                      "descendants": {
-                        "x4lYUc": {
-                          "icon": "ellipsis",
-                          "fill": "$text-primary"
-                        }
-                      }
                     }
                   ]
                 }
@@ -160787,6 +160867,32 @@
               "width": "fill_container",
               "height": "fit_content(0)",
               "layout": "vertical"
+            },
+            {
+              "type": "frame",
+              "id": "yiT7a",
+              "layoutPosition": "absolute",
+              "x": 342,
+              "y": 12,
+              "name": "Btn more · banner",
+              "width": 36,
+              "height": 36,
+              "fill": "$scrim",
+              "cornerRadius": 18,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "LD5TQ",
+                  "name": "More icon",
+                  "width": 20,
+                  "height": 20,
+                  "icon": "ellipsis",
+                  "library": "lucide",
+                  "fill": "$text-primary"
+                }
+              ]
             }
           ]
         }
@@ -161167,7 +161273,7 @@
           "id": "z1osoH",
           "layoutPosition": "absolute",
           "x": 0,
-          "y": 502,
+          "y": 345,
           "name": "Sheet",
           "width": 390,
           "fill": "$surface-1",
@@ -161195,6 +161301,16 @@
             0
           ],
           "children": [
+            {
+              "id": "Bdq7Y",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-2"
+            },
             {
               "type": "frame",
               "id": "FjWc9",
@@ -161227,6 +161343,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                60,
+                24,
                 8,
                 24
               ],
@@ -161239,6 +161357,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "nW9O5",
+                      "x": -6,
+                      "y": -6,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 108,
+                      "height": 108
+                    },
                     {
                       "id": "C1A8v",
                       "type": "ref",
@@ -161275,7 +161403,7 @@
                   "id": "q0zAgU",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -161300,28 +161428,98 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "ocmaz",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "GV2nb",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Lớp trưởng D22CN05 · hỏi bài cứ tag mình",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "lov73",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Trưởng nhóm · Thành viên từ 02/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "s3uRjp",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "dpvWY",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "hpt2x",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "GIỚI THIỆU",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "ocmaz",
+                              "name": "Pf bio",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Lớp trưởng D22CN05 · hỏi bài cứ tag mình",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-body",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "eNyUT",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "nCfF5",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "TRONG SERVER",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "lov73",
+                              "name": "Pf line",
+                              "fill": "$text-secondary",
+                              "content": "Trưởng nhóm · Thành viên từ 02/10/2026",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -161354,30 +161552,35 @@
                       }
                     },
                     {
-                      "id": "RvKxo",
-                      "type": "ref",
-                      "ref": "UajXt",
-                      "name": "Chip Bạn bè",
-                      "descendants": {
-                        "A7zxrZ": {
-                          "icon": "user-check"
-                        },
-                        "dJNsJ": {
-                          "content": "Bạn bè"
+                      "type": "frame",
+                      "id": "Oaf7X",
+                      "name": "Btn bạn bè (icon)",
+                      "width": 44,
+                      "height": 44,
+                      "cornerRadius": 12,
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "padding": [
+                        0,
+                        0,
+                        0,
+                        3
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "m4ggyU",
+                          "name": "UserCheck icon",
+                          "width": 18,
+                          "height": 18,
+                          "icon": "user-check",
+                          "library": "lucide",
+                          "fill": "$text-secondary"
                         }
-                      }
-                    },
-                    {
-                      "id": "S4JGe",
-                      "type": "ref",
-                      "ref": "WNKGn",
-                      "name": "Btn more",
-                      "descendants": {
-                        "x4lYUc": {
-                          "icon": "ellipsis",
-                          "fill": "$text-primary"
-                        }
-                      }
+                      ]
                     }
                   ]
                 }
@@ -161390,6 +161593,32 @@
               "width": "fill_container",
               "height": "fit_content(0)",
               "layout": "vertical"
+            },
+            {
+              "type": "frame",
+              "id": "c7agJs",
+              "layoutPosition": "absolute",
+              "x": 342,
+              "y": 12,
+              "name": "Btn more · banner",
+              "width": 36,
+              "height": 36,
+              "fill": "$scrim",
+              "cornerRadius": 18,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "Aa3fn",
+                  "name": "More icon",
+                  "width": 20,
+                  "height": 20,
+                  "icon": "ellipsis",
+                  "library": "lucide",
+                  "fill": "$text-primary"
+                }
+              ]
             }
           ]
         }
@@ -161770,7 +161999,7 @@
           "id": "o3D60t",
           "layoutPosition": "absolute",
           "x": 0,
-          "y": 446,
+          "y": 312,
           "name": "Sheet",
           "width": 390,
           "fill": "$surface-1",
@@ -161798,6 +162027,16 @@
             0
           ],
           "children": [
+            {
+              "id": "oM6f2",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-3"
+            },
             {
               "type": "frame",
               "id": "VtKKR",
@@ -161830,6 +162069,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                60,
+                24,
                 8,
                 24
               ],
@@ -161842,6 +162083,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "qlkNk",
+                      "x": -6,
+                      "y": -6,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 108,
+                      "height": 108
+                    },
                     {
                       "id": "wn0sg",
                       "type": "ref",
@@ -161878,7 +162129,7 @@
                   "id": "zphGo",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -161903,28 +162154,98 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "t2tuD6",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "i4HI7v",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "K22 Điện tử",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "fd7Al",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Thành viên từ 03/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ijLpC",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "e3Bkzx",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "eJTqd",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "GIỚI THIỆU",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "t2tuD6",
+                              "name": "Pf bio",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "K22 Điện tử",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-body",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "z9q6Z",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "M5Cf6",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "TRONG SERVER",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "fd7Al",
+                              "name": "Pf line",
+                              "fill": "$text-secondary",
+                              "content": "Thành viên từ 03/10/2026",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -161990,30 +162311,43 @@
                       }
                     },
                     {
-                      "id": "sDlVT",
-                      "type": "ref",
-                      "ref": "UajXt",
-                      "name": "Chip Đã gửi lời mời",
-                      "descendants": {
-                        "A7zxrZ": {
-                          "icon": "send"
-                        },
-                        "dJNsJ": {
-                          "content": "Đã gửi lời mời"
+                      "type": "frame",
+                      "id": "e2ikjE",
+                      "name": "Btn đã gửi (icon, disabled)",
+                      "width": 44,
+                      "height": 44,
+                      "cornerRadius": 12,
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "padding": [
+                        0,
+                        0,
+                        0,
+                        3
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "path",
+                          "id": "aMT7q",
+                          "name": "UserSent icon",
+                          "geometry": "M16 21v-2a4 4 0 0 0-4-4h-6a4 4 0 0 0-4 4v2m11-14a4 4 0 1 1-8 0 4 4 0 1 1 8 0m3 4h6m-3-3l3 3-3 3",
+                          "viewBox": [
+                            0,
+                            0,
+                            24,
+                            24
+                          ],
+                          "width": 18,
+                          "height": 18,
+                          "stroke": "$text-tertiary",
+                          "strokeWidth": 1.5,
+                          "strokeLinejoin": "round",
+                          "strokeLinecap": "round"
                         }
-                      }
-                    },
-                    {
-                      "id": "c1ydya",
-                      "type": "ref",
-                      "ref": "WNKGn",
-                      "name": "Btn more",
-                      "descendants": {
-                        "x4lYUc": {
-                          "icon": "ellipsis",
-                          "fill": "$text-primary"
-                        }
-                      }
+                      ]
                     }
                   ]
                 }
@@ -162026,6 +162360,32 @@
               "width": "fill_container",
               "height": "fit_content(0)",
               "layout": "vertical"
+            },
+            {
+              "type": "frame",
+              "id": "FZjG8",
+              "layoutPosition": "absolute",
+              "x": 342,
+              "y": 12,
+              "name": "Btn more · banner",
+              "width": 36,
+              "height": 36,
+              "fill": "$scrim",
+              "cornerRadius": 18,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "V00Zhp",
+                  "name": "More icon",
+                  "width": 20,
+                  "height": 20,
+                  "icon": "ellipsis",
+                  "library": "lucide",
+                  "fill": "$text-primary"
+                }
+              ]
             }
           ]
         }
@@ -162034,7 +162394,7 @@
     {
       "type": "frame",
       "id": "LelEm",
-      "x": 12810,
+      "x": 13280,
       "y": 15716,
       "name": "S-HOME-10 · self",
       "theme": {
@@ -162406,7 +162766,7 @@
           "id": "ujr13",
           "layoutPosition": "absolute",
           "x": 0,
-          "y": 506,
+          "y": 368,
           "name": "Sheet",
           "width": 390,
           "fill": "$surface-1",
@@ -162434,6 +162794,16 @@
             0
           ],
           "children": [
+            {
+              "id": "r64p0",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-5"
+            },
             {
               "type": "frame",
               "id": "E4mfiT",
@@ -162466,6 +162836,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                60,
+                24,
                 8,
                 24
               ],
@@ -162478,6 +162850,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "qPCqz",
+                      "x": -6,
+                      "y": -6,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 108,
+                      "height": 108
+                    },
                     {
                       "id": "bWfmU",
                       "type": "ref",
@@ -162514,7 +162896,7 @@
                   "id": "isis5",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -162539,28 +162921,98 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "ySNy9",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "p4OQup",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Sinh viên năm 3 PTIT · đang ôn Giải tích 2",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "B0QXm",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Owner · Thành viên từ 01/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "uXsCm",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "FD85y",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "L96KTc",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "GIỚI THIỆU",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "ySNy9",
+                              "name": "Pf bio",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Sinh viên năm 3 PTIT · đang ôn Giải tích 2",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-body",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "iLh9P",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "bN75f",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "TRONG SERVER",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "B0QXm",
+                              "name": "Pf line",
+                              "fill": "$text-secondary",
+                              "content": "Owner · Thành viên từ 01/10/2026",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -162611,7 +163063,7 @@
     {
       "type": "frame",
       "id": "wyf17",
-      "x": 13280,
+      "x": 13750,
       "y": 15716,
       "name": "S-HOME-10 · moderator",
       "theme": {
@@ -162983,7 +163435,7 @@
           "id": "oTUaY",
           "layoutPosition": "absolute",
           "x": 0,
-          "y": 239,
+          "y": 105,
           "name": "Sheet",
           "width": 390,
           "fill": "$surface-1",
@@ -163011,6 +163463,16 @@
             0
           ],
           "children": [
+            {
+              "id": "tuzKC",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-1"
+            },
             {
               "type": "frame",
               "id": "v001tG",
@@ -163043,6 +163505,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                60,
+                24,
                 8,
                 24
               ],
@@ -163055,6 +163519,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "WZxaP",
+                      "x": -6,
+                      "y": -6,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 108,
+                      "height": 108
+                    },
                     {
                       "id": "X3qF2",
                       "type": "ref",
@@ -163096,7 +163570,7 @@
                   "id": "jXrcg",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -163121,28 +163595,98 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "vMgHV",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "ppdUu",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Bán tài liệu ôn thi giá rẻ · inbox mình",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "TVGHl",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Thành viên từ 12/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Z0gWZY",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "s9uqaE",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "eksIL",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "GIỚI THIỆU",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "vMgHV",
+                              "name": "Pf bio",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Bán tài liệu ôn thi giá rẻ · inbox mình",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-body",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "G5f2A",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Rod7a",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "TRONG SERVER",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "TVGHl",
+                              "name": "Pf line",
+                              "fill": "$text-secondary",
+                              "content": "Thành viên từ 12/10/2026",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -163187,18 +163731,6 @@
                         },
                         "p4T1YW": {
                           "content": "Kết bạn"
-                        }
-                      }
-                    },
-                    {
-                      "id": "s03zRg",
-                      "type": "ref",
-                      "ref": "WNKGn",
-                      "name": "Btn more",
-                      "descendants": {
-                        "x4lYUc": {
-                          "icon": "ellipsis",
-                          "fill": "$text-primary"
                         }
                       }
                     }
@@ -163314,6 +163846,32 @@
                   }
                 }
               ]
+            },
+            {
+              "type": "frame",
+              "id": "DtPyC",
+              "layoutPosition": "absolute",
+              "x": 342,
+              "y": 12,
+              "name": "Btn more · banner",
+              "width": 36,
+              "height": 36,
+              "fill": "$scrim",
+              "cornerRadius": 18,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "r7H0G",
+                  "name": "More icon",
+                  "width": 20,
+                  "height": 20,
+                  "icon": "ellipsis",
+                  "library": "lucide",
+                  "fill": "$text-primary"
+                }
+              ]
             }
           ]
         }
@@ -163322,7 +163880,7 @@
     {
       "type": "frame",
       "id": "rEatw",
-      "x": 13750,
+      "x": 17040,
       "y": 15716,
       "name": "S-HOME-10 · cannot-message",
       "theme": {
@@ -163694,7 +164252,7 @@
           "id": "BLbm6",
           "layoutPosition": "absolute",
           "x": 0,
-          "y": 498,
+          "y": 389,
           "name": "Sheet",
           "width": 390,
           "fill": "$surface-1",
@@ -163722,6 +164280,16 @@
             0
           ],
           "children": [
+            {
+              "id": "vcPEC",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-5"
+            },
             {
               "type": "frame",
               "id": "gYSad",
@@ -163754,6 +164322,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                60,
+                24,
                 8,
                 24
               ],
@@ -163766,6 +164336,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "VMEqz",
+                      "x": -6,
+                      "y": -6,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 108,
+                      "height": 108
+                    },
                     {
                       "id": "F0e1jf",
                       "type": "ref",
@@ -163802,7 +164382,7 @@
                   "id": "rzBbM",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -163827,15 +164407,64 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "acQ8x",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Thành viên từ 11/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "type": "frame",
+                  "id": "Oja1Y",
+                  "name": "Info wrap",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "d8HzT",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "qFb4k",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "CQgh6",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "TRONG SERVER",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "acQ8x",
+                              "name": "Pf line",
+                              "fill": "$text-secondary",
+                              "content": "Thành viên từ 11/10/2026",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -163883,18 +164512,6 @@
                         },
                         "p4T1YW": {
                           "content": "Kết bạn"
-                        }
-                      }
-                    },
-                    {
-                      "id": "xx0sv",
-                      "type": "ref",
-                      "ref": "WNKGn",
-                      "name": "Btn more",
-                      "descendants": {
-                        "x4lYUc": {
-                          "icon": "ellipsis",
-                          "fill": "$text-primary"
                         }
                       }
                     }
@@ -163946,6 +164563,32 @@
               "width": "fill_container",
               "height": "fit_content(0)",
               "layout": "vertical"
+            },
+            {
+              "type": "frame",
+              "id": "xcEN4",
+              "layoutPosition": "absolute",
+              "x": 342,
+              "y": 12,
+              "name": "Btn more · banner",
+              "width": 36,
+              "height": 36,
+              "fill": "$scrim",
+              "cornerRadius": 18,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "k7kOuj",
+                  "name": "More icon",
+                  "width": 20,
+                  "height": 20,
+                  "icon": "ellipsis",
+                  "library": "lucide",
+                  "fill": "$text-primary"
+                }
+              ]
             }
           ]
         }
@@ -163954,7 +164597,7 @@
     {
       "type": "frame",
       "id": "R1dUA",
-      "x": 14220,
+      "x": 17510,
       "y": 15716,
       "name": "S-HOME-10 · deleted",
       "theme": {
@@ -164326,7 +164969,7 @@
           "id": "G1grB5",
           "layoutPosition": "absolute",
           "x": 0,
-          "y": 643,
+          "y": 587,
           "name": "Sheet",
           "width": 390,
           "fill": "$surface-1",
@@ -164354,6 +164997,16 @@
             0
           ],
           "children": [
+            {
+              "id": "r9JjD",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$surface-3"
+            },
             {
               "type": "frame",
               "id": "Xw2RM",
@@ -164386,6 +165039,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                60,
+                24,
                 8,
                 24
               ],
@@ -164398,6 +165053,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "p3nMy",
+                      "x": -6,
+                      "y": -6,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 108,
+                      "height": 108
+                    },
                     {
                       "id": "WTuvC",
                       "type": "ref",
@@ -164415,7 +165080,7 @@
                   "id": "MAsz1",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -223438,7 +224103,7 @@
     {
       "type": "frame",
       "id": "tvYiB",
-      "x": 14690,
+      "x": 12810,
       "y": 15716,
       "name": "S-HOME-10 · request-received",
       "theme": {
@@ -223810,7 +224475,7 @@
           "id": "hbKDd",
           "layoutPosition": "absolute",
           "x": 0,
-          "y": 471,
+          "y": 337,
           "name": "Sheet",
           "width": 390,
           "fill": "$surface-1",
@@ -223838,6 +224503,16 @@
             0
           ],
           "children": [
+            {
+              "id": "IpxAx",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-4"
+            },
             {
               "type": "frame",
               "id": "hq4AY",
@@ -223870,6 +224545,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                60,
+                24,
                 8,
                 24
               ],
@@ -223882,6 +224559,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "jSSx7",
+                      "x": -6,
+                      "y": -6,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 108,
+                      "height": 108
+                    },
                     {
                       "id": "icEAL",
                       "type": "ref",
@@ -223918,7 +224605,7 @@
                   "id": "nrCrM",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -223943,28 +224630,98 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "JpQuv",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "pKlkv",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Tối nào cũng học lúc 20:00",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "NVjje",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Thành viên từ 08/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "fsoIs",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "GcZvu",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "L4HcUC",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "GIỚI THIỆU",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "JpQuv",
+                              "name": "Pf bio",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Tối nào cũng học lúc 20:00",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-body",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "qWeVj",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "b0rSXj",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "TRONG SERVER",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "NVjje",
+                              "name": "Pf line",
+                              "fill": "$text-secondary",
+                              "content": "Thành viên từ 08/10/2026",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -224036,18 +224793,6 @@
                           "content": "Chấp nhận"
                         }
                       }
-                    },
-                    {
-                      "id": "gNQZi",
-                      "type": "ref",
-                      "ref": "WNKGn",
-                      "name": "Btn more",
-                      "descendants": {
-                        "x4lYUc": {
-                          "icon": "ellipsis",
-                          "fill": "$text-primary"
-                        }
-                      }
                     }
                   ]
                 }
@@ -224060,6 +224805,32 @@
               "width": "fill_container",
               "height": "fit_content(0)",
               "layout": "vertical"
+            },
+            {
+              "type": "frame",
+              "id": "jB6Cm",
+              "layoutPosition": "absolute",
+              "x": 342,
+              "y": 12,
+              "name": "Btn more · banner",
+              "width": 36,
+              "height": 36,
+              "fill": "$scrim",
+              "cornerRadius": 18,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "TD3yx",
+                  "name": "More icon",
+                  "width": 20,
+                  "height": 20,
+                  "icon": "ellipsis",
+                  "library": "lucide",
+                  "fill": "$text-primary"
+                }
+              ]
             }
           ]
         }
@@ -236656,6 +237427,16 @@
           ],
           "children": [
             {
+              "id": "Tphc8",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-1"
+            },
+            {
               "type": "frame",
               "id": "o97Lr",
               "name": "Handle wrap",
@@ -236687,6 +237468,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                30,
+                24,
                 8,
                 24
               ],
@@ -236699,6 +237482,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "f35DxI",
+                      "x": -6,
+                      "y": -6,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 108,
+                      "height": 108
+                    },
                     {
                       "id": "CSZcv",
                       "type": "ref",
@@ -236740,7 +237533,7 @@
                   "id": "O9KsNT",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -236765,28 +237558,56 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "Mkjtb",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "AfdWS",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Bán tài liệu ôn thi giá rẻ · inbox mình",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "v3pYz",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Thành viên từ 12/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "gPxpA",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Mkjtb",
+                          "name": "Pf bio",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Bán tài liệu ôn thi giá rẻ · inbox mình",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-body",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "v3pYz",
+                          "name": "Pf line",
+                          "fill": "$text-tertiary",
+                          "content": "Thành viên từ 12/10/2026",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-label",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -311700,7 +312521,7 @@
     {
       "type": "frame",
       "id": "W7rs2",
-      "x": 15160,
+      "x": 14220,
       "y": 15716,
       "name": "S-HOME-10 · moderator-voice",
       "theme": {
@@ -312072,7 +312893,7 @@
           "id": "YmiDg",
           "layoutPosition": "absolute",
           "x": 0,
-          "y": 71,
+          "y": 84,
           "name": "Sheet",
           "width": 390,
           "fill": "$surface-1",
@@ -312100,6 +312921,16 @@
             0
           ],
           "children": [
+            {
+              "id": "ZUj2P",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-1"
+            },
             {
               "type": "frame",
               "id": "kq54f",
@@ -312132,6 +312963,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                60,
+                24,
                 8,
                 24
               ],
@@ -312144,6 +312977,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "uula6",
+                      "x": -6,
+                      "y": -6,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 108,
+                      "height": 108
+                    },
                     {
                       "id": "SbK00",
                       "type": "ref",
@@ -312180,7 +313023,7 @@
                   "id": "Yhc58",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -312205,28 +313048,98 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "hRhMY",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "X8ErTp",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Mới vào nhóm, nhờ mọi người chỉ giáo",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "dMHd0",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Thành viên từ 18/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ZdyVG",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "fYLaf",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "PZVqX",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "GIỚI THIỆU",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "hRhMY",
+                              "name": "Pf bio",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Mới vào nhóm, nhờ mọi người chỉ giáo",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-body",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "f2EDN",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "b0vR83",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "TRONG SERVER",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "dMHd0",
+                              "name": "Pf line",
+                              "fill": "$text-secondary",
+                              "content": "Thành viên từ 18/10/2026",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -312292,30 +313205,35 @@
                       }
                     },
                     {
-                      "id": "AZMYL",
-                      "type": "ref",
-                      "ref": "UajXt",
-                      "name": "Chip Bạn bè",
-                      "descendants": {
-                        "A7zxrZ": {
-                          "icon": "user-check"
-                        },
-                        "dJNsJ": {
-                          "content": "Bạn bè"
+                      "type": "frame",
+                      "id": "T19Qoz",
+                      "name": "Btn bạn bè (icon)",
+                      "width": 44,
+                      "height": 44,
+                      "cornerRadius": 12,
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "padding": [
+                        0,
+                        0,
+                        0,
+                        3
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "PbkbZ",
+                          "name": "UserCheck icon",
+                          "width": 18,
+                          "height": 18,
+                          "icon": "user-check",
+                          "library": "lucide",
+                          "fill": "$text-secondary"
                         }
-                      }
-                    },
-                    {
-                      "id": "rZBX2",
-                      "type": "ref",
-                      "ref": "WNKGn",
-                      "name": "Btn more",
-                      "descendants": {
-                        "x4lYUc": {
-                          "icon": "ellipsis",
-                          "fill": "$text-primary"
-                        }
-                      }
+                      ]
                     }
                   ]
                 }
@@ -312457,6 +313375,32 @@
                       "fill": "$text-tertiary"
                     }
                   }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "i5eE3i",
+              "layoutPosition": "absolute",
+              "x": 342,
+              "y": 12,
+              "name": "Btn more · banner",
+              "width": 36,
+              "height": 36,
+              "fill": "$scrim",
+              "cornerRadius": 18,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "Ai2zs",
+                  "name": "More icon",
+                  "width": 20,
+                  "height": 20,
+                  "icon": "ellipsis",
+                  "library": "lucide",
+                  "fill": "$text-primary"
                 }
               ]
             }
@@ -374867,7 +375811,7 @@
     {
       "type": "frame",
       "id": "jD3j9",
-      "x": 15630,
+      "x": 14690,
       "y": 15716,
       "name": "S-HOME-10 · activity",
       "theme": {
@@ -375239,7 +376183,7 @@
           "id": "P2vQW",
           "layoutPosition": "absolute",
           "x": 0,
-          "y": 425,
+          "y": 291,
           "name": "Sheet",
           "width": 390,
           "fill": "$surface-1",
@@ -375267,6 +376211,21 @@
             0
           ],
           "children": [
+            {
+              "id": "O1jzW3",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-6",
+              "descendants": {
+                "RX95B": {
+                  "enabled": true
+                }
+              }
+            },
             {
               "type": "frame",
               "id": "bnspe",
@@ -375299,6 +376258,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                60,
+                24,
                 8,
                 24
               ],
@@ -375311,6 +376272,28 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "T94iJ",
+                      "x": -6,
+                      "y": -6,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 108,
+                      "height": 108
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "ReBLf",
+                      "x": -4,
+                      "y": -4,
+                      "name": "Phase ring",
+                      "width": 104,
+                      "height": 104,
+                      "stroke": "$phase-focus",
+                      "strokeWidth": 2,
+                      "strokeAlignment": "inner"
+                    },
                     {
                       "id": "FiDWe",
                       "type": "ref",
@@ -375347,7 +376330,7 @@
                   "id": "D9vED9",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -375372,28 +376355,98 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "aIewu",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "D5P7x",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Mới vào nhóm, nhờ mọi người chỉ giáo",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "oLnKt",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Thành viên từ 18/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "O1R7M",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "IJGVv",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "lTIha",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "GIỚI THIỆU",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "aIewu",
+                              "name": "Pf bio",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Mới vào nhóm, nhờ mọi người chỉ giáo",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-body",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "bC4qF",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "MiLma",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "TRONG SERVER",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "oLnKt",
+                              "name": "Pf line",
+                              "fill": "$text-secondary",
+                              "content": "Thành viên từ 18/10/2026",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -375459,30 +376512,35 @@
                       }
                     },
                     {
-                      "id": "hO7AV",
-                      "type": "ref",
-                      "ref": "UajXt",
-                      "name": "Chip Bạn bè",
-                      "descendants": {
-                        "A7zxrZ": {
-                          "icon": "user-check"
-                        },
-                        "dJNsJ": {
-                          "content": "Bạn bè"
+                      "type": "frame",
+                      "id": "PzHbr",
+                      "name": "Btn bạn bè (icon)",
+                      "width": 44,
+                      "height": 44,
+                      "cornerRadius": 12,
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "padding": [
+                        0,
+                        0,
+                        0,
+                        3
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "JNAcM",
+                          "name": "UserCheck icon",
+                          "width": 18,
+                          "height": 18,
+                          "icon": "user-check",
+                          "library": "lucide",
+                          "fill": "$text-secondary"
                         }
-                      }
-                    },
-                    {
-                      "id": "k9z5po",
-                      "type": "ref",
-                      "ref": "WNKGn",
-                      "name": "Btn more",
-                      "descendants": {
-                        "x4lYUc": {
-                          "icon": "ellipsis",
-                          "fill": "$text-primary"
-                        }
-                      }
+                      ]
                     }
                   ]
                 }
@@ -375495,6 +376553,32 @@
               "width": "fill_container",
               "height": "fit_content(0)",
               "layout": "vertical"
+            },
+            {
+              "type": "frame",
+              "id": "W3QJh",
+              "layoutPosition": "absolute",
+              "x": 342,
+              "y": 12,
+              "name": "Btn more · banner",
+              "width": 36,
+              "height": 36,
+              "fill": "$scrim",
+              "cornerRadius": 18,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "Mp5YF",
+                  "name": "More icon",
+                  "width": 20,
+                  "height": 20,
+                  "icon": "ellipsis",
+                  "library": "lucide",
+                  "fill": "$text-primary"
+                }
+              ]
             }
           ]
         }
@@ -375503,7 +376587,7 @@
     {
       "type": "frame",
       "id": "h9gFHd",
-      "x": 16100,
+      "x": 15160,
       "y": 15716,
       "name": "S-HOME-10 · menu",
       "theme": {
@@ -375875,7 +376959,7 @@
           "id": "lD9su",
           "layoutPosition": "absolute",
           "x": 0,
-          "y": 502,
+          "y": 345,
           "name": "Sheet",
           "width": 390,
           "fill": "$surface-1",
@@ -375903,6 +376987,16 @@
             0
           ],
           "children": [
+            {
+              "id": "iWo1u",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-2"
+            },
             {
               "type": "frame",
               "id": "d36lm",
@@ -375935,6 +377029,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                60,
+                24,
                 8,
                 24
               ],
@@ -375947,6 +377043,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "CWFWz",
+                      "x": -6,
+                      "y": -6,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 108,
+                      "height": 108
+                    },
                     {
                       "id": "R9ycX",
                       "type": "ref",
@@ -375983,7 +377089,7 @@
                   "id": "EzmeB",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -376008,28 +377114,98 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "pINJY",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "qCaHb",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Lớp trưởng D22CN05 · hỏi bài cứ tag mình",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "G4kesS",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Trưởng nhóm · Thành viên từ 02/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "NKr4N",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "xdUzq",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "c0oTq",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "GIỚI THIỆU",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "pINJY",
+                              "name": "Pf bio",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Lớp trưởng D22CN05 · hỏi bài cứ tag mình",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-body",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "B1v8C7",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "EI3io",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "TRONG SERVER",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "G4kesS",
+                              "name": "Pf line",
+                              "fill": "$text-secondary",
+                              "content": "Trưởng nhóm · Thành viên từ 02/10/2026",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -376062,30 +377238,35 @@
                       }
                     },
                     {
-                      "id": "FosNb",
-                      "type": "ref",
-                      "ref": "UajXt",
-                      "name": "Chip Bạn bè",
-                      "descendants": {
-                        "A7zxrZ": {
-                          "icon": "user-check"
-                        },
-                        "dJNsJ": {
-                          "content": "Bạn bè"
+                      "type": "frame",
+                      "id": "Uhw75",
+                      "name": "Btn bạn bè (icon)",
+                      "width": 44,
+                      "height": 44,
+                      "cornerRadius": 12,
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "padding": [
+                        0,
+                        0,
+                        0,
+                        3
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "RD5ZM",
+                          "name": "UserCheck icon",
+                          "width": 18,
+                          "height": 18,
+                          "icon": "user-check",
+                          "library": "lucide",
+                          "fill": "$text-secondary"
                         }
-                      }
-                    },
-                    {
-                      "id": "gJw3C",
-                      "type": "ref",
-                      "ref": "WNKGn",
-                      "name": "Btn more",
-                      "descendants": {
-                        "x4lYUc": {
-                          "icon": "ellipsis",
-                          "fill": "$text-primary"
-                        }
-                      }
+                      ]
                     }
                   ]
                 }
@@ -376098,6 +377279,32 @@
               "width": "fill_container",
               "height": "fit_content(0)",
               "layout": "vertical"
+            },
+            {
+              "type": "frame",
+              "id": "DuDNr",
+              "layoutPosition": "absolute",
+              "x": 342,
+              "y": 12,
+              "name": "Btn more · banner",
+              "width": 36,
+              "height": 36,
+              "fill": "$scrim",
+              "cornerRadius": 18,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "m4XFc",
+                  "name": "More icon",
+                  "width": 20,
+                  "height": 20,
+                  "icon": "ellipsis",
+                  "library": "lucide",
+                  "fill": "$text-primary"
+                }
+              ]
             }
           ]
         },
@@ -376267,7 +377474,7 @@
     {
       "type": "frame",
       "id": "aO433",
-      "x": 16570,
+      "x": 15630,
       "y": 15716,
       "name": "S-HOME-10 · blocked",
       "theme": {
@@ -376639,7 +377846,7 @@
           "id": "N22dOf",
           "layoutPosition": "absolute",
           "x": 0,
-          "y": 502,
+          "y": 384,
           "name": "Sheet",
           "width": 390,
           "fill": "$surface-1",
@@ -376667,6 +377874,16 @@
             0
           ],
           "children": [
+            {
+              "id": "e6mYV",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-4"
+            },
             {
               "type": "frame",
               "id": "P1sh0",
@@ -376699,6 +377916,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                60,
+                24,
                 8,
                 24
               ],
@@ -376711,6 +377930,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "d9ioz",
+                      "x": -6,
+                      "y": -6,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 108,
+                      "height": 108
+                    },
                     {
                       "id": "lOQuo",
                       "type": "ref",
@@ -376747,7 +377976,7 @@
                   "id": "deSGz",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -376772,28 +378001,98 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "EDigj",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "Pf97D",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Sinh viên K23 PTIT",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "VpToA",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Thành viên từ 05/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "LNex3",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "vVZ7U",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "uLcaq",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "GIỚI THIỆU",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "EDigj",
+                              "name": "Pf bio",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Sinh viên K23 PTIT",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-body",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "KZJgV",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "UN6Fr",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "TRONG SERVER",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "VpToA",
+                              "name": "Pf line",
+                              "fill": "$text-secondary",
+                              "content": "Thành viên từ 05/10/2026",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -376807,7 +378106,6 @@
                     0,
                     0
                   ],
-                  "justifyContent": "space_between",
                   "alignItems": "center",
                   "children": [
                     {
@@ -376823,18 +378121,6 @@
                           "content": "Đã chặn"
                         }
                       }
-                    },
-                    {
-                      "id": "HpZFN",
-                      "type": "ref",
-                      "ref": "WNKGn",
-                      "name": "Btn more",
-                      "descendants": {
-                        "x4lYUc": {
-                          "icon": "ellipsis",
-                          "fill": "$text-primary"
-                        }
-                      }
                     }
                   ]
                 }
@@ -376847,6 +378133,32 @@
               "width": "fill_container",
               "height": "fit_content(0)",
               "layout": "vertical"
+            },
+            {
+              "type": "frame",
+              "id": "Gi4Q3",
+              "layoutPosition": "absolute",
+              "x": 342,
+              "y": 12,
+              "name": "Btn more · banner",
+              "width": 36,
+              "height": 36,
+              "fill": "$scrim",
+              "cornerRadius": 18,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "Y8eaP",
+                  "name": "More icon",
+                  "width": 20,
+                  "height": 20,
+                  "icon": "ellipsis",
+                  "library": "lucide",
+                  "fill": "$text-primary"
+                }
+              ]
             }
           ]
         }
@@ -376855,7 +378167,7 @@
     {
       "type": "frame",
       "id": "C6TTIb",
-      "x": 17040,
+      "x": 16100,
       "y": 15716,
       "name": "S-HOME-10 · outside-server",
       "theme": {
@@ -377297,7 +378609,7 @@
           "id": "zFP8N",
           "layoutPosition": "absolute",
           "x": 0,
-          "y": 398,
+          "y": 270,
           "name": "Sheet",
           "width": 390,
           "fill": "$surface-1",
@@ -377325,6 +378637,16 @@
             0
           ],
           "children": [
+            {
+              "id": "nHNU3",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-2"
+            },
             {
               "type": "frame",
               "id": "aXJpo",
@@ -377357,6 +378679,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                60,
+                24,
                 8,
                 24
               ],
@@ -377369,6 +378693,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "zpPtZ",
+                      "x": -6,
+                      "y": -6,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 108,
+                      "height": 108
+                    },
                     {
                       "id": "gtHY5",
                       "type": "ref",
@@ -377405,7 +378739,7 @@
                   "id": "jMPkv",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -377430,131 +378764,174 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "HXzgm",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
-                  "width": "fill_container",
-                  "content": "Lớp trưởng D22CN05 · hỏi bài cứ tag mình",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
                   "type": "frame",
-                  "id": "urKQr",
-                  "name": "Common servers",
+                  "id": "qSPvW",
+                  "name": "Info wrap",
                   "width": "fill_container",
                   "layout": "vertical",
                   "padding": [
-                    8,
+                    12,
                     0,
                     0,
                     0
                   ],
                   "children": [
                     {
-                      "type": "text",
-                      "id": "fdQlO",
-                      "name": "Servers title",
-                      "fill": "$text-tertiary",
-                      "content": "SERVER CHUNG — 2",
-                      "lineHeight": 1.45,
-                      "fontFamily": "$font-text",
-                      "fontSize": "$type-label",
-                      "fontWeight": "600"
-                    },
-                    {
                       "type": "frame",
-                      "id": "b58R3d",
-                      "name": "Server Ôn thi Giải tích 2",
+                      "id": "WWDUX",
+                      "name": "Info",
                       "width": "fill_container",
-                      "height": 48,
-                      "gap": 12,
-                      "alignItems": "center",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
                       "children": [
                         {
                           "type": "frame",
-                          "id": "ChebB",
-                          "name": "Server icon",
-                          "width": 32,
-                          "height": 32,
-                          "fill": "$surface-3",
-                          "cornerRadius": "$radius-server",
-                          "justifyContent": "center",
-                          "alignItems": "center",
+                          "id": "oRX6z",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
                           "children": [
                             {
                               "type": "text",
-                              "id": "M4fEV",
-                              "name": "Server icon text",
-                              "fill": "$text-primary",
-                              "content": "ÔT",
+                              "id": "tJRgA",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "GIỚI THIỆU",
                               "lineHeight": 1.45,
                               "fontFamily": "$font-text",
                               "fontSize": "$type-label",
                               "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "HXzgm",
+                              "name": "Pf bio",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Lớp trưởng D22CN05 · hỏi bài cứ tag mình",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-body",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
                         {
-                          "type": "text",
-                          "id": "K3kOt",
-                          "name": "Server name",
-                          "fill": "$text-primary",
-                          "content": "Ôn thi Giải tích 2",
-                          "lineHeight": 1.45,
-                          "fontFamily": "$font-text",
-                          "fontSize": "$type-body",
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "XoSDg",
-                      "name": "Server Nhóm đồ án Mobile",
-                      "width": "fill_container",
-                      "height": 48,
-                      "gap": 12,
-                      "alignItems": "center",
-                      "children": [
-                        {
                           "type": "frame",
-                          "id": "ACXhR",
-                          "name": "Server icon",
-                          "width": 32,
-                          "height": 32,
-                          "fill": "$surface-3",
-                          "cornerRadius": "$radius-server",
-                          "justifyContent": "center",
-                          "alignItems": "center",
+                          "id": "urKQr",
+                          "name": "Common servers",
+                          "width": "fill_container",
+                          "layout": "vertical",
                           "children": [
                             {
                               "type": "text",
-                              "id": "R4mURV",
-                              "name": "Server icon text",
-                              "fill": "$text-primary",
-                              "content": "NĐ",
+                              "id": "fdQlO",
+                              "name": "Servers title",
+                              "fill": "$text-tertiary",
+                              "content": "SERVER CHUNG — 2",
                               "lineHeight": 1.45,
                               "fontFamily": "$font-text",
                               "fontSize": "$type-label",
                               "fontWeight": "600"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "b58R3d",
+                              "name": "Server Ôn thi Giải tích 2",
+                              "width": "fill_container",
+                              "height": 48,
+                              "gap": 12,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "ChebB",
+                                  "name": "Server icon",
+                                  "width": 32,
+                                  "height": 32,
+                                  "fill": "$surface-3",
+                                  "cornerRadius": "$radius-server",
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "M4fEV",
+                                      "name": "Server icon text",
+                                      "fill": "$text-primary",
+                                      "content": "ÔT",
+                                      "lineHeight": 1.45,
+                                      "fontFamily": "$font-text",
+                                      "fontSize": "$type-label",
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "K3kOt",
+                                  "name": "Server name",
+                                  "fill": "$text-primary",
+                                  "content": "Ôn thi Giải tích 2",
+                                  "lineHeight": 1.45,
+                                  "fontFamily": "$font-text",
+                                  "fontSize": "$type-body",
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "XoSDg",
+                              "name": "Server Nhóm đồ án Mobile",
+                              "width": "fill_container",
+                              "height": 48,
+                              "gap": 12,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "ACXhR",
+                                  "name": "Server icon",
+                                  "width": 32,
+                                  "height": 32,
+                                  "fill": "$surface-3",
+                                  "cornerRadius": "$radius-server",
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "R4mURV",
+                                      "name": "Server icon text",
+                                      "fill": "$text-primary",
+                                      "content": "NĐ",
+                                      "lineHeight": 1.45,
+                                      "fontFamily": "$font-text",
+                                      "fontSize": "$type-label",
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Kz8Ic",
+                                  "name": "Server name",
+                                  "fill": "$text-primary",
+                                  "content": "Nhóm đồ án Mobile",
+                                  "lineHeight": 1.45,
+                                  "fontFamily": "$font-text",
+                                  "fontSize": "$type-body",
+                                  "fontWeight": "normal"
+                                }
+                              ]
                             }
                           ]
-                        },
-                        {
-                          "type": "text",
-                          "id": "Kz8Ic",
-                          "name": "Server name",
-                          "fill": "$text-primary",
-                          "content": "Nhóm đồ án Mobile",
-                          "lineHeight": 1.45,
-                          "fontFamily": "$font-text",
-                          "fontSize": "$type-body",
-                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -377591,30 +378968,35 @@
                       }
                     },
                     {
-                      "id": "ygCpb",
-                      "type": "ref",
-                      "ref": "UajXt",
-                      "name": "Chip Bạn bè",
-                      "descendants": {
-                        "A7zxrZ": {
-                          "icon": "user-check"
-                        },
-                        "dJNsJ": {
-                          "content": "Bạn bè"
+                      "type": "frame",
+                      "id": "wEeyq",
+                      "name": "Btn bạn bè (icon)",
+                      "width": 44,
+                      "height": 44,
+                      "cornerRadius": 12,
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "padding": [
+                        0,
+                        0,
+                        0,
+                        3
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "bnDyY",
+                          "name": "UserCheck icon",
+                          "width": 18,
+                          "height": 18,
+                          "icon": "user-check",
+                          "library": "lucide",
+                          "fill": "$text-secondary"
                         }
-                      }
-                    },
-                    {
-                      "id": "znMFI",
-                      "type": "ref",
-                      "ref": "WNKGn",
-                      "name": "Btn more",
-                      "descendants": {
-                        "x4lYUc": {
-                          "icon": "ellipsis",
-                          "fill": "$text-primary"
-                        }
-                      }
+                      ]
                     }
                   ]
                 }
@@ -377627,6 +379009,32 @@
               "width": "fill_container",
               "height": "fit_content(0)",
               "layout": "vertical"
+            },
+            {
+              "type": "frame",
+              "id": "hy6pj",
+              "layoutPosition": "absolute",
+              "x": 342,
+              "y": 12,
+              "name": "Btn more · banner",
+              "width": 36,
+              "height": 36,
+              "fill": "$scrim",
+              "cornerRadius": 18,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "wfykU",
+                  "name": "More icon",
+                  "width": 20,
+                  "height": 20,
+                  "icon": "ellipsis",
+                  "library": "lucide",
+                  "fill": "$text-primary"
+                }
+              ]
             }
           ]
         }
@@ -377635,7 +379043,7 @@
     {
       "type": "frame",
       "id": "hMhvy",
-      "x": 17510,
+      "x": 16570,
       "y": 15716,
       "name": "S-HOME-10 · outside-server-none",
       "theme": {
@@ -378077,7 +379485,7 @@
           "id": "k1DSj",
           "layoutPosition": "absolute",
           "x": 0,
-          "y": 494,
+          "y": 389,
           "name": "Sheet",
           "width": 390,
           "fill": "$surface-1",
@@ -378105,6 +379513,16 @@
             0
           ],
           "children": [
+            {
+              "id": "w5geM",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-3"
+            },
             {
               "type": "frame",
               "id": "QH0ZB",
@@ -378137,6 +379555,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                60,
+                24,
                 8,
                 24
               ],
@@ -378149,6 +379569,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "zjgwX",
+                      "x": -6,
+                      "y": -6,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 108,
+                      "height": 108
+                    },
                     {
                       "id": "XHBeG",
                       "type": "ref",
@@ -378185,7 +379615,7 @@
                   "id": "jdccA",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -378210,40 +379640,83 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "Wlnfp",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
-                  "width": "fill_container",
-                  "content": "Thích chạy bộ và Giải tích",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
                   "type": "frame",
-                  "id": "jNr8A",
-                  "name": "Common servers",
+                  "id": "t7oil6",
+                  "name": "Info wrap",
                   "width": "fill_container",
+                  "layout": "vertical",
                   "padding": [
-                    8,
+                    12,
                     0,
                     0,
                     0
                   ],
                   "children": [
                     {
-                      "type": "text",
-                      "id": "SQ2CV",
-                      "name": "No servers",
-                      "fill": "$text-secondary",
-                      "content": "Chưa ở chung server nào",
-                      "lineHeight": 1.45,
-                      "fontFamily": "$font-text",
-                      "fontSize": "$type-label",
-                      "fontWeight": "normal"
+                      "type": "frame",
+                      "id": "xQtD2",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "jlYK9",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "EFeJe",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "GIỚI THIỆU",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Wlnfp",
+                              "name": "Pf bio",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Thích chạy bộ và Giải tích",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-body",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "jNr8A",
+                          "name": "Common servers",
+                          "width": "fill_container",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "SQ2CV",
+                              "name": "No servers",
+                              "fill": "$text-secondary",
+                              "content": "Chưa ở chung server nào",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
                     }
                   ]
                 },
@@ -378278,30 +379751,35 @@
                       }
                     },
                     {
-                      "id": "b82mG",
-                      "type": "ref",
-                      "ref": "UajXt",
-                      "name": "Chip Bạn bè",
-                      "descendants": {
-                        "A7zxrZ": {
-                          "icon": "user-check"
-                        },
-                        "dJNsJ": {
-                          "content": "Bạn bè"
+                      "type": "frame",
+                      "id": "MVZ6H",
+                      "name": "Btn bạn bè (icon)",
+                      "width": 44,
+                      "height": 44,
+                      "cornerRadius": 12,
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "padding": [
+                        0,
+                        0,
+                        0,
+                        3
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "zKiZT",
+                          "name": "UserCheck icon",
+                          "width": 18,
+                          "height": 18,
+                          "icon": "user-check",
+                          "library": "lucide",
+                          "fill": "$text-secondary"
                         }
-                      }
-                    },
-                    {
-                      "id": "PeMMM",
-                      "type": "ref",
-                      "ref": "WNKGn",
-                      "name": "Btn more",
-                      "descendants": {
-                        "x4lYUc": {
-                          "icon": "ellipsis",
-                          "fill": "$text-primary"
-                        }
-                      }
+                      ]
                     }
                   ]
                 }
@@ -378314,6 +379792,32 @@
               "width": "fill_container",
               "height": "fit_content(0)",
               "layout": "vertical"
+            },
+            {
+              "type": "frame",
+              "id": "NAkVF",
+              "layoutPosition": "absolute",
+              "x": 342,
+              "y": 12,
+              "name": "Btn more · banner",
+              "width": 36,
+              "height": 36,
+              "fill": "$scrim",
+              "cornerRadius": 18,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "g4Me7a",
+                  "name": "More icon",
+                  "width": 20,
+                  "height": 20,
+                  "icon": "ellipsis",
+                  "library": "lucide",
+                  "fill": "$text-primary"
+                }
+              ]
             }
           ]
         }
@@ -601372,6 +602876,1009 @@
           "y": 549
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "VlowQ",
+      "x": 11400,
+      "y": -340,
+      "name": "C-41 · Background/default (S-HOME-10, 25/11/2026)",
+      "theme": {
+        "mode": "dark"
+      },
+      "fill": "$bg",
+      "layout": "vertical",
+      "gap": 16,
+      "padding": 24,
+      "children": [
+        {
+          "type": "frame",
+          "id": "E9CIS",
+          "name": "Background/default",
+          "reusable": true,
+          "clip": true,
+          "width": 390,
+          "height": 128,
+          "fill": "$profile-bg-1",
+          "cornerRadius": [
+            24,
+            24,
+            0,
+            0
+          ],
+          "layout": "none",
+          "children": [
+            {
+              "type": "frame",
+              "id": "RX95B",
+              "x": 0,
+              "y": 0,
+              "name": "Lamp (phase)",
+              "enabled": false,
+              "width": 390,
+              "height": 128,
+              "fill": {
+                "type": "gradient",
+                "gradientType": "radial",
+                "enabled": true,
+                "rotation": 0,
+                "size": {
+                  "width": 1.3,
+                  "height": 2.6
+                },
+                "colors": [
+                  {
+                    "color": "$profile-glow",
+                    "position": 0
+                  },
+                  {
+                    "color": "$profile-glow-end",
+                    "position": 1
+                  }
+                ],
+                "center": {
+                  "x": 0.82,
+                  "y": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "I2So9r",
+          "type": "ref",
+          "ref": "E9CIS",
+          "name": "Background · đang học (Tập trung)",
+          "descendants": {
+            "RX95B": {
+              "enabled": true
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "IUPtI",
+          "name": "Note",
+          "fill": "$text-secondary",
+          "textGrowth": "fixed-width",
+          "width": 390,
+          "content": "Banner đầu sheet hồ sơ: cao 128, bo trên 24; nền $profile-bg-1…6 theo id người dùng (id mod 6), tài khoản đã xóa $surface-3. ⋯ ở góc trên phải (cách mép 12): tròn 36 nền $scrim, icon 20 $text-primary, vùng chạm 48. Đèn bàn (layer Lamp, tắt mặc định): chỉ bật khi người đó đang học và pha đang chạy; radial màu pha (đục 22% sáng / 35% tối; $profile-glow = phase-focus), tâm 82% / 0. Avatar 96 viền 6 $surface-1, tâm ở mép dưới; đang học thì trong viền có vòng 2 màu pha.",
+          "fontFamily": "$font-text",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "gx71g",
+      "x": 17980,
+      "y": 15716,
+      "name": "S-HOME-10 · from-their-dm",
+      "theme": {
+        "mode": "dark"
+      },
+      "clip": true,
+      "width": 390,
+      "height": 844,
+      "fill": "$bg",
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "kgWOV",
+          "type": "ref",
+          "ref": "TflF2",
+          "name": "Status bar",
+          "width": "fill_container",
+          "descendants": {
+            "vrS3t": {
+              "content": "20:12"
+            }
+          }
+        },
+        {
+          "id": "qJcKS",
+          "type": "ref",
+          "ref": "sys9c",
+          "name": "Header",
+          "width": "fill_container",
+          "descendants": {
+            "j6I3oE": {
+              "content": "Bạn bè"
+            },
+            "kFe6A": {
+              "id": "olpml",
+              "type": "ref",
+              "ref": "WNKGn",
+              "name": "SH add",
+              "descendants": {
+                "x4lYUc": {
+                  "fill": "$text-primary",
+                  "icon": "user-plus"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "GwPWf",
+          "name": "Body",
+          "clip": true,
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "kq0OB",
+              "name": "Seg wrap",
+              "width": "fill_container",
+              "padding": [
+                4,
+                16,
+                8,
+                16
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "iH5w1",
+                  "name": "Segmented",
+                  "width": "fill_container",
+                  "fill": "$surface-2",
+                  "cornerRadius": "$radius-button",
+                  "gap": 2,
+                  "padding": 2,
+                  "children": [
+                    {
+                      "id": "KNQEb",
+                      "type": "ref",
+                      "ref": "ZqZlU",
+                      "name": "Seg Online",
+                      "width": "fill_container",
+                      "height": 36,
+                      "padding": [
+                        0,
+                        4
+                      ],
+                      "descendants": {
+                        "jo8Bf": {
+                          "content": "Trực tuyến"
+                        }
+                      }
+                    },
+                    {
+                      "id": "h0DOwM",
+                      "type": "ref",
+                      "ref": "ZqZlU",
+                      "name": "Seg Tất cả",
+                      "width": "fill_container",
+                      "height": 36,
+                      "fill": "$surface-1",
+                      "padding": [
+                        0,
+                        4
+                      ],
+                      "descendants": {
+                        "jo8Bf": {
+                          "fill": "$text-primary",
+                          "content": "Tất cả",
+                          "fontWeight": "600"
+                        }
+                      }
+                    },
+                    {
+                      "id": "PFqKw",
+                      "type": "ref",
+                      "ref": "ZqZlU",
+                      "name": "Seg Đang chờ",
+                      "width": "fit_content",
+                      "height": 36,
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "descendants": {
+                        "jo8Bf": {
+                          "content": "Đang chờ"
+                        },
+                        "D5qNEz": {
+                          "enabled": true,
+                          "fill": "$danger",
+                          "content": "· 1",
+                          "fontWeight": "700"
+                        }
+                      }
+                    },
+                    {
+                      "id": "V3Cj3X",
+                      "type": "ref",
+                      "ref": "ZqZlU",
+                      "name": "Seg Đã chặn",
+                      "width": "fill_container",
+                      "height": 36,
+                      "padding": [
+                        0,
+                        4
+                      ],
+                      "descendants": {
+                        "jo8Bf": {
+                          "content": "Đã chặn"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "SMSsM",
+              "name": "Search wrap",
+              "width": "fill_container",
+              "padding": [
+                0,
+                16,
+                8,
+                16
+              ],
+              "children": [
+                {
+                  "id": "U92VY",
+                  "type": "ref",
+                  "ref": "OxNCq",
+                  "name": "Search",
+                  "width": "fill_container",
+                  "descendants": {
+                    "K57FJ": {
+                      "content": "Tìm theo tên hoặc username"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "c7IdtU",
+              "name": "Group TRỰC TUYẾN — 4",
+              "width": "fill_container",
+              "padding": [
+                12,
+                16,
+                4,
+                16
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Qeb5y",
+                  "name": "Group text",
+                  "fill": "$text-tertiary",
+                  "content": "TRỰC TUYẾN — 4",
+                  "lineHeight": 1.45,
+                  "fontFamily": "$font-text",
+                  "fontSize": "$type-label",
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "id": "XYrgU",
+              "type": "ref",
+              "ref": "Jpcbk",
+              "name": "FR Bình",
+              "width": "fill_container",
+              "descendants": {
+                "o3jMR/L56hqK": {
+                  "content": "B"
+                },
+                "XfFFZ": {
+                  "content": "Bình"
+                },
+                "HLy37": {
+                  "content": "binh.tran"
+                },
+                "P8dSv4": {
+                  "content": "Bình"
+                },
+                "o6A1qJ": {
+                  "content": "binh.tran"
+                }
+              }
+            },
+            {
+              "id": "lM2MW",
+              "type": "ref",
+              "ref": "Jpcbk",
+              "name": "FR Chi",
+              "width": "fill_container",
+              "descendants": {
+                "o3jMR/L56hqK": {
+                  "content": "C"
+                },
+                "XfFFZ": {
+                  "content": "Chi"
+                },
+                "HLy37": {
+                  "content": "chi.le"
+                },
+                "P8dSv4": {
+                  "content": "Chi"
+                },
+                "o6A1qJ": {
+                  "content": "chi.le"
+                }
+              }
+            },
+            {
+              "id": "KM2jI",
+              "type": "ref",
+              "ref": "Jpcbk",
+              "name": "FR Dũng",
+              "width": "fill_container",
+              "descendants": {
+                "o3jMR/L56hqK": {
+                  "content": "D"
+                },
+                "XfFFZ": {
+                  "content": "Dũng"
+                },
+                "HLy37": {
+                  "content": "dung.pham"
+                },
+                "P8dSv4": {
+                  "content": "Dũng"
+                },
+                "o6A1qJ": {
+                  "content": "dung.pham"
+                }
+              }
+            },
+            {
+              "id": "tN4sU",
+              "type": "ref",
+              "ref": "Jpcbk",
+              "name": "FR Tuấn",
+              "width": "fill_container",
+              "descendants": {
+                "o3jMR/L56hqK": {
+                  "content": "T"
+                },
+                "wnO18": {
+                  "id": "m8uHU",
+                  "type": "ref",
+                  "ref": "IiInu",
+                  "name": "FR presence",
+                  "x": 28,
+                  "y": 28
+                },
+                "XfFFZ": {
+                  "content": "Tuấn"
+                },
+                "HLy37": {
+                  "content": "tuan.hoang"
+                },
+                "P8dSv4": {
+                  "content": "Tuấn"
+                },
+                "o6A1qJ": {
+                  "content": "tuan.hoang"
+                }
+              }
+            },
+            {
+              "type": "frame",
+              "id": "kAtr8",
+              "name": "Group NGOẠI TUYẾN — 2",
+              "width": "fill_container",
+              "padding": [
+                12,
+                16,
+                4,
+                16
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "pR8BK",
+                  "name": "Group text",
+                  "fill": "$text-tertiary",
+                  "content": "NGOẠI TUYẾN — 2",
+                  "lineHeight": 1.45,
+                  "fontFamily": "$font-text",
+                  "fontSize": "$type-label",
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "id": "syCBz",
+              "type": "ref",
+              "ref": "Jpcbk",
+              "name": "FR Lan",
+              "width": "fill_container",
+              "descendants": {
+                "o3jMR/L56hqK": {
+                  "content": "L"
+                },
+                "wnO18": {
+                  "id": "G6D39",
+                  "type": "ref",
+                  "ref": "dhjeI",
+                  "name": "FR presence",
+                  "x": 28,
+                  "y": 28
+                },
+                "XfFFZ": {
+                  "fill": "$text-secondary",
+                  "content": "Lan"
+                },
+                "HLy37": {
+                  "content": "lan.vu"
+                },
+                "P8dSv4": {
+                  "fill": "$text-secondary",
+                  "content": "Lan"
+                },
+                "o6A1qJ": {
+                  "content": "lan.vu"
+                }
+              }
+            },
+            {
+              "id": "qzI86",
+              "type": "ref",
+              "ref": "Jpcbk",
+              "name": "FR Minh",
+              "width": "fill_container",
+              "descendants": {
+                "o3jMR/L56hqK": {
+                  "content": "M"
+                },
+                "wnO18": {
+                  "id": "ELvJB",
+                  "type": "ref",
+                  "ref": "dhjeI",
+                  "name": "FR presence",
+                  "x": 28,
+                  "y": 28
+                },
+                "XfFFZ": {
+                  "fill": "$text-secondary",
+                  "content": "Minh"
+                },
+                "HLy37": {
+                  "content": "minh.do"
+                },
+                "P8dSv4": {
+                  "fill": "$text-secondary",
+                  "content": "Minh"
+                },
+                "o6A1qJ": {
+                  "content": "minh.do"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "Arhrg",
+          "type": "ref",
+          "ref": "LSkxx",
+          "name": "Tab bar",
+          "width": "fill_container",
+          "descendants": {
+            "VLvYr/F6Snt": {
+              "fill": "$primary"
+            },
+            "VLvYr/QaBZO": {
+              "fill": "$primary",
+              "fontWeight": "600"
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "fi2I4",
+          "layoutPosition": "absolute",
+          "x": 0,
+          "y": 0,
+          "name": "Scrim",
+          "width": 390,
+          "height": 844,
+          "fill": "$scrim"
+        },
+        {
+          "type": "frame",
+          "id": "a2xLM",
+          "layoutPosition": "absolute",
+          "x": 0,
+          "y": 330,
+          "name": "Sheet",
+          "width": 390,
+          "fill": "$surface-1",
+          "cornerRadius": [
+            24,
+            24,
+            0,
+            0
+          ],
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "$shadow",
+            "offset": {
+              "x": 0,
+              "y": -4
+            },
+            "blur": 24
+          },
+          "layout": "vertical",
+          "padding": [
+            8,
+            0,
+            24,
+            0
+          ],
+          "children": [
+            {
+              "id": "ABHUV",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-2",
+              "layoutPosition": "absolute"
+            },
+            {
+              "type": "frame",
+              "id": "IKL3y",
+              "name": "Handle wrap",
+              "width": "fill_container",
+              "padding": [
+                0,
+                0,
+                8,
+                0
+              ],
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "a1hDNw",
+                  "name": "Handle",
+                  "width": 36,
+                  "height": 4,
+                  "fill": "$border-input",
+                  "cornerRadius": "$radius-full"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "rkN6g",
+              "name": "Profile",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "padding": [
+                60,
+                24,
+                8,
+                24
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "CmCMQ",
+                  "name": "Av box",
+                  "width": 96,
+                  "height": 96,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "boZYR",
+                      "x": -6,
+                      "y": -6,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 108,
+                      "height": 108
+                    },
+                    {
+                      "id": "spuGk",
+                      "type": "ref",
+                      "ref": "kh2dM",
+                      "name": "Avatar",
+                      "width": 96,
+                      "height": 96,
+                      "x": 0,
+                      "y": 0,
+                      "descendants": {
+                        "L56hqK": {
+                          "content": "B",
+                          "fontSize": "$type-display"
+                        }
+                      }
+                    },
+                    {
+                      "id": "k5Mmt",
+                      "type": "ref",
+                      "ref": "pDNcf",
+                      "name": "Presence",
+                      "width": 14,
+                      "height": 14,
+                      "x": 76,
+                      "y": 76,
+                      "fill": "$surface-1",
+                      "stroke": "$surface-1",
+                      "strokeWidth": 0
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Kr4BO",
+                  "name": "Gap",
+                  "width": 1,
+                  "height": 12
+                },
+                {
+                  "type": "text",
+                  "id": "N42QK2",
+                  "name": "Pf name",
+                  "fill": "$text-primary",
+                  "content": "Bình",
+                  "lineHeight": 1.45,
+                  "fontFamily": "$font-text",
+                  "fontSize": "$type-title-2",
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "t2j05",
+                  "name": "Pf user",
+                  "fill": "$text-secondary",
+                  "content": "binh.tran",
+                  "lineHeight": 1.45,
+                  "fontFamily": "$font-text",
+                  "fontSize": "$type-body",
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "v9Lpo",
+                  "name": "Info wrap",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "HQUFD",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "dbNAj",
+                          "name": "Pf section",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "ztPml",
+                              "name": "Pf heading",
+                              "fill": "$text-tertiary",
+                              "content": "GIỚI THIỆU",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "BGlIL",
+                              "name": "Pf bio",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Lớp trưởng D22CN05 · hỏi bài cứ tag mình",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-body",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "aHujU",
+                          "name": "Common servers",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "sAMJX",
+                              "name": "Servers title",
+                              "fill": "$text-tertiary",
+                              "content": "SERVER CHUNG — 2",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ADPg3",
+                              "name": "Server Ôn thi Giải tích 2",
+                              "width": "fill_container",
+                              "height": 48,
+                              "gap": 12,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "TLIDB",
+                                  "name": "Server icon",
+                                  "width": 32,
+                                  "height": 32,
+                                  "fill": "$surface-3",
+                                  "cornerRadius": "$radius-server",
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "nxoWE",
+                                      "name": "Server icon text",
+                                      "fill": "$text-primary",
+                                      "content": "ÔT",
+                                      "lineHeight": 1.45,
+                                      "fontFamily": "$font-text",
+                                      "fontSize": "$type-label",
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "xVYCv",
+                                  "name": "Server name",
+                                  "fill": "$text-primary",
+                                  "content": "Ôn thi Giải tích 2",
+                                  "lineHeight": 1.45,
+                                  "fontFamily": "$font-text",
+                                  "fontSize": "$type-body",
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "V67B5",
+                              "name": "Server Nhóm đồ án Mobile",
+                              "width": "fill_container",
+                              "height": 48,
+                              "gap": 12,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "Xm4rH",
+                                  "name": "Server icon",
+                                  "width": 32,
+                                  "height": 32,
+                                  "fill": "$surface-3",
+                                  "cornerRadius": "$radius-server",
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "RTmtl",
+                                      "name": "Server icon text",
+                                      "fill": "$text-primary",
+                                      "content": "NĐ",
+                                      "lineHeight": 1.45,
+                                      "fontFamily": "$font-text",
+                                      "fontSize": "$type-label",
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "CmjHl",
+                                  "name": "Server name",
+                                  "fill": "$text-primary",
+                                  "content": "Nhóm đồ án Mobile",
+                                  "lineHeight": 1.45,
+                                  "fontFamily": "$font-text",
+                                  "fontSize": "$type-body",
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "WfztT",
+                  "x": 24,
+                  "y": 466,
+                  "name": "Pf buttons",
+                  "enabled": false,
+                  "width": "fill_container(342)",
+                  "gap": 12,
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "h3XtOW",
+                      "type": "ref",
+                      "ref": "bcqud",
+                      "name": "Btn Nhắn tin",
+                      "width": "fill_container",
+                      "descendants": {
+                        "G1jKj": {
+                          "enabled": true,
+                          "icon": "message-circle"
+                        },
+                        "hOEYm": {
+                          "content": "Nhắn tin"
+                        }
+                      }
+                    },
+                    {
+                      "type": "frame",
+                      "id": "UED57",
+                      "name": "Btn bạn bè (icon)",
+                      "width": 44,
+                      "height": 44,
+                      "cornerRadius": 12,
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "padding": [
+                        0,
+                        0,
+                        0,
+                        3
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "MtTTy",
+                          "name": "UserCheck icon",
+                          "width": 18,
+                          "height": 18,
+                          "icon": "user-check",
+                          "library": "lucide",
+                          "fill": "$text-secondary"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "VURjO",
+              "name": "Rows",
+              "width": "fill_container",
+              "height": "fit_content(0)",
+              "layout": "vertical"
+            },
+            {
+              "type": "frame",
+              "id": "vyvob",
+              "layoutPosition": "absolute",
+              "x": 342,
+              "y": 12,
+              "name": "Btn more · banner",
+              "width": 36,
+              "height": 36,
+              "fill": "$scrim",
+              "cornerRadius": 18,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "OBYPu",
+                  "name": "More icon",
+                  "width": 20,
+                  "height": 20,
+                  "icon": "ellipsis",
+                  "library": "lucide",
+                  "fill": "$text-primary"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "yxGdM",
+              "layoutPosition": "absolute",
+              "x": 298,
+              "y": 12,
+              "name": "Rel · banner (bạn bè)",
+              "width": 36,
+              "height": 36,
+              "fill": "$scrim",
+              "cornerRadius": 18,
+              "padding": [
+                0,
+                0,
+                0,
+                2
+              ],
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "YpRyf",
+                  "name": "UserCheck icon",
+                  "width": 18,
+                  "height": 18,
+                  "icon": "user-check",
+                  "library": "lucide",
+                  "fill": "$text-primary"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "themes": {
@@ -601912,6 +604419,142 @@
     "type-mono": {
       "type": "number",
       "value": 14
+    },
+    "profile-bg-1": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#DCE6FB",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#24345E",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "profile-bg-2": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#E1E0F7",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#2A2F5C",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "profile-bg-3": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#D6E9EE",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#1F3A4F",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "profile-bg-4": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#E7E1F0",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#33304F",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "profile-bg-5": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#DDE3EE",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#2C3A55",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "profile-bg-6": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#D5E6F2",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#1E3348",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "profile-glow": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#3A64CC38",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#6EA6FB59",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "profile-glow-end": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#3A64CC00",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#6EA6FB00",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
     }
   },
   "fileToken": "0d2a74af-9f2e-4262-9579-83504495daaf"

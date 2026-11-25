@@ -633,7 +633,7 @@ Rời server khi đang ở phòng: rời phòng luôn, phút đã học giữ nh
 │ │ [lamp] Tập trung · còn 18 phút        │ │
 │ │        Phòng học im lặng              │ │
 │ └──────────────────────────────────────┘ │
-│ [ Nhắn tin ]  [ Kết bạn ]  [⋯]           │  Button primary · nút / ChipStatus quan hệ · IconButton 48 (v1.9, CR-25 #10)
+│ [ Nhắn tin ]  [ Kết bạn ]                │  Button primary · nút / ChipStatus quan hệ; ⋯ ở góc trên phải banner (chốt 25/11/2026, xem Chốt)
 ```
 (v1.9, CR-25 #10) Hàng nút = [Nhắn tin] [nút hoặc nhãn quan hệ] [⋯]. Nút thật duy nhất về quan hệ: "Kết bạn" (chưa là bạn) hoặc "Chấp nhận" (người kia đã mời). Còn lại là `ChipStatus` không bấm được: "Bạn bè" (`user-check`), "Đã gửi lời mời" (`send`), "Đã chặn" (`ban`). Hàng chữ "⚑ Báo cáo" cũ **bỏ** — chuyển vào ⋯ thành "Báo cáo hồ sơ".
 
@@ -647,8 +647,8 @@ Rời server khi đang ở phòng: rời phòng luôn, phút đã học giữ nh
 | State | Khác gì | Chữ |
 |---|---|---|
 | `not-friend` | Như bố cục, người mẫu **Khánh** (sửa 20/10/2026 khi làm 09: Bình là bạn của An ở 04 và 09); chấm presence DND như ở drawer S-HOME-03; giới thiệu "Bán tài liệu ôn thi giá rẻ · inbox mình"; không khối hoạt động (Khánh không học) | "Nhắn tin" · "Kết bạn" · ⋯ |
-| `friend` | Bình; giới thiệu "Lớp trưởng D22CN05 · hỏi bài cứ tag mình"; dòng "Trưởng nhóm · Thành viên từ 02/10/2026"; nút quan hệ thành `ChipStatus` | "Bạn bè" (`user-check`, không bấm được) |
-| `request-sent` | Hà (An đã mời, khớp 09 › Đang chờ); giới thiệu "K22 Điện tử"; khối hoạt động một dòng "Đang học cùng nhóm" (khớp drawer) | `ChipStatus` "Đã gửi lời mời" (`send`); ⋯ có "Hủy lời mời" |
+| `friend` | Bình; giới thiệu "Lớp trưởng D22CN05 · hỏi bài cứ tag mình"; dòng "Trưởng nhóm · Thành viên từ 02/10/2026"; (chốt 25/11/2026) quan hệ là ô icon 44 `user-check` (`text-secondary`, viền `border`, không bấm được, không chữ), "Nhắn tin" rộng hết phần còn lại | `accessibilityLabel` "Bạn bè" |
+| `request-sent` | Hà (An đã mời, khớp 09 › Đang chờ); giới thiệu "K22 Điện tử"; khối hoạt động một dòng "Đang học cùng nhóm" (khớp drawer) | (Chốt 25/11/2026, kiểu Discord) "Nhắn tin" rộng hết hàng + nút icon vuông 44 `user-sent` (`user-plus` có mũi tên → thay dấu +), viền `border`, icon `text-tertiary`, `disabled`: không gửi lại được; `accessibilityLabel` "Đã gửi lời mời". ⋯ có "Hủy lời mời" |
 | `request-received` 🆕 | Giang (đã mời An lúc 19:48, khớp 06); giới thiệu "Tối nào cũng học lúc 20:00"; nút quan hệ thành "Chấp nhận" (`primary`), nút "Nhắn tin" thành `secondary` | "Giang muốn kết bạn với bạn" (label trên hàng nút); ⋯ có "Từ chối lời mời" |
 | `self` | Chỉ thông tin, nút "Sửa hồ sơ" → S-ME-01; không ⋯, không khối hoạt động; giới thiệu "Sinh viên năm 3 PTIT · đang ôn Giải tích 2" | Dòng phụ "Owner · Thành viên từ 01/10/2026" (An vào sớm nhất) |
 | `moderator` | Khánh như `not-friend`, thêm nhóm "Kiểm duyệt" dưới hàng nút: (v1.9, CR-17 #1) "Tạm khóa" · "Mời ra khỏi server" · "Cấm khỏi server" (chỉ khi role của An cao hơn, mỗi hàng theo quyền tương ứng) — chạm mở thẳng sheet / dialog của 08 S-SET-03 (`timeout-sheet` tiêu đề "Tạm khóa Khánh", `kick-confirm`, `ban-confirm`) trên hồ sơ; thêm "Vai trò ›" (`MANAGE_ROLES`) → 08 S-SET-03 `member-detail` | Người đang bị tạm khóa: hàng thành "Đổi thời hạn tạm khóa ›" + "Gỡ tạm khóa" (08) |
@@ -664,8 +664,22 @@ Rời server khi đang ở phòng: rời phòng luôn, phút đã học giữ nh
 ### Checklist duyệt
 - [ ] 14 state (gồm `request-received`; `moderator-voice` do area 08 vẽ); không hiện thao tác kiểm duyệt khi role không đủ.
 - [ ] Mọi state có người (trừ `deleted`, `cannot-message` của Quân) có dòng giới thiệu ≤ 3 dòng; không còn hàng "⚑ Báo cáo".
-- [ ] Quan hệ ngoài "Kết bạn" / "Chấp nhận" là `ChipStatus`, không phải nút.
+- [ ] Quan hệ ngoài "Kết bạn" / "Chấp nhận" không bấm được: "Bạn bè" là ô icon `user-check`, "Đã gửi lời mời" là ô icon `user-sent` `disabled`, "Đã chặn" là `ChipStatus` (chốt 25/11/2026).
 - [ ] Ngoài server: không vai trò, không ngày vào, không Kiểm duyệt.
+
+
+### Chốt 25/11/2026 (bảng hỏi P2-B3 #20, theo khuyến nghị)
+
+| Chỗ | Chốt |
+| --- | --- |
+| Tên | `title-2` đậm 700 (như frame) |
+| Hàng nút | Nút M (44); `ChipStatus` giữ đệm 16 (frame vẽ 12 là lỗi vẽ) |
+| SERVER CHUNG | Icon 32, nền `surface-3`, chữ 600 |
+| `cannot-message` mở ngoài server | Ẩn `PresenceDot` (như mọi màn `40303`); mở trong server vẫn hiện |
+| Menu ⋯ → "Hủy kết bạn" / "Chặn" | Đóng `ActionSheet`, dialog chồng lên sheet hồ sơ, sheet giữ nguyên |
+| Offline | Mọi thao tác gọi API (Kết bạn, Chấp nhận, mục menu theo quan hệ, Chặn) `disabled`; "Sao chép username" vẫn dùng được |
+| Tiêu đề menu ⋯ | `headline` (C-09) |
+| Đầu sheet kiểu Discord (25/11/2026, người dùng yêu cầu khi thử trên máy) | Banner `Background/default` (board C-41) cao **128**, bo trên 24, tay nắm nằm trên banner; màu `profile-bg-1…6` theo id người dùng (id mod 6), tài khoản đã xóa `surface-3`. **Đèn bàn:** chỉ khi người đó đang học và pha đang chạy (không tạm dừng / chờ), quầng sáng radial màu pha (`phase-*`, đục 22% sáng / 35% tối) toả từ góc trên phải, hiện dần 320 ms sau khi sheet mở; không học thì banner phẳng. **⋯ lên góc trên phải banner** (cách mép 12): tròn 36 nền `scrim`, icon 20 `text-primary`, vùng chạm 48; hàng nút không còn ⋯. Avatar 96 viền 6 màu `surface-1`, tâm nằm ở mép dưới banner, hiện vào bằng scale 0.9 → 1 + mờ dần 320 ms (giảm chuyển động: chỉ mờ dần 200); đang học thì trong viền có vòng 2 màu pha (cách avatar 2). Khối `surface-2` bo 12, đệm 12, cách 8: tiêu đề nhỏ `label` 600 `text-tertiary` "GIỚI THIỆU" trên giới thiệu, "TRONG SERVER" trên dòng vai trò · ngày vào (`label` `text-secondary`), "SERVER CHUNG — N" như cũ. Hàng nút: bạn bè / đã gửi lời mời thì "Nhắn tin" rộng hết hàng + ô icon 44 (`user-check` / `user-sent` `disabled`; icon dịch phải 1.5 cho cân mắt); **mở từ DM của chính người đó** (không "Nhắn tin") thì ô quan hệ (`user-check` / `user-sent` / `user-plus` bấm để kết bạn) lên banner, tròn 36 nền `scrim` bên trái ⋯ cách 8, hàng nút bỏ hẳn — trừ "Chấp nhận" vẫn là nút có chữ (frame `from-their-dm`); có hai nút (Nhắn tin + Kết bạn / Chấp nhận) thì rộng bằng nhau và cao bằng nhau kể cả khi chữ to xuống 2 dòng; còn một nút quan hệ thì rộng hết hàng; "Nhắn tin" + `ChipStatus` thì nút giữ đủ chữ, chip co lại và cắt "…". Ảnh bìa tự đặt vẫn là v1.x (REQ-AUTH-06 v1.7) |
 
 ---
 

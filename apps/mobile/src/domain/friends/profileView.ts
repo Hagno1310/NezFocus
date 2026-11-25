@@ -1,5 +1,19 @@
 import type { LookupRelationship, StudyActivity } from '@nezfocus/shared';
 
+const BANDS = 6;
+
+// S-HOME-10 default background (C-41): one of six tones, fixed per person by id.
+export const profileBand = (userId: string, deleted: boolean) =>
+  deleted
+    ? ('surface-3' as const)
+    : (`profile-bg-${Number(BigInt(userId) % BigInt(BANDS)) + 1}` as
+        | 'profile-bg-1'
+        | 'profile-bg-2'
+        | 'profile-bg-3'
+        | 'profile-bg-4'
+        | 'profile-bg-5'
+        | 'profile-bg-6');
+
 export type ProfileView = {
   message: 'primary' | 'secondary' | 'disabled' | null; // "Nhắn tin"
   relation:

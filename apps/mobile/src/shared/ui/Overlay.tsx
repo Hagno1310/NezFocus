@@ -356,9 +356,12 @@ export function BottomSheet({
   onDismiss,
   above,
   titleRight,
+  band,
 }: {
   visible: boolean;
   title?: string; // none: S-HOME-10 starts with the avatar
+  // S-HOME-10 (C-41): a coloured strip behind the handle, the avatar straddles its edge.
+  band?: ColorToken;
   children?: ReactNode;
   action?: ButtonProps;
   // Under the main button (S-MOD-03 "Hủy").
@@ -401,6 +404,9 @@ export function BottomSheet({
       >
         {(handle) => (
           <>
+            {band && (
+              <View style={[styles.band, { backgroundColor: colors[band] }]} />
+            )}
             {handle}
             <View style={styles.sheetBody}>
               {icon &&
@@ -694,6 +700,15 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   sheetBody: { gap: space[3], flexShrink: 1 },
+  band: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: size.profileBand,
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
+  },
   sheetTitle: { flexDirection: 'row', alignItems: 'center', gap: space[1] },
   iconCircle: {
     width: size.icon.hero * 2,

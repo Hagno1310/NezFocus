@@ -29,6 +29,12 @@ colors:
   overlay-pressed: "#00000014"
   scrim: "#F6F8FE99"
   shadow: "#2B325724"
+  profile-bg-1: "#DCE6FB"
+  profile-bg-2: "#E1E0F7"
+  profile-bg-3: "#D6E9EE"
+  profile-bg-4: "#E7E1F0"
+  profile-bg-5: "#DDE3EE"
+  profile-bg-6: "#D5E6F2"
   dark:
     bg: "#11162A"
     surface-1: "#171D35"
@@ -56,6 +62,12 @@ colors:
     overlay-pressed: "#00000029"
     scrim: "#11162A99"
     shadow: "#2B325766"
+    profile-bg-1: "#24345E"
+    profile-bg-2: "#2A2F5C"
+    profile-bg-3: "#1F3A4F"
+    profile-bg-4: "#33304F"
+    profile-bg-5: "#2C3A55"
+    profile-bg-6: "#1E3348"
 typography:
   display:
     fontFamily: Be Vietnam Pro
@@ -545,3 +557,4 @@ Thêm 01/11/2026 (SRS v1.10, CR-27, Mục 4.11; chế độ cập nhật của `
 | 06/11/2026 | Nhãn nút (`button-primary`, `button-secondary`, `button-danger`) đậm 600, cỡ 16 ở mọi cỡ nút; `button-secondary` cao 44 như master (S 40 vẫn dùng trên hàng danh sách) | Dựng component P0-3b (#3): board `C-01 · Button` vẽ mọi biến thể và cả ba cỡ 48 / 44 / 40 bằng 16/600, token cũ ghi 400 (và 14 cho nút phụ) nên code theo token sẽ lệch board. Sửa token theo board, không đổi frame |
 | 07/11/2026 | Học một mình tạm dừng trong pha Nghỉ: không mascot, giữ nền và nét vòng của pha | Thử trên máy thật: mascot đẩy dòng "Đồng hồ đứng yên, không tính phút" đè lên vòng 280; mascot "được nghỉ" cũng không hợp lúc đồng hồ đứng yên. Frame `S-STUDY-02 · paused` chỉ vẽ pha Tập trung |
 | 12/11/2026 | Chấm presence 10 ở mọi cỡ avatar (bỏ chấm 14 cho avatar 56–96) | Frame S-ME-02 và master `PresenceDot` chỉ có một cỡ (chấm 10, viền cắt 2); user chọn theo frame khi thử P1-A4 trên máy. Token `presence-dot.size` vốn đã là 10 |
+| 25/11/2026 | Thêm `profile-bg-1…6`: nền mặc định ở đầu sheet hồ sơ S-HOME-10 (board C-41 `Background/default`), màu theo id người dùng (id mod 6); tài khoản đã xóa dùng `surface-3` | Người dùng yêu cầu khi thử P2-B3 (#20) trên máy. Ngoại lệ có chủ đích của "mọi nơi khác giữ trung tính": sáu tông trầm cùng họ navy / xanh thương hiệu, không mang chữ nên không cần tỉ lệ tương phản; ảnh bìa do người dùng đặt vẫn là v1.x (REQ-AUTH-06 v1.7) |

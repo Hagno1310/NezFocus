@@ -27,6 +27,13 @@ export const lightColors = {
   'overlay-pressed': '#00000014',
   scrim: '#F6F8FE99',
   shadow: '#2B325724',
+  // S-HOME-10 default background (DESIGN.md, 25/11/2026)
+  'profile-bg-1': '#DCE6FB',
+  'profile-bg-2': '#E1E0F7',
+  'profile-bg-3': '#D6E9EE',
+  'profile-bg-4': '#E7E1F0',
+  'profile-bg-5': '#DDE3EE',
+  'profile-bg-6': '#D5E6F2',
 };
 
 export type ColorToken = keyof typeof lightColors;
@@ -59,6 +66,12 @@ export const darkColors: Colors = {
   'overlay-pressed': '#00000029',
   scrim: '#11162A99',
   shadow: '#2B325766',
+  'profile-bg-1': '#24345E',
+  'profile-bg-2': '#2A2F5C',
+  'profile-bg-3': '#1F3A4F',
+  'profile-bg-4': '#33304F',
+  'profile-bg-5': '#2C3A55',
+  'profile-bg-6': '#1E3348',
 };
 
 // Android family names registered by the expo-font plugin in app.config.ts.
@@ -182,6 +195,7 @@ export const size = {
   // C-13 Avatar sizes; DESIGN.md › Presence: dot 10 on every avatar size, cut 2.
   avatar: [20, 24, 28, 32, 40, 48, 56, 96] as const, // 48: S-DM-05 card (chốt 20/11/2026); 28: ChannelHeader · dm (chốt 25/11/2026)
   presence: { dot: 10, cut: 2 },
+  profileBand: 76, // C-41: the 96 avatar's centre sits on its bottom edge
   avatarStackOverlap: -6,
   // DESIGN.md › Mascot: empty state 96–120; board EmptyState draws 112.
   mascotEmpty: 112,

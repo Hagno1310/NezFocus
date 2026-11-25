@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { profileView } from './profileView';
+import { profileBand, profileView } from './profileView';
 
 const studying = { kind: 'solo' } as never;
 const base = {
@@ -115,5 +115,14 @@ describe('S-HOME-10', () => {
       dot: false,
       requestNote: false,
     });
+  });
+});
+
+describe('S-HOME-10 default background (C-41)', () => {
+  it('the same person always gets the same of six tones; a deleted account is neutral', () => {
+    expect(profileBand('12', false)).toBe('profile-bg-1');
+    expect(profileBand('17', false)).toBe('profile-bg-6');
+    expect(profileBand('17', false)).toBe(profileBand('17', false));
+    expect(profileBand('17', true)).toBe('surface-3');
   });
 });

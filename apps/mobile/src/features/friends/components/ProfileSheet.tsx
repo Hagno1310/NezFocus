@@ -27,7 +27,7 @@ import {
   profileSheet,
   type ProfileTarget,
 } from '../../../domain/friends/profileSheet';
-import { profileView } from '../../../domain/friends/profileView';
+import { profileBand, profileView } from '../../../domain/friends/profileView';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
 import { dmWith, hideDmList } from '../../../domain/dm/dmStore';
 import {
@@ -260,6 +260,7 @@ function ProfileSheet({
       <BottomSheet
         visible={visible}
         onDismiss={closeMemberProfile}
+        band={profileBand(userId, deleted)}
         above={
           copied ? (
             <ToastCard
@@ -269,14 +270,21 @@ function ProfileSheet({
         }
       >
         <View style={styles.block}>
-          <Avatar
-            name={name}
-            uri={avatarUri(user?.avatar ?? null, '256')}
-            deleted={deleted}
-            size={96}
-            ring="surface-1"
-            presence={v.dot && user ? presence.status : undefined}
-          />
+          <View
+            style={[
+              styles.avatarRing,
+              { backgroundColor: colors['surface-1'] },
+            ]}
+          >
+            <Avatar
+              name={name}
+              uri={avatarUri(user?.avatar ?? null, '256')}
+              deleted={deleted}
+              size={96}
+              ring="surface-1"
+              presence={v.dot && user ? presence.status : undefined}
+            />
+          </View>
           <View style={styles.gap} />
           <Text variant="title-2" weight="700" accessibilityRole="header">
             {name}
@@ -470,10 +478,17 @@ function ProfileSheet({
 
 const styles = StyleSheet.create({
   flex: { flex: 1, minWidth: 0 },
+  // Frame S-HOME-10: the avatar starts 28 below the sheet top, half over the band (C-41).
   block: {
     gap: space[1],
     paddingHorizontal: space[4],
-    paddingVertical: space[2],
+    paddingBottom: space[2],
+  },
+  avatarRing: {
+    alignSelf: 'flex-start',
+    padding: space[1],
+    margin: -space[1],
+    borderRadius: radius.full,
   },
   gap: { height: space[2] },
   pad8: { paddingTop: space[2] },

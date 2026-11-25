@@ -1,5 +1,5 @@
 {
-  "version": "2.22",
+  "version": "2.25",
   "children": [
     {
       "type": "frame",
@@ -160586,6 +160586,16 @@
           ],
           "children": [
             {
+              "id": "YRx4S",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-1"
+            },
+            {
               "type": "frame",
               "id": "hhmBo",
               "name": "Handle wrap",
@@ -160629,6 +160639,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "RoiFa",
+                      "x": -4,
+                      "y": -4,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 104,
+                      "height": 104
+                    },
                     {
                       "id": "S11Yjt",
                       "type": "ref",
@@ -161196,6 +161216,16 @@
           ],
           "children": [
             {
+              "id": "Bdq7Y",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-2"
+            },
+            {
               "type": "frame",
               "id": "FjWc9",
               "name": "Handle wrap",
@@ -161239,6 +161269,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "nW9O5",
+                      "x": -4,
+                      "y": -4,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 104,
+                      "height": 104
+                    },
                     {
                       "id": "C1A8v",
                       "type": "ref",
@@ -161799,6 +161839,16 @@
           ],
           "children": [
             {
+              "id": "oM6f2",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-3"
+            },
+            {
               "type": "frame",
               "id": "VtKKR",
               "name": "Handle wrap",
@@ -161842,6 +161892,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "qlkNk",
+                      "x": -4,
+                      "y": -4,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 104,
+                      "height": 104
+                    },
                     {
                       "id": "wn0sg",
                       "type": "ref",
@@ -162435,6 +162495,16 @@
           ],
           "children": [
             {
+              "id": "r64p0",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-5"
+            },
+            {
               "type": "frame",
               "id": "E4mfiT",
               "name": "Handle wrap",
@@ -162478,6 +162548,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "qPCqz",
+                      "x": -4,
+                      "y": -4,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 104,
+                      "height": 104
+                    },
                     {
                       "id": "bWfmU",
                       "type": "ref",
@@ -163012,6 +163092,16 @@
           ],
           "children": [
             {
+              "id": "tuzKC",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-1"
+            },
+            {
               "type": "frame",
               "id": "v001tG",
               "name": "Handle wrap",
@@ -163055,6 +163145,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "WZxaP",
+                      "x": -4,
+                      "y": -4,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 104,
+                      "height": 104
+                    },
                     {
                       "id": "X3qF2",
                       "type": "ref",
@@ -163723,6 +163823,16 @@
           ],
           "children": [
             {
+              "id": "vcPEC",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-5"
+            },
+            {
               "type": "frame",
               "id": "gYSad",
               "name": "Handle wrap",
@@ -163766,6 +163876,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "VMEqz",
+                      "x": -4,
+                      "y": -4,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 104,
+                      "height": 104
+                    },
                     {
                       "id": "F0e1jf",
                       "type": "ref",
@@ -164355,6 +164475,16 @@
           ],
           "children": [
             {
+              "id": "r9JjD",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$surface-3"
+            },
+            {
               "type": "frame",
               "id": "Xw2RM",
               "name": "Handle wrap",
@@ -164398,6 +164528,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "p3nMy",
+                      "x": -4,
+                      "y": -4,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 104,
+                      "height": 104
+                    },
                     {
                       "id": "WTuvC",
                       "type": "ref",
@@ -223839,6 +223979,16 @@
           ],
           "children": [
             {
+              "id": "IpxAx",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-4"
+            },
+            {
               "type": "frame",
               "id": "hq4AY",
               "name": "Handle wrap",
@@ -223882,6 +224032,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "jSSx7",
+                      "x": -4,
+                      "y": -4,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 104,
+                      "height": 104
+                    },
                     {
                       "id": "icEAL",
                       "type": "ref",
@@ -236656,6 +236816,16 @@
           ],
           "children": [
             {
+              "id": "Tphc8",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-1"
+            },
+            {
               "type": "frame",
               "id": "o97Lr",
               "name": "Handle wrap",
@@ -236699,6 +236869,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "f35DxI",
+                      "x": -4,
+                      "y": -4,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 104,
+                      "height": 104
+                    },
                     {
                       "id": "CSZcv",
                       "type": "ref",
@@ -312101,6 +312281,16 @@
           ],
           "children": [
             {
+              "id": "ZUj2P",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-1"
+            },
+            {
               "type": "frame",
               "id": "kq54f",
               "name": "Handle wrap",
@@ -312144,6 +312334,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "uula6",
+                      "x": -4,
+                      "y": -4,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 104,
+                      "height": 104
+                    },
                     {
                       "id": "SbK00",
                       "type": "ref",
@@ -375268,6 +375468,16 @@
           ],
           "children": [
             {
+              "id": "O1jzW3",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-6"
+            },
+            {
               "type": "frame",
               "id": "bnspe",
               "name": "Handle wrap",
@@ -375311,6 +375521,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "T94iJ",
+                      "x": -4,
+                      "y": -4,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 104,
+                      "height": 104
+                    },
                     {
                       "id": "FiDWe",
                       "type": "ref",
@@ -375904,6 +376124,16 @@
           ],
           "children": [
             {
+              "id": "iWo1u",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-2"
+            },
+            {
               "type": "frame",
               "id": "d36lm",
               "name": "Handle wrap",
@@ -375947,6 +376177,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "CWFWz",
+                      "x": -4,
+                      "y": -4,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 104,
+                      "height": 104
+                    },
                     {
                       "id": "R9ycX",
                       "type": "ref",
@@ -376668,6 +376908,16 @@
           ],
           "children": [
             {
+              "id": "e6mYV",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-4"
+            },
+            {
               "type": "frame",
               "id": "P1sh0",
               "name": "Handle wrap",
@@ -376711,6 +376961,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "d9ioz",
+                      "x": -4,
+                      "y": -4,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 104,
+                      "height": 104
+                    },
                     {
                       "id": "lOQuo",
                       "type": "ref",
@@ -377326,6 +377586,16 @@
           ],
           "children": [
             {
+              "id": "nHNU3",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-2"
+            },
+            {
               "type": "frame",
               "id": "aXJpo",
               "name": "Handle wrap",
@@ -377369,6 +377639,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "zpPtZ",
+                      "x": -4,
+                      "y": -4,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 104,
+                      "height": 104
+                    },
                     {
                       "id": "gtHY5",
                       "type": "ref",
@@ -378106,6 +378386,16 @@
           ],
           "children": [
             {
+              "id": "w5geM",
+              "type": "ref",
+              "ref": "E9CIS",
+              "name": "Background",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "fill": "$profile-bg-3"
+            },
+            {
               "type": "frame",
               "id": "QH0ZB",
               "name": "Handle wrap",
@@ -378149,6 +378439,16 @@
                   "height": 96,
                   "layout": "none",
                   "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "zjgwX",
+                      "x": -4,
+                      "y": -4,
+                      "name": "Ring",
+                      "fill": "$surface-1",
+                      "width": 104,
+                      "height": 104
+                    },
                     {
                       "id": "XHBeG",
                       "type": "ref",
@@ -601372,6 +601672,49 @@
           "y": 549
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "VlowQ",
+      "x": 11400,
+      "y": -340,
+      "name": "C-41 · Background/default (S-HOME-10, 25/11/2026)",
+      "theme": {
+        "mode": "dark"
+      },
+      "fill": "$bg",
+      "layout": "vertical",
+      "gap": 16,
+      "padding": 24,
+      "children": [
+        {
+          "type": "frame",
+          "id": "E9CIS",
+          "name": "Background/default",
+          "reusable": true,
+          "width": 390,
+          "height": 76,
+          "fill": "$profile-bg-1",
+          "cornerRadius": [
+            24,
+            24,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "text",
+          "id": "IUPtI",
+          "name": "Note",
+          "fill": "$text-secondary",
+          "textGrowth": "fixed-width",
+          "width": 390,
+          "content": "Nền đầu sheet hồ sơ: cao 76, bo trên 24; màu $profile-bg-1…6 chọn theo id người dùng (id mod 6); tài khoản đã xóa: $surface-3. Avatar 96 nằm vắt mép dưới, viền 4 màu $surface-1.",
+          "fontFamily": "$font-text",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        }
+      ]
     }
   ],
   "themes": {
@@ -601912,6 +602255,108 @@
     "type-mono": {
       "type": "number",
       "value": 14
+    },
+    "profile-bg-1": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#DCE6FB",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#24345E",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "profile-bg-2": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#E1E0F7",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#2A2F5C",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "profile-bg-3": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#D6E9EE",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#1F3A4F",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "profile-bg-4": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#E7E1F0",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#33304F",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "profile-bg-5": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#DDE3EE",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#2C3A55",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "profile-bg-6": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#D5E6F2",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#1E3348",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
     }
   },
   "fileToken": "0d2a74af-9f2e-4262-9579-83504495daaf"

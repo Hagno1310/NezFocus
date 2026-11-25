@@ -90,6 +90,8 @@ import {
   FriendsScreen,
   type FriendsTab,
 } from '../../features/friends/screens/FriendsScreen';
+import { dmView, showDmList } from '../../domain/dm/dmStore';
+import { openDmWith } from '../../features/dm/openDm';
 import { HomeDrawers } from './HomeDrawers';
 import { InviteRoute } from './InviteRoute';
 import { Placeholder } from './Placeholder';
@@ -190,6 +192,8 @@ function HomeTab() {
   const { t } = useTranslation();
   // S-HOME-02 `no-server`: READY listed none; the drawer becomes the Home root.
   const noServer = useStore(homeStore, (s) => s.servers?.length === 0);
+  // A DM on screen needs the drawers even with no server (S-DM-02 is a Home root like a channel).
+  const dmOpen = useStore(dmView, (s) => s.open !== null);
   return (
     <>
       <HomeStack.Navigator screenOptions={{ headerShown: false }}>
@@ -197,12 +201,14 @@ function HomeTab() {
           {({ navigation }) => {
             const placeholder = (title: string, ticket?: string) => () =>
               navigation.navigate('HomePlaceholder', { title, ticket });
-            const dm = placeholder(t('screens.directMessages'), 'P2-B3 (#20)');
-            return noServer ? (
+            const dm = showDmList;
+            const friends = () => navigation.navigate('Friends');
+            return noServer && !dmOpen ? (
               <NoServerHome
                 onCreate={() => navigation.navigate('CreateServer')}
                 onJoinByCode={() => navigation.navigate('JoinByCode')}
                 onDirectMessages={dm}
+                onFriends={friends}
               />
             ) : (
               <HomeDrawers
@@ -211,6 +217,7 @@ function HomeTab() {
                   onOpenVoice: (channel) =>
                     placeholder(channel.name, 'P3-B1 (#26)')(),
                   onDirectMessages: dm,
+                  onFriends: friends,
                   onInvite: openInviteSheet,
                   menu: {
                     invite: () => {
@@ -456,11 +463,11 @@ function HomeTab() {
         </HomeStack.Screen>
         <HomeStack.Screen name="Friends">
           {({ navigation, route }) => (
-            // ponytail: onOpenDm (💬, row, "Nhắn tin") comes with S-DM-02, P2-B3.3 (#116);
-            // onOpenProfile (avatar → S-HOME-10) with P2-B3.4 (#117).
+            // ponytail: onOpenProfile (avatar → S-HOME-10) comes with P2-B3.4 (#117).
             <FriendsScreen
               initialTab={route.params?.tab}
               onBack={navigation.goBack}
+              onOpenDm={(userId) => openDmWith(userId, navigation.popToTop)}
             />
           )}
         </HomeStack.Screen>
@@ -746,8 +753,6 @@ function Welcome({
 function MainTabs() {
   const { t } = useTranslation();
   const gallery = useGalleryAction();
-  const rootNav =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   // Dev only: sample badges for comparing with the C-03 board (Tasks, Inbox: P4).
   const [sampleBadges, setSampleBadges] = useState(false);
   useSoloSync();
@@ -771,17 +776,6 @@ function MainTabs() {
   const badgeToggle = __DEV__
     ? [{ label: 'Badge mẫu', onPress: () => setSampleBadges((b) => !b) }]
     : [];
-  // ponytail: S-DM-04's real entry is the "Bạn bè" row of S-DM-01, P2-B3.3 (#116).
-  const friendsEntry = [
-    {
-      label: t('friends.title'),
-      onPress: () =>
-        rootNav.navigate('Main', {
-          screen: 'Home',
-          params: { screen: 'Friends' },
-        }),
-    },
-  ];
   // Dev: the Fake cannot end a session, so these stand in for 40100 / 40103 / Gateway 4004.
   const endedActions = __DEV__
     ? (['password_reset', 'revoked', 'reuse_detected', 'expired'] as const).map(
@@ -820,9 +814,7 @@ function MainTabs() {
         {() => (
           <MeTab
             devActions={
-              __DEV__
-                ? [...friendsEntry, ...gallery, ...badgeToggle, ...endedActions]
-                : []
+              __DEV__ ? [...gallery, ...badgeToggle, ...endedActions] : []
             }
           />
         )}

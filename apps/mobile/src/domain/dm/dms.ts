@@ -1,0 +1,73 @@
+import type { DispatchEvent, DmChannel, StudyActivity } from '@nezfocus/shared';
+import { newerId } from '../messages/unread';
+
+export type DmState = { byId: Record<string, DmChannel>; loaded: boolean };
+
+export const emptyDms: DmState = { byId: {}, loaded: false };
+
+// Snowflakes order by time: a DM with no message yet sorts by when it was made.
+const activityOf = (d: DmChannel) => d.last_message_id ?? d.id;
+
+export const sortedDms = (s: DmState) =>
+  Object.values(s.byId).sort((a, b) =>
+    newerId(activityOf(a), activityOf(b)) ? -1 : 1,
+  );
+
+export function reduceDms(s: DmState, e: DispatchEvent): DmState {
+  switch (e.t) {
+    case 'READY':
+      return {
+        loaded: true,
+        byId: Object.fromEntries(e.d.private_channels.map((d) => [d.id, d])),
+      };
+    case 'CHANNEL_CREATE':
+      if (!('type' in e.d) || e.d.type !== 'dm') return s;
+      return { ...s, byId: { ...s.byId, [e.d.id]: e.d } };
+    case 'MESSAGE_CREATE': {
+      const known = e.d.server_id === null && s.byId[e.d.channel_id];
+      if (!known) return s;
+      const { server_id: _, ...message } = e.d;
+      return {
+        ...s,
+        byId: {
+          ...s.byId,
+          [known.id]: {
+            ...known,
+            last_message_id: message.id,
+            last_message: message,
+          },
+        },
+      };
+    }
+    default:
+      return s;
+  }
+}
+
+export const closeDm = (s: DmState, id: string): DmState => {
+  const { [id]: _, ...byId } = s.byId;
+  return { ...s, byId };
+};
+
+export type DmLine2 =
+  | { kind: 'message'; text: string; own: boolean; bold: boolean }
+  | { kind: 'activity'; activity: StudyActivity }
+  | { kind: 'none' };
+
+// S-DM-01 › Nội dung chữ (CR-25 #16): unread message > their study activity > last message.
+export function dmLine2(
+  dm: DmChannel,
+  o: { meId: string | null; unread: boolean; activity: StudyActivity | null },
+): DmLine2 {
+  const last = dm.last_message;
+  if (o.activity && !o.unread && !dm.recipient.deleted)
+    return { kind: 'activity', activity: o.activity };
+  if (!last) return { kind: 'none' };
+  // ponytail: "Đã gửi một ảnh / tệp" comes with P3-A2.2 (#124), call lines with P3-B6.3 (#157).
+  return {
+    kind: 'message',
+    text: last.content,
+    own: last.author.id === o.meId,
+    bold: o.unread,
+  };
+}

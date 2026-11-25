@@ -4,6 +4,7 @@ import {
   memberName,
   mentionToken,
   type MessageResponse,
+  type ServerMember,
 } from '@nezfocus/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
@@ -37,6 +38,8 @@ export function useChatMentions(
   serverId: string | null,
   channelId: string,
   trigger: Trigger | null,
+  // A DM: its two people stand in for the member list (no roles, CR-19 #14).
+  people?: readonly ServerMember[],
 ) {
   const { t } = useTranslation();
   const access = useServerAccess(serverId);
@@ -49,7 +52,8 @@ export function useChatMentions(
   const roles = useStore(homeStore, (s) =>
     serverId ? s.roles[serverId] : undefined,
   );
-  const members = useMembers(serverId ?? '', channelId).data;
+  const fetched = useMembers(serverId ?? '', channelId).data;
+  const members = people ?? fetched;
   const others = useStore(presenceStore, (s) => s.others);
   const byUser = useStore(friendsStore, (s) => s.byUser);
   // "{N} thành viên": counts only come with the role list; asked once roles are suggested.

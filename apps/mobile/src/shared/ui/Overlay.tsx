@@ -459,6 +459,7 @@ export type ActionItem = {
   onPress: () => void;
   destructive?: boolean;
   selected?: boolean;
+  disabled?: boolean; // e.g. offline (chốt 25/11/2026): shown, not pressable
 };
 
 export type ActionGroup = { title?: string; items: ActionItem[] };
@@ -608,12 +609,23 @@ function ActionRow({
   pickOne?: boolean;
 }) {
   const { colors } = useTheme();
-  const tone: ColorToken = item.destructive ? 'danger' : 'text-primary';
+  const tone: ColorToken = item.disabled
+    ? 'text-tertiary'
+    : item.destructive
+      ? 'danger'
+      : 'text-primary';
   return (
     <Pressable
       accessibilityRole={pickOne ? 'radio' : 'button'}
       accessibilityLabel={item.label}
-      accessibilityState={pickOne ? { selected: !!item.selected } : undefined}
+      accessibilityState={
+        pickOne
+          ? { selected: !!item.selected }
+          : item.disabled
+            ? { disabled: true }
+            : undefined
+      }
+      disabled={item.disabled}
       onPress={item.onPress}
       style={({ pressed }) => [
         styles.actionRow,
@@ -623,7 +635,13 @@ function ActionRow({
       <Icon
         as={item.icon}
         size="lg"
-        color={item.destructive ? 'danger' : 'text-secondary'}
+        color={
+          item.disabled
+            ? 'text-tertiary'
+            : item.destructive
+              ? 'danger'
+              : 'text-secondary'
+        }
       />
       <Text color={tone} style={styles.flex}>
         {item.label}

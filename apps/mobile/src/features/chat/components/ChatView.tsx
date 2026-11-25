@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactElement,
   type ReactNode,
 } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,7 +18,11 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
-import { ErrorCode } from '@nezfocus/shared';
+import {
+  CANNOT_MESSAGE_TEXT,
+  ErrorCode,
+  type ServerMember,
+} from '@nezfocus/shared';
 import { useStore } from 'zustand';
 import {
   chatRows,
@@ -71,6 +76,7 @@ import { useSendMessage } from '../hooks/useSendMessage';
 import { dayText, timeText } from '../chatText';
 
 const RATE_LIMITED = String(ErrorCode.RateLimited);
+const CANNOT_MESSAGE = String(ErrorCode.CannotMessageUser);
 
 // Offset from the bottom (the list is inverted) under which the list counts as "at the bottom".
 const AT_BOTTOM = 48;
@@ -92,6 +98,11 @@ export function ChatView({
   belowHeader,
   aboveComposer,
   disabled,
+  start,
+  composer,
+  hideBlocked = false,
+  people,
+  onCannotMessage,
 }: {
   channelId: string;
   serverId: string | null;
@@ -102,6 +113,13 @@ export function ChatView({
   // The typing line (P2-B1.3, #109).
   aboveComposer?: ReactNode;
   disabled?: ComposerBlock;
+  // S-DM-02: the DM start block, a strip in place of the Composer (`blocked-by-me`),
+  // messages of people I blocked hidden (FRIEND-03), the DM's people for @.
+  start?: ReactElement;
+  composer?: ReactNode;
+  hideBlocked?: boolean;
+  people?: readonly ServerMember[];
+  onCannotMessage?: () => void; // a send answered 40303: S-DM-EDGE `blocked-mid-chat`
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -117,7 +135,7 @@ export function ChatView({
   // so suggestions follow the @ / # at the end of the text.
   // ponytail: an @ typed mid-text gets no suggestions; khi cần: theo con trỏ bằng ref.
   const trigger = activeTrigger(draft, draft.length);
-  const mentions = useChatMentions(serverId, channelId, trigger);
+  const mentions = useChatMentions(serverId, channelId, trigger, people);
   const [picked, setPicked] = useState<PickedMention[]>([]);
   const toSend = encodeMentions(messageToSend(draft), picked);
 
@@ -137,15 +155,25 @@ export function ChatView({
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set());
   const rows = useMemo(
     () =>
-      chatRows(view.items, {
-        now,
-        timeZone,
-        myId,
-        blocked: mentions.blocked,
-        revealed,
-        newFrom: reading.newFrom,
-      }).reverse(),
+      chatRows(
+        hideBlocked
+          ? view.items.filter(
+              (i) =>
+                i.kind !== 'message' ||
+                !mentions.blocked.has(i.message.author.id),
+            )
+          : view.items,
+        {
+          now,
+          timeZone,
+          myId,
+          blocked: mentions.blocked,
+          revealed,
+          newFrom: reading.newFrom,
+        },
+      ).reverse(),
     [
+      hideBlocked,
       view.items,
       now,
       timeZone,
@@ -167,6 +195,13 @@ export function ChatView({
     const id = setInterval(() => setTick(Date.now()), 1000);
     return () => clearInterval(id);
   }, [waiting]);
+
+  const refused = view.items.some(
+    (i) => i.kind === 'outbox' && i.entry.lastError === CANNOT_MESSAGE,
+  );
+  useEffect(() => {
+    if (refused) onCannotMessage?.();
+  }, [refused, onCannotMessage]);
 
   const list = useRef<FlatList<ChatRow>>(null);
   const newest = view.items.at(-1);
@@ -250,6 +285,9 @@ export function ChatView({
           count: Math.max(1, Math.ceil((nextAttemptAt - tick) / 1000)),
         }),
       };
+    // FRIEND-03 AC1 / S-DM-EDGE `blocked-mid-chat`: the one sentence, no "Thử lại".
+    if (status === 'failed' && lastError === CANNOT_MESSAGE)
+      return { kind: 'failed', text: CANNOT_MESSAGE_TEXT };
     return status === 'failed'
       ? { kind: 'failed', text: t('chat.failed') }
       : { kind: 'pending', offline: !online };
@@ -296,7 +334,10 @@ export function ChatView({
           .join(', ')}
         // S-HOME-01 › Tương tác: a failed message opens S-HOME-04 `failed-message`.
         onPress={
-          isFailed && nonce
+          isFailed &&
+          nonce &&
+          row.item.kind === 'outbox' &&
+          row.item.entry.lastError !== CANNOT_MESSAGE
             ? (e) => {
                 const target = e.currentTarget as unknown as Measurable;
                 target.measureInWindow((_x, y) =>
@@ -398,7 +439,7 @@ export function ChatView({
         contentContainerStyle={styles.listContent}
         ListFooterComponent={
           view.reachedStart || empty ? (
-            <ChannelStart name={channelName} />
+            (start ?? <ChannelStart name={channelName} />)
           ) : loadingOlder ? (
             <SkeletonRows count={2} />
           ) : undefined
@@ -446,15 +487,17 @@ export function ChatView({
       {mentions.suggestion && !disabled && (
         <MentionSuggest sections={mentions.suggestion.sections} onPick={pick} />
       )}
-      <Composer
-        value={draft}
-        onChangeText={(text) => drafts.set(channelId, text)}
-        placeholder={placeholder}
-        counter={count.counter}
-        canSend={count.canSend}
-        onSend={send}
-        disabled={disabled}
-      />
+      {composer ?? (
+        <Composer
+          value={draft}
+          onChangeText={(text) => drafts.set(channelId, text)}
+          placeholder={placeholder}
+          counter={count.counter}
+          canSend={count.canSend}
+          onSend={send}
+          disabled={disabled}
+        />
+      )}
       <ActionSheet
         visible={failed !== null}
         cancel={false}

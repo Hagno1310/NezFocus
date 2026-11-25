@@ -6,6 +6,7 @@ import {
   DmRoutes,
   ErrorCode,
   MessageRoutes,
+  ProfileRoutes,
   RelationshipRoutes,
   ServerRoutes,
   SettingsRoutes,
@@ -13,6 +14,7 @@ import {
   type DmChannel,
   type ReadState,
   type ServerResponse,
+  type UserProfile,
 } from '@nezfocus/shared';
 import { eq } from 'drizzle-orm';
 import { DB, type Db } from '../src/db/db.module.js';
@@ -109,10 +111,12 @@ describe('DM (e2e)', () => {
         .send({ name: 'Ôn thi Giải tích 2', template: 'general' })
         .expect(201)
     ).body as ServerResponse;
-    await db
-      .insert(serverMembers)
-      .values(
-        members.map((m) => ({ serverId: BigInt(server.id), userId: m.userId })),
+    if (members.length)
+      await db.insert(serverMembers).values(
+        members.map((m) => ({
+          serverId: BigInt(server.id),
+          userId: m.userId,
+        })),
       );
     return server;
   };
@@ -407,6 +411,96 @@ describe('DM (e2e)', () => {
         deleted: true,
       });
       expect40303(await send(an, dm));
+    });
+  });
+
+  describe('GET /users/{id}/profile (P2-B3.4 #117)', () => {
+    beforeAll(() => start());
+    afterAll(() => app.close());
+
+    const profileOf = (me: Me, other: Me | string) =>
+      me.get(
+        ProfileRoutes.byUser.replace(
+          ':id',
+          typeof other === 'string' ? other : other.id,
+        ),
+      );
+
+    it('AUTH-06 AC5: SERVER CHUNG lists only servers both are in, in my rail order', async () => {
+      const an = await signedIn();
+      const binh = await signedIn('Bình');
+      const first = await sharedServer(an, binh);
+      await sharedServer(an); // An alone
+      const second = await sharedServer(binh, an);
+      await sharedServer(binh); // Bình alone
+      const res = (await profileOf(an, binh).expect(200)).body as UserProfile;
+      expect(res.mutual_servers.map((s) => s.id)).toEqual([
+        first.id,
+        second.id,
+      ]);
+      expect(res).toMatchObject({
+        user: { id: binh.id, display_name: 'Bình' },
+        deleted: false,
+        relationship: 'none',
+        can_message: true,
+      });
+    });
+
+    it('relationship as seen by me; outside every server and not friends → cannot message', async () => {
+      const an = await signedIn();
+      const minh = await signedIn('Minh');
+      await friends(an, minh);
+      expect((await profileOf(an, minh).expect(200)).body).toMatchObject({
+        relationship: 'friend',
+        mutual_servers: [],
+        can_message: true,
+      });
+      const quan = await signedIn('Quân');
+      expect((await profileOf(an, quan).expect(200)).body).toMatchObject({
+        relationship: 'none',
+        can_message: false,
+      });
+    });
+
+    it('someone who blocked me answers as usual, only can_message is false; I see "blocked" for mine', async () => {
+      const an = await signedIn();
+      const phong = await signedIn('Phong');
+      await sharedServer(an, phong);
+      await phong.put(byUser(an.id)).send({ type: 'blocked' }).expect(200);
+      expect((await profileOf(an, phong).expect(200)).body).toMatchObject({
+        user: { display_name: 'Phong' },
+        relationship: 'none',
+        can_message: false,
+      });
+      expect((await profileOf(phong, an).expect(200)).body).toMatchObject({
+        relationship: 'blocked',
+        can_message: false,
+      });
+    });
+
+    it('a deleted account reads as deleted; an unknown id is 40401', async () => {
+      const an = await signedIn();
+      const tuan = await signedIn('Tuấn');
+      await sharedServer(an, tuan);
+      await db
+        .update(users)
+        .set({ accountStatus: 'pending_deletion' })
+        .where(eq(users.id, tuan.userId));
+      expect((await profileOf(an, tuan).expect(200)).body).toEqual({
+        user: {
+          id: tuan.id,
+          username: null,
+          display_name: null,
+          avatar: null,
+          bio: null,
+        },
+        deleted: true,
+        relationship: 'none',
+        mutual_servers: [],
+        can_message: false,
+      });
+      const res = await profileOf(an, '1').expect(404);
+      expect(res.body.code).toBe(ErrorCode.NotFound);
     });
   });
 

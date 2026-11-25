@@ -57,7 +57,8 @@ export function useChannelReading({
   reachedStart: boolean;
   loadOlder: () => Promise<void>;
   atBottom: boolean;
-  jumped: boolean; // the opening jump to the line is done
+  // The opening jump to the line is done. A ref: this hook's effect runs before the jump's.
+  jumped: { readonly current: boolean };
 }) {
   const { active, canAck } = useReadTracking();
   // The line stays where it was until the channel is left (02 › Đã đọc)…
@@ -148,7 +149,7 @@ export function useChannelReading({
       canAck,
       atBottom,
       loading,
-      settled: !openedUnread || jumped,
+      settled: !openedUnread || jumped.current,
     });
     shown.current = { newestId, canAck };
     if (id) acks.seen(channelId, id, lastReadOf(channelId));

@@ -123,7 +123,7 @@ export function ChatView({
 
   // Newest row seen while at the bottom; null = at the bottom now.
   const [leftAt, setLeftAt] = useState<string | null>(null);
-  const [jumped, setJumped] = useState(false);
+  const jumped = useRef(false);
   const reading = useChannelReading({
     channelId,
     items: view.items,
@@ -190,10 +190,10 @@ export function ChatView({
     [],
   );
   useEffect(() => {
-    if (jumped || lineAt < 0) return;
-    setJumped(true);
+    if (jumped.current || lineAt < 0) return;
+    jumped.current = true;
     toLine(lineAt, false);
-  }, [jumped, lineAt, toLine]);
+  }, [lineAt, toLine]);
 
   const [loadingOlder, setLoadingOlder] = useState(false);
   const onTop = () => {

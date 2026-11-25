@@ -2,6 +2,7 @@ import {
   Easing,
   FadeIn,
   FadeOut,
+  Keyframe,
   ReduceMotion,
   SlideInDown,
   SlideOutDown,
@@ -35,3 +36,16 @@ export const sheetExit = (reduced: boolean, dragged: boolean) =>
     : SlideOutDown.duration(exitMs)
         .easing(exit)
         .reduceMotion(ReduceMotion.Never);
+
+// S-HOME-10 (chốt 25/11/2026): the lamp warms up after the sheet lands; the avatar settles in.
+export const lampOn = FadeIn.duration(motion.medium)
+  .delay(motion.short)
+  .easing(enter)
+  .reduceMotion(ReduceMotion.Never);
+export const avatarIn = (reduced: boolean) =>
+  reduced
+    ? fadeIn
+    : new Keyframe({
+        0: { opacity: 0, transform: [{ scale: 0.9 }] },
+        100: { opacity: 1, transform: [{ scale: 1 }], easing: enter },
+      }).duration(motion.medium);

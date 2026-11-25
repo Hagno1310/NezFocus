@@ -1,3 +1,4 @@
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { Check, ChevronLeft } from 'lucide-react-native';
 import {
   createContext,
@@ -45,7 +46,14 @@ import { FormMessage } from './FormMessage';
 import { Icon, type IconComponent } from './Icon';
 import { dialogLayout } from './logic';
 import { Text } from './Text';
-import { exitMs, fadeIn, fadeOut, sheetEnter, sheetExit } from './transitions';
+import {
+  exitMs,
+  fadeIn,
+  fadeOut,
+  lampOn,
+  sheetEnter,
+  sheetExit,
+} from './transitions';
 import { overlayClosed, overlayOpened } from './Toast';
 import { interacted } from '../interaction';
 
@@ -357,11 +365,15 @@ export function BottomSheet({
   above,
   titleRight,
   band,
+  bandAction,
 }: {
   visible: boolean;
   title?: string; // none: S-HOME-10 starts with the avatar
-  // S-HOME-10 (C-41): a coloured strip behind the handle, the avatar straddles its edge.
-  band?: ColorToken;
+  // S-HOME-10 (C-41): a coloured banner behind the handle, the avatar straddles its edge;
+  // `lamp` lights it from the top right while the person studies (the phase colour).
+  band?: { tone: ColorToken; lamp: ColorToken | null };
+  // Top right of the banner (S-HOME-10 ⋯, chốt 25/11/2026).
+  bandAction?: ReactNode;
   children?: ReactNode;
   action?: ButtonProps;
   // Under the main button (S-MOD-03 "Hủy").
@@ -404,10 +416,11 @@ export function BottomSheet({
       >
         {(handle) => (
           <>
-            {band && (
-              <View style={[styles.band, { backgroundColor: colors[band] }]} />
-            )}
+            {band && <Banner tone={band.tone} lamp={band.lamp} />}
             {handle}
+            {band && bandAction && (
+              <View style={styles.bandAction}>{bandAction}</View>
+            )}
             <View style={styles.sheetBody}>
               {icon &&
                 (icon.circle ? (
@@ -708,6 +721,12 @@ const styles = StyleSheet.create({
     height: size.profileBand,
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
+    overflow: 'hidden',
+  },
+  bandAction: {
+    position: 'absolute',
+    top: space[3] - space[1],
+    right: space[3] - space[1],
   },
   sheetTitle: { flexDirection: 'row', alignItems: 'center', gap: space[1] },
   iconCircle: {
@@ -755,3 +774,42 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[3],
   },
 });
+
+// C-41 Background/default: the person's tone; while they study, a desk lamp in the phase
+// colour glows from the top right (DESIGN.md: only the shared rhythm is lit).
+function Banner({ tone, lamp }: { tone: ColorToken; lamp: ColorToken | null }) {
+  const { colors, scheme } = useTheme();
+  return (
+    <View style={styles.band} pointerEvents="none">
+      <View
+        style={[StyleSheet.absoluteFill, { backgroundColor: colors[tone] }]}
+      />
+      {lamp && (
+        <Animated.View entering={lampOn} style={StyleSheet.absoluteFill}>
+          <Svg width="100%" height="100%">
+            <Defs>
+              <RadialGradient
+                id="lamp"
+                cx="82%"
+                cy="0%"
+                rx="65%"
+                ry="130%"
+                fx="82%"
+                fy="0%"
+              >
+                {/* Gotcha: react-native-svg ignores the alpha of an #RRGGBBAA stop colour. */}
+                <Stop
+                  offset="0"
+                  stopColor={colors[lamp]}
+                  stopOpacity={scheme === 'dark' ? 0.35 : 0.22}
+                />
+                <Stop offset="1" stopColor={colors[lamp]} stopOpacity={0} />
+              </RadialGradient>
+            </Defs>
+            <Rect width="100%" height="100%" fill="url(#lamp)" />
+          </Svg>
+        </Animated.View>
+      )}
+    </View>
+  );
+}

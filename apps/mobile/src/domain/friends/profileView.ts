@@ -1,4 +1,8 @@
-import type { LookupRelationship, StudyActivity } from '@nezfocus/shared';
+import type {
+  FocusPhase,
+  LookupRelationship,
+  StudyActivity,
+} from '@nezfocus/shared';
 
 const BANDS = 6;
 
@@ -18,7 +22,9 @@ export type ProfileView = {
   message: 'primary' | 'secondary' | 'disabled' | null; // "Nhắn tin"
   relation:
     | { kind: 'button'; action: 'add' | 'accept' }
-    | { kind: 'chip'; chip: 'friend' | 'sent' | 'blocked' }
+    | { kind: 'chip'; chip: 'blocked' }
+    // Chốt 25/11/2026 (Discord): an icon, no label; `sent` is disabled — never sent twice.
+    | { kind: 'icon'; icon: 'friend' | 'sent' }
     | null;
   menu: boolean; // ⋯
   edit: boolean; // "Sửa hồ sơ" (self)
@@ -63,10 +69,9 @@ export function profileView(o: {
       ? { kind: 'button', action: 'add' }
       : o.relationship === 'incoming'
         ? { kind: 'button', action: 'accept' }
-        : {
-            kind: 'chip',
-            chip: o.relationship === 'friend' ? 'friend' : 'sent',
-          };
+        : o.relationship === 'friend'
+          ? { kind: 'icon', icon: 'friend' }
+          : { kind: 'icon', icon: 'sent' };
   const message: ProfileView['message'] = o.fromTheirDm
     ? null
     : !o.canMessage
@@ -86,4 +91,12 @@ export function profileView(o: {
     dot: o.canMessage || o.inServer,
     requestNote: o.relationship === 'incoming',
   };
+}
+
+// S-HOME-10 banner lamp (chốt 25/11/2026): lit only while a phase runs; paused / waiting stay dark.
+export function litPhase(a: StudyActivity | null): FocusPhase | null {
+  if (a?.kind === 'solo') return a.state === 'running' ? a.phase : null;
+  if (a?.kind === 'group_study' && a.room?.state === 'running')
+    return a.room.phase;
+  return null;
 }

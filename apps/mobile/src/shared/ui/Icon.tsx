@@ -23,3 +23,12 @@ export function Icon({
     <Glyph size={sizes.icon[size]} color={colors[color]} strokeWidth={2} />
   );
 }
+
+// S-HOME-10 "Đã gửi lời mời" (chốt 25/11/2026): `user-plus` with an outgoing arrow; lucide has no
+// user-arrow-right.
+export const UserSent = createLucideIcon('user-sent', [
+  ['path', { d: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2', key: 'body' }],
+  ['circle', { cx: '9', cy: '7', r: '4', key: 'head' }],
+  ['path', { d: 'M16 11h6', key: 'shaft' }],
+  ['path', { d: 'm19 8 3 3-3 3', key: 'tip' }],
+]);

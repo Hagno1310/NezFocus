@@ -9,7 +9,6 @@ import {
   Lock,
   MessageCircle,
   Pencil,
-  Send,
   UserCheck,
   UserMinus,
   UserPlus,
@@ -18,6 +17,7 @@ import {
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, { useReducedMotion } from 'react-native-reanimated';
 import { useStore } from 'zustand';
 import { friendActions } from '../../../data/friends';
 import { localMessages } from '../../../data/messages';
@@ -27,7 +27,11 @@ import {
   profileSheet,
   type ProfileTarget,
 } from '../../../domain/friends/profileSheet';
-import { profileBand, profileView } from '../../../domain/friends/profileView';
+import {
+  litPhase,
+  profileBand,
+  profileView,
+} from '../../../domain/friends/profileView';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
 import { dmWith, hideDmList } from '../../../domain/dm/dmStore';
 import {
@@ -38,18 +42,23 @@ import {
 import { railInitials } from '../../../domain/servers/drawer';
 import { memberRightLabel, sinceText } from '../../../domain/servers/members';
 import { sessionStore } from '../../../domain/session/sessionStore';
-import { radius, space, useTheme } from '../../../shared/theme';
+import { radius, size, space, useTheme } from '../../../shared/theme';
 import { ActivityLine } from '../../../shared/ui/ActivityLine';
-import { Button, IconButton } from '../../../shared/ui/Button';
+import { Button } from '../../../shared/ui/Button';
 import { ChipStatus } from '../../../shared/ui/ChipStatus';
+import { phaseColor } from '../../../shared/ui/Focus';
 import { Icon } from '../../../shared/ui/Icon';
 import { ActionSheet, BottomSheet, Dialog } from '../../../shared/ui/Overlay';
 import { Avatar } from '../../../shared/ui/People';
 import { Text } from '../../../shared/ui/Text';
 import { showToast, ToastCard } from '../../../shared/ui/Toast';
+import { avatarIn } from '../../../shared/ui/transitions';
 
 const COPIED_MS = 4000; // C-14 toast without an action
 const AVATAR_RING = 6; // frame S-HOME-10: the sheet colour cut around the 96 avatar
+const PHASE_RING = 2; // chốt 25/11/2026: a phase-coloured ring inside the cut while studying
+const HANDLE_AREA = 28; // BottomSheet handle row 20 + gap 8, above the content
+const MORE = 36; // ⋯ on the banner; hitSlop brings the touch to 48
 import { useChatClock } from '../../chat/hooks/useChatClock';
 import { openDmWith } from '../../dm/openDm';
 import { avatarUri } from '../../me/avatarUri';
@@ -57,6 +66,7 @@ import { usePresence } from '../../presence/hooks/usePresence';
 import { useMembers } from '../../servers/hooks/useMembers';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { BlockDialog } from './BlockDialog';
+import { RelationIcon, type RelationIconKind } from './RelationIcon';
 
 // S-HOME-10, mounted once above the tabs; it keeps the last person while it animates out.
 export function ProfileSheetHost({
@@ -118,6 +128,7 @@ function ProfileSheet({
   const [blocking, setBlocking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const reduced = useReducedMotion();
 
   // Until the profile loads: what the friends list or the DM already knows.
   const known = useStore(
@@ -147,6 +158,8 @@ function ProfileSheet({
       .catch(() => showToast({ message: t('friends.addSheet.errors.generic') }))
       .finally(() => setBusy(false));
   };
+  const sendRequest = () =>
+    friendActions.send({ user_id: userId }, randomUUID());
   const message = () =>
     openDmWith(userId, () => {
       closeMemberProfile();
@@ -249,21 +262,63 @@ function ProfileSheet({
   const chip =
     v.relation?.kind === 'chip'
       ? {
-          friend: { icon: UserCheck, label: t('profile.chips.friend') },
-          sent: { icon: Send, label: t('profile.chips.sent') },
           blocked: { icon: Ban, label: t('profile.chips.blocked') },
         }[v.relation.chip]
       : null;
+  // Chốt 25/11/2026: opened from their own DM (no "Nhắn tin"), the relation icon joins ⋯ on
+  // the banner instead of standing alone in the button row; "Chấp nhận" keeps its label.
+  const bannerRelation: RelationIconKind | null = v.message
+    ? null
+    : v.relation?.kind === 'icon'
+      ? v.relation.icon
+      : v.relation?.kind === 'button' && v.relation.action === 'add'
+        ? 'add'
+        : null;
   const servers = profile?.mutual_servers ?? [];
   const bio = profile?.user.bio ?? null;
   const showServers = !serverId && !self && !!profile;
+  const phase = v.activity ? litPhase(presence.activity) : null;
+  const lamp = phase ? phaseColor[phase] : null;
 
   return (
     <>
       <BottomSheet
         visible={visible}
         onDismiss={closeMemberProfile}
-        band={profileBand(userId, deleted)}
+        band={{ tone: profileBand(userId, deleted), lamp }}
+        bandAction={
+          bannerRelation || v.menu ? (
+            <View style={styles.bandRow}>
+              {bannerRelation && (
+                <RelationIcon
+                  kind={bannerRelation}
+                  onBanner
+                  busy={busy}
+                  disabled={offline}
+                  onAdd={sendRequest}
+                />
+              )}
+              {v.menu && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('profile.more')}
+                  hitSlop={(size.touch - MORE) / 2}
+                  onPress={() => setMenu(true)}
+                  style={({ pressed }) => [
+                    styles.more,
+                    {
+                      backgroundColor: pressed
+                        ? colors['surface-2']
+                        : colors.scrim,
+                    },
+                  ]}
+                >
+                  <Icon as={Ellipsis} size="md" color="text-primary" />
+                </Pressable>
+              )}
+            </View>
+          ) : undefined
+        }
         above={
           copied ? (
             <ToastCard
@@ -273,21 +328,29 @@ function ProfileSheet({
         }
       >
         <View style={styles.block}>
-          <View
+          <Animated.View
+            entering={avatarIn(reduced)}
             style={[
               styles.avatarRing,
               { backgroundColor: colors['surface-1'] },
+              lamp && styles.avatarRingLit,
             ]}
           >
-            <Avatar
-              name={name}
-              uri={avatarUri(user?.avatar ?? null, '256')}
-              deleted={deleted}
-              size={96}
-              ring="surface-1"
-              presence={v.dot && user ? presence.status : undefined}
-            />
-          </View>
+            <View
+              style={
+                lamp ? [styles.phaseRing, { borderColor: colors[lamp] }] : null
+              }
+            >
+              <Avatar
+                name={name}
+                uri={avatarUri(user?.avatar ?? null, '256')}
+                deleted={deleted}
+                size={96}
+                ring="surface-1"
+                presence={v.dot && user ? presence.status : undefined}
+              />
+            </View>
+          </Animated.View>
           <View style={styles.gap} />
           <Text variant="title-2" weight="700" accessibilityRole="header">
             {name}
@@ -300,11 +363,23 @@ function ProfileSheet({
             <View
               style={[styles.info, { backgroundColor: colors['surface-2'] }]}
             >
-              {bio && <Text numberOfLines={3}>{bio}</Text>}
+              {bio && (
+                <View style={styles.section}>
+                  <Text variant="label" weight="600" color="text-tertiary">
+                    {t('profile.about')}
+                  </Text>
+                  <Text numberOfLines={3}>{bio}</Text>
+                </View>
+              )}
               {meta && (
-                <Text variant="label" weight="400" color="text-tertiary">
-                  {meta}
-                </Text>
+                <View style={styles.section}>
+                  <Text variant="label" weight="600" color="text-tertiary">
+                    {t('profile.inServer')}
+                  </Text>
+                  <Text variant="label" weight="400" color="text-secondary">
+                    {meta}
+                  </Text>
+                </View>
               )}
               {showServers && (
                 <View style={styles.servers}>
@@ -376,15 +451,14 @@ function ProfileSheet({
               />
             </View>
           )}
-          {(v.message || v.relation || v.menu) && (
-            <View
-              style={[
-                styles.buttons,
-                !v.message && !v.relation?.kind && styles.apart,
-              ]}
-            >
+          {(v.message || (v.relation && !bannerRelation)) && (
+            <View style={styles.buttons}>
               {v.message && (
-                <View style={styles.main}>
+                <View
+                  style={
+                    v.relation?.kind === 'chip' ? styles.main : styles.flex
+                  }
+                >
                   <Button
                     variant={
                       v.message === 'secondary' ? 'secondary' : 'primary'
@@ -397,8 +471,8 @@ function ProfileSheet({
                   />
                 </View>
               )}
-              {v.relation?.kind === 'button' && (
-                <View style={v.message ? styles.flex : undefined}>
+              {v.relation?.kind === 'button' && !bannerRelation && (
+                <View style={styles.flex}>
                   <Button
                     variant={
                       v.relation.action === 'accept' ? 'primary' : 'secondary'
@@ -409,7 +483,7 @@ function ProfileSheet({
                         ? 'profile.accept'
                         : 'profile.add',
                     )}
-                    fullWidth={!!v.message}
+                    fullWidth
                     loading={busy}
                     disabled={offline}
                     onPress={() =>
@@ -417,24 +491,18 @@ function ProfileSheet({
                         v.relation?.kind === 'button' &&
                         v.relation.action === 'accept'
                           ? friendActions.accept(userId)
-                          : friendActions.send(
-                              { user_id: userId },
-                              randomUUID(),
-                            ),
+                          : sendRequest(),
                       )
                     }
                   />
                 </View>
               )}
-              {chip && <ChipStatus icon={chip.icon} label={chip.label} />}
-              {v.menu && (
-                <View style={!v.message && chip ? styles.end : undefined}>
-                  <IconButton
-                    icon={Ellipsis}
-                    label={t('profile.more')}
-                    color="text-primary"
-                    onPress={() => setMenu(true)}
-                  />
+              {v.relation?.kind === 'icon' && !bannerRelation && (
+                <RelationIcon kind={v.relation.icon} />
+              )}
+              {chip && (
+                <View style={styles.chip}>
+                  <ChipStatus icon={chip.icon} label={chip.label} />
                 </View>
               )}
             </View>
@@ -488,12 +556,11 @@ const styles = StyleSheet.create({
   flex: { flex: 1, minWidth: 0 },
   // The button keeps its label whole; a ChipStatus beside it shrinks instead.
   main: { flexGrow: 1, flexShrink: 0 },
-  // Frame S-HOME-10: the avatar starts 28 below the sheet top, half over the band (C-41).
-  // Frame S-HOME-10 (25/11/2026): ring top 44, the avatar's centre on the banner's edge.
+  // Frame S-HOME-10: the avatar's centre on the banner's bottom edge (C-41).
   block: {
     gap: space[1],
-    paddingTop: space[3],
-    paddingHorizontal: space[4],
+    paddingTop: size.profileBand - 96 / 2 - AVATAR_RING - HANDLE_AREA,
+    paddingHorizontal: space[2], // + the sheet's 16 = frame S-HOME-10's 24
     paddingBottom: space[2],
   },
   avatarRing: {
@@ -502,6 +569,21 @@ const styles = StyleSheet.create({
     marginLeft: -AVATAR_RING,
     borderRadius: radius.full,
   },
+  avatarRingLit: { padding: AVATAR_RING - PHASE_RING * 2 },
+  phaseRing: {
+    borderWidth: PHASE_RING,
+    padding: PHASE_RING,
+    borderRadius: radius.full,
+  },
+  bandRow: { flexDirection: 'row', gap: space[2] },
+  more: {
+    width: MORE,
+    height: MORE,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  section: { gap: space[1] / 2 },
   gap: { height: space[2] },
   pad8: { paddingTop: space[2] },
   info: {
@@ -525,14 +607,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // stretch: a label wrapping at large text grows both buttons, never just one.
   buttons: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
     gap: 12, // frame S-HOME-10 button row
     paddingTop: space[3] - space[1],
   },
-  apart: { justifyContent: 'space-between' },
-  end: { marginLeft: 'auto' },
+  chip: { flexShrink: 1, minWidth: 0, justifyContent: 'center' },
   note: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { profileBand, profileView } from './profileView';
+import { litPhase, profileBand, profileView } from './profileView';
 
 const studying = { kind: 'solo' } as never;
 const base = {
@@ -27,14 +27,18 @@ describe('S-HOME-10', () => {
     });
   });
 
-  it('friend / request-sent: the relation is a ChipStatus, not a button', () => {
+  it('friend: an icon, no label (chốt 25/11/2026)', () => {
     expect(profileView({ ...base, relationship: 'friend' }).relation).toEqual({
-      kind: 'chip',
-      chip: 'friend',
+      kind: 'icon',
+      icon: 'friend',
     });
-    expect(profileView({ ...base, relationship: 'outgoing' }).relation).toEqual(
-      { kind: 'chip', chip: 'sent' },
-    );
+  });
+
+  it('request-sent: an icon that cannot send again (chốt 25/11/2026)', () => {
+    expect(profileView({ ...base, relationship: 'outgoing' })).toMatchObject({
+      message: 'primary',
+      relation: { kind: 'icon', icon: 'sent' },
+    });
   });
 
   it('request-received: "Chấp nhận" primary, "Nhắn tin" secondary, the note above', () => {
@@ -124,5 +128,23 @@ describe('S-HOME-10 default background (C-41)', () => {
     expect(profileBand('17', false)).toBe('profile-bg-6');
     expect(profileBand('17', false)).toBe(profileBand('17', false));
     expect(profileBand('17', true)).toBe('surface-3');
+  });
+});
+
+describe('S-HOME-10 banner lamp', () => {
+  const room = (state: 'running' | 'paused') =>
+    ({ kind: 'group_study', room: { phase: 'short_break', state } }) as never;
+  it('lit in the running phase, dark when paused, waiting or not studying', () => {
+    expect(
+      litPhase({ kind: 'solo', phase: 'focus', state: 'running' } as never),
+    ).toBe('focus');
+    expect(
+      litPhase({ kind: 'solo', phase: 'focus', state: 'waiting' } as never),
+    ).toBeNull();
+    expect(litPhase(room('running'))).toBe('short_break');
+    expect(litPhase(room('paused'))).toBeNull();
+    expect(litPhase({ kind: 'group_study', room: null } as never)).toBeNull();
+    expect(litPhase({ kind: 'voice' } as never)).toBeNull();
+    expect(litPhase(null)).toBeNull();
   });
 });

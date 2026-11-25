@@ -1011,6 +1011,8 @@ export const vi = {
     wantsFriend: '{{name}} muốn kết bạn với bạn',
     mutual: 'SERVER CHUNG — {{count}}',
     noMutual: 'Chưa ở chung server nào',
+    about: 'GIỚI THIỆU',
+    inServer: 'TRONG SERVER',
     more: 'Thêm',
     menu: {
       copy: 'Sao chép username',

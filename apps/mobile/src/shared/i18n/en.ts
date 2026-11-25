@@ -1007,6 +1007,8 @@ export const en: Strings = {
     wantsFriend: '{{name}} wants to be your friend',
     mutual: 'MUTUAL SERVERS — {{count}}',
     noMutual: 'No mutual servers',
+    about: 'ABOUT ME',
+    inServer: 'IN THIS SERVER',
     more: 'More',
     menu: {
       copy: 'Copy username',

@@ -19,7 +19,12 @@ export function ChipStatus({
       style={[styles.chip, { borderColor: colors.border }]}
     >
       <Icon as={icon} size="xs" color="text-secondary" />
-      <Text variant="label" color="text-secondary" numberOfLines={1}>
+      <Text
+        variant="label"
+        color="text-secondary"
+        numberOfLines={1}
+        style={styles.label}
+      >
         {label}
       </Text>
     </View>
@@ -36,5 +41,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[3],
     borderRadius: radius.full,
     borderWidth: size.hairline,
+    flexShrink: 1, // gives way before a button beside it (large text)
+    minWidth: 0,
   },
+  label: { flexShrink: 1 },
 });

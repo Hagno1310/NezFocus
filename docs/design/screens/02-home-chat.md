@@ -679,7 +679,7 @@ Rời server khi đang ở phòng: rời phòng luôn, phút đã học giữ nh
 | Menu ⋯ → "Hủy kết bạn" / "Chặn" | Đóng `ActionSheet`, dialog chồng lên sheet hồ sơ, sheet giữ nguyên |
 | Offline | Mọi thao tác gọi API (Kết bạn, Chấp nhận, mục menu theo quan hệ, Chặn) `disabled`; "Sao chép username" vẫn dùng được |
 | Tiêu đề menu ⋯ | `headline` (C-09) |
-| Nền đầu sheet (25/11/2026, người dùng yêu cầu khi thử trên máy) | Dải `Background/default` (board C-41) cao 76, bo trên 24, nằm sau tay nắm; màu `profile-bg-1…6` theo id người dùng (id mod 6), tài khoản đã xóa `surface-3`. Avatar 96 vắt qua mép dưới dải, viền 4 màu `surface-1`. Ảnh bìa tự đặt vẫn là v1.x (REQ-AUTH-06 v1.7) |
+| Đầu sheet kiểu Discord (25/11/2026, người dùng yêu cầu khi thử trên máy) | Banner `Background/default` (board C-41) cao 100, bo trên 24, tay nắm nằm trên banner; màu `profile-bg-1…6` theo id người dùng (id mod 6), tài khoản đã xóa `surface-3`. Avatar 96 viền 6 màu `surface-1`, tâm nằm ở mép dưới banner. Giới thiệu, dòng vai trò · ngày vào và SERVER CHUNG gom vào một khối `surface-2` bo 12, đệm 12, cách 8 (không thêm chữ). Hàng nút: "Nhắn tin" giữ đủ chữ, `ChipStatus` co lại và cắt "…" khi cỡ chữ lớn. Ảnh bìa tự đặt vẫn là v1.x (REQ-AUTH-06 v1.7) |
 
 ---
 

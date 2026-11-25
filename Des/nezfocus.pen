@@ -160627,6 +160627,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                30,
+                24,
                 8,
                 24
               ],
@@ -160642,12 +160644,12 @@
                     {
                       "type": "ellipse",
                       "id": "RoiFa",
-                      "x": -4,
-                      "y": -4,
+                      "x": -6,
+                      "y": -6,
                       "name": "Ring",
                       "fill": "$surface-1",
-                      "width": 104,
-                      "height": 104
+                      "width": 108,
+                      "height": 108
                     },
                     {
                       "id": "S11Yjt",
@@ -160690,7 +160692,7 @@
                   "id": "D3XkT",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -160715,28 +160717,56 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "JXiY1",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "NHuhg",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Bán tài liệu ôn thi giá rẻ · inbox mình",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "MnOav",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Thành viên từ 12/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "W9fRPG",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "JXiY1",
+                          "name": "Pf bio",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Bán tài liệu ôn thi giá rẻ · inbox mình",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-body",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "MnOav",
+                          "name": "Pf line",
+                          "fill": "$text-tertiary",
+                          "content": "Thành viên từ 12/10/2026",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-label",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -161257,6 +161287,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                30,
+                24,
                 8,
                 24
               ],
@@ -161272,12 +161304,12 @@
                     {
                       "type": "ellipse",
                       "id": "nW9O5",
-                      "x": -4,
-                      "y": -4,
+                      "x": -6,
+                      "y": -6,
                       "name": "Ring",
                       "fill": "$surface-1",
-                      "width": 104,
-                      "height": 104
+                      "width": 108,
+                      "height": 108
                     },
                     {
                       "id": "C1A8v",
@@ -161315,7 +161347,7 @@
                   "id": "q0zAgU",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -161340,28 +161372,56 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "ocmaz",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "GV2nb",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Lớp trưởng D22CN05 · hỏi bài cứ tag mình",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "lov73",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Trưởng nhóm · Thành viên từ 02/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "s3uRjp",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ocmaz",
+                          "name": "Pf bio",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Lớp trưởng D22CN05 · hỏi bài cứ tag mình",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-body",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "lov73",
+                          "name": "Pf line",
+                          "fill": "$text-tertiary",
+                          "content": "Trưởng nhóm · Thành viên từ 02/10/2026",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-label",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -161880,6 +161940,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                30,
+                24,
                 8,
                 24
               ],
@@ -161895,12 +161957,12 @@
                     {
                       "type": "ellipse",
                       "id": "qlkNk",
-                      "x": -4,
-                      "y": -4,
+                      "x": -6,
+                      "y": -6,
                       "name": "Ring",
                       "fill": "$surface-1",
-                      "width": 104,
-                      "height": 104
+                      "width": 108,
+                      "height": 108
                     },
                     {
                       "id": "wn0sg",
@@ -161938,7 +162000,7 @@
                   "id": "zphGo",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -161963,28 +162025,56 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "t2tuD6",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "i4HI7v",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "K22 Điện tử",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "fd7Al",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Thành viên từ 03/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ijLpC",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "t2tuD6",
+                          "name": "Pf bio",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "K22 Điện tử",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-body",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "fd7Al",
+                          "name": "Pf line",
+                          "fill": "$text-tertiary",
+                          "content": "Thành viên từ 03/10/2026",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-label",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -162536,6 +162626,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                30,
+                24,
                 8,
                 24
               ],
@@ -162551,12 +162643,12 @@
                     {
                       "type": "ellipse",
                       "id": "qPCqz",
-                      "x": -4,
-                      "y": -4,
+                      "x": -6,
+                      "y": -6,
                       "name": "Ring",
                       "fill": "$surface-1",
-                      "width": 104,
-                      "height": 104
+                      "width": 108,
+                      "height": 108
                     },
                     {
                       "id": "bWfmU",
@@ -162594,7 +162686,7 @@
                   "id": "isis5",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -162619,28 +162711,56 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "ySNy9",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "p4OQup",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Sinh viên năm 3 PTIT · đang ôn Giải tích 2",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "B0QXm",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Owner · Thành viên từ 01/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "uXsCm",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ySNy9",
+                          "name": "Pf bio",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Sinh viên năm 3 PTIT · đang ôn Giải tích 2",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-body",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "B0QXm",
+                          "name": "Pf line",
+                          "fill": "$text-tertiary",
+                          "content": "Owner · Thành viên từ 01/10/2026",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-label",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -163133,6 +163253,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                30,
+                24,
                 8,
                 24
               ],
@@ -163148,12 +163270,12 @@
                     {
                       "type": "ellipse",
                       "id": "WZxaP",
-                      "x": -4,
-                      "y": -4,
+                      "x": -6,
+                      "y": -6,
                       "name": "Ring",
                       "fill": "$surface-1",
-                      "width": 104,
-                      "height": 104
+                      "width": 108,
+                      "height": 108
                     },
                     {
                       "id": "X3qF2",
@@ -163196,7 +163318,7 @@
                   "id": "jXrcg",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -163221,28 +163343,56 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "vMgHV",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "ppdUu",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Bán tài liệu ôn thi giá rẻ · inbox mình",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "TVGHl",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Thành viên từ 12/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Z0gWZY",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "vMgHV",
+                          "name": "Pf bio",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Bán tài liệu ôn thi giá rẻ · inbox mình",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-body",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "TVGHl",
+                          "name": "Pf line",
+                          "fill": "$text-tertiary",
+                          "content": "Thành viên từ 12/10/2026",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-label",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -163864,6 +164014,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                30,
+                24,
                 8,
                 24
               ],
@@ -163879,12 +164031,12 @@
                     {
                       "type": "ellipse",
                       "id": "VMEqz",
-                      "x": -4,
-                      "y": -4,
+                      "x": -6,
+                      "y": -6,
                       "name": "Ring",
                       "fill": "$surface-1",
-                      "width": 104,
-                      "height": 104
+                      "width": 108,
+                      "height": 108
                     },
                     {
                       "id": "F0e1jf",
@@ -163922,7 +164074,7 @@
                   "id": "rzBbM",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -163947,15 +164099,43 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "acQ8x",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Thành viên từ 11/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "type": "frame",
+                  "id": "Oja1Y",
+                  "name": "Info wrap",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "d8HzT",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "acQ8x",
+                          "name": "Pf line",
+                          "fill": "$text-tertiary",
+                          "content": "Thành viên từ 11/10/2026",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-label",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -164516,6 +164696,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                30,
+                24,
                 8,
                 24
               ],
@@ -164531,12 +164713,12 @@
                     {
                       "type": "ellipse",
                       "id": "p3nMy",
-                      "x": -4,
-                      "y": -4,
+                      "x": -6,
+                      "y": -6,
                       "name": "Ring",
                       "fill": "$surface-1",
-                      "width": 104,
-                      "height": 104
+                      "width": 108,
+                      "height": 108
                     },
                     {
                       "id": "WTuvC",
@@ -164555,7 +164737,7 @@
                   "id": "MAsz1",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -224020,6 +224202,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                30,
+                24,
                 8,
                 24
               ],
@@ -224035,12 +224219,12 @@
                     {
                       "type": "ellipse",
                       "id": "jSSx7",
-                      "x": -4,
-                      "y": -4,
+                      "x": -6,
+                      "y": -6,
                       "name": "Ring",
                       "fill": "$surface-1",
-                      "width": 104,
-                      "height": 104
+                      "width": 108,
+                      "height": 108
                     },
                     {
                       "id": "icEAL",
@@ -224078,7 +224262,7 @@
                   "id": "nrCrM",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -224103,28 +224287,56 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "JpQuv",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "pKlkv",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Tối nào cũng học lúc 20:00",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "NVjje",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Thành viên từ 08/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "fsoIs",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "JpQuv",
+                          "name": "Pf bio",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Tối nào cũng học lúc 20:00",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-body",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "NVjje",
+                          "name": "Pf line",
+                          "fill": "$text-tertiary",
+                          "content": "Thành viên từ 08/10/2026",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-label",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -236857,6 +237069,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                30,
+                24,
                 8,
                 24
               ],
@@ -236872,12 +237086,12 @@
                     {
                       "type": "ellipse",
                       "id": "f35DxI",
-                      "x": -4,
-                      "y": -4,
+                      "x": -6,
+                      "y": -6,
                       "name": "Ring",
                       "fill": "$surface-1",
-                      "width": 104,
-                      "height": 104
+                      "width": 108,
+                      "height": 108
                     },
                     {
                       "id": "CSZcv",
@@ -236920,7 +237134,7 @@
                   "id": "O9KsNT",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -236945,28 +237159,56 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "Mkjtb",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "AfdWS",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Bán tài liệu ôn thi giá rẻ · inbox mình",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "v3pYz",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Thành viên từ 12/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "gPxpA",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Mkjtb",
+                          "name": "Pf bio",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Bán tài liệu ôn thi giá rẻ · inbox mình",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-body",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "v3pYz",
+                          "name": "Pf line",
+                          "fill": "$text-tertiary",
+                          "content": "Thành viên từ 12/10/2026",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-label",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -312322,6 +312564,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                30,
+                24,
                 8,
                 24
               ],
@@ -312337,12 +312581,12 @@
                     {
                       "type": "ellipse",
                       "id": "uula6",
-                      "x": -4,
-                      "y": -4,
+                      "x": -6,
+                      "y": -6,
                       "name": "Ring",
                       "fill": "$surface-1",
-                      "width": 104,
-                      "height": 104
+                      "width": 108,
+                      "height": 108
                     },
                     {
                       "id": "SbK00",
@@ -312380,7 +312624,7 @@
                   "id": "Yhc58",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -312405,28 +312649,56 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "hRhMY",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "X8ErTp",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Mới vào nhóm, nhờ mọi người chỉ giáo",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "dMHd0",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Thành viên từ 18/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ZdyVG",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "hRhMY",
+                          "name": "Pf bio",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Mới vào nhóm, nhờ mọi người chỉ giáo",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-body",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "dMHd0",
+                          "name": "Pf line",
+                          "fill": "$text-tertiary",
+                          "content": "Thành viên từ 18/10/2026",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-label",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -375509,6 +375781,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                30,
+                24,
                 8,
                 24
               ],
@@ -375524,12 +375798,12 @@
                     {
                       "type": "ellipse",
                       "id": "T94iJ",
-                      "x": -4,
-                      "y": -4,
+                      "x": -6,
+                      "y": -6,
                       "name": "Ring",
                       "fill": "$surface-1",
-                      "width": 104,
-                      "height": 104
+                      "width": 108,
+                      "height": 108
                     },
                     {
                       "id": "FiDWe",
@@ -375567,7 +375841,7 @@
                   "id": "D9vED9",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -375592,28 +375866,56 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "aIewu",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "D5P7x",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Mới vào nhóm, nhờ mọi người chỉ giáo",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "oLnKt",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Thành viên từ 18/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "O1R7M",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "aIewu",
+                          "name": "Pf bio",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Mới vào nhóm, nhờ mọi người chỉ giáo",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-body",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "oLnKt",
+                          "name": "Pf line",
+                          "fill": "$text-tertiary",
+                          "content": "Thành viên từ 18/10/2026",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-label",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -376165,6 +376467,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                30,
+                24,
                 8,
                 24
               ],
@@ -376180,12 +376484,12 @@
                     {
                       "type": "ellipse",
                       "id": "CWFWz",
-                      "x": -4,
-                      "y": -4,
+                      "x": -6,
+                      "y": -6,
                       "name": "Ring",
                       "fill": "$surface-1",
-                      "width": 104,
-                      "height": 104
+                      "width": 108,
+                      "height": 108
                     },
                     {
                       "id": "R9ycX",
@@ -376223,7 +376527,7 @@
                   "id": "EzmeB",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -376248,28 +376552,56 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "pINJY",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "qCaHb",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Lớp trưởng D22CN05 · hỏi bài cứ tag mình",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "G4kesS",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Trưởng nhóm · Thành viên từ 02/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "NKr4N",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "pINJY",
+                          "name": "Pf bio",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Lớp trưởng D22CN05 · hỏi bài cứ tag mình",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-body",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "G4kesS",
+                          "name": "Pf line",
+                          "fill": "$text-tertiary",
+                          "content": "Trưởng nhóm · Thành viên từ 02/10/2026",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-label",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -376949,6 +377281,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                30,
+                24,
                 8,
                 24
               ],
@@ -376964,12 +377298,12 @@
                     {
                       "type": "ellipse",
                       "id": "d9ioz",
-                      "x": -4,
-                      "y": -4,
+                      "x": -6,
+                      "y": -6,
                       "name": "Ring",
                       "fill": "$surface-1",
-                      "width": 104,
-                      "height": 104
+                      "width": 108,
+                      "height": 108
                     },
                     {
                       "id": "lOQuo",
@@ -377007,7 +377341,7 @@
                   "id": "deSGz",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -377032,28 +377366,56 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "EDigj",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
+                  "type": "frame",
+                  "id": "Pf97D",
+                  "name": "Info wrap",
                   "width": "fill_container",
-                  "content": "Sinh viên K23 PTIT",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "text",
-                  "id": "VpToA",
-                  "name": "Pf line",
-                  "fill": "$text-tertiary",
-                  "content": "Thành viên từ 05/10/2026",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-label",
-                  "fontWeight": "normal"
+                  "layout": "vertical",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "LNex3",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "EDigj",
+                          "name": "Pf bio",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Sinh viên K23 PTIT",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-body",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "VpToA",
+                          "name": "Pf line",
+                          "fill": "$text-tertiary",
+                          "content": "Thành viên từ 05/10/2026",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-label",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -377627,6 +377989,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                30,
+                24,
                 8,
                 24
               ],
@@ -377642,12 +378006,12 @@
                     {
                       "type": "ellipse",
                       "id": "zpPtZ",
-                      "x": -4,
-                      "y": -4,
+                      "x": -6,
+                      "y": -6,
                       "name": "Ring",
                       "fill": "$surface-1",
-                      "width": 104,
-                      "height": 104
+                      "width": 108,
+                      "height": 108
                     },
                     {
                       "id": "gtHY5",
@@ -377685,7 +378049,7 @@
                   "id": "jMPkv",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -377710,131 +378074,153 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "HXzgm",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
-                  "width": "fill_container",
-                  "content": "Lớp trưởng D22CN05 · hỏi bài cứ tag mình",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
                   "type": "frame",
-                  "id": "urKQr",
-                  "name": "Common servers",
+                  "id": "qSPvW",
+                  "name": "Info wrap",
                   "width": "fill_container",
                   "layout": "vertical",
                   "padding": [
-                    8,
+                    12,
                     0,
                     0,
                     0
                   ],
                   "children": [
                     {
-                      "type": "text",
-                      "id": "fdQlO",
-                      "name": "Servers title",
-                      "fill": "$text-tertiary",
-                      "content": "SERVER CHUNG — 2",
-                      "lineHeight": 1.45,
-                      "fontFamily": "$font-text",
-                      "fontSize": "$type-label",
-                      "fontWeight": "600"
-                    },
-                    {
                       "type": "frame",
-                      "id": "b58R3d",
-                      "name": "Server Ôn thi Giải tích 2",
+                      "id": "WWDUX",
+                      "name": "Info",
                       "width": "fill_container",
-                      "height": 48,
-                      "gap": 12,
-                      "alignItems": "center",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
                       "children": [
                         {
-                          "type": "frame",
-                          "id": "ChebB",
-                          "name": "Server icon",
-                          "width": 32,
-                          "height": 32,
-                          "fill": "$surface-3",
-                          "cornerRadius": "$radius-server",
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "M4fEV",
-                              "name": "Server icon text",
-                              "fill": "$text-primary",
-                              "content": "ÔT",
-                              "lineHeight": 1.45,
-                              "fontFamily": "$font-text",
-                              "fontSize": "$type-label",
-                              "fontWeight": "600"
-                            }
-                          ]
-                        },
-                        {
                           "type": "text",
-                          "id": "K3kOt",
-                          "name": "Server name",
+                          "id": "HXzgm",
+                          "name": "Pf bio",
                           "fill": "$text-primary",
-                          "content": "Ôn thi Giải tích 2",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Lớp trưởng D22CN05 · hỏi bài cứ tag mình",
                           "lineHeight": 1.45,
                           "fontFamily": "$font-text",
                           "fontSize": "$type-body",
                           "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "XoSDg",
-                      "name": "Server Nhóm đồ án Mobile",
-                      "width": "fill_container",
-                      "height": 48,
-                      "gap": 12,
-                      "alignItems": "center",
-                      "children": [
+                        },
                         {
                           "type": "frame",
-                          "id": "ACXhR",
-                          "name": "Server icon",
-                          "width": 32,
-                          "height": 32,
-                          "fill": "$surface-3",
-                          "cornerRadius": "$radius-server",
-                          "justifyContent": "center",
-                          "alignItems": "center",
+                          "id": "urKQr",
+                          "name": "Common servers",
+                          "width": "fill_container",
+                          "layout": "vertical",
                           "children": [
                             {
                               "type": "text",
-                              "id": "R4mURV",
-                              "name": "Server icon text",
-                              "fill": "$text-primary",
-                              "content": "NĐ",
+                              "id": "fdQlO",
+                              "name": "Servers title",
+                              "fill": "$text-tertiary",
+                              "content": "SERVER CHUNG — 2",
                               "lineHeight": 1.45,
                               "fontFamily": "$font-text",
                               "fontSize": "$type-label",
                               "fontWeight": "600"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "b58R3d",
+                              "name": "Server Ôn thi Giải tích 2",
+                              "width": "fill_container",
+                              "height": 48,
+                              "gap": 12,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "ChebB",
+                                  "name": "Server icon",
+                                  "width": 32,
+                                  "height": 32,
+                                  "fill": "$surface-3",
+                                  "cornerRadius": "$radius-server",
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "M4fEV",
+                                      "name": "Server icon text",
+                                      "fill": "$text-primary",
+                                      "content": "ÔT",
+                                      "lineHeight": 1.45,
+                                      "fontFamily": "$font-text",
+                                      "fontSize": "$type-label",
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "K3kOt",
+                                  "name": "Server name",
+                                  "fill": "$text-primary",
+                                  "content": "Ôn thi Giải tích 2",
+                                  "lineHeight": 1.45,
+                                  "fontFamily": "$font-text",
+                                  "fontSize": "$type-body",
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "XoSDg",
+                              "name": "Server Nhóm đồ án Mobile",
+                              "width": "fill_container",
+                              "height": 48,
+                              "gap": 12,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "ACXhR",
+                                  "name": "Server icon",
+                                  "width": 32,
+                                  "height": 32,
+                                  "fill": "$surface-3",
+                                  "cornerRadius": "$radius-server",
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "R4mURV",
+                                      "name": "Server icon text",
+                                      "fill": "$text-primary",
+                                      "content": "NĐ",
+                                      "lineHeight": 1.45,
+                                      "fontFamily": "$font-text",
+                                      "fontSize": "$type-label",
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Kz8Ic",
+                                  "name": "Server name",
+                                  "fill": "$text-primary",
+                                  "content": "Nhóm đồ án Mobile",
+                                  "lineHeight": 1.45,
+                                  "fontFamily": "$font-text",
+                                  "fontSize": "$type-body",
+                                  "fontWeight": "normal"
+                                }
+                              ]
                             }
                           ]
-                        },
-                        {
-                          "type": "text",
-                          "id": "Kz8Ic",
-                          "name": "Server name",
-                          "fill": "$text-primary",
-                          "content": "Nhóm đồ án Mobile",
-                          "lineHeight": 1.45,
-                          "fontFamily": "$font-text",
-                          "fontSize": "$type-body",
-                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -378427,6 +378813,8 @@
               "layout": "vertical",
               "gap": 4,
               "padding": [
+                30,
+                24,
                 8,
                 24
               ],
@@ -378442,12 +378830,12 @@
                     {
                       "type": "ellipse",
                       "id": "zjgwX",
-                      "x": -4,
-                      "y": -4,
+                      "x": -6,
+                      "y": -6,
                       "name": "Ring",
                       "fill": "$surface-1",
-                      "width": 104,
-                      "height": 104
+                      "width": 108,
+                      "height": 108
                     },
                     {
                       "id": "XHBeG",
@@ -378485,7 +378873,7 @@
                   "id": "jdccA",
                   "name": "Gap",
                   "width": 1,
-                  "height": 8
+                  "height": 12
                 },
                 {
                   "type": "text",
@@ -378510,40 +378898,62 @@
                   "fontWeight": "normal"
                 },
                 {
-                  "type": "text",
-                  "id": "Wlnfp",
-                  "name": "Pf bio",
-                  "fill": "$text-primary",
-                  "textGrowth": "fixed-width",
-                  "width": "fill_container",
-                  "content": "Thích chạy bộ và Giải tích",
-                  "lineHeight": 1.45,
-                  "fontFamily": "$font-text",
-                  "fontSize": "$type-body",
-                  "fontWeight": "normal"
-                },
-                {
                   "type": "frame",
-                  "id": "jNr8A",
-                  "name": "Common servers",
+                  "id": "t7oil6",
+                  "name": "Info wrap",
                   "width": "fill_container",
+                  "layout": "vertical",
                   "padding": [
-                    8,
+                    12,
                     0,
                     0,
                     0
                   ],
                   "children": [
                     {
-                      "type": "text",
-                      "id": "SQ2CV",
-                      "name": "No servers",
-                      "fill": "$text-secondary",
-                      "content": "Chưa ở chung server nào",
-                      "lineHeight": 1.45,
-                      "fontFamily": "$font-text",
-                      "fontSize": "$type-label",
-                      "fontWeight": "normal"
+                      "type": "frame",
+                      "id": "xQtD2",
+                      "name": "Info",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Wlnfp",
+                          "name": "Pf bio",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Thích chạy bộ và Giải tích",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$type-body",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "jNr8A",
+                          "name": "Common servers",
+                          "width": "fill_container",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "SQ2CV",
+                              "name": "No servers",
+                              "fill": "$text-secondary",
+                              "content": "Chưa ở chung server nào",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$font-text",
+                              "fontSize": "$type-label",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
                     }
                   ]
                 },
@@ -601693,7 +602103,7 @@
           "name": "Background/default",
           "reusable": true,
           "width": 390,
-          "height": 76,
+          "height": 100,
           "fill": "$profile-bg-1",
           "cornerRadius": [
             24,

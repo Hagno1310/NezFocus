@@ -49,6 +49,7 @@ import { Text } from '../../../shared/ui/Text';
 import { showToast, ToastCard } from '../../../shared/ui/Toast';
 
 const COPIED_MS = 4000; // C-14 toast without an action
+const AVATAR_RING = 6; // frame S-HOME-10: the sheet colour cut around the 96 avatar
 import { useChatClock } from '../../chat/hooks/useChatClock';
 import { openDmWith } from '../../dm/openDm';
 import { avatarUri } from '../../me/avatarUri';
@@ -254,6 +255,8 @@ function ProfileSheet({
         }[v.relation.chip]
       : null;
   const servers = profile?.mutual_servers ?? [];
+  const bio = profile?.user.bio ?? null;
+  const showServers = !serverId && !self && !!profile;
 
   return (
     <>
@@ -292,53 +295,58 @@ function ProfileSheet({
           {!deleted && user?.username && (
             <Text color="text-secondary">{user.username}</Text>
           )}
-          {!deleted && profile?.user.bio && (
-            <Text numberOfLines={3}>{profile.user.bio}</Text>
-          )}
-          {!deleted && meta && (
-            <Text variant="label" weight="400" color="text-tertiary">
-              {meta}
-            </Text>
-          )}
-          {!deleted && !serverId && !self && profile && (
-            <View style={styles.servers}>
-              {servers.length ? (
-                <>
-                  <Text variant="label" weight="600" color="text-tertiary">
-                    {t('profile.mutual', { count: servers.length })}
-                  </Text>
-                  {servers.map((s) => (
-                    <Pressable
-                      key={s.id}
-                      accessibilityRole="button"
-                      onPress={() => openServer(s.id)}
-                      style={({ pressed }) => [
-                        styles.serverRow,
-                        pressed && {
-                          backgroundColor: colors['overlay-pressed'],
-                        },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.serverIcon,
-                          { backgroundColor: colors['surface-3'] },
-                        ]}
-                      >
-                        <Text variant="label" weight="600">
-                          {railInitials(s.name)}
-                        </Text>
-                      </View>
-                      <Text numberOfLines={1} style={styles.flex}>
-                        {s.name}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </>
-              ) : (
-                <Text variant="label" weight="400" color="text-secondary">
-                  {t('profile.noMutual')}
+          {/* Discord-like: one surface-2 block for what describes them (25/11/2026). */}
+          {!deleted && (bio || meta || showServers) && (
+            <View
+              style={[styles.info, { backgroundColor: colors['surface-2'] }]}
+            >
+              {bio && <Text numberOfLines={3}>{bio}</Text>}
+              {meta && (
+                <Text variant="label" weight="400" color="text-tertiary">
+                  {meta}
                 </Text>
+              )}
+              {showServers && (
+                <View style={styles.servers}>
+                  {servers.length ? (
+                    <>
+                      <Text variant="label" weight="600" color="text-tertiary">
+                        {t('profile.mutual', { count: servers.length })}
+                      </Text>
+                      {servers.map((s) => (
+                        <Pressable
+                          key={s.id}
+                          accessibilityRole="button"
+                          onPress={() => openServer(s.id)}
+                          style={({ pressed }) => [
+                            styles.serverRow,
+                            pressed && {
+                              backgroundColor: colors['overlay-pressed'],
+                            },
+                          ]}
+                        >
+                          <View
+                            style={[
+                              styles.serverIcon,
+                              { backgroundColor: colors['surface-3'] },
+                            ]}
+                          >
+                            <Text variant="label" weight="600">
+                              {railInitials(s.name)}
+                            </Text>
+                          </View>
+                          <Text numberOfLines={1} style={styles.flex}>
+                            {s.name}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </>
+                  ) : (
+                    <Text variant="label" weight="400" color="text-secondary">
+                      {t('profile.noMutual')}
+                    </Text>
+                  )}
+                </View>
               )}
             </View>
           )}
@@ -376,7 +384,7 @@ function ProfileSheet({
               ]}
             >
               {v.message && (
-                <View style={styles.flex}>
+                <View style={styles.main}>
                   <Button
                     variant={
                       v.message === 'secondary' ? 'secondary' : 'primary'
@@ -478,21 +486,31 @@ function ProfileSheet({
 
 const styles = StyleSheet.create({
   flex: { flex: 1, minWidth: 0 },
+  // The button keeps its label whole; a ChipStatus beside it shrinks instead.
+  main: { flexGrow: 1, flexShrink: 0 },
   // Frame S-HOME-10: the avatar starts 28 below the sheet top, half over the band (C-41).
+  // Frame S-HOME-10 (25/11/2026): ring top 44, the avatar's centre on the banner's edge.
   block: {
     gap: space[1],
+    paddingTop: space[3],
     paddingHorizontal: space[4],
     paddingBottom: space[2],
   },
   avatarRing: {
     alignSelf: 'flex-start',
-    padding: space[1],
-    margin: -space[1],
+    padding: AVATAR_RING,
+    marginLeft: -AVATAR_RING,
     borderRadius: radius.full,
   },
   gap: { height: space[2] },
   pad8: { paddingTop: space[2] },
-  servers: { paddingTop: space[2], gap: space[1] },
+  info: {
+    marginTop: space[2],
+    padding: space[2] + space[1],
+    gap: space[2],
+    borderRadius: radius.button,
+  },
+  servers: { gap: space[1] },
   serverRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -195,7 +195,7 @@ export const size = {
   // C-13 Avatar sizes; DESIGN.md › Presence: dot 10 on every avatar size, cut 2.
   avatar: [20, 24, 28, 32, 40, 48, 56, 96] as const, // 48: S-DM-05 card (chốt 20/11/2026); 28: ChannelHeader · dm (chốt 25/11/2026)
   presence: { dot: 10, cut: 2 },
-  profileBand: 76, // C-41: the 96 avatar's centre sits on its bottom edge
+  profileBand: 100, // C-41 banner: the 96 avatar sits across its bottom edge
   avatarStackOverlap: -6,
   // DESIGN.md › Mascot: empty state 96–120; board EmptyState draws 112.
   mascotEmpty: 112,

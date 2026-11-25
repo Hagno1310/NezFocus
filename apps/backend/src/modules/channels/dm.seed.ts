@@ -7,8 +7,7 @@ import { ChannelTypeCode, channels } from '../servers/servers.schema.js';
 import { users } from '../users/users.schema.js';
 import { channelRecipients, dmPairs } from './dm.schema.js';
 
-// 09 › Dữ liệu mẫu, danh sách DM của An (+07). Text only: the call messages come with
-// P3-B6.3 (#157), so Tuấn's last line is a text one; the Group DM is v1.x.
+// 09 › Dữ liệu mẫu (+07); text only until call messages (P3-B6.3 #157), no Group DM (v1.x).
 const SAMPLE_DMS: [
   other: string,
   lines: [at: string, from: 'an' | 'them', content: string][],

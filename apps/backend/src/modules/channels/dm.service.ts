@@ -14,7 +14,7 @@ import {
   type MessageCreated,
 } from '../messaging/message-events.js';
 import { DmAccessPolicy } from './dm-access-policy.js';
-import { isDeletedAccount, toDmChannel } from './dm.dto.js';
+import { toDmChannel } from './dm.dto.js';
 import { DmRepository } from './dm.repository.js';
 
 const unknownUser = () => new AppError(ErrorCode.NotFound, 'Unknown user');
@@ -31,7 +31,6 @@ export class DmService {
     private readonly ids: SnowflakeGenerator,
   ) {}
 
-  // READY private_channels, newest activity first (S-DM-01).
   async openFor(userId: bigint): Promise<DmChannel[]> {
     return (await this.repo.seenBy(userId)).map(toDmChannel);
   }
@@ -47,7 +46,7 @@ export class DmService {
         await this.announce(existing, me);
       return this.seen(existing, me);
     }
-    if (isDeletedAccount(recipient.accountStatus)) throw unknownUser();
+    // SRS 11.1: an account pending deletion is 40303 too (AUTH-10), via the policy.
     if (!(await this.policy.canMessage(me, recipientId)))
       throw new AppError(ErrorCode.CannotMessageUser, CANNOT_MESSAGE_TEXT);
     const channelId = this.ids.next();
@@ -65,8 +64,7 @@ export class DmService {
     return this.seen(channelId, me);
   }
 
-  // DELETE /channels/{id} on a DM 1-1 (CR-28): hide it on my side only. false = not a DM,
-  // the caller deletes the server channel instead.
+  // CR-28: DELETE /channels/{id} on a DM hides it for me only; false lets servers delete theirs.
   async close(userId: bigint, channelId: bigint): Promise<boolean> {
     const people = await this.repo.recipients(channelId);
     if (!people) return false;

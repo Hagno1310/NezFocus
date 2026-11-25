@@ -35,4 +35,4 @@ export * from './messages/typing.contract.js';
 export * from './friends/relationship.contract.js';
 export * from './notifications/notification.contract.js';
 export * from './dm/dm.contract.js';
-export * from './dm/profile.contract.js';
+export * from './account/profile.contract.js';

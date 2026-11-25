@@ -151,7 +151,6 @@ export class DmRepository {
       );
   }
 
-  // Read-only look at friendships (module friends).
   async areFriends(a: bigint, b: bigint) {
     const { low, high } = pairKey(a, b);
     const [row] = await this.db
@@ -167,8 +166,7 @@ export class DmRepository {
     return !!row;
   }
 
-  // Read-only look at server_members (module servers): both are members, in `viewer`'s rail
-  // order (oldest joined first, REQ-SRV-01).
+  // AUTH-06 v1.9: in the viewer's rail order (oldest joined first, REQ-SRV-01).
   async sharedServers(viewer: bigint, other: bigint) {
     const theirs = this.db
       .select({ id: serverMembers.serverId })

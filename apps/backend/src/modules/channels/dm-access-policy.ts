@@ -4,8 +4,7 @@ import { SettingsService } from '../users/settings.service.js';
 import { DmRepository } from './dm.repository.js';
 import { isDeletedAccount } from './dm.dto.js';
 
-// REQ-DM-01: DMs never go through server RBAC. Owner: channels (B); messaging injects this
-// (WORKFLOW 4.3) for send, typing, history and ack in a DM; users for the profile.
+// REQ-DM-01: DMs never go through server RBAC (WORKFLOW 4.3; owner channels, B).
 export abstract class DmAccessPolicy {
   // A person of the DM keeps reading it whatever happens later (block, leaving a server).
   abstract canView(userId: bigint, channelId: bigint): Promise<boolean>;

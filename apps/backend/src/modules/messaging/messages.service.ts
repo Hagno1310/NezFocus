@@ -254,8 +254,7 @@ export class MessagesService {
       throw new AppError(ErrorCode.CannotMessageUser, CANNOT_MESSAGE_TEXT);
   }
 
-  // CR-12 #3: a DM has no roles, no @everyone, no highlight and no inbox item; a mention
-  // only of someone in it is kept so the app can show the name.
+  // CR-12 #3: a DM keeps mentions of its people only (for the name), nothing else.
   private async mentionsOf(
     userId: bigint,
     channel: ChannelRow,

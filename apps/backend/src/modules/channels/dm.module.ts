@@ -5,8 +5,7 @@ import { DmController } from './dm.controller.js';
 import { DmRepository } from './dm.repository.js';
 import { DmService } from './dm.service.js';
 
-// Global like FriendsModule: messaging (policy), servers (DELETE /channels/{id}), users
-// (profile) and the Gateway (READY, fanout) inject from here without importing it back.
+// Global: messaging, servers, users and the Gateway inject from here without an import cycle.
 @Global()
 @Module({
   imports: [UsersModule],

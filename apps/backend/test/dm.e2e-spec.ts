@@ -411,6 +411,10 @@ describe('DM (e2e)', () => {
         deleted: true,
       });
       expect40303(await send(an, dm));
+      // SRS 11.1: no DM yet with an account pending deletion → 40303 as well.
+      const ha = await signedIn('Hà');
+      await friends(ha, tuan);
+      expect40303(await open(ha, tuan));
     });
   });
 

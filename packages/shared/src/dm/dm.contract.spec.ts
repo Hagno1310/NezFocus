@@ -1,7 +1,7 @@
 import { DEFAULT_USER_SETTINGS } from '../account/settings.contract.js';
 import { parseDispatch } from '../gateway/events.contract.js';
 import { CreateDmRequest, DmChannel } from './dm.contract.js';
-import { UserProfile } from './profile.contract.js';
+import { UserProfile } from '../account/profile.contract.js';
 
 const binh = {
   id: '2',

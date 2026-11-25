@@ -4,12 +4,9 @@ import { SnowflakeId } from '../snowflake.js';
 
 // Paths are relative to /api/v1 (SRS 5.3 DM). Group DM (GDM-*) is v1.x.
 export const DmRoutes = {
-  // POST CreateDmRequest → 200 DmChannel · REQ-DM-03: the pair's DM if it exists (reopened for
-  // the caller, even when they can no longer message: the screen shows `cannot-message`);
-  // a new one only when REQ-DM-02 / FRIEND-03 allow, else 40303 · 40401 (no such user, yourself).
+  // POST → 200 DmChannel (DM-03: the pair's DM, reopened, even if 40303 now) · new: 40303 · 40401
   create: '/users/@me/channels',
-  // DELETE on a DM 1-1 → 204: closes it for the caller only, messages kept; a new message
-  // reopens it (CR-28). On a server channel it deletes it (ChannelRoutes.byId).
+  // DELETE → 204, CR-28: hides the DM for the caller only until a new message (cf. ChannelRoutes.byId)
   close: '/channels/:id',
 } as const;
 

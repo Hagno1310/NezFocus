@@ -36,7 +36,12 @@ export const servers = pgTable('servers', {
   createdAt: tz().notNull().defaultNow(),
 });
 
-export const ChannelTypeCode = { category: 0, text: 1, voice: 2 } as const;
+export const ChannelTypeCode = {
+  category: 0,
+  text: 1,
+  voice: 2,
+  dm: 3,
+} as const;
 
 export const channels = pgTable(
   'channels',

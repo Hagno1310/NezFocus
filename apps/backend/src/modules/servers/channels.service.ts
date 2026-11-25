@@ -26,6 +26,7 @@ import { ChannelEvents } from './channel-events.js';
 import { ruleError } from './channel-rules.js';
 import { ChannelsRepository, type ChannelMove } from './channels.repository.js';
 import { assertCanEditTarget } from './overwrite-targets.js';
+import { DmService } from '../channels/dm.service.js';
 import { toChannelResponse, toServerSummary } from './servers.dto.js';
 import { ServersRepository } from './servers.repository.js';
 import { ChannelTypeCode, type ChannelRow } from './servers.schema.js';
@@ -66,6 +67,7 @@ export class ChannelsService {
     private readonly permissions: PermissionService,
     private readonly permissionCache: PermissionCache,
     private readonly channelEvents: ChannelEvents,
+    private readonly dms: DmService,
   ) {}
 
   async list(userId: bigint, serverId: bigint): Promise<ChannelResponse[]> {
@@ -254,6 +256,8 @@ export class ChannelsService {
   }
 
   async remove(userId: bigint, channelId: bigint): Promise<void> {
+    // SRS 5.3 (CR-28): on a DM 1-1 the same route only closes it for the caller.
+    if (await this.dms.close(userId, channelId)) return;
     const row = await this.manageable(userId, channelId);
     const serverId = row.serverId!;
     const { moved, welcomeCleared } = await this.repo.locked(

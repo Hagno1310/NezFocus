@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
+  CANNOT_MESSAGE_TEXT,
   ErrorCode,
   Permission,
+  parseMentions,
   TYPING_CLIENT_INTERVAL_MS,
   messageTypeCode,
   type CreateMessageRequest,
@@ -15,6 +17,8 @@ import { Clock } from '../../common/clock.js';
 import { isUniqueViolation } from '../../common/db-errors.js';
 import { SnowflakeGenerator } from '../../common/snowflake.js';
 import { KeyValueStore } from '../../redis/key-value-store.js';
+import { DmAccessPolicy } from '../channels/dm-access-policy.js';
+import { DmRepository } from '../channels/dm.repository.js';
 import { BlockQuery } from '../friends/block-query.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
 import { PermissionService } from '../permissions/permission.service.js';
@@ -51,6 +55,8 @@ export class MessagesService {
     private readonly clock: Clock,
     private readonly blocks: BlockQuery,
     private readonly mentions: MentionsService,
+    private readonly dmPolicy: DmAccessPolicy,
+    private readonly dms: DmRepository,
   ) {}
 
   async send(
@@ -59,11 +65,7 @@ export class MessagesService {
     body: CreateMessageRequest,
   ): Promise<MessageResponse> {
     const channel = await this.viewable(userId, channelId);
-    await this.permissions.require(
-      userId,
-      { channelId },
-      Permission.SEND_MESSAGES,
-    );
+    await this.requireSend(userId, channel);
     // ponytail: timed-out members get 40302 instead of 40307 until P3-A3.1 (#126).
     // A retry of a message already saved gets it back without touching the rate limit.
     const sent = await this.repo.byNonce(userId, body.nonce);
@@ -75,12 +77,10 @@ export class MessagesService {
     ]);
     if (wait) throw rateLimited(wait / 1000);
 
-    const mentions = await this.mentions.resolve(userId, channel, body.content);
-    const concerned = await this.mentions.recipients(
+    const { mentions, concerned } = await this.mentionsOf(
       userId,
       channel,
       body.content,
-      mentions,
     );
     let saved: MessageWithAuthor;
     try {
@@ -154,20 +154,28 @@ export class MessagesService {
   // REQ-MSG-06 / DEC-33: same checks as sending; a repeat inside the window is 204, not broadcast.
   async typing(userId: bigint, channelId: bigint) {
     const channel = await this.viewable(userId, channelId);
-    await this.permissions.require(
-      userId,
-      { channelId },
-      Permission.SEND_MESSAGES,
-    );
+    await this.requireSend(userId, channel);
     // 1 s under the client's interval, so its next call on time is never swallowed.
     const fresh = await this.store.setIfAbsent(
       `typing:${userId}:${channelId}`,
       '1',
       TYPING_CLIENT_INTERVAL_MS / 1000 - 1,
     );
-    if (!fresh || !channel.serverId) return;
+    if (!fresh) return;
     const author = await this.repo.author(userId);
     if (!author) return;
+    if (!channel.serverId) {
+      // A DM: only the other person; canSend already ruled out a block either way.
+      for (const other of (await this.dms.recipients(channelId)) ?? [])
+        if (other !== userId)
+          await this.events.toUser(other, 'TYPING_START', {
+            channel_id: channelId.toString(),
+            server_id: null,
+            user: toMessageAuthor(author),
+            timestamp: this.clock.now().toISOString(),
+          });
+      return;
+    }
     await this.events.toServerSubscribers(
       channel.serverId,
       channelId,
@@ -212,10 +220,14 @@ export class MessagesService {
   }
 
   // REQ-ROLE-03 AC3: a channel one cannot view does not exist for them (40401).
-  // ponytail: text channels only; DMs wait for DmAccessPolicy, P2-B3.1 (#114), and voice
-  // channel chat for P3-B7 (#160) — both open here.
+  // ponytail: text channels and DMs; voice channel chat opens here with P3-B7 (#160).
   async viewable(userId: bigint, channelId: bigint): Promise<ChannelRow> {
     const channel = await this.servers.findChannel(channelId);
+    // REQ-DM-01: a DM is not under server RBAC.
+    if (channel?.type === ChannelTypeCode.dm && !channel.deletedAt) {
+      if (await this.dmPolicy.canView(userId, channelId)) return channel;
+      throw unknownChannel();
+    }
     if (
       channel?.type !== ChannelTypeCode.text ||
       !channel.serverId ||
@@ -228,5 +240,48 @@ export class MessagesService {
     )
       throw unknownChannel();
     return channel;
+  }
+
+  // REQ-DM-02 / FRIEND-03 AC1 in a DM: 40303 with one sentence; elsewhere SEND_MESSAGES.
+  private async requireSend(userId: bigint, channel: ChannelRow) {
+    if (channel.serverId)
+      return this.permissions.require(
+        userId,
+        { channelId: channel.id },
+        Permission.SEND_MESSAGES,
+      );
+    if (!(await this.dmPolicy.canSend(userId, channel.id)))
+      throw new AppError(ErrorCode.CannotMessageUser, CANNOT_MESSAGE_TEXT);
+  }
+
+  // CR-12 #3: a DM keeps mentions of its people only (for the name), nothing else.
+  private async mentionsOf(
+    userId: bigint,
+    channel: ChannelRow,
+    content: string,
+  ) {
+    if (channel.serverId) {
+      const mentions = await this.mentions.resolve(userId, channel, content);
+      const concerned = await this.mentions.recipients(
+        userId,
+        channel,
+        content,
+        mentions,
+      );
+      return { mentions, concerned };
+    }
+    const people = new Set(
+      ((await this.dms.recipients(channel.id)) ?? []).map(String),
+    );
+    return {
+      mentions: {
+        mentionUserIds: parseMentions(content)
+          .mention_user_ids.filter((id) => people.has(id))
+          .map(BigInt),
+        mentionRoleIds: [],
+        mentionEveryone: false,
+      },
+      concerned: new Map(),
+    };
   }
 }

@@ -85,6 +85,7 @@ async function connected(client = createGatewayClient(deps)) {
       presences: [],
       read_states: [],
       relationships: [],
+      private_channels: [],
     },
   });
   return client;
@@ -127,6 +128,7 @@ describe('RemoteGatewayClient', () => {
         presences: [],
         read_states: [],
         relationships: [],
+        private_channels: [],
       },
     });
     expect(gatewayStore.getState().status).toBe('connected');

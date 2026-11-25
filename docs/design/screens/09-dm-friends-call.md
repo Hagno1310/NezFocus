@@ -523,6 +523,20 @@ Frame đối chiếu bằng pen.dev trước khi code; frame thắng trừ khi l
 | S-DM-EDGE `large-text-friends` | Hàng lời mời: nút xếp dọc như spec (frame chưa vẽ) |
 | Dữ liệu mẫu trong frame | `many-friends-sheet` tính cả Phong (đã bị chặn), `auto-accepted` dùng Giang (đã mời An): lỗi dữ liệu mẫu, code theo luật |
 
+## Chốt 25/11/2026 (bảng hỏi P2-B3 #20, phần backend, theo khuyến nghị)
+
+| Chỗ | Chốt |
+| --- | --- |
+| Module | DM ở `apps/backend/src/modules/channels/` (`DmService`, `DmAccessPolicy`, `channel_recipients`, `dm_pairs`) |
+| `CHANNEL_CREATE` | Payload là `ChannelResponse` (kênh server) **hoặc** `DmChannel` (`type: 'dm'`); reducer drawer bỏ qua DM |
+| Biết trước `cannot-message` | `GET /users/{id}/profile` trả `can_message` (một cờ cho mọi lý do, không lộ lý do); S-DM-02 và S-HOME-10 đọc cờ này |
+| Gửi tin / typing trong DM | `MessagesService` có nhánh DM: `DmAccessPolicy` thay RBAC (`40303` một câu); mention chỉ giữ người trong DM, không vai trò, không `@everyone` |
+| RBAC | DM không đi qua `PermissionService` (`permissionsIn` = 0 cho DM); mọi kiểm DM qua `DmAccessPolicy` |
+| Typing DM | `TYPING_START` gửi thẳng tới người kia (`server_id: null`) |
+| Mở DM khi không còn nhắn được | DM đã có: trả DM cũ và mở lại phía người gọi (màn hiện `cannot-message`); DM chưa có: `40303` |
+| READY | `private_channels` và read state chỉ gồm DM chưa đóng ở phía mình |
+| Seed | Tin cuối của Tuấn là tin chữ (tin cuộc gọi đến với P3-B6.3 #157) |
+
 ## Câu hỏi còn mở
 
 Không còn. 21 câu chốt 20/10/2026 (chủ dự án đồng ý cả 21); hành vi mới ở `SRS_v1.2_change_notes.md` mục 11 (CR-06, đã áp vào SRS v1.6 ngày 21/10/2026). Cập nhật 30/10/2026 theo CR-12, CR-15, CR-19, CR-21, CR-24, CR-25 (đã áp vào SRS v1.9, Phụ lục 11.13).

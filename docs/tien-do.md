@@ -144,7 +144,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 - [ ] **P2-B3** [#20](https://github.com/Hagno1310/NezFocus/issues/20) Tin nhắn riêng (DM 1-1) và hồ sơ thành viên
   - Cần trước: P2-A3.1 (Hiếu), P2-B2
   - Trong lúc làm: P2-B3.2 chờ P2-A3.2 (Hiếu); P2-B3.3 chờ P2-A3.4 (Hiếu); P2-B3.3 chờ P2-A4.4 (Hiếu); P2-B3.4 chờ P2-A2.1 (Hiếu); P2-B3.4 chờ P2-A3.4 (Hiếu)
-  - [ ] mốc **P2-B3.1** [#114](https://github.com/Hagno1310/NezFocus/issues/114) Hợp đồng DM, quyền nhắn DM, hồ sơ người khác trong shared · hợp đồng
+  - [x] mốc **P2-B3.1** [#114](https://github.com/Hagno1310/NezFocus/issues/114) Hợp đồng DM, quyền nhắn DM, hồ sơ người khác trong shared · hợp đồng
 
 ## P3 — Phòng học, Room Session, gọi 1-1; quản lý server
 

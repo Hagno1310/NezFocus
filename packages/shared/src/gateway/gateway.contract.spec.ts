@@ -101,6 +101,7 @@ describe('gateway contract', () => {
         presences: [],
         read_states: [],
         relationships: [],
+        private_channels: [],
       };
       expect(DispatchEvents.READY.parse(d)).toEqual(d);
     });

@@ -39,6 +39,7 @@ const setup = (members: bigint[], cannotView: bigint[] = []) => {
         return !hidden.has(userId);
       },
     },
+    { recipients: async (channelId) => (channelId === DM ? [1n, 2n] : null) },
   );
   const deliver = (target: FanoutTarget) =>
     fanout.deliver({ target, t: 'USER_UPDATE', d: {} as never });
@@ -74,12 +75,13 @@ describe('Fanout (REQ-MSG-07)', () => {
     expect(s.got(1n)).toBe(2);
   });
 
-  it('a channel with no server (DM, until P2-B3.2 #115) or an unknown one reaches nobody', async () => {
-    const s = setup([1n]);
-    s.connect(1n);
+  it('REQ-DM-01: a DM reaches its two people only, without RBAC; an unknown channel nobody', async () => {
+    const s = setup([1n, 3n]);
+    [1n, 2n, 3n].forEach(s.connect);
     await s.deliver({ kind: 'channel', channelId: DM.toString() });
     await s.deliver({ kind: 'channel', channelId: '99' });
-    expect(s.got(1n)).toBe(0);
+    expect([s.got(1n), s.got(2n), s.got(3n)]).toEqual([1, 1, 0]);
+    expect(s.permissionChecks).toEqual([]);
   });
 
   it('toServer reaches every online member, no permission check', async () => {

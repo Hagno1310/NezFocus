@@ -48,6 +48,7 @@ export function useChannelReading({
   reachedStart,
   loadOlder,
   atBottom,
+  jumped,
 }: {
   channelId: string;
   items: readonly ChatItem[];
@@ -56,6 +57,7 @@ export function useChannelReading({
   reachedStart: boolean;
   loadOlder: () => Promise<void>;
   atBottom: boolean;
+  jumped: boolean; // the opening jump to the line is done
 }) {
   const { active, canAck } = useReadTracking();
   // The line stays where it was until the channel is left (02 › Đã đọc)…
@@ -139,16 +141,27 @@ export function useChannelReading({
 
   const newestId = sent.at(-1)?.id ?? null;
   const shown = useRef({ newestId, canAck });
+  const [openedUnread] = useState(() => anchorOf(channelId) !== null);
   useEffect(() => {
     const id = seenAtBottom(shown.current, {
       newestId,
       canAck,
       atBottom,
       loading,
+      settled: !openedUnread || jumped,
     });
     shown.current = { newestId, canAck };
     if (id) acks.seen(channelId, id, lastReadOf(channelId));
-  }, [newestId, canAck, atBottom, loading, acks, channelId]);
+  }, [
+    newestId,
+    canAck,
+    atBottom,
+    loading,
+    openedUnread,
+    jumped,
+    acks,
+    channelId,
+  ]);
 
   // Seen = ≥ 50% shown, or (taller than the list) covering all of it: SRS 7.3.3.
   const onViewable = useCallback(

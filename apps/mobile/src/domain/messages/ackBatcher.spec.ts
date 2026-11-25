@@ -65,9 +65,15 @@ describe('REQ-NOTIF-01 / SRS 7.3.3: one ack per second, for the newest message s
   });
 });
 
-describe('seenAtBottom', () => {
+describe('REQ-NOTIF-01 / SRS 7.3.3: seenAtBottom', () => {
   const shown = { newestId: '10', canAck: true };
-  const at = { newestId: '11', canAck: true, atBottom: true, loading: false };
+  const at = {
+    newestId: '11',
+    canAck: true,
+    atBottom: true,
+    loading: false,
+    settled: true,
+  };
 
   it('a message arriving at the bottom is seen', () => {
     expect(seenAtBottom(shown, at)).toBe('11');
@@ -89,5 +95,9 @@ describe('seenAtBottom', () => {
   it('the first page loading in is left to the "Tin nhắn mới" line', () => {
     expect(seenAtBottom({ newestId: null, canAck: true }, at)).toBeNull();
     expect(seenAtBottom(shown, { ...at, loading: true })).toBeNull();
+  });
+
+  it('opened with unread: nothing until the list has gone to the line', () => {
+    expect(seenAtBottom(shown, { ...at, settled: false })).toBeNull();
   });
 });

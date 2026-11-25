@@ -123,6 +123,7 @@ export function ChatView({
 
   // Newest row seen while at the bottom; null = at the bottom now.
   const [leftAt, setLeftAt] = useState<string | null>(null);
+  const [jumped, setJumped] = useState(false);
   const reading = useChannelReading({
     channelId,
     items: view.items,
@@ -131,6 +132,7 @@ export function ChatView({
     reachedStart: view.reachedStart,
     loadOlder: view.loadOlder,
     atBottom: leftAt === null,
+    jumped,
   });
 
   // FRIEND-03 AC2: "Hiện" opens a folded run until the channel is left (this view unmounts).
@@ -187,12 +189,11 @@ export function ChatView({
       list.current?.scrollToIndex({ index, viewPosition: 1, animated }),
     [],
   );
-  const jumped = useRef(false);
   useEffect(() => {
-    if (jumped.current || lineAt < 0) return;
-    jumped.current = true;
+    if (jumped || lineAt < 0) return;
+    setJumped(true);
     toLine(lineAt, false);
-  }, [lineAt, toLine]);
+  }, [jumped, lineAt, toLine]);
 
   const [loadingOlder, setLoadingOlder] = useState(false);
   const onTop = () => {

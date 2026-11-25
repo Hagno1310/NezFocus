@@ -48,9 +48,10 @@ export function seenAtBottom(
     canAck: boolean;
     atBottom: boolean;
     loading: boolean;
+    settled: boolean; // opened with unread: the list has gone to the line (02 › Thứ tự tin)
   },
 ): string | null {
-  if (!now.atBottom || !now.canAck || now.loading) return null;
+  if (!now.atBottom || !now.canAck || now.loading || !now.settled) return null;
   // No newest before = the first page: opening goes to the line, viewability acks from there.
   if (!now.newestId || !before.newestId) return null;
   return now.newestId !== before.newestId || !before.canAck

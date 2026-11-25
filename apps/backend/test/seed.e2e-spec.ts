@@ -7,6 +7,8 @@ import { DB, type Db } from '../src/db/db.module.js';
 import { runSeeds } from '../src/db/seed.js';
 import { SAMPLE_SERVERS } from '../src/modules/servers/servers.seed.js';
 import { StudyStatsService } from '../src/modules/study/study-stats.service.js';
+import { DmService } from '../src/modules/channels/dm.service.js';
+import { ReadStatesService } from '../src/modules/messaging/read-states.service.js';
 import {
   channelPermissionOverwrites,
   channels,
@@ -232,5 +234,27 @@ describe('db:seed (e2e)', () => {
     expect(
       september.days.slice(0, 18).reduce((n, d) => n + d.focused_minutes, 0),
     ).toBe(550); // 9 giờ 10 phút
+  });
+
+  it("09 › An's DMs: Chi, Bình, Tuấn, Minh, newest first; only Chi's is unread", async () => {
+    await seed();
+    await seed();
+    const [an] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.username, 'an.nguyen'));
+    const dms = await app.get(DmService).openFor(an!.id);
+    expect(dms.map((d) => d.recipient.username)).toEqual([
+      'chi.le',
+      'binh.tran',
+      'tuan.hoang',
+      'minh.do',
+    ]);
+    const states = await app.get(ReadStatesService).forReady(an!.id);
+    const unread = dms.filter((d) => {
+      const s = states.find((r) => r.channel_id === d.id);
+      return s?.last_read_message_id !== d.last_message_id;
+    });
+    expect(unread.map((d) => d.recipient.username)).toEqual(['chi.le']);
   });
 });

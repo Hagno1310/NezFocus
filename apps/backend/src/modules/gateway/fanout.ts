@@ -3,6 +3,7 @@ import {
   type DispatchEventName,
   type DispatchPayload,
 } from '@nezfocus/shared';
+import type { DmRepository } from '../channels/dm.repository.js';
 import type { PermissionService } from '../permissions/permission.service.js';
 import type { ServersRepository } from '../servers/servers.repository.js';
 import type { GatewaySessions } from './gateway-sessions.js';
@@ -36,6 +37,7 @@ export class Fanout {
       'memberIds' | 'findChannel'
     >,
     private readonly permissions: Pick<PermissionService, 'can'>,
+    private readonly dms: Pick<DmRepository, 'recipients'>,
   ) {}
 
   async deliver({ target, t, d }: Envelope) {
@@ -50,9 +52,13 @@ export class Fanout {
 
     if (target.kind === 'channel') {
       const channelId = BigInt(target.channelId);
-      // ponytail: a DM channel (no server) reaches nobody until P2-B3.2 (#115) adds its members.
       const serverId = (await this.servers.findChannel(channelId))?.serverId;
-      if (!serverId) return;
+      if (!serverId) {
+        // REQ-DM-01: a DM reaches its two people, no RBAC.
+        for (const userId of (await this.dms.recipients(channelId)) ?? [])
+          await this.sessions.dispatchToUser(userId, t, d);
+        return;
+      }
       for (const userId of await this.online(serverId))
         if (await this.sees(userId, channelId))
           await this.sessions.dispatchToUser(userId, t, d);

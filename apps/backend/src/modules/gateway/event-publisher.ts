@@ -8,6 +8,7 @@ import {
 import type { DispatchEventName, DispatchPayload } from '@nezfocus/shared';
 import type { Redis } from 'ioredis';
 import { REDIS } from '../../redis/redis.module.js';
+import { DmRepository } from '../channels/dm.repository.js';
 import { PermissionService } from '../permissions/permission.service.js';
 import { ServersRepository } from '../servers/servers.repository.js';
 import { Fanout, type Envelope, type FanoutTarget } from './fanout.js';
@@ -22,7 +23,7 @@ export abstract class EventPublisher {
     t: T,
     d: DispatchPayload<T>,
   ): Promise<void>;
-  // Channel content (MESSAGE_*, CHANNEL_CREATE): only who can VIEW_CHANNEL (ROLE-03); DM: P2-B3.2 (#115).
+  // Channel content (MESSAGE_*, CHANNEL_CREATE): only who can VIEW_CHANNEL (ROLE-03); a DM: its two people.
   abstract toChannel<T extends DispatchEventName>(
     channelId: bigint,
     t: T,
@@ -65,10 +66,11 @@ export class GatewayEventPublisher
     sessions: GatewaySessions,
     servers: ServersRepository,
     permissions: PermissionService,
+    dms: DmRepository,
   ) {
     super();
     this.subscriber = redis.duplicate();
-    this.fanout = new Fanout(sessions, servers, permissions);
+    this.fanout = new Fanout(sessions, servers, permissions, dms);
   }
 
   async onModuleInit() {

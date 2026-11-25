@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { messageTypeCode } from '@nezfocus/shared';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
+import { channelRecipients } from '../channels/dm.schema.js';
 import {
   ChannelTypeCode,
   channels,
@@ -102,11 +103,11 @@ export class ReadStatesRepository {
       });
   }
 
-  // READY: every live text channel of my servers, read state or not; the caller filters by view.
-  // ponytail: text channels only; voice channel chat adds its type with P3-B7 (#160), DMs with
-  // P2-B3.2 (#115).
+  // READY: every live text channel of my servers, read state or not, and my DMs not closed
+  // (chốt 25/11/2026); the caller filters server channels by view.
+  // ponytail: voice channel chat adds its type with P3-B7 (#160).
   async forUser(userId: bigint): Promise<ChannelReadState[]> {
-    const rows = await this.db
+    const inServers = await this.db
       .select({
         channelId: channels.id,
         serverId: channels.serverId,
@@ -135,7 +136,31 @@ export class ReadStatesRepository {
           isNull(channels.deletedAt),
         ),
       );
-    return rows.map((r) => ({
+    const inDms = await this.db
+      .select({
+        channelId: channels.id,
+        serverId: channels.serverId,
+        lastMessageId: channels.lastMessageId,
+        lastReadMessageId: readStates.lastReadMessageId,
+        mentionCount: readStates.mentionCount,
+      })
+      .from(channelRecipients)
+      .innerJoin(channels, eq(channels.id, channelRecipients.channelId))
+      .leftJoin(
+        readStates,
+        and(
+          eq(readStates.channelId, channels.id),
+          eq(readStates.userId, userId),
+        ),
+      )
+      .where(
+        and(
+          eq(channelRecipients.userId, userId),
+          eq(channelRecipients.closed, false),
+          isNull(channels.deletedAt),
+        ),
+      );
+    return [...inServers, ...inDms].map((r) => ({
       ...r,
       lastReadMessageId: r.lastReadMessageId ?? 0n,
       mentionCount: r.mentionCount ?? 0,

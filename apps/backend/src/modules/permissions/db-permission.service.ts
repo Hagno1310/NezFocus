@@ -53,7 +53,7 @@ export class DbPermissionService extends PermissionService {
     let serverId: bigint;
     if ('channelId' in scope) {
       channel = await this.repo.channel(scope.channelId);
-      // ponytail: DM channels have no server; their rule comes with P2-B3.2 (#115).
+      // REQ-DM-01 (chốt 25/11/2026): a DM is never under RBAC; DmAccessPolicy decides.
       if (!channel?.serverId || channel.deletedAt) return 0n;
       serverId = channel.serverId;
     } else serverId = scope.serverId;

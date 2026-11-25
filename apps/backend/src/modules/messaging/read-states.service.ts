@@ -55,11 +55,13 @@ export class ReadStatesService {
     const out: ReadState[] = [];
     for (const r of await this.repo.forUser(userId))
       if (
-        await this.permissions.can(
+        // A DM row is mine already (REQ-DM-01: no RBAC).
+        !r.serverId ||
+        (await this.permissions.can(
           userId,
           { channelId: r.channelId },
           Permission.VIEW_CHANNEL,
-        )
+        ))
       )
         out.push({
           channel_id: String(r.channelId),

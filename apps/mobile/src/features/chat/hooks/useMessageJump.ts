@@ -9,6 +9,8 @@ import { showToast } from '../../../shared/ui/Toast';
 
 // Inverted list: viewPosition 1 is the top of the screen; a link's message sits a third down.
 const positionOf = (times: 1 | 2) => (times === 2 ? 2 / 3 : 0.5);
+// Past a reply's animated scroll (`short`) and the first draw of rows that were off-screen.
+const SETTLE_MS = 350;
 
 // C-10 `highlight`: a reply jump flashes once; a link / push (CR-19 #2) twice, the message a
 // third from the top. The target lives in `jumps`, so a link opened elsewhere lands here too.
@@ -52,16 +54,24 @@ export function useMessageJump(
   useEffect(() => {
     if (!target || targetIndex < 0 || scrolled.current === target.key) return;
     scrolled.current = target.key;
-    list.current?.scrollToIndex({
-      index: targetIndex,
-      viewPosition: positionOf(target.times),
-      animated: target.times === 1,
-    });
+    const place = (animated: boolean) =>
+      list.current?.scrollToIndex({
+        index: targetIndex,
+        viewPosition: positionOf(target.times),
+        animated,
+      });
+    place(target.times === 1);
+    // A far message lands by estimated row heights; once the rows around it are drawn and
+    // measured, the same call puts it exactly a third down.
+    const settle = setTimeout(() => place(false), SETTLE_MS);
     // After the flashes (2 × 400 ms, or 1 s held): done, so coming back does not jump again.
     const done = setTimeout(() => {
       if (jumps.getState()?.key === target.key) jumps.setState(null, true);
     }, 1500);
-    return () => clearTimeout(done);
+    return () => {
+      clearTimeout(settle);
+      clearTimeout(done);
+    };
   }, [target, targetIndex, list]);
 
   return {

@@ -23,6 +23,10 @@ import { MemberItem } from '../components/MemberItem';
 import { useMembers } from '../hooks/useMembers';
 import { useServerAccess } from '../hooks/useServerAccess';
 import { openMemberProfile } from '../../../domain/friends/profileSheet';
+import { requestJump } from '../../../domain/messages/jumps';
+import { PinnedList } from '../../chat/components/PinnedList';
+import { useChannelAbilities } from '../../chat/hooks/useCanSend';
+import { usePins } from '../../chat/hooks/usePins';
 
 type Tab = 'members' | 'tasks' | 'pins';
 
@@ -30,7 +34,13 @@ type Tab = 'members' | 'tasks' | 'pins';
 const tabs = new Map<string, Tab>();
 
 // S-HOME-03 drawer phải: `members`, `loading`, `offline`; Edge case `alone-in-server`.
-export function RightDrawer({ open }: { open: boolean }) {
+export function RightDrawer({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   const { colors } = useTheme();
   const { top } = useSafeAreaInsets();
   const current = useStore(homeStore, (s) => s.open);
@@ -54,6 +64,7 @@ export function RightDrawer({ open }: { open: boolean }) {
           channelId={current.channelId}
           name={channel.name}
           open={open}
+          onClose={onClose}
           tab={tabs.get(current.channelId) ?? 'members'}
           onTab={(next) => {
             tabs.set(current.channelId, next);
@@ -70,6 +81,7 @@ function ChannelMembers({
   channelId,
   name,
   open,
+  onClose,
   tab,
   onTab,
 }: {
@@ -77,6 +89,7 @@ function ChannelMembers({
   channelId: string;
   name: string;
   open: boolean;
+  onClose: () => void;
   tab: Tab;
   onTab: (tab: Tab) => void;
 }) {
@@ -86,6 +99,8 @@ function ChannelMembers({
   const members = useMembers(serverId, channelId);
   const { now, timeZone } = useChatClock();
   const meId = useStore(sessionStore, (s) => s.user?.id);
+  const pins = usePins(channelId, open);
+  const abilities = useChannelAbilities(serverId, channelId);
   // Groups as they were when the drawer opened: no re-sort while it is open (S-HOME-03).
   const snapshot = () => {
     const { others, mine } = presenceStore.getState();
@@ -145,7 +160,13 @@ function ChannelMembers({
           segments={[
             { key: 'members', label: t('servers.members.tabMembers') },
             { key: 'tasks', label: t('servers.members.tabTasks') },
-            { key: 'pins', label: t('servers.members.tabPins') },
+            // "Ghim · 3" once there are pins (S-HOME-03 › Nội dung chữ).
+            {
+              key: 'pins',
+              label: pins?.length
+                ? t('servers.members.tabPinsCount', { count: pins.length })
+                : t('servers.members.tabPins'),
+            },
           ]}
           value={tab}
           onChange={onTab}
@@ -153,12 +174,22 @@ function ChannelMembers({
         />
       </View>
       {offline && <SystemBanner kind="offline" />}
-      {tab !== 'members' ? (
-        // ponytail: Việc is P4-A1 (#32), Ghim is P3-A2 (#22); until then the placeholder sentence.
+      {tab === 'pins' ? (
+        <PinnedList
+          channelId={channelId}
+          pins={pins}
+          canUnpin={abilities.canManage}
+          online={!offline}
+          // S-HOME-03 › Tương tác: close the drawer, bring the message into view.
+          onOpen={(m) => {
+            onClose();
+            requestJump({ channelId, messageId: m.id, times: 1 });
+          }}
+        />
+      ) : tab === 'tasks' ? (
+        // ponytail: Việc is P4-A1 (#32); until then the placeholder sentence.
         <Text variant="body-sm" color="text-secondary" style={styles.soon}>
-          {t('placeholder.noteTicket', {
-            ticket: tab === 'tasks' ? 'P4-A1 (#32)' : 'P3-A2 (#22)',
-          })}
+          {t('placeholder.noteTicket', { ticket: 'P4-A1 (#32)' })}
         </Text>
       ) : !list ? (
         <View style={styles.loading}>

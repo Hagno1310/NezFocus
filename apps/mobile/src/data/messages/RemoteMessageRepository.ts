@@ -13,6 +13,8 @@ const messagePath = (channelId: string, messageId: string) =>
   MessageRoutes.message
     .replace(':id', channelId)
     .replace(':messageId', messageId);
+const pinPath = (channelId: string, messageId: string) =>
+  MessageRoutes.pin.replace(':id', channelId).replace(':messageId', messageId);
 const reaction = (
   route: string,
   channelId: string,
@@ -66,6 +68,16 @@ export const remoteMessageRepository: MessageRepository = {
       reaction(MessageRoutes.myReaction, channelId, messageId, emoji),
       { method: 'DELETE' },
     );
+  },
+  pins: async (channelId) =>
+    MessageListResponse.parse(
+      await api.request(MessageRoutes.pins.replace(':id', channelId)),
+    ),
+  async pin(channelId, messageId) {
+    await api.request(pinPath(channelId, messageId), { method: 'PUT' });
+  },
+  async unpin(channelId, messageId) {
+    await api.request(pinPath(channelId, messageId), { method: 'DELETE' });
   },
   reactionUsers: async (channelId, messageId, emoji) =>
     ReactionUsersResponse.parse(

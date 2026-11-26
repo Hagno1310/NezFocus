@@ -85,6 +85,35 @@ export class MessagesController {
     );
   }
 
+  // REQ-MSG-10
+  @Get(MessageRoutes.pins)
+  pins(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ZodValidationPipe(SnowflakeId)) id: string,
+  ): Promise<MessageListResponse> {
+    return this.actions.pins(user.userId, BigInt(id));
+  }
+
+  @Put(MessageRoutes.pin)
+  @HttpCode(204)
+  async pin(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ZodValidationPipe(SnowflakeId)) id: string,
+    @Param('messageId', new ZodValidationPipe(SnowflakeId)) messageId: string,
+  ): Promise<void> {
+    await this.actions.pin(user.userId, BigInt(id), BigInt(messageId));
+  }
+
+  @Delete(MessageRoutes.pin)
+  @HttpCode(204)
+  async unpin(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ZodValidationPipe(SnowflakeId)) id: string,
+    @Param('messageId', new ZodValidationPipe(SnowflakeId)) messageId: string,
+  ): Promise<void> {
+    await this.actions.unpin(user.userId, BigInt(id), BigInt(messageId));
+  }
+
   // CR-28 #26
   @Get(MessageRoutes.reaction)
   reactionUsers(

@@ -533,6 +533,7 @@ export const en: Strings = {
       tabMembers: 'Members',
       tabTasks: 'Tasks',
       tabPins: 'Pins',
+      tabPinsCount: 'Pins · {{count}}',
     },
     drawer: {
       subtitleStudy: 'Study Server · {{count}} members',
@@ -984,6 +985,14 @@ export const en: Strings = {
     rateLimited_other:
       'You are sending too fast · retrying in {{count}} seconds',
     memberJoin: '{{name}} joined the server',
+    pin: 'Pin message',
+    unpin: 'Unpin',
+    maxPins:
+      'This channel already has 50 pinned messages. Unpin some to pin a new one.',
+    pinned: '{{name}} pinned a message',
+    pinnedSee: 'View',
+    pinsEmpty: 'No pinned messages yet',
+    pinsEmptyBody: 'Channel managers can long-press a message to pin it.',
     blocked_one: '{{count}} blocked message ·',
     blocked_other: '{{count}} blocked messages ·',
     showBlocked: 'Show',

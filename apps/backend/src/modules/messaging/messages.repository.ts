@@ -3,11 +3,13 @@ import type { MessageHistoryQuery } from '@nezfocus/shared';
 import {
   and,
   asc,
+  count,
   desc,
   eq,
   gt,
   gte,
   inArray,
+  isNotNull,
   isNull,
   lt,
   sql,
@@ -128,6 +130,67 @@ export class MessagesRepository {
     });
     const [saved] = await this.select().where(eq(messages.id, row.id));
     return saved!;
+  }
+
+  // REQ-MSG-10 AC2: under a lock on the channel, so two pins at 49 do not make 51.
+  async pin(
+    channelId: bigint,
+    messageId: bigint,
+    by: bigint,
+    at: Date,
+    max: number,
+  ): Promise<'pinned' | 'already' | 'full'> {
+    return this.db.transaction(async (tx) => {
+      await tx
+        .select({ id: channels.id })
+        .from(channels)
+        .where(eq(channels.id, channelId))
+        .for('update');
+      const [target] = await tx
+        .select({ pinnedAt: messages.pinnedAt })
+        .from(messages)
+        .where(eq(messages.id, messageId));
+      if (target?.pinnedAt) return 'already';
+      const [pinned] = await tx
+        .select({ n: count() })
+        .from(messages)
+        .where(
+          and(
+            eq(messages.channelId, channelId),
+            isNotNull(messages.pinnedAt),
+            isNull(messages.deletedAt),
+          ),
+        );
+      if ((pinned?.n ?? 0) >= max) return 'full';
+      await tx
+        .update(messages)
+        .set({ pinnedAt: at, pinnedBy: by })
+        .where(eq(messages.id, messageId));
+      return 'pinned';
+    });
+  }
+
+  // True when it was pinned.
+  async unpin(messageId: bigint): Promise<boolean> {
+    const rows = await this.db
+      .update(messages)
+      .set({ pinnedAt: null, pinnedBy: null })
+      .where(and(eq(messages.id, messageId), isNotNull(messages.pinnedAt)))
+      .returning({ id: messages.id });
+    return rows.length > 0;
+  }
+
+  // S-HOME-03 `pins`: newest pin first; a deleted message is not one (CR-28 #28).
+  pins(channelId: bigint): Promise<MessageWithAuthor[]> {
+    return this.select()
+      .where(
+        and(
+          eq(messages.channelId, channelId),
+          isNotNull(messages.pinnedAt),
+          isNull(messages.deletedAt),
+        ),
+      )
+      .orderBy(desc(messages.pinnedAt), desc(messages.id));
   }
 
   // REQ-MSG-04: the images of these messages, in upload order.

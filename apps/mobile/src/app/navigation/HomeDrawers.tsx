@@ -177,7 +177,12 @@ export function HomeDrawers({
             screenListeners={{
               state: (e) => setOpen((o) => ({ ...o, rightOpen: openFrom(e) })),
             }}
-            drawerContent={() => <RightDrawer open={open.rightOpen} />}
+            drawerContent={(props) => (
+              <RightDrawer
+                open={open.rightOpen}
+                onClose={() => props.navigation.closeDrawer()}
+              />
+            )}
           >
             <Right.Screen name="Channel" component={ChannelHost} />
           </Right.Navigator>

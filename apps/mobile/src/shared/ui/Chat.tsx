@@ -420,6 +420,7 @@ export function SystemLine({
   surface,
   onLongPress,
   deleteLabel,
+  action,
 }: {
   icon: IconComponent;
   parts: string[];
@@ -429,21 +430,27 @@ export function SystemLine({
   // S-HOME-04 `system-message`: only with MANAGE_MESSAGES (MSG-11); where the row sits.
   onLongPress?: (at: { top: number }) => void;
   deleteLabel?: string; // the same, for a screen reader
+  // C-10 › Tin hệ thống: "· **Xem**" (`primary`, 600) after the sentence (a pin → the message).
+  action?: { label: string; onPress: () => void };
 }) {
   const { colors } = useTheme();
   const row = useRef<ComponentRef<typeof View>>(null);
+  const a11yActions = [
+    ...(action ? [{ name: 'activate', label: action.label }] : []),
+    ...(onLongPress && deleteLabel
+      ? [{ name: 'longpress', label: deleteLabel }]
+      : []),
+  ];
   return (
     <Pressable
       ref={row}
       accessible
       accessibilityLabel={accessibilityLabel}
-      accessibilityActions={
-        onLongPress && deleteLabel
-          ? [{ name: 'longpress', label: deleteLabel }]
-          : undefined
-      }
-      onAccessibilityAction={() =>
-        row.current?.measureInWindow((_x, top) => onLongPress?.({ top }))
+      accessibilityActions={a11yActions.length ? a11yActions : undefined}
+      onAccessibilityAction={(e) =>
+        e.nativeEvent.actionName === 'activate'
+          ? action?.onPress()
+          : row.current?.measureInWindow((_x, top) => onLongPress?.({ top }))
       }
       disabled={!onLongPress}
       onLongPress={
@@ -473,6 +480,20 @@ export function SystemLine({
           ) : (
             part
           ),
+        )}
+        {action && (
+          <>
+            {' · '}
+            <Text
+              variant="label"
+              weight="600"
+              color="primary"
+              onPress={action.onPress}
+              suppressHighlighting
+            >
+              {action.label}
+            </Text>
+          </>
         )}
       </Text>
       <Text variant="label" weight="400" color="text-tertiary">

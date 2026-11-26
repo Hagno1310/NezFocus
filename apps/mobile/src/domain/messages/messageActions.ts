@@ -3,12 +3,19 @@
 export type SheetRow =
   | 'reply'
   | 'edit'
+  | 'pin' // REQ-MSG-10: "Ghim tin nhắn" / "Bỏ ghim"
+  | 'unpin'
   | 'copyText'
   | 'copyLink' // CR-19: right after "Sao chép văn bản", every sent message
   | 'report'
   | 'delete';
 
-export type SheetTarget = { mine: boolean; system: boolean; hasText: boolean };
+export type SheetTarget = {
+  mine: boolean;
+  system: boolean;
+  hasText: boolean;
+  pinned?: boolean;
+};
 
 export type SheetViewer = {
   inDm: boolean;
@@ -27,6 +34,8 @@ export type MessageSheet = {
 // Needs the network: CR-28 #7 (chốt 26/11/2026, 02 S-HOME-04).
 const NEEDS_NETWORK: ReadonlySet<SheetRow> = new Set([
   'edit',
+  'pin',
+  'unpin',
   'delete',
   'report',
 ]);
@@ -54,9 +63,14 @@ export function messageSheet(
     if (!target.mine && canDelete) rows.push('delete');
     reactions = 'off';
   } else {
+    // REQ-MSG-10 AC3 / AC4: MANAGE_MESSAGES in a server, anyone in a DM.
+    const canPin = viewer.inDm || viewer.canManage;
     rows = [
       'reply',
       ...(target.mine ? ['edit' as const] : []),
+      ...(canPin
+        ? [target.pinned ? ('unpin' as const) : ('pin' as const)]
+        : []),
       ...(target.hasText ? ['copyText' as const] : []),
       'copyLink' as const,
       ...(target.mine ? [] : ['report' as const]),

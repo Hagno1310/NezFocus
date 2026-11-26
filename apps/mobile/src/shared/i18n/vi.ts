@@ -529,6 +529,7 @@ export const vi = {
       tabMembers: 'Thành viên',
       tabTasks: 'Việc',
       tabPins: 'Ghim',
+      tabPinsCount: 'Ghim · {{count}}',
     },
     drawer: {
       subtitleStudy: 'Study Server · {{count}} thành viên',
@@ -983,6 +984,13 @@ export const vi = {
     rateLimited_other: 'Bạn gửi quá nhanh · tự gửi lại sau {{count}} giây',
     // REQ-MSG-11, C-10 › Tin hệ thống
     memberJoin: '{{name}} đã tham gia server',
+    pin: 'Ghim tin nhắn',
+    unpin: 'Bỏ ghim',
+    maxPins: 'Kênh đã có 50 tin ghim. Bỏ ghim bớt để ghim tin mới.',
+    pinned: '{{name}} đã ghim một tin nhắn',
+    pinnedSee: 'Xem',
+    pinsEmpty: 'Chưa có tin nhắn được ghim',
+    pinsEmptyBody: 'Người quản lý kênh nhấn giữ một tin nhắn để ghim.',
     // FRIEND-03 AC2, S-HOME-01 `blocked-message`
     blocked_one: '{{count}} tin nhắn bị chặn ·',
     blocked_other: '{{count}} tin nhắn bị chặn ·',

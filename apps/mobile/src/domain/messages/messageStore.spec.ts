@@ -89,6 +89,9 @@ function fakeRemote(messages: MessageResponse[] = []) {
       calls.push(`unreact ${messageId} ${emoji}`);
     },
     reactionUsers: async () => [],
+    pins: async () => messages.filter((m) => m.pinned_at),
+    pin: async (_c, messageId) => void calls.push(`pin ${messageId}`),
+    unpin: async (_c, messageId) => void calls.push(`unpin ${messageId}`),
   };
   return {
     remote,
@@ -660,5 +663,38 @@ describe('sending images (REQ-MSG-04, S-HOME-05, CR-28 #29)', () => {
     await settle();
     expect(server.sends).toHaveLength(1);
     expect(server.sends[0]!.body.nonce).toBe('nonce-1');
+  });
+});
+
+describe('pins (REQ-MSG-10)', () => {
+  it('pin / unpin go to the server and change the cached copy; CHANNEL_PINS_UPDATE does too', async () => {
+    const { store, server } = setup(fakeRemote([msg('1'), msg('2')]));
+    await store.open('7', '9');
+    const pinnedOf = (id: string) =>
+      store.state
+        .getState()
+        .views['7']!.items.find(
+          (i) => i.kind === 'message' && i.message.id === id,
+        )?.kind === 'message'
+        ? (
+            store.state
+              .getState()
+              .views['7']!.items.find(
+                (i) => i.kind === 'message' && i.message.id === id,
+              ) as Extract<ChatItem, { kind: 'message' }>
+          ).message.pinned_at
+        : undefined;
+    await store.pin('7', '1');
+    expect(server.calls).toContain('pin 1');
+    expect(pinnedOf('1')).toBe(new Date(T0).toISOString());
+    await store.unpin('7', '1');
+    expect(pinnedOf('1')).toBeNull();
+    await store.applyPins({
+      channel_id: '7',
+      server_id: '9',
+      message_id: '2',
+      pinned_at: '2026-11-19T13:05:00.000Z',
+    });
+    expect(pinnedOf('2')).toBe('2026-11-19T13:05:00.000Z');
   });
 });

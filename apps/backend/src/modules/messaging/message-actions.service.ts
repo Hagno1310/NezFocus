@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   CANNOT_MESSAGE_TEXT,
   ErrorCode,
+  MAX_PINS,
   MAX_REACTION_EMOJI,
   Permission,
   messageTypeCode,
@@ -26,7 +27,8 @@ type ActionEvent =
   | 'MESSAGE_UPDATE'
   | 'MESSAGE_DELETE'
   | 'MESSAGE_REACTION_ADD'
-  | 'MESSAGE_REACTION_REMOVE';
+  | 'MESSAGE_REACTION_REMOVE'
+  | 'CHANNEL_PINS_UPDATE';
 
 const unknownMessage = () =>
   new AppError(ErrorCode.NotFound, 'Unknown message');
@@ -35,7 +37,7 @@ const forbidden = () => new AppError(ErrorCode.Forbidden, 'Missing permission');
 // CR-28 #25: 10 puts / removes in 5 s per user, every channel and DM together.
 const REACTIONS = { limit: 10, windowMs: 5_000 };
 
-// REQ-MSG-05: edit, delete and react (reply is a send, MessagesService.send).
+// REQ-MSG-05: edit, delete and react (reply is a send, MessagesService.send). REQ-MSG-10: pins.
 @Injectable()
 export class MessageActionsService {
   private readonly logger = new Logger('MessageActionsService');
@@ -200,6 +202,80 @@ export class MessageActionsService {
         'MESSAGE_REACTION_REMOVE',
         this.reaction(userId, channelId, messageId, emoji),
       );
+  }
+
+  // REQ-MSG-10 AC1: a `channel_pinned` system message by the pinner (MSG-11), once.
+  async pin(userId: bigint, channelId: bigint, messageId: bigint) {
+    const { channel, message } = await this.target(
+      userId,
+      channelId,
+      messageId,
+    );
+    if (message.type !== messageTypeCode.default) throw forbidden();
+    await this.mayPin(userId, channel);
+    const at = this.clock.now();
+    const done = await this.repo.pin(
+      channelId,
+      messageId,
+      userId,
+      at,
+      MAX_PINS,
+    );
+    if (done === 'full')
+      throw new AppError(
+        ErrorCode.MaxPinsReached,
+        `At most ${MAX_PINS} pinned messages`,
+      );
+    if (done === 'already') return;
+    this.emit(channel, 'CHANNEL_PINS_UPDATE', {
+      channel_id: channelId.toString(),
+      message_id: messageId.toString(),
+      pinned_at: at.toISOString(),
+    });
+    await this.messages.createSystemMessage(
+      channelId,
+      userId,
+      'channel_pinned',
+      {
+        message_id: messageId.toString(),
+      },
+    );
+  }
+
+  // CR-28 #28: no system message for an unpin.
+  async unpin(userId: bigint, channelId: bigint, messageId: bigint) {
+    const { channel } = await this.target(userId, channelId, messageId);
+    await this.mayPin(userId, channel);
+    if (await this.repo.unpin(messageId))
+      this.emit(channel, 'CHANNEL_PINS_UPDATE', {
+        channel_id: channelId.toString(),
+        message_id: messageId.toString(),
+        pinned_at: null,
+      });
+  }
+
+  async pins(userId: bigint, channelId: bigint): Promise<MessageResponse[]> {
+    await this.messages.viewable(userId, channelId);
+    return this.messages.toResponses(await this.repo.pins(channelId), userId);
+  }
+
+  // AC3: MANAGE_MESSAGES in a server; AC4: anyone in a DM, as sending (CR-28 #28: 40303).
+  // Not while timed out.
+  private async mayPin(userId: bigint, channel: ChannelRow) {
+    await this.notTimedOut(userId, channel);
+    if (channel.serverId) {
+      if (
+        !(await this.permissions.can(
+          userId,
+          { channelId: channel.id },
+          Permission.MANAGE_MESSAGES,
+        ))
+      )
+        throw forbidden();
+      return;
+    }
+    if (!(await this.dmPolicy.canSend(userId, channel.id)))
+      throw new AppError(ErrorCode.CannotMessageUser, CANNOT_MESSAGE_TEXT);
   }
 
   // CR-28 #26: "Ai đã thả cảm xúc".

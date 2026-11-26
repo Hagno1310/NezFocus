@@ -28,6 +28,9 @@ export function startMessagesLifecycle() {
           sessionStore.getState().user?.id ?? '',
         ),
       );
+    // REQ-MSG-10 AC1: the cached message knows whether it is pinned (sheet row).
+    if (event.t === 'CHANNEL_PINS_UPDATE')
+      quietly(messageStore.applyPins(event.d));
     // RESUMED, or READY again after INVALID_SESSION: what the open channels missed.
     if (event.t === 'READY' || event.t === 'RESUMED')
       quietly(messageStore.catchUp());

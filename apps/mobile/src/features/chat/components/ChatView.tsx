@@ -1,6 +1,7 @@
 import {
   ArrowRight,
   CloudOff,
+  Pin,
   RotateCw,
   SendHorizontal,
   Trash2,
@@ -293,6 +294,7 @@ export function ChatView({
         mine: m.author.id === myId,
         system: m.type !== 'default',
         hasText: m.content.trim() !== '',
+        pinned: m.pinned_at !== null,
       },
       viewer,
     );
@@ -655,18 +657,29 @@ export function ChatView({
     lifted = false,
   ) => {
     const m = row.message;
-    if (m.type !== 'member_join') return null;
+    if (m.type !== 'member_join' && m.type !== 'channel_pinned') return null;
     const name =
       m.author.display_name ?? m.author.username ?? t('ui.deletedUser');
-    const parts = t('chat.memberJoin', { name: '\u0000' }).split('\u0000');
+    // MSG-11: "Dũng đã tham gia server" · MSG-10: "Chi đã ghim một tin nhắn · Xem".
+    const sentence =
+      m.type === 'member_join' ? 'chat.memberJoin' : 'chat.pinned';
+    const parts = t(sentence, { name: '\u0000' }).split('\u0000');
     // S-HOME-04 `system-message`: "Xóa tin nhắn" with MANAGE_MESSAGES, else no sheet (MSG-11).
     const opens = !lifted && sheetOf(m) !== null;
     return (
       <SystemLine
-        icon={ArrowRight}
+        icon={m.type === 'member_join' ? ArrowRight : Pin}
         parts={[parts[0] ?? '', name, parts[1] ?? '']}
         time={timeText(t, row.time)}
-        accessibilityLabel={`${t('chat.memberJoin', { name })}, ${timeText(t, row.time, true)}`}
+        action={
+          m.type === 'channel_pinned' && !lifted
+            ? {
+                label: t('chat.pinnedSee'),
+                onPress: () => jumpTo(m.system_data.message_id),
+              }
+            : undefined
+        }
+        accessibilityLabel={`${t(sentence, { name })}, ${timeText(t, row.time, true)}`}
         surface={lifted ? 'surface-2' : undefined}
         deleteLabel={t('chat.deleteMessage')}
         onLongPress={

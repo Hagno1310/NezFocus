@@ -1,5 +1,6 @@
 import {
   ErrorCode,
+  type ChannelPinsUpdateEvent,
   type MessageCreateEvent,
   type MessageDeleteEvent,
   type MessageReactionEvent,
@@ -258,6 +259,19 @@ export function createMessageStore(deps: MessageStoreDeps) {
     await refresh(channelId);
   };
 
+  const pinnedAt = async (
+    channelId: string,
+    messageId: string,
+    at: string | null,
+  ) => {
+    await rewrite(channelId, (m) =>
+      m.id === messageId && (m.pinned_at === null) !== (at === null)
+        ? { ...m, pinned_at: at }
+        : m,
+    );
+    await refresh(channelId);
+  };
+
   // REQ-MSG-05 AC3 / AC6: gone here, and replies to it show "Tin nhắn gốc đã bị xóa".
   const deleted = async (channelId: string, messageId: string) => {
     await local.deleteMessage(messageId);
@@ -453,6 +467,20 @@ export function createMessageStore(deps: MessageStoreDeps) {
 
     reactionUsers: (channelId: string, messageId: string, emoji: string) =>
       remote.reactionUsers(channelId, messageId, emoji),
+
+    // REQ-MSG-10 (CR-28 #7: needs the network; errors go to the caller). The cached copy
+    // changes at once, so the sheet offers "Bỏ ghim" before CHANNEL_PINS_UPDATE arrives.
+    pins: (channelId: string) => remote.pins(channelId),
+    async pin(channelId: string, messageId: string) {
+      await remote.pin(channelId, messageId);
+      await pinnedAt(channelId, messageId, new Date(deps.now()).toISOString());
+    },
+    async unpin(channelId: string, messageId: string) {
+      await remote.unpin(channelId, messageId);
+      await pinnedAt(channelId, messageId, null);
+    },
+    applyPins: (e: ChannelPinsUpdateEvent) =>
+      pinnedAt(e.channel_id, e.message_id, e.pinned_at),
 
     // MESSAGE_UPDATE: the message, and the reply lines quoting it.
     async applyUpdate(e: MessageUpdateEvent) {

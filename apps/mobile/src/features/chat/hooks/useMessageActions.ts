@@ -66,6 +66,9 @@ export function useMessageActions(
       const e = err as { code?: number; retry_after?: number | null };
       if (e.code === ErrorCode.MaxReactionsReached)
         showToast({ message: t('chat.maxReactions') });
+      // REQ-MSG-10 AC2.
+      else if (e.code === ErrorCode.MaxPinsReached)
+        showToast({ message: t('chat.maxPins') });
       else if (
         e.code === ErrorCode.Forbidden ||
         e.code === ErrorCode.CannotMessageUser
@@ -169,6 +172,15 @@ export function useMessageActions(
       onBegin?.('edit', message);
     },
     endContext: () => setContext(null),
+    // S-HOME-04 "Ghim tin nhắn" / "Bỏ ghim" (REQ-MSG-10): the system message tells the rest.
+    pin: (message: MessageResponse) => {
+      setSheet(null);
+      void messageStore.pin(channelId, message.id).catch(failed);
+    },
+    unpin: (message: MessageResponse) => {
+      setSheet(null);
+      void messageStore.unpin(channelId, message.id).catch(failed);
+    },
     // S-HOME-01 `edit-mode` ✓: errors as for any action (CR-28 #7: needs the network).
     saveEdit: (messageId: string, content: string) =>
       void messageStore.edit(channelId, messageId, content).catch(failed),

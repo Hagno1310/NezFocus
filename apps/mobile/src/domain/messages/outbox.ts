@@ -9,6 +9,7 @@ export type OutboxEntry = {
   channelId: string;
   serverId: string | null;
   content: string;
+  replyToId: string | null; // REQ-MSG-05
   status: OutboxStatus;
   attempts: number;
   nextAttemptAt: number | null; // epoch ms

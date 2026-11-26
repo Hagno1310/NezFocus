@@ -51,6 +51,8 @@ type Call = {
 // A server we answer by hand; `history` serves `messages` by cursor like REQ-SEARCH-02.
 function fakeRemote(messages: MessageResponse[] = []) {
   const sends: Call[] = [];
+  const calls: string[] = [];
+  const gone = new Set<string>(); // deleted by someone else already
   const queries: Partial<MessageHistoryQuery>[] = [];
   let offline = false;
   const remote: MessageRepository = {
@@ -68,9 +70,28 @@ function fakeRemote(messages: MessageResponse[] = []) {
     send: (_channelId, body) =>
       new Promise((resolve, reject) => sends.push({ body, resolve, reject })),
     ack: async () => {},
+    edit: async (_channelId, messageId, content) => {
+      calls.push(`edit ${messageId}`);
+      const m = messages.find((x) => x.id === messageId)!;
+      return { ...m, content, edited_at: '2026-11-19T13:05:00.000Z' };
+    },
+    remove: async (_channelId, messageId) => {
+      calls.push(`remove ${messageId}`);
+      if (gone.has(messageId))
+        throw Object.assign(new Error('gone'), { code: ErrorCode.NotFound });
+    },
+    react: async (_c, messageId, emoji) => {
+      calls.push(`react ${messageId} ${emoji}`);
+    },
+    unreact: async (_c, messageId, emoji) => {
+      calls.push(`unreact ${messageId} ${emoji}`);
+    },
+    reactionUsers: async () => [],
   };
   return {
     remote,
+    calls,
+    gone,
     sends,
     queries,
     messages,
@@ -348,5 +369,128 @@ describe('Gateway', () => {
     server.messages.push(msg('2'), msg('3'));
     await store.catchUp();
     expect(shown()).toEqual(['1', '2', '3']);
+  });
+});
+
+describe('REQ-MSG-05 on the device', () => {
+  const opened = async (messages: MessageResponse[]) => {
+    const t = setup(fakeRemote(messages));
+    await t.store.open('7', '9');
+    const find = (id: string) =>
+      t
+        .items()
+        .flatMap((i) => (i.kind === 'message' ? [i.message] : []))
+        .find((m) => m.id === id);
+    return { ...t, find };
+  };
+
+  it('a reply goes out with reply_to_id (reply-mode)', async () => {
+    const t = await opened([msg('1')]);
+    await t.store.send('7', 'Mình cũng thắc mắc', '1');
+    await t.settle();
+    expect(t.server.sends[0]?.body).toMatchObject({
+      content: 'Mình cũng thắc mắc',
+      reply_to_id: '1',
+    });
+    expect((await t.local.outbox())[0]?.replyToId).toBe('1');
+  });
+
+  it('AC1: an edit replaces the text and edited_at; MESSAGE_UPDATE also fixes reply lines', async () => {
+    const t = await opened([
+      msg('1'),
+      msg('2', {
+        reply_to_id: '1',
+        referenced_message: {
+          id: '1',
+          author: msg('1').author,
+          content: 'Tin 1',
+        },
+      }),
+    ]);
+    await t.store.edit('7', '1', 'Tin 1 đã sửa');
+    expect(t.find('1')).toMatchObject({
+      content: 'Tin 1 đã sửa',
+      edited_at: '2026-11-19T13:05:00.000Z',
+    });
+    await t.store.applyUpdate({
+      id: '1',
+      channel_id: '7',
+      server_id: '9',
+      content: 'Sửa lần hai',
+      mention_user_ids: [],
+      mention_role_ids: [],
+      mention_everyone: false,
+      edited_at: '2026-11-19T13:06:00.000Z',
+    });
+    expect(t.find('1')?.content).toBe('Sửa lần hai');
+    expect(t.find('2')?.referenced_message?.content).toBe('Sửa lần hai');
+  });
+
+  it('AC3 + AC6: a delete removes the message; replies to it lose their original', async () => {
+    const t = await opened([
+      msg('1'),
+      msg('2', {
+        reply_to_id: '1',
+        referenced_message: {
+          id: '1',
+          author: msg('1').author,
+          content: 'Tin 1',
+        },
+      }),
+      msg('3'),
+    ]);
+    await t.store.remove('7', '1');
+    expect(t.find('1')).toBeUndefined();
+    expect(t.find('2')).toMatchObject({
+      reply_to_id: '1',
+      referenced_message: null,
+    });
+    await t.store.applyDelete({ id: '3', channel_id: '7', server_id: '9' });
+    expect(t.find('3')).toBeUndefined();
+  });
+
+  it('two people deleting at once: 40401 is not an error (02 edge case)', async () => {
+    const t = await opened([msg('1')]);
+    t.server.gone.add('1');
+    await t.store.remove('7', '1');
+    expect(t.find('1')).toBeUndefined();
+  });
+
+  it('AC5: tapping my chip removes it, any other chip puts it; my own event counts once', async () => {
+    const t = await opened([
+      msg('1', { reactions: [{ emoji: '👍', count: 2, me: true }] }),
+    ]);
+    await t.store.toggleReaction('7', '1', '👍');
+    expect(t.find('1')?.reactions).toEqual([
+      { emoji: '👍', count: 1, me: false },
+    ]);
+    await t.store.toggleReaction('7', '1', '🎉');
+    await t.store.applyReaction(
+      {
+        user_id: '1',
+        channel_id: '7',
+        message_id: '1',
+        server_id: '9',
+        emoji: '🎉',
+      },
+      'add',
+      '1',
+    );
+    await t.store.applyReaction(
+      {
+        user_id: '2',
+        channel_id: '7',
+        message_id: '1',
+        server_id: '9',
+        emoji: '🎉',
+      },
+      'add',
+      '1',
+    );
+    expect(t.server.calls).toEqual(['unreact 1 👍', 'react 1 🎉']);
+    expect(t.find('1')?.reactions).toEqual([
+      { emoji: '👍', count: 1, me: false },
+      { emoji: '🎉', count: 2, me: true },
+    ]);
   });
 });

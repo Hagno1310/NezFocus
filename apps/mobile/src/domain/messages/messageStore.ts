@@ -1,7 +1,15 @@
-import type { MessageCreateEvent, MessageResponse } from '@nezfocus/shared';
+import {
+  ErrorCode,
+  type MessageCreateEvent,
+  type MessageDeleteEvent,
+  type MessageReactionEvent,
+  type MessageResponse,
+  type MessageUpdateEvent,
+} from '@nezfocus/shared';
 import { createStore } from 'zustand/vanilla';
 import type { LocalMessages } from './LocalMessages';
 import type { MessageRepository } from './MessageRepository';
+import { withReaction } from './reactions';
 import {
   afterFailure,
   classifySendError,
@@ -126,6 +134,7 @@ export function createMessageStore(deps: MessageStoreDeps) {
       const message = await remote.send(entry.channelId, {
         content: entry.content,
         nonce: entry.nonce,
+        ...(entry.replyToId ? { reply_to_id: entry.replyToId } : {}),
       });
       await local.saveMessages([message]);
       await local.removeOutbox(entry.nonce);
@@ -173,6 +182,44 @@ export function createMessageStore(deps: MessageStoreDeps) {
     return flushing;
   }
 
+  // Rewrites cached messages of a channel; untouched ones are not saved again.
+  const rewrite = async (
+    channelId: string,
+    change: (m: MessageResponse) => MessageResponse,
+  ) => {
+    const changed = (await local.messages(channelId)).flatMap((m) => {
+      const next = change(m);
+      return next === m ? [] : [next];
+    });
+    if (changed.length) await local.saveMessages(changed);
+  };
+
+  const reacted = async (
+    channelId: string,
+    messageId: string,
+    emoji: string,
+    op: 'add' | 'remove',
+    mine: boolean,
+  ) => {
+    await rewrite(channelId, (m) =>
+      m.id === messageId
+        ? { ...m, reactions: withReaction(m.reactions, emoji, op, mine) }
+        : m,
+    );
+    await refresh(channelId);
+  };
+
+  // REQ-MSG-05 AC3 / AC6: gone here, and replies to it show "Tin nhắn gốc đã bị xóa".
+  const deleted = async (channelId: string, messageId: string) => {
+    await local.deleteMessage(messageId);
+    await rewrite(channelId, (m) =>
+      m.reply_to_id === messageId && m.referenced_message
+        ? { ...m, referenced_message: null }
+        : m,
+    );
+    await refresh(channelId);
+  };
+
   return {
     state,
 
@@ -202,13 +249,15 @@ export function createMessageStore(deps: MessageStoreDeps) {
       await refresh(channelId);
     },
 
-    async send(channelId: string, content: string) {
+    // `replyToId`: S-HOME-01 `reply-mode` (REQ-MSG-05).
+    async send(channelId: string, content: string, replyToId?: string) {
       const now = deps.now();
       await local.addOutbox({
         nonce: deps.newNonce(),
         channelId,
         serverId: state.getState().views[channelId]?.serverId ?? null,
         content,
+        replyToId: replyToId ?? null,
         status: 'pending',
         attempts: 0,
         nextAttemptAt: null,
@@ -250,6 +299,69 @@ export function createMessageStore(deps: MessageStoreDeps) {
         await local.saveMessages([message]);
       await refresh(message.channel_id);
     },
+
+    // REQ-MSG-05: these need the network (CR-28 #7, no outbox); errors go to the caller.
+    async edit(channelId: string, messageId: string, content: string) {
+      const message = await remote.edit(channelId, messageId, content);
+      await local.saveMessages([message]);
+      await refresh(channelId);
+    },
+
+    // 02 edge case "Hai người cùng xóa một tin": already gone (40401) is what was wanted.
+    async remove(channelId: string, messageId: string) {
+      try {
+        await remote.remove(channelId, messageId);
+      } catch (err) {
+        if ((err as { code?: number }).code !== ErrorCode.NotFound) throw err;
+      }
+      await deleted(channelId, messageId);
+    },
+
+    // A chip I already put is removed, any other is put (S-HOME-01 › Tương tác).
+    async toggleReaction(channelId: string, messageId: string, emoji: string) {
+      const message = (await local.messages(channelId)).find(
+        (m) => m.id === messageId,
+      );
+      const mine = message?.reactions.some((r) => r.emoji === emoji && r.me);
+      if (mine) await remote.unreact(channelId, messageId, emoji);
+      else await remote.react(channelId, messageId, emoji);
+      await reacted(channelId, messageId, emoji, mine ? 'remove' : 'add', true);
+    },
+
+    reactionUsers: (channelId: string, messageId: string, emoji: string) =>
+      remote.reactionUsers(channelId, messageId, emoji),
+
+    // MESSAGE_UPDATE: the message, and the reply lines quoting it.
+    async applyUpdate(e: MessageUpdateEvent) {
+      const { id, content, edited_at } = e;
+      await rewrite(e.channel_id, (m) => {
+        if (m.id === id)
+          return {
+            ...m,
+            content,
+            edited_at,
+            mention_user_ids: e.mention_user_ids,
+            mention_role_ids: e.mention_role_ids,
+            mention_everyone: e.mention_everyone,
+          };
+        if (m.referenced_message?.id === id)
+          return {
+            ...m,
+            referenced_message: { ...m.referenced_message, content },
+          };
+        return m;
+      });
+      await refresh(e.channel_id);
+    },
+
+    applyDelete: (e: MessageDeleteEvent) => deleted(e.channel_id, e.id),
+
+    // MESSAGE_REACTION_ADD / REMOVE; my own one again changes nothing (withReaction).
+    applyReaction: (
+      e: MessageReactionEvent,
+      op: 'add' | 'remove',
+      myId: string,
+    ) => reacted(e.channel_id, e.message_id, e.emoji, op, e.user_id === myId),
 
     // RESUMED / READY after a drop (7.3.2): what each open channel missed, then the outbox.
     async catchUp() {

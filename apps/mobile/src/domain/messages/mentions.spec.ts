@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   activeTrigger,
+  decodeMentions,
   concernsMe,
   encodeMentions,
   insertMention,
@@ -179,5 +180,19 @@ describe('concernsMe (CR-12)', () => {
         [],
       ),
     ).toBe(false);
+  });
+});
+
+describe('decodeMentions (S-HOME-01 edit-mode)', () => {
+  it('shows tokens as labels and gives them back to encodeMentions', () => {
+    const label = (n: { kind: string; id: string }) =>
+      n.kind === 'user'
+        ? '@Bình'
+        : n.kind === 'role'
+          ? '@Trưởng nhóm'
+          : '#tai-lieu';
+    const { text, picked } = decodeMentions('<@2> xem <#9> nhé <@&5>', label);
+    expect(text).toBe('@Bình xem #tai-lieu nhé @Trưởng nhóm');
+    expect(encodeMentions(text, picked)).toBe('<@2> xem <#9> nhé <@&5>');
   });
 });

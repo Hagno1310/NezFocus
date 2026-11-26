@@ -7,7 +7,16 @@ import {
   Menu,
   Users,
 } from 'lucide-react-native';
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import {
   Pressable,
@@ -17,6 +26,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  motion,
   radius,
   size,
   space,
@@ -137,6 +147,9 @@ export function MessageBubble({
   mention = false,
   surface,
   liftedTime,
+  edited,
+  reactions,
+  highlight,
   accessibilityLabel,
   actions = [],
   onPress,
@@ -159,6 +172,12 @@ export function MessageBubble({
   surface?: ColorToken;
   // C-10 `lifted` of a grouped message: its own "20:04" in the avatar column.
   liftedTime?: string;
+  // "(đã chỉnh sửa)" on its own line under the text (frame `message-states`, 26/11/2026).
+  edited?: string;
+  reactions?: ReactNode; // C-10 `reaction` chips
+  // C-10 `highlight`: the background flashes `times` (reply 1, link / push 2); a new `key`
+  // flashes again.
+  highlight?: { key: number; times: 1 | 2 };
   accessibilityLabel: string;
   // C-10: what the row offers a screen reader instead of its inner presses (links…).
   actions?: { label: string; onPress: () => void }[];
@@ -197,6 +216,7 @@ export function MessageBubble({
         },
       ]}
     >
+      {highlight && <Flash key={highlight.key} times={highlight.times} />}
       <Pressable
         disabled={!head || !onPressAuthor}
         onPress={onPressAuthor}
@@ -239,6 +259,12 @@ export function MessageBubble({
           </View>
         )}
         {children}
+        {edited && (
+          <Text variant="label" weight="400" color="text-tertiary">
+            {edited}
+          </Text>
+        )}
+        {reactions}
         {status?.kind === 'pending' && status.offline && (
           <StatusLine icon={Clock3} color="text-tertiary" weight="400">
             {t('chat.willSend')}
@@ -251,6 +277,40 @@ export function MessageBubble({
         )}
       </View>
     </Pressable>
+  );
+}
+
+// Each flash `short` on, `short` off; reduce motion: held 1 s, no flashing (C-10).
+function Flash({ times }: { times: 1 | 2 }) {
+  const { colors } = useTheme();
+  const reduced = useReducedMotion();
+  const on = useSharedValue(0);
+  useEffect(() => {
+    on.set(
+      reduced
+        ? withSequence(
+            withTiming(1, { duration: 0 }),
+            withDelay(1000, withTiming(0, { duration: 0 })),
+          )
+        : withRepeat(
+            withSequence(
+              withTiming(1, { duration: motion.short }),
+              withTiming(0, { duration: motion.short }),
+            ),
+            times,
+          ),
+    );
+  }, [on, reduced, times]);
+  const style = useAnimatedStyle(() => ({ opacity: on.value }));
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        StyleSheet.absoluteFill,
+        { backgroundColor: colors['surface-2'] },
+        style,
+      ]}
+    />
   );
 }
 

@@ -1,5 +1,6 @@
 import type {
   CreateMessageRequest,
+  MessageAuthor,
   MessageHistoryQuery,
   MessageResponse,
 } from '@nezfocus/shared';
@@ -13,4 +14,19 @@ export interface MessageRepository {
   send(channelId: string, body: CreateMessageRequest): Promise<MessageResponse>;
   // REQ-NOTIF-01: read up to messageId; MESSAGE_ACK comes back to every session.
   ack(channelId: string, messageId: string): Promise<void>;
+  // REQ-MSG-05
+  edit(
+    channelId: string,
+    messageId: string,
+    content: string,
+  ): Promise<MessageResponse>;
+  remove(channelId: string, messageId: string): Promise<void>;
+  react(channelId: string, messageId: string, emoji: string): Promise<void>;
+  unreact(channelId: string, messageId: string, emoji: string): Promise<void>;
+  // CR-28 #26: "Ai đã thả cảm xúc", oldest first.
+  reactionUsers(
+    channelId: string,
+    messageId: string,
+    emoji: string,
+  ): Promise<MessageAuthor[]>;
 }

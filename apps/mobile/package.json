@@ -48,6 +48,7 @@
     "@types/react": "~19.3.0",
     "babel-plugin-inline-import": "3.0.0",
     "drizzle-kit": "0.31.11",
+    "emojibase-data": "18.0.0",
     "typescript": "~6.0.3",
     "vitest": "^4.1.12"
   },

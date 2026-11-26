@@ -11,3 +11,6 @@ Des/
 
 # Skill chép từ mattpocock/skills (quản lý bằng skills-lock.json), không format lại
 .claude/
+
+# Sinh bằng apps/mobile/scripts/build-emoji-data.mjs
+apps/mobile/src/shared/emoji/emojiData.json

@@ -2,9 +2,11 @@ import { ArrowRight, CloudOff, RotateCw, Trash2 } from 'lucide-react-native';
 import {
   useCallback,
   useEffect,
+  useEffectEvent,
   useMemo,
   useRef,
   useState,
+  type ComponentRef,
   type ReactElement,
   type ReactNode,
 } from 'react';
@@ -14,6 +16,7 @@ import {
   KeyboardAvoidingView,
   Linking,
   StyleSheet,
+  TextInput,
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -21,6 +24,8 @@ import {
 import {
   CANNOT_MESSAGE_TEXT,
   ErrorCode,
+  type MessageAuthor,
+  type MessageResponse,
   type ServerMember,
 } from '@nezfocus/shared';
 import { useStore } from 'zustand';
@@ -36,9 +41,12 @@ import {
 import { drafts } from '../../../domain/messages/drafts';
 import {
   activeTrigger,
+  decodeMentions,
   encodeMentions,
   type PickedMention,
 } from '../../../domain/messages/mentions';
+import { messageSheet } from '../../../domain/messages/messageActions';
+import { messageStore } from '../../../data/messages';
 import {
   linksOf,
   parseMessage,
@@ -57,18 +65,27 @@ import {
   UnreadStrip,
   type MessageStatus,
 } from '../../../shared/ui/Chat';
-import { Composer, type ComposerBlock } from '../../../shared/ui/Composer';
+import {
+  Composer,
+  type ComposerBlock,
+  type ComposerContext,
+} from '../../../shared/ui/Composer';
 import { Skeleton } from '../../../shared/ui/Feedback';
 import { Icon } from '../../../shared/ui/Icon';
 import { MentionSuggest } from '../../../shared/ui/MentionSuggest';
 import { MessageText } from '../../../shared/ui/MessageText';
 import { ActionSheet, type Lifted } from '../../../shared/ui/Overlay';
+import { ReactionChips, ReplyLine } from '../../../shared/ui/Reactions';
 import { Text } from '../../../shared/ui/Text';
+import { showToast } from '../../../shared/ui/Toast';
 import { useOnline } from '../../gateway/hooks/useOnline';
 import { useMe } from '../../me/hooks/useMe';
 import { avatarUri } from '../../me/avatarUri';
 import { lastActive } from '../../../domain/account/sessions';
+import { useChannelAbilities } from '../hooks/useCanSend';
 import { useChannelMessages } from '../hooks/useChannelMessages';
+import { useMessageActions } from '../hooks/useMessageActions';
+import { MessageSheets } from './MessageSheets';
 import { useChannelReading } from '../hooks/useChannelReading';
 import { useChatMentions } from '../hooks/useChatMentions';
 import { useChatClock } from '../hooks/useChatClock';
@@ -130,6 +147,16 @@ export function ChatView({
   const { now, timeZone } = useChatClock();
   const view = useChannelMessages(channelId, serverId);
   const outbox = useSendMessage(channelId);
+  const actions = useMessageActions(channelId, beginContext);
+  const abilities = useChannelAbilities(serverId, channelId);
+  const viewer = {
+    inDm: !serverId,
+    canManage: abilities.canManage,
+    canReact: abilities.canReact,
+    timedOut: abilities.timedOut,
+    online,
+  };
+  const input = useRef<ComponentRef<typeof TextInput>>(null);
 
   const draft = useStore(drafts.state, (s) => s[channelId] ?? '');
   // Gotcha: setState in onSelectionChange makes Android drop the '' after ➤ (text piles up),
@@ -240,14 +267,108 @@ export function ChatView({
       .finally(() => setLoadingOlder(false));
   };
 
+  function nameOf(a: MessageAuthor) {
+    if (a.id === myId) return me?.display_name ?? me?.username ?? '';
+    return a.display_name ?? a.username ?? t('ui.deletedUser');
+  }
+
+  // S-HOME-01 `reply-mode` / `edit-mode`. Editing borrows the composer: the draft typed before
+  // comes back when the edit ends.
+  const context = actions.context;
+  const before = useRef<{ text: string; picked: PickedMention[] } | null>(null);
+  // Hoisted: useMessageActions calls it from the sheet's rows, after this render.
+  function beginContext(kind: 'reply' | 'edit', message: MessageResponse) {
+    input.current?.focus();
+    if (kind !== 'edit') {
+      // From editing straight to a reply: the draft typed before comes back first.
+      if (before.current) {
+        drafts.set(channelId, before.current.text);
+        setPicked(before.current.picked);
+        before.current = null;
+      }
+      return;
+    }
+    before.current ??= {
+      text: drafts.state.getState()[channelId] ?? '',
+      picked,
+    };
+    const shown = decodeMentions(message.content, (n) =>
+      mentions.viewOf(message).label({ t: 'mention', ...n }),
+    );
+    drafts.set(channelId, shown.text);
+    setPicked(shown.picked);
+  }
+  const endContext = () => {
+    if (context?.kind === 'edit' && before.current) {
+      drafts.set(channelId, before.current.text);
+      setPicked(before.current.picked);
+      before.current = null;
+    }
+    actions.endContext();
+  };
+  // 02 edge cases: the message being answered or edited was deleted meanwhile.
+  const contextGone =
+    !!context &&
+    !view.items.some(
+      (i) => i.kind === 'message' && i.message.id === context.message.id,
+    );
+  const editGone = useEffectEvent(() => {
+    endContext();
+    showToast({ message: t('chat.messageDeleted') });
+  });
+  const editingGone = contextGone && context?.kind === 'edit';
+  useEffect(() => {
+    if (editingGone) editGone();
+  }, [editingGone]);
+
   // Counted as sent: with the tokens, as the backend counts.
   const count = composerCount(toSend);
+  const editing = context?.kind === 'edit' ? context.message : null;
   const send = () => {
+    if (editing) {
+      // `edit-mode`: "Lưu rỗng → hỏi xóa tin".
+      if (!toSend.trim()) return actions.askDelete({ message: editing });
+      if (!count.canSend) return;
+      const id = editing.id;
+      endContext();
+      void messageStore.edit(channelId, id, toSend).catch(actions.failed);
+      return;
+    }
     if (!count.canSend) return;
-    void outbox.send(toSend);
+    void outbox.send(
+      toSend,
+      context?.kind === 'reply' ? context.message.id : undefined,
+    );
+    if (context) actions.endContext();
     drafts.set(channelId, '');
     setPicked([]);
     toBottom();
+  };
+  const composerContext: ComposerContext | undefined = context
+    ? context.kind === 'edit'
+      ? { text: t('chat.editing'), edit: true, onClose: endContext }
+      : contextGone
+        ? { text: t('chat.replyingDeleted'), onClose: endContext }
+        : {
+            text: t('chat.replyingTo'),
+            name: nameOf(context.message.author),
+            onClose: endContext,
+          }
+    : undefined;
+
+  // C-10 `highlight` after a jump: one flash for a reply (02 S-HOME-01 › Tương tác).
+  const [flash, setFlash] = useState<{ id: string; key: number } | null>(null);
+  const jumpTo = (messageId: string) => {
+    const index = rows.findIndex(
+      (r) =>
+        r.kind === 'message' &&
+        r.item.kind === 'message' &&
+        r.item.message.id === messageId,
+    );
+    // ponytail: an original not loaded yet is fetched `around` it with P3-A1.3 (#122).
+    if (index < 0) return;
+    list.current?.scrollToIndex({ index, viewPosition: 0.5, animated: true });
+    setFlash({ id: messageId, key: Date.now() });
   };
   const pick = (key: string) => {
     if (!mentions.suggestion) return;
@@ -307,6 +428,35 @@ export function ChatView({
     const status = statusOf(row.item);
     const isFailed = status?.kind === 'failed';
     const nonce = row.item.kind === 'outbox' ? row.item.entry.nonce : null;
+    const replyTo =
+      message?.reply_to_id ??
+      (row.item.kind === 'outbox' ? row.item.entry.replyToId : null);
+    const original =
+      message?.referenced_message ??
+      (replyTo
+        ? view.items.find(
+            (i): i is Extract<ChatItem, { kind: 'message' }> =>
+              i.kind === 'message' && i.message.id === replyTo,
+          )?.message
+        : undefined);
+    const sheetOpens =
+      !!message &&
+      messageSheet(
+        {
+          mine: message.author.id === myId,
+          system: message.type !== 'default',
+          hasText: message.content.trim() !== '',
+        },
+        viewer,
+      ) !== null;
+    const openSheet = (e: { currentTarget: unknown }) => {
+      if (!message) return;
+      const target = e.currentTarget as Measurable;
+      target.measureInWindow((_x, y) =>
+        actions.open({ message, lifted: { top: y, node: bubble(row, true) } }),
+      );
+    };
+    const chipsOff = !online || viewer.timedOut;
     return (
       <MessageBubble
         name={who.name}
@@ -325,10 +475,57 @@ export function ChatView({
           })
         }
         liftedTime={lifted ? row.time.time : undefined}
-        actions={linksOf(blocks).map((url) => ({
-          label: url,
-          onPress: () => void Linking.openURL(url).catch(() => {}),
-        }))}
+        reply={
+          replyTo ? (
+            <ReplyLine
+              name={original ? nameOf(original.author) : null}
+              text={original ? original.content : t('chat.replyDeleted')}
+              onPress={
+                original && !lifted ? () => jumpTo(original.id) : undefined
+              }
+            />
+          ) : undefined
+        }
+        edited={message?.edited_at ? t('chat.edited') : undefined}
+        reactions={
+          message && message.reactions.length > 0 ? (
+            <ReactionChips
+              reactions={message.reactions}
+              disabled={lifted || chipsOff}
+              onToggle={(emoji) => actions.toggle(message, emoji)}
+              onLongPress={(emoji) => actions.showReactors(message, emoji)}
+              onAdd={
+                viewer.inDm || viewer.canReact
+                  ? () => actions.openPicker({ message })
+                  : undefined
+              }
+            />
+          ) : undefined
+        }
+        highlight={
+          message && flash?.id === message.id
+            ? { key: flash.key, times: 1 }
+            : undefined
+        }
+        actions={[
+          ...linksOf(blocks).map((url) => ({
+            label: url,
+            onPress: () => void Linking.openURL(url).catch(() => {}),
+          })),
+          // C-10 a11y: what long-press offers, as actions.
+          ...(message && sheetOpens && !lifted
+            ? [
+                {
+                  label: t('chat.reply'),
+                  onPress: () => actions.reply(message),
+                },
+                {
+                  label: t('chat.addReaction'),
+                  onPress: () => actions.openPicker({ message }),
+                },
+              ]
+            : []),
+        ]}
         accessibilityLabel={[
           t('chat.a11yMessage', {
             name: who.name,
@@ -356,6 +553,8 @@ export function ChatView({
               }
             : undefined
         }
+        // S-HOME-01 › Tương tác: long-press a sent message → S-HOME-04.
+        onLongPress={message && sheetOpens && !lifted ? openSheet : undefined}
       >
         <MessageText content={contentOf(row.item)} mentions={mentionView} />
       </MessageBubble>
@@ -500,11 +699,20 @@ export function ChatView({
           onChangeText={(text) => drafts.set(channelId, text)}
           placeholder={placeholder}
           counter={count.counter}
-          canSend={count.canSend}
+          canSend={count.canSend || (!!editing && !toSend.trim())}
           onSend={send}
           disabled={disabled}
+          context={composerContext}
+          inputRef={input}
         />
       )}
+      <MessageSheets
+        actions={actions}
+        viewer={viewer}
+        myId={myId}
+        nameOf={nameOf}
+        timeOf={(m) => timeText(t, lastActive(m.created_at, now, timeZone))}
+      />
       <ActionSheet
         visible={failed !== null}
         cancel={false}

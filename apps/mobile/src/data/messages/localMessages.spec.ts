@@ -36,6 +36,7 @@ const entry = (
   channelId: '7',
   serverId: '9',
   content: 'Chào',
+  replyToId: null,
   status: 'pending',
   attempts: 0,
   nextAttemptAt: null,

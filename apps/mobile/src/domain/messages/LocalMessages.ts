@@ -6,6 +6,7 @@ import type { OutboxEntry } from './outbox';
 export interface LocalMessages {
   messages(channelId: string): Promise<MessageResponse[]>; // oldest first
   saveMessages(messages: MessageResponse[]): Promise<void>; // insert or replace by id
+  deleteMessage(id: string): Promise<void>; // REQ-MSG-05 AC3
   // Only channels opened at least once keep messages (7.3.2).
   isCached(channelId: string): Promise<boolean>;
   touchChannel(

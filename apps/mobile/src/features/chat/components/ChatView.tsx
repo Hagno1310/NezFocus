@@ -375,7 +375,7 @@ export function ChatView({
           }
     : undefined;
 
-  const { target, targetIndex, jumpTo, jumpPosition } = useMessageJump(
+  const { target, jumpTo, onScrollFailed } = useMessageJump(
     channelId,
     rows,
     list,
@@ -503,7 +503,7 @@ export function ChatView({
           ) : undefined
         }
         highlight={
-          message && targetIndex >= 0 && target?.messageId === message.id
+          message && target?.landed && target.messageId === message.id
             ? { key: target.key, times: target.times }
             : undefined
         }
@@ -656,19 +656,16 @@ export function ChatView({
         viewabilityConfigCallbackPairs={reading.viewPairs}
         // Rows not laid out yet: go near by the average height, then try again.
         onScrollToIndexFailed={(info) => {
+          if (onScrollFailed(info)) return;
           list.current?.scrollToOffset({
             offset: info.averageItemLength * info.index,
             animated: false,
           });
-          setTimeout(
-            () =>
-              list.current?.scrollToIndex({
-                index: info.index,
-                viewPosition: info.index === targetIndex ? jumpPosition : 1,
-                animated: false,
-              }),
-            100,
-          );
+          // The rows may have changed meanwhile: an index past the end throws.
+          setTimeout(() => {
+            if (info.index < (list.current?.props.data?.length ?? 0))
+              toLine(info.index, false);
+          }, 100);
         }}
         onEndReached={onTop}
         onEndReachedThreshold={0.5}

@@ -7,6 +7,7 @@ export type Jump = {
   messageId: string;
   times: 1 | 2;
   key: number; // a new jump to the same message flashes again
+  landed?: boolean; // scrolled into place: only then it flashes, not while still moving
 };
 
 export const jumps = createStore<Jump | null>(() => null);

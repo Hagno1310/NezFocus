@@ -49,6 +49,9 @@ const stats = (over: Partial<StudyStatsResponse> = {}): StudyStatsResponse => ({
   ...over,
 });
 
+// 21:47 Sunday 18/10/2026 in Ho Chi Minh City.
+const at = new Date('2026-10-18T14:47:00Z');
+
 const timer = (over: Partial<SoloTimer> = {}): SoloTimer => ({
   status: 'running',
   phase: 'focus',
@@ -83,6 +86,7 @@ describe('live focus (REQ-STUDY-03 v1.9: progress moves every minute of focus)',
         current_streak_days: 5,
       }),
       17 * 60 + 50,
+      at,
     );
     expect(s.today_minutes).toBe(31);
     expect(s.days[6]!.focused_minutes).toBe(31);
@@ -92,7 +96,34 @@ describe('live focus (REQ-STUDY-03 v1.9: progress moves every minute of focus)',
   });
 
   it('does not bump the streak again once today already counted', () => {
-    expect(withLiveFocus(stats(), 600).current_streak_days).toBe(6);
+    expect(withLiveFocus(stats(), 600, at).current_streak_days).toBe(6);
+  });
+
+  it('AC3: a phase from 23:50 counts only its minutes after 00:00 for the new day', () => {
+    // 00:05 on 19/10 in Ho Chi Minh City; the phase has run 15 minutes, 5 of them today.
+    const s = withLiveFocus(
+      stats({
+        today: '2026-10-19',
+        from: '2026-10-19',
+        to: '2026-10-25',
+        days: days([0, 0, 0, 0, 0, 0, 0], '2026-10-19'),
+        total_minutes: 0,
+        solo_minutes: 0,
+        today_minutes: 0,
+        current_streak_days: 7,
+      }),
+      15 * 60,
+      new Date('2026-10-18T17:05:00Z'),
+    );
+    expect(s.today_minutes).toBe(5);
+    expect(s.days[0]!.focused_minutes).toBe(5);
+    expect(s.total_minutes).toBe(5);
+    expect(s.current_streak_days).toBe(7);
+  });
+
+  it('adds nothing to a "today" the clock has already left (not yet refetched)', () => {
+    const s = stats();
+    expect(withLiveFocus(s, 15 * 60, new Date('2026-10-18T17:05:00Z'))).toBe(s);
   });
 });
 

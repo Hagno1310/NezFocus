@@ -11,7 +11,7 @@ import {
 } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { studyStatsRepository } from '../../../data/study';
-import { timerOf } from '../../../domain/study/solo';
+import { backendNow, timerOf } from '../../../domain/study/solo';
 import {
   liveFocusSeconds,
   msUntilMidnight,
@@ -28,21 +28,26 @@ const SESSIONS = 'study-sessions';
 const creditedInPhase = new Map<string, number>();
 
 // The running Solo focus not yet credited by the backend; a 10 s tick keeps the minute close.
-export function useLiveFocusSeconds() {
+function useLiveFocus() {
   const snap = useSolo();
   const now = useNow(10_000);
-  if (!snap) return 0;
+  if (!snap) return { seconds: 0, at: now };
   const s = snap.session;
   const key = `${s.id}:${s.focus_phases_done}`;
   const timer = timerOf(snap, now);
   if (timer?.status === 'paused' && timer.phase === 'focus')
     creditedInPhase.set(key, timer.totalMs - timer.remainingMs);
-  return liveFocusSeconds(timer, creditedInPhase.get(key) ?? 0);
+  return {
+    seconds: liveFocusSeconds(timer, creditedInPhase.get(key) ?? 0),
+    at: backendNow(snap, now.getTime()),
+  };
 }
+
+export const useLiveFocusSeconds = () => useLiveFocus().seconds;
 
 // date omitted = the period holding today, as the backend sees it.
 export function useStudyStats(view: StatsView, date?: string) {
-  const live = useLiveFocusSeconds();
+  const live = useLiveFocus();
   const q = useQuery({
     queryKey: [STATS, view, date ?? 'today'],
     queryFn: () => studyStatsRepository.stats({ view, date }),
@@ -63,7 +68,7 @@ export function useStudyStats(view: StatsView, date?: string) {
     return () => clearTimeout(id);
   }, [qc, timeZone, q.dataUpdatedAt]);
   const data: StudyStatsResponse | undefined =
-    q.data && withLiveFocus(q.data, live);
+    q.data && withLiveFocus(q.data, live.seconds, live.at);
   return { ...q, data };
 }
 

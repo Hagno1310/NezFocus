@@ -67,6 +67,19 @@ export function reduceRelationships(
 
 export const nameOf = (u: Relationship['user']) => u.display_name ?? u.username;
 
+// S-DM-04: each row tracks its own request, so one answer never frees or blocks another row.
+export function withBusy(
+  busy: ReadonlySet<string>,
+  userId: string,
+  on: boolean,
+): ReadonlySet<string> {
+  if (busy.has(userId) === on) return busy;
+  const next = new Set(busy);
+  if (on) next.add(userId);
+  else next.delete(userId);
+  return next;
+}
+
 const byName = (a: Relationship, b: Relationship) =>
   nameOf(a.user).localeCompare(nameOf(b.user), 'vi');
 const newestFirst = (a: Relationship, b: Relationship) =>

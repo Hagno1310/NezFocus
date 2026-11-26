@@ -2,7 +2,7 @@ import { ErrorCode } from '@nezfocus/shared';
 import { Lock, MessageSquareX, WifiOff } from 'lucide-react-native';
 import { messageStore } from '../../data/messages';
 import { showDm, dmStore } from '../../domain/dm/dmStore';
-import { jumps } from '../../domain/messages/jumps';
+import { requestJump } from '../../domain/messages/jumps';
 import type { NezfocusLink } from '../../domain/messages/links';
 import { homeStore, openChannel } from '../../domain/servers/homeStore';
 import { i18n } from '../../shared/i18n';
@@ -49,15 +49,11 @@ export async function openMessageLink(
   else showDm(link.channelId);
   if (!link.messageId) return 'opened';
   if (exists)
-    jumps.setState(
-      {
-        channelId: link.channelId,
-        messageId: link.messageId,
-        times: 2,
-        key: Date.now(),
-      },
-      true,
-    );
+    requestJump({
+      channelId: link.channelId,
+      messageId: link.messageId,
+      times: 2,
+    });
   // AC9: the channel opens as if tapped, and says the message is gone.
   else showToast({ icon: MessageSquareX, message: t('chat.messageDeleted') });
   return 'opened';

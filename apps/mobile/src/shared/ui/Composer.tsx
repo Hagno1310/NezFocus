@@ -11,7 +11,7 @@ import type { ComponentRef, ReactNode, Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import type { Counter } from '../../domain/messages/chatRows';
-import { radius, size, space, typography, useTheme } from '../theme';
+import { radius, size, space, touchSlop, typography, useTheme } from '../theme';
 import { IconButton } from './Button';
 import { Icon } from './Icon';
 import { Text } from './Text';
@@ -28,8 +28,8 @@ export type ComposerContext = {
 };
 
 const LINES = 5;
-const CONTEXT = 36;
-const CONTEXT_CLOSE = 36;
+const CONTEXT = size.composerContext;
+const CONTEXT_CLOSE = size.composerContext;
 const BOX_MIN = 40;
 
 // C-11: Enter is a new line, only ➤ sends (SRS 3.4); `+` and ☺ show once given a handler.
@@ -123,7 +123,7 @@ export function Composer({
             accessibilityRole="button"
             accessibilityLabel={t('chat.cancelContext')}
             onPress={context.onClose}
-            hitSlop={(size.touch - CONTEXT_CLOSE) / 2}
+            hitSlop={touchSlop(CONTEXT_CLOSE)}
             style={({ pressed }) => [
               styles.contextClose,
               pressed && { backgroundColor: colors['surface-3'] },

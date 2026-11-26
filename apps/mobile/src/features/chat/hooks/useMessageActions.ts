@@ -27,6 +27,8 @@ const RECENT_MAX = 8; // one row of the picker (frame `emoji-picker`)
 const buzz = () => Vibration.vibrate(10);
 
 export type Target = { message: MessageResponse; lifted?: Lifted };
+// The picker reacts to a message, or (no message) puts the emoji in the Composer.
+type PickerFor = Target | { message?: undefined; lifted?: undefined };
 
 // REQ-MSG-05 on the chat screen: the sheet and what it opens, reply / edit mode, reactions,
 // and the Toasts of S-HOME-04 › Tương tác for each failure.
@@ -38,7 +40,7 @@ export function useMessageActions(
 ) {
   const { t } = useTranslation();
   const [sheet, setSheet] = useState<Target | null>(null);
-  const [picker, setPicker] = useState<Target | null>(null);
+  const [picker, setPicker] = useState<PickerFor | null>(null);
   const [deleting, setDeleting] = useState<Target | null>(null);
   const [reactors, setReactors] = useState<{
     message: MessageResponse;
@@ -140,6 +142,7 @@ export function useMessageActions(
       setSheet(null);
       setPicker(target);
     },
+    openComposerPicker: () => setPicker({}),
     closePicker: () => setPicker(null),
     deleting,
     askDelete: (target: Target) => {
@@ -166,6 +169,9 @@ export function useMessageActions(
       onBegin?.('edit', message);
     },
     endContext: () => setContext(null),
+    // S-HOME-01 `edit-mode` ✓: errors as for any action (CR-28 #7: needs the network).
+    saveEdit: (messageId: string, content: string) =>
+      void messageStore.edit(channelId, messageId, content).catch(failed),
     // CR-19 #2: "Sao chép link tin".
     copyLink: (message: MessageResponse) => {
       setSheet(null);

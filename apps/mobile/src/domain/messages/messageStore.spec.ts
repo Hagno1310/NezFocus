@@ -515,7 +515,7 @@ describe('opening a message (REQ-MSG-05 CR-19)', () => {
     const t = setup(fakeRemote(many(130)));
     await t.store.open('7', '9');
     expect(t.shown()[0]).toBe('81');
-    expect(await t.store.reveal('7', '12')).toBe(true);
+    expect(await t.store.reveal('7', '12')).toBe('found');
     const ids = t.shown().map(Number);
     expect(ids[0]).toBeLessThanOrEqual(12);
     expect(ids).toEqual(
@@ -526,7 +526,7 @@ describe('opening a message (REQ-MSG-05 CR-19)', () => {
   it('reveal of a message not there (deleted) stops once past it', async () => {
     const t = setup(fakeRemote(many(130).filter((m) => m.id !== '20')));
     await t.store.open('7', '9');
-    expect(await t.store.reveal('7', '20')).toBe(false);
+    expect(await t.store.reveal('7', '20')).toBe('missing');
     // 81 → 31 → 1: past 20 after two pages, then it stops.
     expect(t.server.queries.filter((q) => q.before)).toHaveLength(2);
   });

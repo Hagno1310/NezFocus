@@ -26,14 +26,16 @@ import {
   type EmojiRow,
 } from '../../domain/emoji/emojiSearch';
 import data from '../emoji/emojiData.json';
-import { size, space, useTheme } from '../theme';
+import { radius, size, space, touchSlop, useTheme } from '../theme';
 import { Icon, type IconComponent } from './Icon';
 import { PlainSheet, type Lifted } from './Overlay';
 import { Text } from './Text';
 import { SearchField } from './TextField';
 
 const COLUMNS = 8;
-const CELL = 44;
+const CELL = size.emojiCell;
+// Cells touch each other: only the height grows to 48.
+const CELL_SLOP = { top: touchSlop(CELL), bottom: touchSlop(CELL) };
 const HEIGHT = 358;
 
 // Frame S-HOME-04 `emoji-picker`: the category bar, in order (C-25, chốt 26/11/2026).
@@ -169,6 +171,7 @@ export function EmojiPicker({
                     key={e}
                     accessibilityRole="button"
                     accessibilityLabel={e}
+                    hitSlop={CELL_SLOP}
                     onPress={() => {
                       setQuery('');
                       onPick(e);
@@ -254,7 +257,8 @@ function CategoryButton({
 
 const styles = StyleSheet.create({
   search: { paddingHorizontal: space[3], paddingBottom: space[2] },
-  grid: { paddingHorizontal: 12, paddingBottom: space[2] },
+  // Frame: 12 at the sides (16 less the 4 inside each cell).
+  grid: { paddingHorizontal: space[3] - space[1], paddingBottom: space[2] },
   sectionTitle: { paddingVertical: space[1], paddingHorizontal: space[1] },
   row: { flexDirection: 'row' },
   // 8 columns of 44 on a 390 screen; narrower screens shrink the cells, never the columns.
@@ -263,10 +267,10 @@ const styles = StyleSheet.create({
     height: CELL,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: size.icon.xs,
+    borderRadius: radius.input,
   },
   gap: { flex: 1 },
-  emoji: { fontSize: 24, lineHeight: 30 },
+  emoji: { fontSize: size.emojiGlyph, lineHeight: size.emojiGlyph + 6 },
   empty: {
     flex: 1,
     alignItems: 'center',

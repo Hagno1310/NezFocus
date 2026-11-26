@@ -9,7 +9,7 @@ import { api } from '../api';
 
 const path = (channelId: string) =>
   MessageRoutes.list.replace(':id', channelId);
-const one = (channelId: string, messageId: string) =>
+const messagePath = (channelId: string, messageId: string) =>
   MessageRoutes.message
     .replace(':id', channelId)
     .replace(':messageId', messageId);
@@ -47,13 +47,13 @@ export const remoteMessageRepository: MessageRepository = {
   },
   edit: async (channelId, messageId, content) =>
     MessageResponse.parse(
-      await api.request(one(channelId, messageId), {
+      await api.request(messagePath(channelId, messageId), {
         method: 'PATCH',
         body: { content },
       }),
     ),
   async remove(channelId, messageId) {
-    await api.request(one(channelId, messageId), { method: 'DELETE' });
+    await api.request(messagePath(channelId, messageId), { method: 'DELETE' });
   },
   async react(channelId, messageId, emoji) {
     await api.request(

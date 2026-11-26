@@ -10,3 +10,7 @@ export type Jump = {
 };
 
 export const jumps = createStore<Jump | null>(() => null);
+
+// A new key each time: the same message asked again flashes again.
+export const requestJump = (jump: Omit<Jump, 'key'>) =>
+  jumps.setState({ ...jump, key: Date.now() }, true);

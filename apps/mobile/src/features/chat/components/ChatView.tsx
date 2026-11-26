@@ -45,9 +45,7 @@ import {
   encodeMentions,
   type PickedMention,
 } from '../../../domain/messages/mentions';
-import { jumps } from '../../../domain/messages/jumps';
 import { messageSheet } from '../../../domain/messages/messageActions';
-import { messageStore } from '../../../data/messages';
 import {
   linksOf,
   parseMessage,
@@ -86,6 +84,7 @@ import { lastActive } from '../../../domain/account/sessions';
 import { useChannelAbilities } from '../hooks/useCanSend';
 import { useChannelMessages } from '../hooks/useChannelMessages';
 import { useLinkChips } from '../hooks/useLinkChips';
+import { useMessageJump } from '../hooks/useMessageJump';
 import { useMessageActions } from '../hooks/useMessageActions';
 import { MessageSheets } from './MessageSheets';
 import { useChannelReading } from '../hooks/useChannelReading';
@@ -270,6 +269,17 @@ export function ChatView({
       .finally(() => setLoadingOlder(false));
   };
 
+  // S-HOME-04 for this viewer; the a11y actions offer the same rows.
+  const sheetOf = (m: MessageResponse) =>
+    messageSheet(
+      {
+        mine: m.author.id === myId,
+        system: m.type !== 'default',
+        hasText: m.content.trim() !== '',
+      },
+      viewer,
+    );
+
   function nameOf(a: MessageAuthor) {
     if (a.id === myId) return me?.display_name ?? me?.username ?? '';
     return a.display_name ?? a.username ?? t('ui.deletedUser');
@@ -334,7 +344,7 @@ export function ChatView({
       if (!count.canSend) return;
       const id = editing.id;
       endContext();
-      void messageStore.edit(channelId, id, toSend).catch(actions.failed);
+      actions.saveEdit(id, toSend);
       return;
     }
     if (!count.canSend) return;
@@ -359,52 +369,12 @@ export function ChatView({
           }
     : undefined;
 
-  // C-10 `highlight`: a reply jump flashes once; a link / push (CR-19 #2) twice, the message a
-  // third from the top. The target lives in `jumps`, so a link opened elsewhere lands here too.
-  const target = useStore(jumps, (j) =>
-    j?.channelId === channelId ? j : null,
+  const { target, targetIndex, jumpTo } = useMessageJump(
+    channelId,
+    rows,
+    list,
+    view.loading,
   );
-  const targetIndex = target
-    ? rows.findIndex(
-        (r) =>
-          r.kind === 'message' &&
-          r.item.kind === 'message' &&
-          r.item.message.id === target.messageId,
-      )
-    : -1;
-  const jumpTo = (messageId: string, times: 1 | 2 = 1) =>
-    jumps.setState({ channelId, messageId, times, key: Date.now() }, true);
-  const walked = useRef<number | null>(null);
-  useEffect(() => {
-    // Not loaded yet: the cache walks back to it; gone meanwhile → AC9's Toast.
-    if (!target || view.loading || targetIndex >= 0) return;
-    if (walked.current === target.key) return;
-    walked.current = target.key;
-    void messageStore
-      .reveal(channelId, target.messageId)
-      .then((found) => {
-        if (found) return;
-        jumps.setState(null, true);
-        showToast({ message: t('chat.messageDeleted') });
-      })
-      .catch(() => jumps.setState(null, true));
-  }, [target, view.loading, targetIndex, channelId, t]);
-  const scrolled = useRef<number | null>(null);
-  useEffect(() => {
-    if (!target || targetIndex < 0 || scrolled.current === target.key) return;
-    scrolled.current = target.key;
-    // Inverted list: viewPosition 1 is the top of the screen.
-    list.current?.scrollToIndex({
-      index: targetIndex,
-      viewPosition: target.times === 2 ? 2 / 3 : 0.5,
-      animated: target.times === 1,
-    });
-    // After the flashes (2 × 400 ms, or 1 s held): done, so coming back does not jump again.
-    const done = setTimeout(() => {
-      if (jumps.getState()?.key === target.key) jumps.setState(null, true);
-    }, 1500);
-    return () => clearTimeout(done);
-  }, [target, targetIndex]);
   const pick = (key: string) => {
     if (!mentions.suggestion) return;
     const next = mentions.suggestion.pick(key, draft, draft.length);
@@ -474,16 +444,8 @@ export function ChatView({
               i.kind === 'message' && i.message.id === replyTo,
           )?.message
         : undefined);
-    const sheetOpens =
-      !!message &&
-      messageSheet(
-        {
-          mine: message.author.id === myId,
-          system: message.type !== 'default',
-          hasText: message.content.trim() !== '',
-        },
-        viewer,
-      ) !== null;
+    const sheet = message ? sheetOf(message) : null;
+    const sheetOpens = sheet !== null;
     const openSheet = (e: { currentTarget: unknown }) => {
       if (!message) return;
       const target = e.currentTarget as Measurable;
@@ -548,16 +510,24 @@ export function ChatView({
             onPress: () => void Linking.openURL(url).catch(() => {}),
           })),
           // C-10 a11y: what long-press offers, as actions.
-          ...(message && sheetOpens && !lifted
+          ...(message && sheet && !lifted
             ? [
-                {
-                  label: t('chat.reply'),
-                  onPress: () => actions.reply(message),
-                },
-                {
-                  label: t('chat.addReaction'),
-                  onPress: () => actions.openPicker({ message }),
-                },
+                ...(sheet.rows.some((r) => r.row === 'reply')
+                  ? [
+                      {
+                        label: t('chat.reply'),
+                        onPress: () => actions.reply(message),
+                      },
+                    ]
+                  : []),
+                ...(sheet.reactions === 'on'
+                  ? [
+                      {
+                        label: t('chat.addReaction'),
+                        onPress: () => actions.openPicker({ message }),
+                      },
+                    ]
+                  : []),
               ]
             : []),
         ]}
@@ -685,7 +655,7 @@ export function ChatView({
         ListFooterComponent={
           view.reachedStart || empty ? (
             (start ?? <ChannelStart name={channelName} />)
-          ) : loadingOlder ? (
+          ) : loadingOlder || view.revealing ? (
             <SkeletonRows count={2} />
           ) : undefined
         }
@@ -742,15 +712,16 @@ export function ChatView({
           onSend={send}
           disabled={disabled}
           context={composerContext}
+          onEmoji={actions.openComposerPicker}
           inputRef={input}
         />
       )}
       <MessageSheets
         actions={actions}
-        viewer={viewer}
-        myId={myId}
+        sheetOf={sheetOf}
         nameOf={nameOf}
         timeOf={(m) => timeText(t, lastActive(m.created_at, now, timeZone))}
+        onInsert={(emoji) => drafts.set(channelId, `${draft}${emoji}`)}
       />
       <ActionSheet
         visible={failed !== null}

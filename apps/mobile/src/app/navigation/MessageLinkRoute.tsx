@@ -1,14 +1,13 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Lock, X } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NezfocusLink } from '../../domain/messages/links';
 import { openMessageLink } from '../../features/chat/openMessageLink';
-import { space, useTheme } from '../../shared/theme';
+import { size, space, useTheme } from '../../shared/theme';
 import { Button, IconButton } from '../../shared/ui/Button';
-import { Icon } from '../../shared/ui/Icon';
 import { Text } from '../../shared/ui/Text';
 import type { RootStackParamList } from './RootNavigator';
 
@@ -30,11 +29,12 @@ export function MessageLinkRoute({ navigation, route }: Props) {
       ? { kind: 'channel', ...params }
       : { kind: 'dm', ...params };
   const key = JSON.stringify(link);
+  const close = () =>
+    navigation.canGoBack() ? navigation.goBack() : navigation.replace('Main');
+  const leave = useEffectEvent(close);
 
   useEffect(() => {
     let live = true;
-    const leave = () =>
-      navigation.canGoBack() ? navigation.goBack() : navigation.replace('Main');
     void openMessageLink(JSON.parse(key) as NezfocusLink, {
       fromOutside: true,
     }).then((result) => {
@@ -51,8 +51,6 @@ export function MessageLinkRoute({ navigation, route }: Props) {
     };
   }, [key, navigation]);
 
-  const close = () =>
-    navigation.canGoBack() ? navigation.goBack() : navigation.replace('Main');
   return (
     <View
       style={[
@@ -64,7 +62,8 @@ export function MessageLinkRoute({ navigation, route }: Props) {
         <>
           <IconButton icon={X} label={t('chat.close')} onPress={close} />
           <View style={styles.middle}>
-            <Icon as={Lock} size="hero" color="text-tertiary" />
+            {/* 10 S-MOD-01 `members-only`: as `expired`, a 56 `lock` for the mascot. */}
+            <Lock size={size.anchorIcon} color={colors['text-tertiary']} />
             <Text variant="title-1" style={styles.centerText}>
               {t('chat.membersOnlyTitle')}
             </Text>

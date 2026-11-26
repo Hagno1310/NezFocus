@@ -3,12 +3,14 @@ import type { Reaction } from '@nezfocus/shared';
 // S-HOME-04 frames: the quick reactions, in this order.
 export const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '🎉', '🙏'] as const;
 
+export type ReactionOp = 'add' | 'remove';
+
 // One put / remove applied to a message's chips. `mine` is my own: applied once whether it
 // comes from my request's answer or from my MESSAGE_REACTION_* event.
 export function withReaction(
   reactions: readonly Reaction[],
   emoji: string,
-  op: 'add' | 'remove',
+  op: ReactionOp,
   mine: boolean,
 ): Reaction[] {
   const at = reactions.findIndex((r) => r.emoji === emoji);

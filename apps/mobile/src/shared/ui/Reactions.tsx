@@ -8,15 +8,71 @@ import {
   Text as RNText,
   View,
 } from 'react-native';
-import { radius, size, space, useTheme } from '../theme';
+import {
+  disabledOpacity,
+  radius,
+  size,
+  space,
+  touchSlop,
+  typography,
+  useTheme,
+} from '../theme';
 import { Icon } from './Icon';
 import { Text } from './Text';
 
-const CHIP = 32;
-const QUICK = 44;
+const { chip: CHIP, quick: QUICK } = size.reaction;
+// Chips sit side by side: only the height grows to 48 (DESIGN.md › Touch).
+const CHIP_SLOP = { top: touchSlop(CHIP), bottom: touchSlop(CHIP) };
+const emojiText = (px: number) => ({ fontSize: px, lineHeight: px + 4 });
 
-// C-10 `reaction`: ReactionChip pills under the message, wrapping (02 `long-message`), the
-// add chip last. Chạm → bật / tắt; nhấn giữ → "Ai đã thả cảm xúc".
+// C-10 ReactionChip: emoji + count; mine = `surface-3` with a `primary` edge. Also the emoji
+// tabs of "Ai đã thả cảm xúc".
+export function ReactionChip({
+  reaction,
+  label,
+  role = 'button',
+  disabled = false,
+  onPress,
+  onLongPress,
+}: {
+  reaction: Reaction;
+  label: string;
+  role?: 'button' | 'tab';
+  disabled?: boolean;
+  onPress: () => void;
+  onLongPress?: () => void;
+}) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      accessibilityRole={role}
+      accessibilityLabel={label}
+      accessibilityState={{ selected: reaction.me, disabled }}
+      disabled={disabled}
+      hitSlop={CHIP_SLOP}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      style={({ pressed }) => [
+        styles.chip,
+        {
+          backgroundColor: reaction.me
+            ? colors['surface-3']
+            : colors['surface-2'],
+          borderColor: reaction.me ? colors.primary : colors['surface-2'],
+        },
+        pressed && { backgroundColor: colors['overlay-pressed'] },
+      ]}
+    >
+      <RNText style={styles.chipEmoji}>{reaction.emoji}</RNText>
+      <Text variant="label" weight="600" color="text-secondary">
+        {String(reaction.count)}
+      </Text>
+    </Pressable>
+  );
+}
+
+// C-10 `reaction`: the chips under a message, wrapping (02 `long-message`), the add chip last.
+// Chạm → bật / tắt; nhấn giữ → "Ai đã thả cảm xúc".
 export function ReactionChips({
   reactions,
   onToggle,
@@ -27,8 +83,8 @@ export function ReactionChips({
   reactions: readonly Reaction[];
   onToggle: (emoji: string) => void;
   onLongPress: (emoji: string) => void;
-  onAdd?: () => void; // hidden without ADD_REACTIONS, timed out or offline
-  disabled?: boolean; // timed out (chốt 26/11/2026): chips do not answer a tap
+  onAdd?: () => void; // hidden without ADD_REACTIONS
+  disabled?: boolean; // timed out or offline (chốt 26/11/2026): chips do not answer
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -36,39 +92,23 @@ export function ReactionChips({
   return (
     <View style={styles.chips}>
       {reactions.map((r) => (
-        <Pressable
+        <ReactionChip
           key={r.emoji}
-          accessibilityRole="button"
-          accessibilityLabel={t(
-            r.me ? 'chat.a11yReactionMine' : 'chat.a11yReaction',
-            {
-              emoji: r.emoji,
-              count: r.count,
-            },
-          )}
-          accessibilityState={{ selected: r.me, disabled }}
+          reaction={r}
           disabled={disabled}
+          label={t(r.me ? 'chat.a11yReactionMine' : 'chat.a11yReaction', {
+            emoji: r.emoji,
+            count: r.count,
+          })}
           onPress={() => onToggle(r.emoji)}
           onLongPress={() => onLongPress(r.emoji)}
-          style={({ pressed }) => [
-            styles.chip,
-            {
-              backgroundColor: r.me ? colors['surface-3'] : colors['surface-2'],
-              borderColor: r.me ? colors.primary : colors['surface-2'],
-            },
-            pressed && { opacity: 0.7 },
-          ]}
-        >
-          <RNText style={styles.chipEmoji}>{r.emoji}</RNText>
-          <Text variant="label" weight="600" color="text-secondary">
-            {String(r.count)}
-          </Text>
-        </Pressable>
+        />
       ))}
       {onAdd && !disabled && (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('chat.addReaction')}
+          hitSlop={CHIP_SLOP}
           onPress={onAdd}
           style={({ pressed }) => [
             styles.chip,
@@ -76,7 +116,7 @@ export function ReactionChips({
               backgroundColor: colors['surface-2'],
               borderColor: colors['surface-2'],
             },
-            pressed && { opacity: 0.7 },
+            pressed && { backgroundColor: colors['overlay-pressed'] },
           ]}
         >
           <Icon as={SmilePlus} size="sm" color="text-secondary" />
@@ -103,7 +143,12 @@ export function QuickReactions({
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const circle = [styles.quick, { backgroundColor: colors['surface-2'] }];
+  const circle = (pressed: boolean) => [
+    styles.quick,
+    { backgroundColor: colors['surface-2'] },
+    disabled && styles.dim,
+    pressed && { backgroundColor: colors['overlay-pressed'] },
+  ];
   return (
     <View>
       <ScrollView
@@ -118,13 +163,9 @@ export function QuickReactions({
             accessibilityLabel={t('chat.a11yReact', { emoji: e })}
             accessibilityState={{ disabled: !!disabled }}
             disabled={disabled}
-            hitSlop={(size.touch - QUICK) / 2}
+            hitSlop={touchSlop(QUICK)}
             onPress={() => onPick(e)}
-            style={({ pressed }) => [
-              circle,
-              disabled && styles.dim,
-              pressed && { backgroundColor: colors['surface-3'] },
-            ]}
+            style={({ pressed }) => circle(pressed)}
           >
             <RNText style={styles.quickEmoji}>{e}</RNText>
           </Pressable>
@@ -134,13 +175,9 @@ export function QuickReactions({
           accessibilityLabel={t('chat.addReaction')}
           accessibilityState={{ disabled: !!disabled }}
           disabled={disabled}
-          hitSlop={(size.touch - QUICK) / 2}
+          hitSlop={touchSlop(QUICK)}
           onPress={onMore}
-          style={({ pressed }) => [
-            circle,
-            disabled && styles.dim,
-            pressed && { backgroundColor: colors['surface-3'] },
-          ]}
+          style={({ pressed }) => circle(pressed)}
         >
           <Icon as={SmilePlus} size="lg" color="text-secondary" />
         </Pressable>
@@ -168,7 +205,7 @@ export function ReplyLine({
     <Pressable
       disabled={!onPress}
       onPress={onPress}
-      hitSlop={space[1]}
+      hitSlop={touchSlop(typography.label.lineHeight)}
       style={styles.reply}
     >
       <Icon as={CornerUpRight} size="xs" color="text-tertiary" />
@@ -202,8 +239,8 @@ const styles = StyleSheet.create({
   chips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    paddingTop: 6,
+    gap: size.iconGap,
+    paddingTop: size.iconGap,
   },
   chip: {
     height: CHIP,
@@ -212,11 +249,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: space[1],
-    paddingHorizontal: 10,
+    paddingHorizontal: size.reaction.chipSide,
     borderRadius: radius.full,
     borderWidth: size.hairline,
   },
-  chipEmoji: { fontSize: 16, lineHeight: 20 },
+  chipEmoji: emojiText(size.reaction.chipEmoji),
   quickRow: {
     flexGrow: 1,
     justifyContent: 'space-between',
@@ -231,13 +268,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  quickEmoji: { fontSize: 22, lineHeight: 28 },
-  dim: { opacity: 0.4 },
+  quickEmoji: emojiText(size.reaction.quickEmoji),
+  dim: { opacity: disabledOpacity },
   hint: { paddingHorizontal: space[3], paddingTop: space[2] },
   reply: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: size.iconGap,
   },
   replyName: { flexShrink: 0, maxWidth: '50%' },
 });

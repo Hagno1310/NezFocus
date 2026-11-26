@@ -7,10 +7,10 @@ import {
 import type { MessageRepository } from '../../domain/messages/MessageRepository';
 import { withReaction } from '../../domain/messages/reactions';
 import { ApiError } from '../api/client';
+import { fakeServerRepository } from '../servers/FakeServerRepository';
 
 const notFound = () =>
   new ApiError(404, { code: ErrorCode.NotFound, message: 'Unknown message' });
-import { fakeServerRepository } from '../servers/FakeServerRepository';
 
 // Typing these plays the failures of S-HOME-01 / S-HOME-04.
 export const FAKE_REFUSED_TEXT = 'Không gửi được'; // 40302 → failed, "Gửi lại" / "Xóa tin nhắn"

@@ -29,8 +29,8 @@ export function useChannelAbilities(
       ? s.channels[serverId]?.find((c) => c.id === channelId)
       : undefined,
   );
-  if (!serverId) return { canManage: false, canReact: true, timedOut: false };
-  if (!access || !channel || !access.roles)
+  // A DM, or roles not known yet: the backend decides (40302 → Toast).
+  if (!serverId || !access || !channel || !access.roles)
     return { canManage: false, canReact: true, timedOut: false };
   const perms = access.channelPerms(channel);
   return {

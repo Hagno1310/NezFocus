@@ -9,7 +9,7 @@ import {
 import { createStore } from 'zustand/vanilla';
 import type { LocalMessages } from './LocalMessages';
 import type { MessageRepository } from './MessageRepository';
-import { withReaction } from './reactions';
+import { withReaction, type ReactionOp } from './reactions';
 import {
   afterFailure,
   classifySendError,
@@ -37,6 +37,7 @@ export type ChannelView = {
   loading: boolean; // nothing to show yet and the network is being asked
   error: boolean; // S-HOME-01 `error`: no cache and the network failed
   reachedStart: boolean; // the channel's first message is loaded
+  revealing: boolean; // walking back to a linked message: Skeleton at the top (02 `message-link`)
 };
 
 export type MessageStoreDeps = {
@@ -54,6 +55,7 @@ const emptyView = (serverId: string | null): ChannelView => ({
   loading: true, // until the cache is read: S-HOME-01 `loading`, never a flash of `empty`
   error: false,
   reachedStart: false,
+  revealing: false,
 });
 
 // The one place the app reads and sends channel messages (SRS 7.3.1 sync engine, 8.4.5).
@@ -201,7 +203,7 @@ export function createMessageStore(deps: MessageStoreDeps) {
     channelId: string,
     messageId: string,
     emoji: string,
-    op: 'add' | 'remove',
+    op: ReactionOp,
     mine: boolean,
   ) => {
     await rewrite(channelId, (m) =>
@@ -347,8 +349,11 @@ export function createMessageStore(deps: MessageStoreDeps) {
     },
 
     // Loads back from the oldest cached message until `messageId` is in, so the cache stays one
-    // run with no hole (7.3.2). false: not there (deleted) or too far back.
-    async reveal(channelId: string, messageId: string) {
+    // run with no hole (7.3.2). `missing`: walked past it (deleted); `far`: not reached in time.
+    async reveal(
+      channelId: string,
+      messageId: string,
+    ): Promise<'found' | 'missing' | 'far'> {
       const target = BigInt(messageId);
       const has = async () => {
         const cached = await local.messages(channelId);
@@ -358,19 +363,21 @@ export function createMessageStore(deps: MessageStoreDeps) {
         };
       };
       let { found, oldest } = await has();
-      for (let i = 0; !found && oldest && i < REVEAL_PAGES; i++) {
-        if (BigInt(oldest.id) <= target) break;
+      let past = !oldest || BigInt(oldest.id) <= target;
+      if (!found && !past) patchView(channelId, { revealing: true });
+      for (let i = 0; !found && !past && i < REVEAL_PAGES; i++) {
         const page = await remote.history(channelId, {
           before: oldest.id,
           limit: PAGE,
         });
         await local.saveMessages(page);
         if (page.length < PAGE) patchView(channelId, { reachedStart: true });
-        if (!page.length) break;
         ({ found, oldest } = await has());
+        past = page.length < PAGE || !oldest || BigInt(oldest.id) <= target;
       }
+      patchView(channelId, { revealing: false });
       await refresh(channelId);
-      return found;
+      return found ? 'found' : past ? 'missing' : 'far';
     },
 
     reactionUsers: (channelId: string, messageId: string, emoji: string) =>
@@ -402,11 +409,8 @@ export function createMessageStore(deps: MessageStoreDeps) {
     applyDelete: (e: MessageDeleteEvent) => deleted(e.channel_id, e.id),
 
     // MESSAGE_REACTION_ADD / REMOVE; my own one again changes nothing (withReaction).
-    applyReaction: (
-      e: MessageReactionEvent,
-      op: 'add' | 'remove',
-      myId: string,
-    ) => reacted(e.channel_id, e.message_id, e.emoji, op, e.user_id === myId),
+    applyReaction: (e: MessageReactionEvent, op: ReactionOp, myId: string) =>
+      reacted(e.channel_id, e.message_id, e.emoji, op, e.user_id === myId),
 
     // RESUMED / READY after a drop (7.3.2): what each open channel missed, then the outbox.
     async catchUp() {

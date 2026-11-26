@@ -1,17 +1,10 @@
 import type { MessageAuthor, MessageResponse } from '@nezfocus/shared';
 import { Copy, Flag, Link, Pencil, Reply, Trash2 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text as RNText,
-  View,
-} from 'react-native';
-import {
-  messageSheet,
-  type SheetRow,
-  type SheetViewer,
+import { ScrollView, StyleSheet, View } from 'react-native';
+import type {
+  MessageSheet,
+  SheetRow,
 } from '../../../domain/messages/messageActions';
 import { QUICK_REACTIONS } from '../../../domain/messages/reactions';
 import { radius, size, space, useTheme } from '../../../shared/theme';
@@ -24,7 +17,7 @@ import {
   Dialog,
   type ActionItem,
 } from '../../../shared/ui/Overlay';
-import { QuickReactions } from '../../../shared/ui/Reactions';
+import { QuickReactions, ReactionChip } from '../../../shared/ui/Reactions';
 import { Text } from '../../../shared/ui/Text';
 import { avatarUri } from '../../me/avatarUri';
 import type { MessageActions } from '../hooks/useMessageActions';
@@ -42,30 +35,21 @@ const ICONS: Record<SheetRow, IconComponent> = {
 // "Ai đã thả cảm xúc" sheet (chốt 26/11/2026).
 export function MessageSheets({
   actions,
-  viewer,
-  myId,
+  sheetOf,
   nameOf,
   timeOf,
+  onInsert,
 }: {
   actions: MessageActions;
-  viewer: SheetViewer;
-  myId: string;
+  onInsert: (emoji: string) => void;
+  sheetOf: (message: MessageResponse) => MessageSheet | null;
   nameOf: (author: MessageAuthor) => string;
   timeOf: (message: MessageResponse) => string;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const target = actions.sheet;
-  const sheet =
-    target &&
-    messageSheet(
-      {
-        mine: target.message.author.id === myId,
-        system: target.message.type !== 'default',
-        hasText: target.message.content.trim() !== '',
-      },
-      viewer,
-    );
+  const sheet = target && sheetOf(target.message);
 
   const run: Record<SheetRow, (m: MessageResponse) => void> = {
     reply: actions.reply,
@@ -120,7 +104,9 @@ export function MessageSheets({
         onPick={(e) => {
           const m = actions.picker?.message;
           actions.closePicker();
+          // C-25 from the Composer's ☺: into the text, not a reaction.
           if (m) actions.react(m, e);
+          else onInsert(e);
         }}
       />
       <Dialog
@@ -164,7 +150,6 @@ function Reactors({
   nameOf: (author: MessageAuthor) => string;
 }) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
   const open = actions.reactors;
 
   return (
@@ -178,35 +163,16 @@ function Reactors({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.tabs}
       >
-        {open?.message.reactions.map((r) => {
-          const on = r.emoji === open.emoji;
-          return (
-            <Pressable
-              key={r.emoji}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: on }}
-              accessibilityLabel={t('chat.a11yReaction', {
-                emoji: r.emoji,
-                count: r.count,
-              })}
-              onPress={() => actions.pickReactors(r.emoji)}
-              style={[
-                styles.tab,
-                {
-                  backgroundColor: on
-                    ? colors['surface-3']
-                    : colors['surface-2'],
-                  borderColor: on ? colors.primary : colors['surface-2'],
-                },
-              ]}
-            >
-              <RNText style={styles.tabEmoji}>{r.emoji}</RNText>
-              <Text variant="label" weight="600" color="text-secondary">
-                {String(r.count)}
-              </Text>
-            </Pressable>
-          );
-        })}
+        {/* The selected emoji is the tab, drawn as a chip of mine (C-10). */}
+        {open?.message.reactions.map((r) => (
+          <ReactionChip
+            key={r.emoji}
+            role="tab"
+            reaction={{ ...r, me: r.emoji === open.emoji }}
+            label={t('chat.a11yReaction', { emoji: r.emoji, count: r.count })}
+            onPress={() => actions.pickReactors(r.emoji)}
+          />
+        ))}
       </ScrollView>
       {open?.people?.map((p) => (
         <MemberRow
@@ -221,20 +187,11 @@ function Reactors({
 }
 
 const styles = StyleSheet.create({
+  // Frame `delete-confirm`: 2 between the lines, 12 inside.
   preview: {
-    gap: 2,
-    padding: 12,
+    gap: space[1] / 2,
+    padding: space[3] - space[1],
     borderRadius: radius.input,
   },
-  tabs: { gap: 6, paddingBottom: space[2] },
-  tab: {
-    height: 32,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space[1],
-    paddingHorizontal: 10,
-    borderRadius: radius.full,
-    borderWidth: size.hairline,
-  },
-  tabEmoji: { fontSize: 16, lineHeight: 20 },
+  tabs: { gap: size.iconGap, paddingBottom: space[2] },
 });

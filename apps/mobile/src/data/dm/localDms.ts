@@ -18,14 +18,12 @@ export function createLocalDms(db: () => Promise<LocalDb>): LocalDms {
       const d = await db();
       await d.delete(dmChannels);
       if (list.length)
-        await d
-          .insert(dmChannels)
-          .values(
-            list.map((c) => ({
-              channelId: padId(c.id),
-              json: JSON.stringify(c),
-            })),
-          );
+        await d.insert(dmChannels).values(
+          list.map((c) => ({
+            channelId: padId(c.id),
+            json: JSON.stringify(c),
+          })),
+        );
     },
   };
 }

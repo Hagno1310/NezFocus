@@ -9,8 +9,8 @@ import { assetLinks, renderInvitePage } from './invite-page.js';
 import { InvitesService } from './invites.service.js';
 
 // REQ-SRV-07, outside /api/v1 (configure-app.ts): what https://nezfocus.app serves for App
-// Links. ponytail: needs Caddy to route nezfocus.app/invite/* and /.well-known/* here once the
-// domain exists; until then try the page on the API host.
+// Links. ponytail: the domain is chosen before release, P4-B2.3 (#193): Caddy then routes
+// nezfocus.app/invite/* and /.well-known/* here; until then try the page on the API host.
 @Controller()
 export class InvitePageController {
   constructor(

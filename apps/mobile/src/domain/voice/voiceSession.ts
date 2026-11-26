@@ -102,10 +102,24 @@ export function createVoiceSession({
       self_video: c.camera,
     });
 
+  // A retry waiting out its backoff stops at once when the call changes (leave, switch).
+  let wake: (() => void) | null = null;
+  const pause = (ms: number) =>
+    Promise.race([
+      wait(ms),
+      new Promise<void>((r) => {
+        wake = r;
+      }),
+    ]);
+
   const reset = (extra: Partial<VoiceState> = {}) => {
     gen++;
+    wake?.();
     store.setState({ call: null, speaking: [], poor: [], ...extra });
   };
+
+  // LiveKit or the native audio session failing to close must not leave a join spinning.
+  const disconnect = () => client.disconnect().catch(() => {});
 
   const publish = (on: boolean, set: (on: boolean) => Promise<void>) =>
     on
@@ -122,7 +136,7 @@ export function createVoiceSession({
     if (gen !== id) return false;
     await client.connect(grant.url, grant.token);
     if (gen !== id) {
-      await client.disconnect();
+      await disconnect();
       return false;
     }
     const mic = await publish(media.mic, client.setMic);
@@ -154,7 +168,7 @@ export function createVoiceSession({
     const id = gen;
     return serial(async () => {
       if (gen !== id) return 'cancelled';
-      if (prev) await client.disconnect();
+      if (prev) await disconnect();
       try {
         if (media.camera) store.setState({ cameraPreviewed: true });
         return (await connect(id, target.channelId, media))
@@ -163,7 +177,7 @@ export function createVoiceSession({
       } catch (err) {
         if (gen !== id) return 'cancelled';
         reset();
-        await client.disconnect();
+        await disconnect();
         const code = asApiError(err)?.code;
         if (code === ErrorCode.Forbidden) return 'no-connect';
         if (code === ErrorCode.NotFound) return 'gone';
@@ -181,7 +195,7 @@ export function createVoiceSession({
       self_mute: true,
       self_video: false,
     });
-    return serial(() => client.disconnect());
+    return serial(disconnect);
   }
 
   // STUDY-02 AC2: the button turns on at once; Android refusing puts it back.
@@ -227,7 +241,7 @@ export function createVoiceSession({
             return;
           }
         }
-        await wait(RETRY_MS[Math.min(attempt, RETRY_MS.length - 1)]!);
+        await pause(RETRY_MS[Math.min(attempt, RETRY_MS.length - 1)]!);
       }
     }).finally(() => {
       if (rejoining === id) rejoining = -1;
@@ -294,14 +308,14 @@ export function createVoiceSession({
       reason: (event.t === 'VOICE_STATE_UPDATE' && event.d.reason) || 'left',
     };
     reset({ seats });
-    void serial(() => client.disconnect());
+    void serial(disconnect);
     endListeners.forEach((l) => l(end));
   }
 
   // Signed out: the backend already freed the seat (`logout`), so no op 4.
   function signOut() {
     reset({ seats: {}, cameraPreviewed: false });
-    return serial(() => client.disconnect());
+    return serial(disconnect);
   }
 
   return {

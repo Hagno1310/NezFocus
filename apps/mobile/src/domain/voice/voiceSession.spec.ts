@@ -286,6 +286,32 @@ describe('mod-mute (REQ-VC-04)', () => {
   });
 });
 
+describe('never stuck', () => {
+  it('leaving while a rejoin waits out its backoff lets the next join go at once', async () => {
+    const own = createFakeVoiceClient();
+    const forever = createVoiceSession({
+      repo: { token },
+      client: own,
+      gateway: { updateVoice: (d) => sent.push(d) },
+      me: () => ME,
+      store: createStore<VoiceState>(() => emptyVoice),
+      wait: () => new Promise(() => {}), // a backoff that would never end
+    });
+    await forever.join(A);
+    token.mockRejectedValueOnce(new TypeError('Network request failed'));
+    own.emit({ type: 'ended', removed: false });
+    await vi.waitFor(() => expect(token).toHaveBeenCalledTimes(2));
+    await forever.leave();
+    expect(await forever.join(B)).toBe('joined');
+  });
+
+  it('LiveKit failing to close does not leave a switch spinning', async () => {
+    await session.join(A);
+    client.disconnect = () => Promise.reject(new Error('audio session'));
+    expect(await session.join(B)).toBe('joined');
+  });
+});
+
 describe('LiveKit link', () => {
   it('poor quality from LiveKit marks the tile (REQ-VC-05)', async () => {
     await session.join(A);

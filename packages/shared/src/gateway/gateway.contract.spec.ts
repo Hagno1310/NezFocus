@@ -102,6 +102,7 @@ describe('gateway contract', () => {
         read_states: [],
         relationships: [],
         private_channels: [],
+        voice_states: [],
       };
       expect(DispatchEvents.READY.parse(d)).toEqual(d);
     });

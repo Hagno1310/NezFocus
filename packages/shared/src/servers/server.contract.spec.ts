@@ -221,6 +221,7 @@ describe('server and channel events (SRS 5.4)', () => {
       read_states: [],
       relationships: [],
       private_channels: [],
+      voice_states: [],
     };
     expect(DispatchEvents.READY.parse(d)).toEqual(d);
   });

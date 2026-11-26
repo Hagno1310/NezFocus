@@ -13,7 +13,11 @@ import { onGatewayEvent } from '../domain/gateway/gatewayStore';
 import { homeStore } from '../domain/servers/homeStore';
 import { sessionStore } from '../domain/session/sessionStore';
 import { mediaDenied } from '../domain/voice/mediaDenied';
-import { ALIVE_EVERY_MS, rejoinTarget } from '../domain/voice/rejoin';
+import {
+  ALIVE_EVERY_MS,
+  AWAY_WAIT_MS,
+  rejoinStep,
+} from '../domain/voice/rejoin';
 import { voiceNotice } from '../domain/voice/voiceNotice';
 import {
   voiceStore,
@@ -54,14 +58,31 @@ function onEnded(end: VoiceEnd, name: string | undefined) {
 // (Android 14 starts no microphone service from the background) → back in, mic and camera off.
 async function rejoin() {
   const saved = await savedRoom.load();
-  const { seats } = voiceStore.getState();
-  const target = rejoinTarget(
-    saved,
-    Date.now(),
-    seats,
-    sessionStore.getState().user?.id ?? null,
-  );
-  if (!target) return void savedRoom.clear();
+  const step = () =>
+    rejoinStep(
+      saved,
+      Date.now(),
+      voiceStore.getState().seats,
+      sessionStore.getState().user?.id ?? null,
+    );
+  // `wait`: my old seat turns `away` once LiveKit notices the kill; another login's never does.
+  const answer = await new Promise<boolean>((resolve) => {
+    const now = step();
+    if (now !== 'wait') return resolve(now === 'rejoin');
+    const done = (ok: boolean) => {
+      clearTimeout(timer);
+      stop();
+      resolve(ok);
+    };
+    const timer = setTimeout(() => done(false), AWAY_WAIT_MS);
+    const stop = voiceStore.subscribe(() => {
+      const next = step();
+      if (next !== 'wait') done(next === 'rejoin');
+    });
+  });
+  if (!answer || !saved || voiceStore.getState().call)
+    return void savedRoom.clear();
+  const target = { serverId: saved.serverId, channelId: saved.channelId };
   openVoice(target);
   if ((await voiceSession.join(target)) !== 'joined') return;
   const name = channelName(target);
@@ -150,8 +171,10 @@ export function startVoiceLifecycle() {
     mediaDenied.setState({ mic: false, camera: false });
     voiceNotice.setState({ otherDevice: null });
   });
+  // A text channel opened over the room closes it; the first one restored at start-up (null →
+  // channel) does not, or a rejoin (VC-01 AC6) would land on the chat instead of the room.
   const stopHome = homeStore.subscribe((s, prev) => {
-    if (s.open !== prev.open && s.open) closeVoice();
+    if (s.open && prev.open && s.open !== prev.open) closeVoice();
   });
   const stopDm = dmView.subscribe((s, prev) => {
     if (s.open && s.open !== prev.open) closeVoice();

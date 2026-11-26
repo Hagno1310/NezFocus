@@ -158,6 +158,7 @@ export function VoiceRoomScreen({
           // C-17 `mod-muted` (REQ-VC-04): disabled until a moderator turns it back on.
           label={t(here?.modMuted ? 'voice.modMuted' : 'voice.mic')}
           state={here?.modMuted ? 'mod-muted' : state(room.denied.mic, micOn)}
+          narrow={!joined}
           onPress={() => void pressMic()}
         />
       )}
@@ -166,6 +167,7 @@ export function VoiceRoomScreen({
           icon={cameraOn ? Video : VideoOff}
           label={t('voice.camera')}
           state={state(room.denied.camera, cameraOn)}
+          narrow={!joined}
           onPress={() => void pressCamera()}
         />
       )}
@@ -209,9 +211,9 @@ export function VoiceRoomScreen({
                 poorNetwork={tile.poorNetwork}
                 width={tileWidth}
                 video={
-                  tile.camera && (
+                  tile.camera ? (
                     <ParticipantVideo userId={tile.userId} mirror={tile.self} />
-                  )
+                  ) : undefined
                 }
               />
             ))}

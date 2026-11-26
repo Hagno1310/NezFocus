@@ -1,4 +1,5 @@
 import { AudioSession } from '@livekit/react-native';
+import { LogBox } from 'react-native';
 import {
   ConnectionQuality,
   DisconnectReason,
@@ -9,6 +10,10 @@ import type {
   VoiceClient,
   VoiceClientEvent,
 } from '../../domain/voice/VoiceClient';
+
+// SRS 5.5: the grant has canPublishData false, so LiveKit closes the publisher's data channels
+// and livekit-client logs that as an error; the room works.
+LogBox.ignoreLogs(['publisher data channel']);
 
 // Closed by the server, not the network: the Gateway brings why (CR-28 #30).
 const REMOVED = new Set<DisconnectReason | undefined>([

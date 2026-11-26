@@ -1,6 +1,6 @@
 import type { VoiceRoomMember } from '@nezfocus/shared';
 import { describe, expect, it } from 'vitest';
-import { rejoinTarget, type SavedRoom } from './rejoin';
+import { rejoinStep, type SavedRoom } from './rejoin';
 
 const NOW = Date.parse('2026-11-26T21:47:00Z');
 const saved = (minutesAgo: number): SavedRoom => ({
@@ -26,28 +26,25 @@ const seat = (
 
 describe('VC-01 AC6: back into the room after the app was killed', () => {
   it('after 2 minutes, my seat still waiting → rejoin that room', () => {
-    expect(rejoinTarget(saved(2), NOW, seat({}), '1')).toEqual({
-      serverId: '10',
-      channelId: '700',
-    });
+    expect(rejoinStep(saved(2), NOW, seat({}), '1')).toBe('rejoin');
   });
 
   it('after 4 minutes → no', () => {
-    expect(rejoinTarget(saved(4), NOW, seat({}), '1')).toBeNull();
+    expect(rejoinStep(saved(4), NOW, seat({}), '1')).toBe('no');
   });
 
-  it('another device sits there (not away) → no', () => {
-    expect(rejoinTarget(saved(1), NOW, seat({ away: false }), '1')).toBeNull();
+  it('not away (yet): LiveKit has not noticed, or another device sits there → wait and see', () => {
+    expect(rejoinStep(saved(1), NOW, seat({ away: false }), '1')).toBe('wait');
   });
 
   it('the seat is gone or moved → no', () => {
-    expect(rejoinTarget(saved(1), NOW, {}, '1')).toBeNull();
-    expect(
-      rejoinTarget(saved(1), NOW, seat({ channel_id: '701' }), '1'),
-    ).toBeNull();
+    expect(rejoinStep(saved(1), NOW, {}, '1')).toBe('no');
+    expect(rejoinStep(saved(1), NOW, seat({ channel_id: '701' }), '1')).toBe(
+      'no',
+    );
   });
 
   it('nothing saved → no', () => {
-    expect(rejoinTarget(null, NOW, seat({}), '1')).toBeNull();
+    expect(rejoinStep(null, NOW, seat({}), '1')).toBe('no');
   });
 });

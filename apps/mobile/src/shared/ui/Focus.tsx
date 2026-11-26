@@ -221,12 +221,15 @@ export function RoomControl({
   label,
   main = false,
   state = 'off',
+  narrow = false,
   onPress,
 }: {
   icon: IconComponent;
   label: string;
   main?: boolean;
   state?: RoomControlState;
+  // Room preview row (CR-22 #4, board C-17): Mic · Camera as wide as their discs, 8 apart.
+  narrow?: boolean;
   onPress: () => void;
 }) {
   const { colors } = useTheme();
@@ -245,7 +248,7 @@ export function RoomControl({
       }}
       disabled={state === 'mod-muted'}
       onPress={onPress}
-      style={styles.control}
+      style={[styles.control, narrow && { width: size.control }]}
     >
       {({ pressed }) => (
         <>

@@ -269,6 +269,9 @@ export function VoiceRoomScreen({
                 label={t(room.elsewhere ? 'voice.switchHere' : 'voice.join')}
                 size="L"
                 fullWidth
+                oneLine
+                // Board C-17 preview row: the button's sides are 12, not 16.
+                style={styles.ctaButton}
                 loading={joining || here?.phase === 'joining'}
                 onPress={() => void join()}
               />
@@ -354,6 +357,7 @@ const styles = StyleSheet.create({
     marginBottom: space[3],
   },
   cta: { flex: 1, paddingTop: space[1] },
+  ctaButton: { paddingHorizontal: space[2] + space[1] },
   locked: { gap: space[2] },
   center: { textAlign: 'center' },
 });

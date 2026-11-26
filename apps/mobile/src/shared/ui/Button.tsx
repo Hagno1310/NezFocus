@@ -19,6 +19,8 @@ import {
 import { Icon, type IconComponent } from './Icon';
 import { Text } from './Text';
 
+const ONE_LINE_MIN_SCALE = 0.85; // `oneLine`: shrinks to 85% at most, then ends with …
+
 export type ButtonVariant = 'primary' | 'secondary' | 'text' | 'danger';
 export type ButtonSize = 'L' | 'M' | 'S';
 
@@ -42,7 +44,11 @@ export type ButtonProps = Omit<PressableProps, 'children' | 'style'> & {
   style?: StyleProp<ViewStyle>;
   // Label colour of `secondary` / `text`: `danger` for a destructive step that still asks
   // first (S-ME-03 "Đăng xuất" on a session row); `neutral` = `text-primary` ("Hủy" on crop).
-  tone?: 'danger' | 'neutral';
+  // `muted` = `text-secondary` ("Hủy" of S-ROOM-01 `camera-self-preview`).
+  tone?: 'danger' | 'neutral' | 'muted';
+  // One line that shrinks a little rather than wrap (board C-17 preview row at 360:
+  // "Chuyển sang phòng này" stays on one line).
+  oneLine?: boolean;
   // Cap on the label's text scale, for buttons pinned to the bottom (spec 01 large-text: ×1.3).
   labelMaxScale?: number;
 };
@@ -57,6 +63,7 @@ export function Button({
   disabled = false,
   fullWidth = false,
   tone,
+  oneLine = false,
   style,
   labelMaxScale,
   ...rest
@@ -79,7 +86,9 @@ export function Button({
             ? 'danger'
             : tone === 'neutral'
               ? 'text-primary'
-              : 'primary';
+              : tone === 'muted'
+                ? 'text-secondary'
+                : 'primary';
   const bg = disabled
     ? filled
       ? colors['surface-3']
@@ -144,7 +153,9 @@ export function Button({
               variant="body"
               weight="600"
               color={fg}
-              numberOfLines={2}
+              numberOfLines={oneLine ? 1 : 2}
+              adjustsFontSizeToFit={oneLine}
+              minimumFontScale={ONE_LINE_MIN_SCALE}
               maxFontSizeMultiplier={labelMaxScale}
               style={styles.label}
             >

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { CameraPreview } from '../../../data/voice/VoiceVideo';
-import { size } from '../../../shared/theme';
+import { size, space } from '../../../shared/theme';
 import { BottomSheet } from '../../../shared/ui/Overlay';
 import { ParticipantTile } from '../../../shared/ui/Room';
 import { Text } from '../../../shared/ui/Text';
@@ -25,6 +25,7 @@ export function CameraPreviewSheet({
       secondary={{
         label: t('voice.cameraPreview.cancel'),
         variant: 'text',
+        tone: 'muted',
         onPress: onDismiss,
       }}
       onDismiss={onDismiss}
@@ -47,4 +48,7 @@ export function CameraPreviewSheet({
   );
 }
 
-const styles = StyleSheet.create({ tile: { alignItems: 'center' } });
+// Frame `camera-self-preview`: the sentence 16 under the tile.
+const styles = StyleSheet.create({
+  tile: { alignItems: 'center', marginBottom: space[3] },
+});

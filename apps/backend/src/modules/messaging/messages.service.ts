@@ -26,7 +26,11 @@ import { ServersRepository } from '../servers/servers.repository.js';
 import { ChannelTypeCode, type ChannelRow } from '../servers/servers.schema.js';
 import { MentionsService } from './mentions.service.js';
 import { MESSAGE_CREATED, type MessageCreated } from './message-events.js';
-import { toMessageAuthor, toMessageResponse } from './messages.dto.js';
+import {
+  toMessageAuthor,
+  toMessageResponse,
+  type MessageExtras,
+} from './messages.dto.js';
 import {
   MessagesRepository,
   type MessageWithAuthor,
@@ -34,6 +38,14 @@ import {
 
 const unknownChannel = () =>
   new AppError(ErrorCode.NotFound, 'Unknown channel');
+
+// REQ-MSG-05: a reply points at a message of the same channel that is not a system one.
+const badReply = () =>
+  new AppError(ErrorCode.ValidationError, 'Invalid request', {
+    reply_to_id: [
+      { code: 'invalid_reply', message: 'Not a message of this channel' },
+    ],
+  });
 
 // REQ-MSG-08: 5 messages / 5 s / channel and 30 / minute across every channel, per user.
 const PER_CHANNEL = { limit: 5, windowMs: 5_000 };
@@ -77,10 +89,22 @@ export class MessagesService {
     ]);
     if (wait) throw rateLimited(wait / 1000);
 
+    const replyTo = body.reply_to_id
+      ? await this.repo.one(channelId, BigInt(body.reply_to_id))
+      : undefined;
+    if (
+      body.reply_to_id &&
+      (!replyTo || replyTo.message.type !== messageTypeCode.default)
+    )
+      throw badReply();
     const { mentions, concerned } = await this.mentionsOf(
       userId,
       channel,
       body.content,
+      // MSG-03 AC3: the original's author, while it still exists.
+      replyTo && !replyTo.message.deletedAt
+        ? replyTo.message.authorId
+        : undefined,
     );
     let saved: MessageWithAuthor;
     try {
@@ -92,6 +116,7 @@ export class MessagesService {
           type: messageTypeCode.default,
           content: body.content,
           nonce: body.nonce,
+          replyToId: replyTo?.message.id ?? null,
           ...mentions,
         },
         [...concerned.keys()].map(BigInt),
@@ -127,12 +152,14 @@ export class MessagesService {
     return this.publish(saved, channel, new Map());
   }
 
-  private publish(
+  private async publish(
     saved: MessageWithAuthor,
     channel: ChannelRow,
     concerned: MessageCreated['concerned'],
   ) {
-    const message = toMessageResponse(saved.message, saved.author);
+    // A new message has no reactions, so the same copy goes to everyone.
+    const [message] = await this.toResponses([saved], saved.message.authorId);
+    if (!message) throw new Error('unreachable');
     const created: MessageCreated = {
       message,
       serverId: channel.serverId,
@@ -197,17 +224,41 @@ export class MessagesService {
     query: MessageHistoryQuery,
   ): Promise<MessageResponse[]> {
     await this.viewable(userId, channelId);
-    const rows = await this.repo.history(channelId, query);
-    return rows.map((r) => toMessageResponse(r.message, r.author));
+    return this.toResponses(await this.repo.history(channelId, query), userId);
+  }
+
+  // REQ-MSG-05: each message with its reply line and the reactions as `viewerId` sees them.
+  async toResponses(
+    rows: MessageWithAuthor[],
+    viewerId: bigint,
+  ): Promise<MessageResponse[]> {
+    const ids = rows.map((r) => r.message.id);
+    const [referenced, reactions] = await Promise.all([
+      this.repo.referenced(
+        rows.flatMap((r) => (r.message.replyToId ? [r.message.replyToId] : [])),
+      ),
+      this.repo.reactions(ids, viewerId),
+    ]);
+    return rows.map((r) => {
+      const extras: MessageExtras = {
+        referenced: r.message.replyToId
+          ? (referenced.get(r.message.replyToId) ?? null)
+          : null,
+        reactions: reactions
+          .filter((x) => x.messageId === r.message.id)
+          .map(({ emoji, count, me }) => ({ emoji, count, me })),
+      };
+      return toMessageResponse(r.message, r.author, extras);
+    });
   }
 
   // REQ-MSG-09 AC1: a repeat of the same nonce gets the first message back; the same nonce
   // for another channel or text is a client bug → 40907.
-  private replay(
+  private async replay(
     sent: MessageWithAuthor,
     channelId: bigint,
     content: string,
-  ): MessageResponse {
+  ): Promise<MessageResponse> {
     if (
       sent.message.channelId !== channelId ||
       sent.message.content !== content
@@ -216,7 +267,8 @@ export class MessagesService {
         ErrorCode.IdempotencyKeyReused,
         'nonce already used for another message',
       );
-    return toMessageResponse(sent.message, sent.author);
+    const [message] = await this.toResponses([sent], sent.message.authorId);
+    return message!;
   }
 
   // REQ-ROLE-03 AC3: a channel one cannot view does not exist for them (40401).
@@ -243,7 +295,7 @@ export class MessagesService {
   }
 
   // REQ-DM-02 / FRIEND-03 AC1 in a DM: 40303 with one sentence; elsewhere SEND_MESSAGES.
-  private async requireSend(userId: bigint, channel: ChannelRow) {
+  async requireSend(userId: bigint, channel: ChannelRow) {
     if (channel.serverId)
       return this.permissions.require(
         userId,
@@ -255,10 +307,11 @@ export class MessagesService {
   }
 
   // CR-12 #3: a DM keeps mentions of its people only (for the name), nothing else.
-  private async mentionsOf(
+  async mentionsOf(
     userId: bigint,
     channel: ChannelRow,
     content: string,
+    replyAuthorId?: bigint,
   ) {
     if (channel.serverId) {
       const mentions = await this.mentions.resolve(userId, channel, content);
@@ -267,6 +320,7 @@ export class MessagesService {
         channel,
         content,
         mentions,
+        replyAuthorId,
       );
       return { mentions, concerned };
     }

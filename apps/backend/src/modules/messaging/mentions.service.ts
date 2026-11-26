@@ -79,12 +79,13 @@ export class MentionsService {
   }
 
   // CR-12: the people a message concerns, one way each. @here (chốt 22/11/2026): the
-  // members not offline right now.
+  // members not offline right now. `replyAuthorId`: whose message this one answers (MSG-03).
   async recipients(
     senderId: bigint,
     channel: ChannelRow,
     content: string,
     found: Resolved,
+    replyAuthorId?: bigint,
   ): Promise<Map<string, MentionVia>> {
     const serverId = channel.serverId!;
     const roleMembers = await this.repo.roleMembers(
@@ -103,6 +104,7 @@ export class MentionsService {
     const seen = await this.viewers(channel.id, [
       ...roleMembers.map((m) => m.userId),
       ...everyoneIds,
+      ...(replyAuthorId ? [replyAuthorId] : []),
     ]);
     return mentionRecipients({
       authorId: String(senderId),
@@ -112,6 +114,10 @@ export class MentionsService {
         .map((m) => ({ roleId: String(m.roleId), userId: String(m.userId) })),
       everyoneIds: everyoneIds.filter((id) => seen.has(id)).map(String),
       everyoneVia: everyone ? 'everyone' : 'here',
+      replyAuthorId:
+        replyAuthorId && seen.has(replyAuthorId)
+          ? String(replyAuthorId)
+          : undefined,
     });
   }
 }

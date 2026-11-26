@@ -34,6 +34,8 @@ const msg = (
     mention_everyone: false,
     system_data: null,
     reply_to_id: null,
+    referenced_message: null,
+    reactions: [],
     edited_at: null,
     pinned_at: null,
     created_at: '2026-11-19T13:00:00.000Z',

@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ServersModule } from '../servers/servers.module.js';
 import { MentionsService } from './mentions.service.js';
+import { MessageActionsService } from './message-actions.service.js';
 import { MessagesController } from './messages.controller.js';
 import { MessagesRepository } from './messages.repository.js';
 import { MessagesService } from './messages.service.js';
@@ -17,6 +18,7 @@ import { ReadStatesService } from './read-states.service.js';
   providers: [
     MessagesRepository,
     MessagesService,
+    MessageActionsService,
     MentionsService,
     MessagingListener,
     ReadStatesRepository,

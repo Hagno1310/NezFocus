@@ -18,7 +18,7 @@ import { users } from '../users/users.schema.js';
 const id = () => bigint({ mode: 'bigint' });
 const tz = () => timestamp({ withTimezone: true });
 
-// SRS 8.2 messages. Embeds, pins and soft-delete columns arrive with P3-A1 / P3-A2.
+// SRS 8.2 messages. Embeds and pinned_by arrive with P3-A2 (#22).
 export const messages = pgTable(
   'messages',
   {
@@ -46,6 +46,7 @@ export const messages = pgTable(
     systemData: jsonb(), // REQ-MSG-11: kind parameters only, never wording
     editedAt: tz(),
     pinnedAt: tz(),
+    deletedAt: tz(), // REQ-MSG-05: soft-delete, gone for everyone
     createdAt: tz().notNull().defaultNow(),
   },
   (t) => [
@@ -58,6 +59,22 @@ export const messages = pgTable(
 );
 
 export type MessageRow = typeof messages.$inferSelect;
+
+// SRS 8.2 message_reactions (REQ-MSG-05): one row per person per emoji.
+export const messageReactions = pgTable(
+  'message_reactions',
+  {
+    messageId: id()
+      .notNull()
+      .references(() => messages.id, { onDelete: 'cascade' }),
+    emoji: varchar({ length: 64 }).notNull(), // Unicode emoji (custom emoji: Backlog)
+    userId: id()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: tz().notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.messageId, t.emoji, t.userId] })],
+);
 
 // SRS 8.2 read_states (REQ-NOTIF-01). 0 = nothing read; the contract says null.
 export const readStates = pgTable(

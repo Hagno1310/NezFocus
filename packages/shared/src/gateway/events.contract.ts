@@ -12,6 +12,9 @@ import {
 import {
   MessageAck,
   MessageCreateEvent,
+  MessageDeleteEvent,
+  MessageReactionEvent,
+  MessageUpdateEvent,
   ReadState,
 } from '../messages/message.contract.js';
 import { TypingStart } from '../messages/typing.contract.js';
@@ -75,6 +78,10 @@ export const DispatchEvents = {
   CHANNEL_UPDATE: ChannelResponse, // also when its overwrites or sync change (REQ-ROLE-03)
   CHANNEL_DELETE: ChannelDeleted,
   MESSAGE_CREATE: MessageCreateEvent, // REQ-MSG-01: to who can view the channel, nonce echoed (MSG-09)
+  MESSAGE_UPDATE: MessageUpdateEvent, // REQ-MSG-05 AC1: to who can view the channel
+  MESSAGE_DELETE: MessageDeleteEvent, // REQ-MSG-05 AC3
+  MESSAGE_REACTION_ADD: MessageReactionEvent, // REQ-MSG-05
+  MESSAGE_REACTION_REMOVE: MessageReactionEvent,
   MESSAGE_ACK: MessageAck, // REQ-NOTIF-01: to every session of the user who acked
   RELATIONSHIP_ADD: Relationship, // REQ-FRIEND-01..03: to every session of the user whose list changed
   RELATIONSHIP_REMOVE: RelationshipRemove, // decline: only the decliner (FRIEND-02 AC3); block: as an unfriend for the blocked

@@ -35,6 +35,8 @@ const created = (
     mention_everyone: false,
     system_data: null,
     reply_to_id: null,
+    referenced_message: null,
+    reactions: [],
     edited_at: null,
     pinned_at: null,
     created_at: '2026-10-18T13:00:00Z',

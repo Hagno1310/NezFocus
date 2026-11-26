@@ -21,6 +21,8 @@ const message = (id: string, channelId = '7'): MessageResponse => ({
   mention_everyone: false,
   system_data: null,
   reply_to_id: null,
+  referenced_message: null,
+  reactions: [],
   edited_at: null,
   pinned_at: null,
   created_at: '2026-10-18T13:02:00.000Z',

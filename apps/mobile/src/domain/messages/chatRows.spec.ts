@@ -40,6 +40,8 @@ const sent = (
     mention_everyone: false,
     system_data: null,
     reply_to_id: null,
+    referenced_message: null,
+    reactions: [],
     edited_at: null,
     pinned_at: null,
     created_at: new Date(at(day, hhmm)).toISOString(),

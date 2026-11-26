@@ -6,7 +6,8 @@ export type MentionVia =
   | { via: 'user' }
   | { via: 'role'; role_id: string }
   | { via: 'everyone' }
-  | { via: 'here' };
+  | { via: 'here' }
+  | { via: 'reply' }; // MSG-03 v1.9: a reply to their message (a `reply` inbox item)
 
 // REQ-MSG-03: @role works when the role is mentionable or the sender has MENTION_EVERYONE;
 // @everyone / @here need MENTION_EVERYONE. Anything else stays plain text (AC1).
@@ -45,12 +46,14 @@ export function mentionRecipients({
   roleMembers,
   everyoneIds,
   everyoneVia,
+  replyAuthorId,
 }: {
   authorId: string;
   userIds: readonly string[];
   roleMembers: readonly { roleId: string; userId: string }[];
   everyoneIds: readonly string[];
   everyoneVia: 'everyone' | 'here';
+  replyAuthorId?: string; // can view the channel, like every id here
 }): Map<string, MentionVia> {
   const out = new Map<string, MentionVia>();
   const add = (id: string, via: MentionVia) => {
@@ -60,5 +63,6 @@ export function mentionRecipients({
   for (const m of roleMembers)
     add(m.userId, { via: 'role', role_id: m.roleId });
   for (const id of everyoneIds) add(id, { via: everyoneVia });
+  if (replyAuthorId) add(replyAuthorId, { via: 'reply' });
   return out;
 }

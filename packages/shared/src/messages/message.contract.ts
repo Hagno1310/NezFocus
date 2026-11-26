@@ -13,7 +13,50 @@ export const MessageRoutes = {
   list: '/channels/:id/messages',
   // REQ-NOTIF-01 · no body · 204 · 40401 (channel or message)
   ack: '/channels/:id/messages/:messageId/ack',
+  // REQ-MSG-05. PATCH: EditMessageRequest → 200 MessageResponse · 40001, 40302 (not the author,
+  // a system message, no SEND_MESSAGES / timed out), 40401 (channel, or message gone).
+  // DELETE: 204 · 40302 (server: not the author and no MANAGE_MESSAGES; DM: not the author; a
+  // system message: MANAGE_MESSAGES only, never in a DM), 40401
+  message: '/channels/:id/messages/:messageId',
+  // REQ-MSG-05 · :emoji URL-encoded · PUT / DELETE 204, both idempotent · 40001 (not one emoji),
+  // 40029 (CR-28 #25), 40302 (new emoji without ADD_REACTIONS, timed out, system message),
+  // 40303 (DM one cannot message), 40401, 40905 (21st emoji)
+  myReaction: '/channels/:id/messages/:messageId/reactions/:emoji/@me',
+  // CR-28 #26 · GET → ReactionUsersResponse, oldest first, at most 100 · 40001, 40401
+  reaction: '/channels/:id/messages/:messageId/reactions/:emoji',
 } as const;
+
+// REQ-MSG-05: at most 20 different emoji on a message (40905).
+export const MAX_REACTION_EMOJI = 20;
+
+const PICTO = /\p{Extended_Pictographic}/gu;
+const REGIONAL = /\p{Regional_Indicator}/gu;
+const EMOJI_PART =
+  /^[\p{Extended_Pictographic}\p{Emoji_Component}⃣️\u{e0020}-\u{e007f}]+$/u;
+
+// One Unicode emoji (custom emoji: Backlog; SRS 8.2 message_reactions.emoji VARCHAR(64)).
+// ZWJ sequences, skin tones, flags and keycaps are one; plain text and two emoji are not.
+export const isReactionEmoji = (s: string) =>
+  s.length > 0 &&
+  s.length <= 64 &&
+  s.split('‍').every((part) => {
+    if (!EMOJI_PART.test(part)) return false;
+    const picto = part.match(PICTO)?.length ?? 0;
+    const regional = part.match(REGIONAL)?.length ?? 0;
+    if (regional) return picto === 0 && regional === 2;
+    return picto === 1 || (picto === 0 && part.includes('⃣'));
+  });
+export const ReactionEmoji = z
+  .string()
+  .refine(isReactionEmoji, 'not a single emoji');
+
+// `me`: the caller has put this emoji. Order: when each emoji was first put.
+export const Reaction = z.object({
+  emoji: z.string(),
+  count: z.number().int().min(1),
+  me: z.boolean(),
+});
+export type Reaction = z.infer<typeof Reaction>;
 
 // REQ-MSG-01: at most 2000 characters, counted the way countMessageChars does.
 export const MESSAGE_MAX_CHARS = 2000;
@@ -51,6 +94,17 @@ export const MessageAuthor = z.object({
 });
 export type MessageAuthor = z.infer<typeof MessageAuthor>;
 
+export const ReactionUsersResponse = z.array(MessageAuthor);
+export type ReactionUsersResponse = z.infer<typeof ReactionUsersResponse>;
+
+// REQ-MSG-05 Reply: what the reply line shows.
+export const ReferencedMessage = z.object({
+  id: SnowflakeId,
+  author: MessageAuthor,
+  content: z.string(),
+});
+export type ReferencedMessage = z.infer<typeof ReferencedMessage>;
+
 const messageFields = {
   id: SnowflakeId,
   channel_id: SnowflakeId,
@@ -60,8 +114,10 @@ const messageFields = {
   mention_user_ids: z.array(SnowflakeId),
   mention_role_ids: z.array(SnowflakeId),
   mention_everyone: z.boolean(),
-  // Filled from P3 on (MSG-05, MSG-10); null until then.
+  // REQ-MSG-05 AC6: reply_to_id set and referenced_message null = "Tin nhắn gốc đã bị xóa".
   reply_to_id: SnowflakeId.nullable(),
+  referenced_message: ReferencedMessage.nullable().default(null),
+  reactions: z.array(Reaction).default([]), // none on MESSAGE_CREATE
   edited_at: z.iso.datetime().nullable(),
   pinned_at: z.iso.datetime().nullable(),
   created_at: z.iso.datetime(),
@@ -94,20 +150,24 @@ export const MessageCreateEvent = z.intersection(
 export type MessageCreateEvent = z.infer<typeof MessageCreateEvent>;
 
 // Saved NFC so the 2000 limit means the same in the counter and in the column.
+const MessageContent = z
+  .string()
+  .transform((s) => s.normalize('NFC'))
+  .pipe(
+    z
+      .string()
+      .refine(
+        (s) => countMessageChars(s) <= MESSAGE_MAX_CHARS,
+        `at most ${MESSAGE_MAX_CHARS} characters`,
+      ),
+  );
+
 export const CreateMessageRequest = z
   .object({
-    content: z
-      .string()
-      .transform((s) => s.normalize('NFC'))
-      .pipe(
-        z
-          .string()
-          .refine(
-            (s) => countMessageChars(s) <= MESSAGE_MAX_CHARS,
-            `at most ${MESSAGE_MAX_CHARS} characters`,
-          ),
-      ),
+    content: MessageContent,
     nonce: ClientRequestId,
+    // REQ-MSG-05: a message of this channel, not a system one (40001); a deleted one is fine.
+    reply_to_id: SnowflakeId.optional(),
   })
   // MSG-01 AC2: "empty and no file"; P3-A2 relaxes this when attachments are sent.
   .refine((b) => b.content.trim() !== '', {
@@ -115,6 +175,46 @@ export const CreateMessageRequest = z
     path: ['content'],
   });
 export type CreateMessageRequest = z.infer<typeof CreateMessageRequest>;
+
+// REQ-MSG-05. Saving it empty is a delete on the app (S-HOME-01 `edit-mode`), never here.
+export const EditMessageRequest = z
+  .object({ content: MessageContent })
+  .refine((b) => b.content.trim() !== '', {
+    message: 'Message is empty',
+    path: ['content'],
+  });
+export type EditMessageRequest = z.infer<typeof EditMessageRequest>;
+
+// MESSAGE_UPDATE (REQ-MSG-05 AC1): what an edit changes, to who can view the channel.
+export const MessageUpdateEvent = z.object({
+  id: SnowflakeId,
+  channel_id: SnowflakeId,
+  server_id: SnowflakeId.nullable(),
+  content: z.string(),
+  mention_user_ids: z.array(SnowflakeId),
+  mention_role_ids: z.array(SnowflakeId),
+  mention_everyone: z.boolean(),
+  edited_at: z.iso.datetime(),
+});
+export type MessageUpdateEvent = z.infer<typeof MessageUpdateEvent>;
+
+// MESSAGE_DELETE (AC3): soft-deleted, gone for everyone.
+export const MessageDeleteEvent = z.object({
+  id: SnowflakeId,
+  channel_id: SnowflakeId,
+  server_id: SnowflakeId.nullable(),
+});
+export type MessageDeleteEvent = z.infer<typeof MessageDeleteEvent>;
+
+// MESSAGE_REACTION_ADD / REMOVE: the app sets `me` when user_id is the signed-in user.
+export const MessageReactionEvent = z.object({
+  user_id: SnowflakeId,
+  channel_id: SnowflakeId,
+  message_id: SnowflakeId,
+  server_id: SnowflakeId.nullable(),
+  emoji: z.string(),
+});
+export type MessageReactionEvent = z.infer<typeof MessageReactionEvent>;
 
 // REQ-SEARCH-02: one cursor at most. around = up to limit/2 before it, it, then the rest after.
 export const MessageHistoryQuery = z

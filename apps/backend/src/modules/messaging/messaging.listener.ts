@@ -20,8 +20,8 @@ export class MessagingListener {
     private readonly readStates: ReadStatesService,
   ) {}
 
-  // REQ-MSG-03 AC2 / NOTIF-05: one `mention` item and +1 mention_count per person (NOTIF-01
-  // AC2). DMs and system messages: neither. My own message marks the channel read for me.
+  // REQ-MSG-03 AC2, AC3 / NOTIF-05: one `mention` or `reply` item and +1 mention_count per
+  // person (NOTIF-01 AC2). DMs and system messages: neither. My own message marks the channel read for me.
   @OnEvent(MESSAGE_CREATED, { promisify: true })
   async created({ message, serverId, concerned }: MessageCreated) {
     try {
@@ -32,14 +32,21 @@ export class MessagingListener {
         BigInt(message.id),
       );
       if (!serverId) return;
+      const source = {
+        actor_id: message.author.id,
+        server_id: String(serverId),
+        channel_id: message.channel_id,
+        message_id: message.id,
+      };
+      // MSG-03 AC3: a reply to my message is a `reply` item, unless it also mentions me.
       for (const [userId, via] of concerned)
-        await this.notifications.create(BigInt(userId), 'mention', {
-          actor_id: message.author.id,
-          server_id: String(serverId),
-          channel_id: message.channel_id,
-          message_id: message.id,
-          ...via,
-        });
+        if (via.via === 'reply')
+          await this.notifications.create(BigInt(userId), 'reply', source);
+        else
+          await this.notifications.create(BigInt(userId), 'mention', {
+            ...source,
+            ...via,
+          });
     } catch (err) {
       this.logger.error(`mentions of ${message.id}`, err);
     }

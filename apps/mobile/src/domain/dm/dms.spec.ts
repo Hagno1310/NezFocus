@@ -24,6 +24,8 @@ const msg = (id: string, authorId: string, content: string): MessageResponse =>
     mention_role_ids: [],
     mention_everyone: false,
     reply_to_id: null,
+    referenced_message: null,
+    reactions: [],
     edited_at: null,
     pinned: false,
     created_at: '2026-10-18T13:08:00Z',

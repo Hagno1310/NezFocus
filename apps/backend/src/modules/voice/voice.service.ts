@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { VoiceLeaveReason } from '@nezfocus/shared';
 
-// Only a room inside this scope counts: kicked from server S → only S's rooms.
-export type VoiceScope = { serverId?: bigint; channelId?: bigint };
+// Which rooms count: kicked from server S → only S's rooms; 'any' for logout / another device.
+export type VoiceScope = { serverId: bigint } | { channelId: bigint } | 'any';
 export type VoiceSeat = { serverId: bigint; channelId: bigint };
 
 // REQ-ROLE-05 AC4, REQ-SRV-05 AC5, REQ-VC-04. Owner: voice (B). Other modules inject this
@@ -21,13 +21,12 @@ export abstract class VoiceService {
 
 // ponytail: logs only, nobody is ever in a room; P3-B1.2 (#138) replaces it with LiveKit.
 @Injectable()
-export class LoggingVoiceService extends VoiceService {
+export class LogVoiceService extends VoiceService {
   private readonly logger = new Logger('VoiceService');
 
   disconnect(userId: bigint, scope: VoiceScope, reason: VoiceLeaveReason) {
-    this.logger.log(
-      `disconnect ${userId} ${JSON.stringify(scope, (_, v: unknown) => (typeof v === 'bigint' ? v.toString() : v))} ${reason}`,
-    );
+    const where = typeof scope === 'string' ? scope : Object.values(scope)[0];
+    this.logger.log(`disconnect ${userId} from ${where} (${reason})`);
     return Promise.resolve(false);
   }
 

@@ -91,8 +91,9 @@ apps/backend/
 │   └── modules/
 │       ├── _example/          MODULE MẪU — copy để bắt đầu feature (không được import vào AppModule)
 │       ├── health/            GET /api/v1/health → {status, db}
+│       ├── voice/             VoiceService (P3-B1): LiveKit token, voice state
 │       └── admin auth calls channels gateway messaging notifications
-│           permissions safety search servers study users voice   ← .gitkeep, bounded context SRS 7.1.1
+│           permissions safety search servers study users   ← .gitkeep, bounded context SRS 7.1.1
 ├── test/app.e2e-spec.ts       E2E bằng supertest, cần Postgres thật
 ├── drizzle/                   Migration sinh ra — PHẢI commit cùng thay đổi schema
 ├── drizzle.config.ts  Dockerfile  vitest.config.ts  vitest.config.e2e.ts  .env.example

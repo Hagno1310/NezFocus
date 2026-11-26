@@ -1,43 +1,52 @@
 import { describe, expect, it } from 'vitest';
 import { ClientFrame, GatewayOp } from '../gateway/gateway.contract.js';
 import { parseDispatch } from '../gateway/events.contract.js';
-import { MemberVoiceRequest, VoiceTokenRequest } from './voice.contract.js';
+import {
+  CreateVoiceTokenRequest,
+  UpdateMemberVoiceRequest,
+  VoiceRoomMember,
+} from './voice.contract.js';
 
 const ROOM = '1234567890123';
 const CALL = '9876543210987';
 
-describe('VoiceTokenRequest (SRS 5.3 Voice, CR-28 #30)', () => {
+describe('CreateVoiceTokenRequest (SRS 5.3 Voice, CR-28 #30)', () => {
   it('takes a voice channel or a call', () => {
-    expect(VoiceTokenRequest.parse({ channel_id: ROOM })).toEqual({
+    expect(CreateVoiceTokenRequest.parse({ channel_id: ROOM })).toEqual({
       channel_id: ROOM,
     });
-    expect(VoiceTokenRequest.parse({ call_id: CALL })).toEqual({
+    expect(CreateVoiceTokenRequest.parse({ call_id: CALL })).toEqual({
       call_id: CALL,
     });
   });
 
   it('refuses neither and both', () => {
-    expect(VoiceTokenRequest.safeParse({}).success).toBe(false);
+    expect(CreateVoiceTokenRequest.safeParse({}).success).toBe(false);
     expect(
-      VoiceTokenRequest.safeParse({ channel_id: ROOM, call_id: CALL }).success,
+      CreateVoiceTokenRequest.safeParse({ channel_id: ROOM, call_id: CALL })
+        .success,
     ).toBe(false);
   });
 });
 
-describe('MemberVoiceRequest (REQ-VC-04, CR-28 #31)', () => {
+describe('UpdateMemberVoiceRequest (REQ-VC-04, CR-28 #31)', () => {
   it('mutes, unmutes or disconnects', () => {
-    expect(MemberVoiceRequest.parse({ mute: true })).toEqual({ mute: true });
-    expect(MemberVoiceRequest.parse({ mute: false })).toEqual({ mute: false });
-    expect(MemberVoiceRequest.parse({ disconnect: true })).toEqual({
+    expect(UpdateMemberVoiceRequest.parse({ mute: true })).toEqual({
+      mute: true,
+    });
+    expect(UpdateMemberVoiceRequest.parse({ mute: false })).toEqual({
+      mute: false,
+    });
+    expect(UpdateMemberVoiceRequest.parse({ disconnect: true })).toEqual({
       disconnect: true,
     });
   });
 
   it('refuses an empty body and disconnect: false', () => {
-    expect(MemberVoiceRequest.safeParse({}).success).toBe(false);
-    expect(MemberVoiceRequest.safeParse({ disconnect: false }).success).toBe(
-      false,
-    );
+    expect(UpdateMemberVoiceRequest.safeParse({}).success).toBe(false);
+    expect(
+      UpdateMemberVoiceRequest.safeParse({ disconnect: false }).success,
+    ).toBe(false);
   });
 });
 
@@ -96,5 +105,24 @@ describe('DISPATCH VOICE_STATE_UPDATE', () => {
         d: { ...state, channel_id: null, reason: 'bored' },
       }),
     ).toThrow();
+  });
+});
+
+describe('READY.voice_states', () => {
+  it('only lists people sitting in a room', () => {
+    const member = {
+      user_id: '1111111111111',
+      channel_id: ROOM,
+      server_id: '2222222222222',
+      self_mute: true,
+      self_video: false,
+      mod_muted: false,
+      joined_at: '2026-10-18T14:47:00.000Z',
+      away: true,
+    };
+    expect(VoiceRoomMember.parse(member)).toEqual(member);
+    expect(
+      VoiceRoomMember.safeParse({ ...member, channel_id: null }).success,
+    ).toBe(false);
   });
 });

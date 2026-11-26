@@ -40,7 +40,7 @@ import { SnowflakeId } from '../snowflake.js';
 import { SoloSessionResponse } from '../study/solo.contract.js';
 import { StreakState } from '../study/stats.contract.js';
 import { DmChannel } from '../dm/dm.contract.js';
-import { VoiceState } from '../voice/voice.contract.js';
+import { VoiceRoomMember, VoiceState } from '../voice/voice.contract.js';
 import type { DispatchFrame } from './gateway.contract.js';
 
 // SRS 5.4 READY. DMs and relationships are added by the area that owns them.
@@ -54,7 +54,7 @@ export const Ready = z.object({
   read_states: z.array(ReadState), // REQ-NOTIF-01: every channel I can view and every DM (P2-A4.2)
   relationships: z.array(Relationship), // REQ-FRIEND-04: friends, requests both ways, people I blocked
   private_channels: z.array(DmChannel), // REQ-DM-03: my DMs not closed on my side
-  voice_states: z.array(VoiceState).default([]), // CR-28 #30: who is in the voice rooms I can view
+  voice_states: z.array(VoiceRoomMember), // CR-28 #30: who is in the voice rooms I can view
 });
 export type Ready = z.infer<typeof Ready>;
 

@@ -116,6 +116,7 @@ export const healthRepository = pickRepository('health', {
 | `SessionRevoker`      | `gateway`       | B   | P0-5.2 (bản tạm ghi log: A, P0-2.3) |
 | `PermissionService`   | `permissions`   | A   | P0-6                                |
 | `NotificationService` | `notifications` | B   | P2-B4                               |
+| `VoiceService`        | `voice`         | B   | P3-B1.1 (bản thật P3-B1.2)          |
 
 ### 4.4 Dữ liệu mẫu
 

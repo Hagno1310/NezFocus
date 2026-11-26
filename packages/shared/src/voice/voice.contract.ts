@@ -3,19 +3,14 @@ import { SnowflakeId } from '../snowflake.js';
 
 // Paths are relative to /api/v1 (SRS 5.3 Voice, CR-28 #30).
 export const VoiceRoutes = {
-  // REQ-VC-01, DEC-33 · POST VoiceTokenRequest → VoiceTokenResponse · 40001, 40302 (no CONNECT,
-  // timed out), 40401 (channel not viewable / not voice; call_id until P3-B6.2 #156), 50301
+  // REQ-VC-01, DEC-33 · POST CreateVoiceTokenRequest → VoiceTokenResponse · 40001, 40302 (no
+  // CONNECT, timed out), 40401 (channel not viewable / not voice; call_id until P3-B6.2 #156), 50301
   token: '/voice/token',
-  // SRS 5.5 · LiveKit webhook, signed (Authorization), no user auth
+  // SRS 5.5 · LiveKit webhook, signed (Authorization), no user auth · 40100 (bad signature)
   webhook: '/voice/webhook',
 } as const;
 
-// SRS 5.5: room name of a voice channel and of a 1-1 call.
-export const voiceRoomName = (
-  to: { channel_id: string } | { call_id: string },
-) => ('channel_id' in to ? `voice:${to.channel_id}` : `call:${to.call_id}`);
-
-export const VoiceTokenRequest = z
+export const CreateVoiceTokenRequest = z
   .object({
     channel_id: SnowflakeId.optional(),
     call_id: SnowflakeId.optional(),
@@ -23,7 +18,7 @@ export const VoiceTokenRequest = z
   .refine((b) => (b.channel_id === undefined) !== (b.call_id === undefined), {
     message: 'exactly one of channel_id, call_id',
   });
-export type VoiceTokenRequest = z.infer<typeof VoiceTokenRequest>;
+export type CreateVoiceTokenRequest = z.infer<typeof CreateVoiceTokenRequest>;
 
 // TTL 10 minutes, only needed to connect (SRS 5.5); ICE / TURN come from LiveKit itself.
 export const VoiceTokenResponse = z.object({
@@ -57,24 +52,30 @@ export const VoiceLeaveReason = z.enum([
 ]);
 export type VoiceLeaveReason = z.infer<typeof VoiceLeaveReason>;
 
-// DISPATCH VOICE_STATE_UPDATE and READY.voice_states: to who can VIEW_CHANNEL it.
-export const VoiceState = z.object({
+// READY.voice_states: someone in a voice room I can VIEW_CHANNEL.
+export const VoiceRoomMember = z.object({
   user_id: SnowflakeId,
-  channel_id: SnowflakeId.nullable(), // null = left
+  channel_id: SnowflakeId,
   server_id: SnowflakeId,
   self_mute: z.boolean(),
   self_video: z.boolean(),
   mod_muted: z.boolean(), // server_members.mod_muted (REQ-VC-04 AC5)
-  joined_at: z.iso.datetime().nullable(),
+  joined_at: z.iso.datetime(),
   away: z.boolean(), // lost connection, seat kept ≤ 3 minutes (VC-01, C-07 `away`)
+});
+export type VoiceRoomMember = z.infer<typeof VoiceRoomMember>;
+
+// DISPATCH VOICE_STATE_UPDATE, to who can VIEW_CHANNEL it: a seat, or a leave.
+export const VoiceState = VoiceRoomMember.extend({
+  channel_id: SnowflakeId.nullable(), // null = left
+  joined_at: z.iso.datetime().nullable(),
   reason: VoiceLeaveReason.optional(), // only on the leaver's own copy
 });
 export type VoiceState = z.infer<typeof VoiceState>;
 
-// PATCH /servers/:id/members/:userId/voice (MemberRoutes.voice) · 204 · 40001, 40301 (role at or
-// above own highest; the Owner), 40302 (MUTE_MEMBERS / MOVE_MEMBERS in their room). Not in a
-// voice room of the server → 204, nothing done.
-export const MemberVoiceRequest = z
+// PATCH MemberRoutes.voice. `mute` always writes server_members.mod_muted, in a room or not
+// (AC5); `disconnect` of someone not in a room of the server does nothing.
+export const UpdateMemberVoiceRequest = z
   .object({
     mute: z.boolean().optional(),
     disconnect: z.literal(true).optional(),
@@ -82,4 +83,4 @@ export const MemberVoiceRequest = z
   .refine((b) => b.mute !== undefined || b.disconnect !== undefined, {
     message: 'mute or disconnect',
   });
-export type MemberVoiceRequest = z.infer<typeof MemberVoiceRequest>;
+export type UpdateMemberVoiceRequest = z.infer<typeof UpdateMemberVoiceRequest>;

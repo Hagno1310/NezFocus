@@ -52,6 +52,7 @@ describe('DM contract', () => {
       read_states: [],
       relationships: [],
       private_channels: [dm],
+      voice_states: [],
     };
     const e = parseDispatch({ op: 0, s: 1, t: 'READY', d: ready });
     expect(e?.t === 'READY' && e.d.private_channels).toEqual([dm]);

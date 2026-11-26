@@ -844,7 +844,7 @@ Tên giữ là `MessageBubble` cho khớp SRS, nhưng **không vẽ bong bóng**
 | Link | Chữ `primary` gạch dưới; link `javascript:` hiện dạng chữ thường (MSG-02 AC4) |
 | Cú pháp Markdown (chốt 19/11/2026, MSG-02 AC1) | `**đậm**` · `*nghiêng*` hoặc `_nghiêng_` · `~~gạch ngang~~` · `` `inline code` `` · khối ` ``` ` (dòng mở và dòng đóng riêng) · dòng bắt đầu `> ` là quote · `\|\|spoiler\|\|`. Ký hiệu không đóng hiện nguyên văn. Không có link che chữ `[chữ](url)`: hiện nguyên văn, link `http(s)` bên trong vẫn bấm được. Không render thẻ HTML (`<b>` hiện nguyên văn). Trong code (inline và khối) không áp Markdown hay link |
 | Thẻ xem trước link (v1.9, CR-19 #10, #15) | Thẻ dưới tin, viền trái 4 `border-input`, rộng tối đa cột nội dung; tin gửi ngay, thẻ tới sau qua `MESSAGE_UPDATE` (1–3 giây, **không Skeleton**), chèn dưới tin, không làm tin phía trên nhảy chỗ. Tối đa **3 thẻ** mỗi tin, theo thứ tự link. Ba kiểu: **`large`** (ảnh ≥ 400 px chiều ngang) — ảnh 16:9 rộng hết thẻ ở trên, rồi tên trang `label` `text-tertiary`, tiêu đề `body` đậm 600, mô tả 2 dòng `body-sm` `text-secondary`; **`small`** — cột chữ như trên + ảnh 64 vuông `rounded.badge` bên phải; **`text`** — chỉ chữ. **Link video** (YouTube…) là `large` có nút ▶ tròn 48 giữa ảnh (nền `scrim`, icon `play` `text-primary`); chạm mở trình duyệt / app của trang, **không phát trong chat**. Ảnh thẻ chỉ tải từ storage NezFocus; ảnh lỗi → thẻ không ảnh, không báo lỗi. Gỡ thẻ ("Gỡ xem trước link"): 02 S-HOME-04 |
-| Ảnh / video | Thumbnail rộng tối đa 240, cao tối đa 320, `rounded.button`; video có nút `play` + thời lượng. Nhiều ảnh: lưới 2 cột. Thumbnail trước, ảnh gốc khi mở (NFR-MOB-07). Chạm ảnh → `MediaViewer · image` (C-36, vuốt giữa các ảnh của cùng tin); chạm video → `MediaViewer · video` (trình phát của nền tảng), không tự phát trong danh sách (v1.9, CR-19 #8) |
+| Ảnh / video | Thumbnail rộng tối đa 240, cao tối đa 320, `rounded.button`; video có nút `play` + thời lượng. Nhiều ảnh: lưới 2 cột. **(Chốt 26/11/2026, P3-A2, theo frame `attachments`)** Lưới: ô 100 × 75 cắt phủ, cách 4; tin một ảnh giữ tỉ lệ trong khung 240 × 320. Thumbnail trước, ảnh gốc khi mở (NFR-MOB-07). Chạm ảnh → `MediaViewer · image` (C-36, vuốt giữa các ảnh của cùng tin); chạm video → `MediaViewer · video` (trình phát của nền tảng), không tự phát trong danh sách (v1.9, CR-19 #8) |
 | Âm thanh (mp3, m4a) 🆕 (v1.9, CR-19 #8) | Thẻ cao 56 như thẻ tệp: `IconButton` tròn 40 `play` / `pause` (nền `surface-3`, icon `text-primary`) + tên tệp (1 dòng, cắt giữa giữ đuôi) + thanh tiến độ cao 4 `rounded.full` (rãnh `surface-3`, phần đã phát `text-primary`) + "0:42 / 3:15" (`numeric-inline` `text-secondary`) + nút `download`. Phát ngay trong tin; một tệp một lúc (bấm tệp khác thì tệp đang phát dừng); rời màn chat thì dừng. `accessibilityLabel` "ghi-am-buoi-2.m4a, 0 phút 42 giây trên 3 phút 15 giây" |
 | Tệp | Thẻ cao 56: icon loại tệp 32 + tên (1 dòng, cắt giữa: "bao-cao-cu…ky.pdf") + cỡ (`label`) + nút `download`. **PDF** (v1.9): chạm thẻ → `MediaViewer · pdf` (C-36). **Office, nén, tệp chữ:** chạm thẻ → tải rồi mở bằng ứng dụng của máy; không có ứng dụng → Toast "Không có ứng dụng mở được tệp .docx". Nút `download` của mọi thẻ → lưu vào Tải xuống + Toast "Đã lưu vào Tải xuống" |
 | Đã sửa | "(đã chỉnh sửa)" `label` `text-tertiary` trên dòng riêng ngay dưới nội dung (theo frame `message-states`, chốt 26/11/2026) |
@@ -1070,6 +1070,8 @@ Dòng dưới khay (tiến độ, lý do bị chặn): C-11 › Dòng dưới kh
 
 **Checklist (v1.9):** ô ảnh 64 × 64 và ô tệp 64 × 160 × `uploading` / `checking` / `done` / `failed` / `rejected`; tên tệp dài cắt giữa giữ đuôi; khay 3 ô cuộn ngang ở khung 360.
 
+**Chốt khi code P3-A2 (#22), 26/11/2026:** nút `x` vẽ 20 (theo frame), vùng chạm 48. Ô `done` giữ dấu ✓ (tròn `primary` 24) như frame `too-many`.
+
 ---
 
 ## OS/ShareSheet (18/10/2026, area 02)
@@ -1271,6 +1273,8 @@ Không còn câu hỏi mở cho các component P0.
 
 - Link đọc trả `Content-Disposition: inline` chỉ cho tệp đã xác nhận là PDF; loại khác không mở ở đây (C-10 › Tệp).
 - **Accessibility:** ảnh đọc "Ảnh 2 trên 3, gửi bởi Bình"; PDF đọc "Trang 3 trên 12"; nút có `accessibilityLabel`.
+
+**Chốt khi code P3-A2 (#22), 26/11/2026:** theo frame S-HOME-11: nút đóng là `x` (không phải ‹), tên người gửi `body` 600.
 
 ### Checklist duyệt
 - [ ] 6 state ở theme tối; `image-multi` và `pdf` cả theme sáng; khung 360; tên tệp dài cắt giữa giữ đuôi.

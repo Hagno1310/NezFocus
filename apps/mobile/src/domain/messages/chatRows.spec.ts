@@ -1,6 +1,7 @@
 import type { MessageResponse } from '@nezfocus/shared';
 import { describe, expect, it } from 'vitest';
 import {
+  bottomAnchor,
   chatRows,
   composerCount,
   itemKey,
@@ -228,6 +229,25 @@ describe('newBelow: "N tin mới ↓" (scrolled-up)', () => {
 
   it('an unknown anchor (pruned) counts nothing rather than everything', () => {
     expect(newBelow(list, 'gone', AN)).toBe(0);
+  });
+
+  it('my unsent message at the bottom does not hide what others send after it', () => {
+    const mine = queued(18, '20:04');
+    const before = [...list, mine];
+    const anchor = bottomAnchor(before);
+    const after = [
+      ...list,
+      sent('2', 18, '20:05'),
+      sent('3', 18, '20:06'),
+      mine,
+    ];
+    expect(newBelow(after, anchor, AN)).toBe(2);
+  });
+
+  it('an empty channel left scrolled up counts every message from others', () => {
+    const mine = queued(18, '20:04');
+    const anchor = bottomAnchor([mine]);
+    expect(newBelow([sent('2', 18, '20:05'), mine], anchor, AN)).toBe(1);
   });
 });
 

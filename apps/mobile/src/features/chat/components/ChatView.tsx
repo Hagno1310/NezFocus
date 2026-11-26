@@ -38,11 +38,11 @@ import {
 import { useIsFocused } from '@react-navigation/native';
 import { useStore } from 'zustand';
 import {
+  bottomAnchor,
   chatRows,
   composerCount,
   contentOf,
   messageToSend,
-  itemKey,
   newBelow,
   type ChatRow,
 } from '../../../domain/messages/chatRows';
@@ -253,11 +253,10 @@ export function ChatView({
   }, [refused, onCannotMessage]);
 
   const list = useRef<FlatList<ChatRow>>(null);
-  const newest = view.items.at(-1);
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const away = e.nativeEvent.contentOffset.y > AT_BOTTOM;
     if (!away && leftAt !== null) setLeftAt(null);
-    if (away && leftAt === null) setLeftAt(newest ? itemKey(newest) : '');
+    if (away && leftAt === null) setLeftAt(bottomAnchor(view.items));
   };
   const toBottom = useCallback(() => {
     list.current?.scrollToOffset({ offset: 0, animated: true });

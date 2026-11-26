@@ -40,10 +40,40 @@ export function reduceDms(s: DmState, e: DispatchEvent): DmState {
         },
       };
     }
+    // REQ-MSG-05 AC1: line 2 shows the last message as edited.
+    case 'MESSAGE_UPDATE': {
+      const dm = s.byId[e.d.channel_id];
+      const last = dm?.last_message;
+      if (e.d.server_id !== null || !dm || last?.id !== e.d.id) return s;
+      const { content, edited_at, mention_user_ids, mention_role_ids } = e.d;
+      return withDm(s, {
+        ...dm,
+        last_message: {
+          ...last,
+          content,
+          edited_at,
+          mention_user_ids,
+          mention_role_ids,
+          mention_everyone: e.d.mention_everyone,
+        },
+      });
+    }
+    // AC3: the message before it is not known here, so no line 2 until the next READY brings
+    // it; last_message_id stays so the row keeps its place.
+    case 'MESSAGE_DELETE': {
+      const dm = s.byId[e.d.channel_id];
+      if (e.d.server_id !== null || dm?.last_message?.id !== e.d.id) return s;
+      return withDm(s, { ...dm, last_message: null });
+    }
     default:
       return s;
   }
 }
+
+const withDm = (s: DmState, dm: DmChannel): DmState => ({
+  ...s,
+  byId: { ...s.byId, [dm.id]: dm },
+});
 
 export const closeDm = (s: DmState, id: string): DmState => {
   const { [id]: _, ...byId } = s.byId;

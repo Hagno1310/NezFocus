@@ -116,6 +116,51 @@ describe('DM list (S-DM-01, REQ-DM-03)', () => {
     ).toBe(s);
   });
 
+  it('an edit of the last message changes line 2; an older message edited changes nothing', () => {
+    const s = ready([chi]);
+    const edit = (id: string) =>
+      reduceDms(s, {
+        t: 'MESSAGE_UPDATE',
+        s: 2,
+        d: {
+          id,
+          channel_id: '50',
+          server_id: null,
+          content: 'Mai 8h đi thư viện không?',
+          mention_user_ids: [],
+          mention_role_ids: [],
+          mention_everyone: false,
+          edited_at: '2026-10-18T13:09:00.000Z',
+        },
+      });
+    expect(edit('900').byId['50']?.last_message).toMatchObject({
+      content: 'Mai 8h đi thư viện không?',
+      edited_at: '2026-10-18T13:09:00.000Z',
+    });
+    expect(edit('899')).toBe(s);
+  });
+
+  it('a delete of the last message leaves the row without line 2, in its place', () => {
+    const s = ready([chi, minh]);
+    const gone = reduceDms(s, {
+      t: 'MESSAGE_DELETE',
+      s: 2,
+      d: { id: '900', channel_id: '50', server_id: null },
+    });
+    expect(gone.byId['50']?.last_message).toBeNull();
+    expect(sortedDms(gone).map((d) => d.id)).toEqual(['50', '52']);
+    expect(
+      dmLine2(gone.byId['50']!, { meId: AN, unread: false, activity: null }),
+    ).toEqual({ kind: 'none' });
+    expect(
+      reduceDms(s, {
+        t: 'MESSAGE_DELETE',
+        s: 2,
+        d: { id: '899', channel_id: '50', server_id: null },
+      }),
+    ).toBe(s);
+  });
+
   it('DM-03: closing hides it on my side', () => {
     expect(
       sortedDms(closeDm(ready([chi, binh]), '50')).map((d) => d.id),

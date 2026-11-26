@@ -1,7 +1,12 @@
-import { ErrorCode } from '@nezfocus/shared';
-import { Lock, MessageSquareX, WifiOff } from 'lucide-react-native';
+import {
+  CircleAlert,
+  Lock,
+  MessageSquareX,
+  WifiOff,
+} from 'lucide-react-native';
 import { messageStore } from '../../data/messages';
 import { showDm, dmStore } from '../../domain/dm/dmStore';
+import { actionFailure } from '../../domain/messages/actionFailure';
 import { requestJump } from '../../domain/messages/jumps';
 import type { NezfocusLink } from '../../domain/messages/links';
 import { homeStore, openChannel } from '../../domain/servers/homeStore';
@@ -48,9 +53,13 @@ export async function openMessageLink(
     exists = await messageStore.peek(link.channelId, link.messageId);
   } catch (err) {
     // 40401 for a channel I cannot view and for one that is gone: nothing says which (AC8).
-    if ((err as { code?: number }).code === ErrorCode.NotFound)
-      return cannotView();
-    showToast({ icon: WifiOff, message: t('chat.cannotConnect') });
+    const failure = actionFailure(err);
+    if (failure.kind === 'deleted') return cannotView();
+    showToast(
+      failure.kind === 'offline'
+        ? { icon: WifiOff, message: t('chat.cannotConnect') }
+        : { icon: CircleAlert, message: t('chat.somethingWrong') },
+    );
     return 'failed';
   }
   if (link.kind === 'channel')

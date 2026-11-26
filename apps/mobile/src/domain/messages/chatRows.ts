@@ -163,14 +163,26 @@ export function chatRows(
   return rows;
 }
 
+const START = '';
+
+// What `newBelow` counts from when leaving the bottom: the newest server message, never my
+// outbox, which always sits last so new messages from others land above it.
+export const bottomAnchor = (items: readonly ChatItem[]) => {
+  const last = items.findLast((x) => x.kind === 'message');
+  return last ? itemKey(last) : START;
+};
+
 // `scrolled-up` "3 tin mới": what others sent below the last row seen at the bottom.
 export function newBelow(
   items: readonly ChatItem[],
   lastSeenKey: string,
   myId: string,
 ): number {
-  const i = items.findIndex((x) => itemKey(x) === lastSeenKey);
-  if (i < 0) return 0;
+  const i =
+    lastSeenKey === START
+      ? -1
+      : items.findIndex((x) => itemKey(x) === lastSeenKey);
+  if (i < 0 && lastSeenKey !== START) return 0;
   return items.slice(i + 1).filter((x) => authorOf(x, myId) !== myId).length;
 }
 

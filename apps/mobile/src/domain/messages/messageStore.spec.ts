@@ -377,6 +377,88 @@ describe('Gateway', () => {
     await store.catchUp();
     expect(shown()).toEqual(['1', '2', '3']);
   });
+
+  it('a live message for a channel cached in an earlier run leaves no hole (7.3.2)', async () => {
+    const server = fakeRemote([msg('1'), msg('2')]);
+    const first = setup(server);
+    await first.store.open('7', '9');
+    server.messages.push(msg('3'), msg('4'), msg('5')); // while the app was closed
+    const again = setup(server, first.local);
+    await again.store.applyCreate({ ...msg('5'), server_id: '9' });
+    await again.store.open('7', '9');
+    expect(again.shown()).toEqual(['1', '2', '3', '4', '5']);
+  });
+
+  it('a live message in a channel whose fetch failed fetches the gap first', async () => {
+    const server = fakeRemote([msg('1')]);
+    const first = setup(server);
+    await first.store.open('7', '9');
+    server.goOffline();
+    const again = setup(server, first.local);
+    await again.store.open('7', '9');
+    server.goOffline(false);
+    server.messages.push(msg('2'), msg('3'));
+    await again.store.applyCreate({ ...msg('3'), server_id: '9' });
+    expect(again.shown()).toEqual(['1', '2', '3']);
+  });
+
+  it('a live message while the channel is still catching up is kept, not lost', async () => {
+    const server = fakeRemote([msg('1')]);
+    const first = setup(server);
+    await first.store.open('7', '9');
+    server.messages.push(msg('2'));
+    const again = setup(server, first.local);
+    const history = server.remote.history;
+    let answer = () => {};
+    server.remote.history = (c, q) =>
+      new Promise((resolve) => {
+        answer = () => resolve(history(c, q));
+      });
+    const opening = again.store.open('7', '9');
+    await again.settle();
+    // 3 arrives live while the page (read before 3 was posted) is still on its way.
+    const live = again.store.applyCreate({ ...msg('3'), server_id: '9' });
+    await again.settle();
+    answer();
+    await Promise.all([opening, live]);
+    expect(again.shown()).toEqual(['1', '2', '3']);
+  });
+
+  it('a message sent after a restart, channel not opened yet, leaves no hole', async () => {
+    const server = fakeRemote([msg('1')]);
+    const first = setup(server);
+    await first.store.open('7', '9');
+    server.goOffline();
+    await first.store.send('7', 'Gửi lúc mất mạng');
+    await first.settle();
+    first.server.sends[0]!.reject(new TypeError('offline'));
+    await first.settle();
+    server.goOffline(false);
+    server.messages.push(msg('2'));
+    const again = setup(server, first.local);
+    void again.store.flush({ now: true });
+    await again.settle();
+    const sent = msg('3', { nonce: 'nonce-1', content: 'Gửi lúc mất mạng' });
+    server.messages.push(sent);
+    server.sends[1]!.resolve(sent);
+    await again.settle();
+    await again.store.open('7', '9');
+    expect(again.shown()).toEqual(['1', '2', '3']);
+  });
+
+  it('catchUp retries unsent messages without waiting for a slow channel', async () => {
+    const server = fakeRemote();
+    const { store, settle } = setup(server);
+    await store.open('7', '9');
+    await store.send('7', 'Gửi khi có mạng');
+    await settle();
+    server.sends[0]!.reject(new TypeError('offline'));
+    await settle();
+    server.remote.history = () => new Promise(() => {}); // never answers
+    void store.catchUp();
+    await settle();
+    expect(server.sends).toHaveLength(2);
+  });
 });
 
 describe('REQ-MSG-05 on the device', () => {
@@ -574,6 +656,43 @@ function fakeUploads() {
 describe('sending images (REQ-MSG-04, S-HOME-05, CR-28 #29)', () => {
   const refs = (...names: string[]): UploadRef[] =>
     names.map((n) => ({ key: n, file: photo(n), attachmentId: null }));
+
+  it('a photo still uploading in one channel does not hold another channel (8.4.5)', async () => {
+    const fake = fakeUploads();
+    const { store, server, settle } = setup(
+      fakeRemote(),
+      undefined,
+      fake.uploads,
+    );
+    await store.open('7', '9');
+    await store.send('7', 'Ảnh lời giải', undefined, refs('a.png'));
+    await store.open('8', '9');
+    await store.send('8', 'ok');
+    await settle();
+    expect(server.sends.map((s) => s.body.content)).toEqual(['ok']);
+  });
+
+  it('…but in its own channel the next message waits, so the order stays as written', async () => {
+    const fake = fakeUploads();
+    const { store, server, settle } = setup(
+      fakeRemote(),
+      undefined,
+      fake.uploads,
+    );
+    await store.open('7', '9');
+    await store.send('7', 'Ảnh lời giải', undefined, refs('a.png'));
+    await store.send('7', 'Hello');
+    await settle();
+    expect(server.sends).toHaveLength(0);
+    fake.waits[0]!.answer({ ok: true, id: '501' });
+    await settle();
+    server.sends[0]!.resolve(msg('10', { nonce: 'nonce-1' }));
+    await settle();
+    expect(server.sends.map((s) => s.body.content)).toEqual([
+      'Ảnh lời giải',
+      'Hello',
+    ]);
+  });
 
   it('➤ while uploading: pending with the images at once, sent with the ids once all are done', async () => {
     const fake = fakeUploads();

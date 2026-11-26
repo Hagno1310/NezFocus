@@ -1,13 +1,13 @@
 import { useRef, useState } from 'react';
-import { cameraPermission } from '../../../data/voice/cameraPermission';
-import { micPermission } from '../../../data/voice/micPermission';
+import {
+  mediaPermissions as permissions,
+  type MediaKind,
+} from '../../../data/voice/mediaPermissions';
 import { mediaDenied } from '../../../domain/voice/mediaDenied';
 import { permissionStep } from '../../../domain/voice/mediaPermission';
 
-export type MediaKind = 'mic' | 'camera';
+export type { MediaKind };
 export type MediaSheet = { kind: MediaKind; blocked: boolean } | null;
-
-const permissions = { mic: micPermission, camera: cameraPermission };
 
 // 10 S-MOD-05 for the room Mic / Camera: `ensure(kind)` answers whether it may turn on, after the
 // explain sheet / Android dialog / blocked sheet as the flow says. Android refusing marks it
@@ -35,6 +35,9 @@ export function useMediaFlow() {
       return true;
     }
     if (step === 'ask') return ask(kind);
+    settle(false); // a sheet still open for the other button: that one goes on without
+    if (step === 'blocked') mark(kind, false);
+    else void permissions[kind].explained();
     setSheet({ kind, blocked: step === 'blocked' });
     return new Promise((resolve) => {
       answer.current = resolve;

@@ -8,14 +8,10 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { motion, radius, space, useTheme } from '../theme';
+import { awayOpacity, motion, radius, size, space, useTheme } from '../theme';
 import { Icon } from './Icon';
 import { Avatar } from './People';
 import { Text } from './Text';
-
-const NAME_BAR = 32; // board PT/video: the scrim strip
-const AWAY_OPACITY = 0.45; // DESIGN.md › Components: away
-const RING = 2; // DESIGN.md › speaking-ring on a video tile
 
 export type TileMic = 'on' | 'mod-muted' | null; // C-07: only a mic that is on, or mod-muted
 
@@ -72,12 +68,12 @@ export function ParticipantTile({
           width,
           height,
           backgroundColor: colors['surface-2'],
-          opacity: away ? AWAY_OPACITY : 1,
+          opacity: away ? awayOpacity : 1,
         },
       ]}
     >
       {video ?? (
-        <View style={[styles.avatarArea, { bottom: NAME_BAR }]}>
+        <View style={[styles.avatarArea, { bottom: size.videoTileBar }]}>
           <Avatar name={name} uri={avatar} size={56} self={self} />
         </View>
       )}
@@ -137,13 +133,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: NAME_BAR,
+    height: size.videoTileBar,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space[1] + space[1] / 2,
+    gap: size.iconGap,
     paddingHorizontal: space[2],
   },
   name: { flex: 1 },
-  ring: { borderRadius: radius.button, borderWidth: RING },
+  // DESIGN.md › speaking-ring on a video tile: a 2 border.
+  ring: { borderRadius: radius.button, borderWidth: size.strokeThick },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space[2] },
 });

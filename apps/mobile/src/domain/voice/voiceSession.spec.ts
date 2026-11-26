@@ -269,6 +269,15 @@ describe('mod-mute (REQ-VC-04)', () => {
     expect(await session.setMic(true)).toBe(true);
   });
 
+  it('AC5: muted before joining → the Mic is `mod-muted` with no Toast', async () => {
+    let told = 0;
+    session.onModMuted(() => told++);
+    await session.join(A);
+    session.apply(seatEvent({ user_id: ME, mod_muted: true }));
+    expect(call()).toMatchObject({ seated: true, modMuted: true });
+    expect(told).toBe(0);
+  });
+
   it('disconnected by a moderator ends the call with its reason', async () => {
     await session.join(A);
     session.apply(seatEvent({ user_id: ME }));

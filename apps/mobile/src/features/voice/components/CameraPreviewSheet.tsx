@@ -1,11 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { CameraPreview } from '../../../data/voice/VoiceVideo';
+import { size } from '../../../shared/theme';
 import { BottomSheet } from '../../../shared/ui/Overlay';
 import { ParticipantTile } from '../../../shared/ui/Room';
 import { Text } from '../../../shared/ui/Text';
-
-const PREVIEW = 240; // frame `camera-self-preview`: 240 × 320
 
 // S-ROOM-01 `camera-self-preview` (REQ-VC-01): nothing is sent before "Bật camera".
 export function CameraPreviewSheet({
@@ -36,7 +35,7 @@ export function CameraPreviewSheet({
             name=""
             self
             mic={null}
-            width={PREVIEW}
+            width={size.videoTilePreview}
             video={<CameraPreview />}
           />
         )}

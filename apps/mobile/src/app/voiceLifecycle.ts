@@ -3,8 +3,10 @@ import { AppState } from 'react-native';
 import { gatewayClient } from '../data/gateway';
 import { voiceSession } from '../data/voice';
 import { backgroundService } from '../data/voice/backgroundService';
-import { cameraPermission } from '../data/voice/cameraPermission';
-import { micPermission } from '../data/voice/micPermission';
+import {
+  mediaPermissions,
+  type MediaKind,
+} from '../data/voice/mediaPermissions';
 import { savedRoom } from '../data/voice/savedRoom';
 import { dmView } from '../domain/dm/dmStore';
 import { onGatewayEvent } from '../domain/gateway/gatewayStore';
@@ -107,7 +109,10 @@ export function startVoiceLifecycle() {
     const was = prev.call?.phase === 'in' ? prev.call : null;
     if (
       now &&
-      (!was || now.channelId !== was.channelId || now.camera !== was.camera)
+      (!was ||
+        now.channelId !== was.channelId ||
+        now.camera !== was.camera ||
+        (now.mic && !was.mic))
     )
       backgroundService.start({
         title: i18n.t('voice.service.title'),
@@ -115,9 +120,10 @@ export function startVoiceLifecycle() {
         channelName: i18n.t('voice.service.channel'),
         camera: now.camera,
       });
-    if (now && !was) {
+    if (now && now.channelId !== was?.channelId) {
       gatewayClient.setKeepAlive(true);
       save(now);
+      clearInterval(alive);
       alive = setInterval(() => {
         const c = voiceStore.getState().call;
         if (c) save(c);
@@ -151,12 +157,10 @@ export function startVoiceLifecycle() {
     if (s.open && s.open !== prev.open) closeVoice();
   });
   // S-ROOM-EDGE `mic-denied`: back from Settings, check again; granted → the button is just `off`.
-  const recheck = (kind: 'mic' | 'camera') =>
-    void (kind === 'mic' ? micPermission : cameraPermission)
-      .check()
-      .then((p) => {
-        if (p.granted) mediaDenied.setState({ [kind]: false });
-      });
+  const recheck = (kind: MediaKind) =>
+    void mediaPermissions[kind].check().then((p) => {
+      if (p.granted) mediaDenied.setState({ [kind]: false });
+    });
   const app = AppState.addEventListener('change', (state) => {
     if (state !== 'active') return;
     if (ready) tryRejoin();

@@ -230,6 +230,11 @@ export const size = {
   mascotWelcome: 160,
   // Spec 01 › Bố cục dọc: the anchor icon of a screen without inputs (S-AUTH-00).
   anchorIcon: 56,
+  // C-07 `video`: the name strip (board PT/video); the self tile of the room preview (CR-22 #4);
+  // the tile of S-ROOM-01 `camera-self-preview`.
+  videoTileBar: 32,
+  videoTileSelf: 96,
+  videoTilePreview: 240,
   // C-17 RoomControl discs; C-08 MiniPlayer height.
   control: 56,
   controlMain: 64,
@@ -242,6 +247,8 @@ export const size = {
 // Slop that grows a visible height to the 48 touch target (00-components › Vùng chạm).
 // Boards dim a disabled control to 40% (C-20 TriState, C-34 Switch).
 export const disabledOpacity = 0.4;
+// DESIGN.md › Components: an `away` participant (lost connection) at 45%.
+export const awayOpacity = 0.45;
 
 export const touchSlop = (visible: number) =>
   Math.max(0, (size.touch - visible) / 2);

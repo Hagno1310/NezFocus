@@ -15,7 +15,10 @@ import {
   CameraPreview,
   ParticipantVideo,
 } from '../../../data/voice/VoiceVideo';
-import type { VoiceTarget } from '../../../domain/voice/voiceSession';
+import type {
+  JoinResult,
+  VoiceTarget,
+} from '../../../domain/voice/voiceSession';
 import { voiceNotice } from '../../../domain/voice/voiceNotice';
 import { closeVoice, openVoice } from '../../../domain/voice/voiceView';
 import { radius, size, space, useTheme } from '../../../shared/theme';
@@ -38,11 +41,15 @@ import { useMediaFlow } from '../hooks/useMediaFlow';
 import { useVoiceRoom } from '../hooks/useVoiceRoom';
 
 const BODY_X = space[3];
-const SELF_TILE = 96; // C-07 `video · self` in the preview: 96 × 128
 const TOAST_NAME_MAX = 24; // S-ROOM-05 › Rời phòng: the room name in a Toast
 
-const shortName = (name: string) =>
-  name.length > TOAST_NAME_MAX ? `${name.slice(0, TOAST_NAME_MAX)}…` : name;
+// By code point, so an emoji is never cut in half.
+const shortName = (name: string) => {
+  const chars = Array.from(name);
+  return chars.length > TOAST_NAME_MAX
+    ? `${chars.slice(0, TOAST_NAME_MAX).join('')}…`
+    : name;
+};
 
 // S-ROOM-01: the preview (`not-joined`, `offline`, `no-connect`) and the room before a session
 // (`study-room-idle`, `not-study-room`, `managers-only`, `voice-video-grid`).
@@ -73,6 +80,17 @@ export function VoiceRoomScreen({
   if (!channel || !layout) return null;
   const target = { serverId, channelId };
 
+  const tell = (result: JoinResult, retry: () => void) => {
+    if (result === 'no-connect') showToast({ message: t('voice.noConnect') });
+    else if (result === 'gone') {
+      closeVoice();
+      showToast({ message: t('voice.gone', { name: channel.name }) });
+    } else if (result === 'failed')
+      showToast({
+        message: t('voice.joinFailed'),
+        action: { label: t('voice.retry'), onPress: retry },
+      });
+  };
   const join = async () => {
     setJoining(true);
     const result = await voiceSession.join(target, {
@@ -83,16 +101,12 @@ export function VoiceRoomScreen({
     if (result === 'joined') {
       setPreviewMic(false);
       setPreviewCamera(false);
-    } else if (result === 'no-connect')
-      showToast({ message: t('voice.noConnect') });
-    else if (result === 'gone') {
-      closeVoice();
-      showToast({ message: t('voice.gone', { name: channel.name }) });
-    } else if (result === 'failed')
-      showToast({
-        message: t('voice.joinFailed'),
-        action: { label: t('voice.retry'), onPress: () => void join() },
-      });
+    } else tell(result, () => void join());
+  };
+  // "Vào lại" (left-voice-toast) and "Vào lại ở đây" (other-device): the same room, mic off.
+  const rejoin = async () => {
+    openVoice(target);
+    tell(await voiceSession.join(target), () => void rejoin());
   };
 
   // S-ROOM-05 › Rời phòng: no question, back to the channel before, "Đã rời {phòng} · Vào lại".
@@ -103,10 +117,7 @@ export function VoiceRoomScreen({
       message: t('voice.left', { name: shortName(channel.name) }),
       action: {
         label: t('voice.rejoin'),
-        onPress: () => {
-          openVoice(target);
-          void voiceSession.join(target);
-        },
+        onPress: () => void rejoin(),
       },
     });
   };
@@ -243,7 +254,7 @@ export function VoiceRoomScreen({
                   name=""
                   self
                   mic={null}
-                  width={SELF_TILE}
+                  width={size.videoTileSelf}
                   video={<CameraPreview />}
                 />
               </View>
@@ -288,7 +299,7 @@ export function VoiceRoomScreen({
           label: t('voice.otherDevice.rejoin'),
           onPress: () => {
             voiceNotice.setState({ otherDevice: null });
-            void voiceSession.join(target);
+            void rejoin();
           },
         }}
         cancel={{

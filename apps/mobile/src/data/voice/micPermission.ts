@@ -23,5 +23,9 @@ export const micPermission: MediaPermissions = {
     await AsyncStorage.setItem(KEY, answer);
     return answer === PermissionsAndroid.RESULTS.GRANTED;
   },
+  async explained() {
+    if (!(await AsyncStorage.getItem(KEY)))
+      await AsyncStorage.setItem(KEY, 'explained');
+  },
   openSettings: () => Linking.openSettings(),
 };

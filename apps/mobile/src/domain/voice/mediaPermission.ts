@@ -20,5 +20,6 @@ export const permissionStep = (p: MediaPermission): PermissionStep =>
 export interface MediaPermissions {
   check(): Promise<MediaPermission>;
   request(): Promise<boolean>; // the Android dialog
+  explained(): Promise<void>; // the S-MOD-05 sheet was shown: next time ask Android at once
   openSettings(): Promise<void>;
 }

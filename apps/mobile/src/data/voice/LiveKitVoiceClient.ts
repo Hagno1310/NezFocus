@@ -26,6 +26,8 @@ export function createLiveKitVoiceClient() {
   const client: VoiceClient & { room(): Room | null } = {
     room: () => room,
     async connect(url, token) {
+      // Never two rooms: an old one (a retry after a failed connect) goes first.
+      await client.disconnect();
       // REQ-VC-05 AC1: simulcast + adaptive stream + dynacast.
       const next = new Room({
         adaptiveStream: true,

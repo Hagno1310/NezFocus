@@ -208,8 +208,12 @@ export function createVoiceSession({
 
   // LiveKit gave up on the network by itself: a new token and the same room, same media, until
   // the backend says the seat is gone or I leave.
+  // One retry loop per call: a second `ended` while it runs changes nothing.
+  let rejoining = -1;
   function rejoin(id: number) {
     patch(id, { link: 'reconnecting' });
+    if (rejoining === id) return;
+    rejoining = id;
     void serial(async () => {
       for (let attempt = 0; gen === id; attempt++) {
         const c = call();
@@ -225,6 +229,8 @@ export function createVoiceSession({
         }
         await wait(RETRY_MS[Math.min(attempt, RETRY_MS.length - 1)]!);
       }
+    }).finally(() => {
+      if (rejoining === id) rejoining = -1;
     });
   }
 
@@ -248,9 +254,12 @@ export function createVoiceSession({
     let c = s.call;
     let ended = false;
     let muted = false;
+    let told = false;
     if (c && mine) {
       const seat = seats[mine];
       if (seat?.channel_id === c.channelId) {
+        // AC5: already muted when I join → just the button, no Toast (only a change is told).
+        told = c.seated && seat.mod_muted && !c.modMuted;
         if (!c.seated) c = { ...c, seated: true };
         // VC-04 AC1: LiveKit already stopped the mic; the button follows.
         muted = seat.mod_muted && !c.modMuted;
@@ -276,7 +285,7 @@ export function createVoiceSession({
           if (gen === id && now) sendState(now);
         });
       }
-      if (muted) mutedListeners.forEach((l) => l());
+      if (told) mutedListeners.forEach((l) => l());
       return;
     }
     const end: VoiceEnd = {

@@ -152,11 +152,11 @@ Hai module mẫu để xem code chạy thế nào: `apps/backend/src/modules/_ex
 
 Cần chạy **cả ba**, mỗi lệnh một terminal, ở thư mục gốc repo:
 
-| Terminal | Lệnh               | Tác dụng                                                          |
-| -------- | ------------------ | ----------------------------------------------------------------- |
+| Terminal | Lệnh               | Tác dụng                                                           |
+| -------- | ------------------ | ------------------------------------------------------------------ |
 | 1        | `pnpm dev:infra`   | Bật Postgres, Redis, S3, LiveKit (chạy nền; 1 lần sau khi bật máy) |
-| 2        | `pnpm dev:backend` | API ở cổng 3000, tự reload khi sửa code                           |
-| 3        | `pnpm dev:mobile`  | Metro. Mở app dev client trên điện thoại để tải code              |
+| 2        | `pnpm dev:backend` | API ở cổng 3000, tự reload khi sửa code                            |
+| 3        | `pnpm dev:mobile`  | Metro. Mở app dev client trên điện thoại để tải code               |
 
 - Sửa code TypeScript ở app hay backend: **tự cập nhật**, không cần build lại APK.
 - Sửa `packages/shared`: chạy thêm `pnpm --filter @nezfocus/shared dev` (tự build lại khi lưu).
@@ -301,17 +301,17 @@ pnpm db:studio       # (tùy chọn) giao diện xem dữ liệu
 
 ## 6. Biến môi trường
 
-| File                | Biến                                                              | Ý nghĩa                                                                 |
-| ------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `apps/backend/.env` | `DATABASE_URL`                                                    | Chuỗi kết nối Postgres (mặc định khớp `infra/docker-compose.yml`)       |
-|                     | `PORT`                                                            | Cổng API, mặc định 3000                                                 |
-|                     | `WORKER_ID`                                                       | 0–1023, phần worker của Snowflake ID (mỗi instance backend một giá trị) |
-|                     | `REDIS_URL`, `S3_*`                                               | Redis và object storage (SeaweedFS)                                     |
-|                     | `JWT_SECRET`                                                      | Khóa ký access token (≥ 32 ký tự); production không nhận giá trị mẫu    |
-|                     | `LIVEKIT_URL`, `LIVEKIT_API_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | LiveKit (REQ-VC-01): app gọi `LIVEKIT_URL` (dev: `ws://<IP Wi-Fi>:7880`), backend gọi `LIVEKIT_API_URL`; khóa khớp `infra/livekit/livekit.dev.yaml` |
-| `infra/.env`        | `LIVEKIT_NODE_IP`                                                 | IP Wi-Fi của máy tính, để LiveKit báo đúng địa chỉ media cho điện thoại |
-| `apps/mobile/.env`  | `EXPO_PUBLIC_API_URL`                                             | Địa chỉ API điện thoại gọi tới; dùng IP Wi-Fi của máy tính              |
-| `infra/.env.prod`   | `API_DOMAIN`, `TURN_DOMAIN`, `S3_DOMAIN`, `BACKEND_IMAGE`, `POSTGRES_*`, `S3_*`, `JWT_SECRET`, `LIVEKIT_API_*` | Chỉ dùng trên server deploy                                             |
+| File                | Biến                                                                                                           | Ý nghĩa                                                                                                                                             |
+| ------------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/backend/.env` | `DATABASE_URL`                                                                                                 | Chuỗi kết nối Postgres (mặc định khớp `infra/docker-compose.yml`)                                                                                   |
+|                     | `PORT`                                                                                                         | Cổng API, mặc định 3000                                                                                                                             |
+|                     | `WORKER_ID`                                                                                                    | 0–1023, phần worker của Snowflake ID (mỗi instance backend một giá trị)                                                                             |
+|                     | `REDIS_URL`, `S3_*`                                                                                            | Redis và object storage (SeaweedFS)                                                                                                                 |
+|                     | `JWT_SECRET`                                                                                                   | Khóa ký access token (≥ 32 ký tự); production không nhận giá trị mẫu                                                                                |
+|                     | `LIVEKIT_URL`, `LIVEKIT_API_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`                                      | LiveKit (REQ-VC-01): app gọi `LIVEKIT_URL` (dev: `ws://<IP Wi-Fi>:7880`), backend gọi `LIVEKIT_API_URL`; khóa khớp `infra/livekit/livekit.dev.yaml` |
+| `infra/.env`        | `LIVEKIT_NODE_IP`                                                                                              | IP Wi-Fi của máy tính, để LiveKit báo đúng địa chỉ media cho điện thoại                                                                             |
+| `apps/mobile/.env`  | `EXPO_PUBLIC_API_URL`                                                                                          | Địa chỉ API điện thoại gọi tới; dùng IP Wi-Fi của máy tính                                                                                          |
+| `infra/.env.prod`   | `API_DOMAIN`, `TURN_DOMAIN`, `S3_DOMAIN`, `BACKEND_IMAGE`, `POSTGRES_*`, `S3_*`, `JWT_SECRET`, `LIVEKIT_API_*` | Chỉ dùng trên server deploy                                                                                                                         |
 
 Biến có tiền tố `EXPO_PUBLIC_` được đóng vào app và **ai cũng đọc được**: không đặt secret vào đó.
 
@@ -321,19 +321,19 @@ Biến có tiền tố `EXPO_PUBLIC_` được đóng vào app và **ai cũng đ
 
 Chạy ở thư mục gốc repo, trừ khi ghi khác.
 
-| Lệnh                                         | Tác dụng                                |
-| -------------------------------------------- | --------------------------------------- |
-| `pnpm install`                               | Cài dependency, build `packages/shared` |
+| Lệnh                                         | Tác dụng                                  |
+| -------------------------------------------- | ----------------------------------------- |
+| `pnpm install`                               | Cài dependency, build `packages/shared`   |
 | `pnpm dev:infra`                             | Bật Postgres, Redis, S3, LiveKit (Docker) |
-| `pnpm dev:backend`                           | Chạy API ở chế độ watch                 |
-| `pnpm dev:mobile`                            | Chạy Metro cho dev client               |
-| `pnpm --filter mobile start:go`              | Chạy Metro cho Expo Go                  |
-| `pnpm --filter mobile build:dev`             | Build APK dev client trên EAS           |
-| `pnpm --filter mobile doctor`                | Kiểm tra cấu hình Expo                  |
-| `pnpm lint` / `pnpm typecheck` / `pnpm test` | Kiểm tra toàn repo                      |
-| `pnpm format`                                | Định dạng code bằng Prettier            |
-| `pnpm --filter backend test:e2e`             | E2E test backend (cần `pnpm dev:infra`) |
-| `pnpm build`                                 | Build mọi package                       |
+| `pnpm dev:backend`                           | Chạy API ở chế độ watch                   |
+| `pnpm dev:mobile`                            | Chạy Metro cho dev client                 |
+| `pnpm --filter mobile start:go`              | Chạy Metro cho Expo Go                    |
+| `pnpm --filter mobile build:dev`             | Build APK dev client trên EAS             |
+| `pnpm --filter mobile doctor`                | Kiểm tra cấu hình Expo                    |
+| `pnpm lint` / `pnpm typecheck` / `pnpm test` | Kiểm tra toàn repo                        |
+| `pnpm format`                                | Định dạng code bằng Prettier              |
+| `pnpm --filter backend test:e2e`             | E2E test backend (cần `pnpm dev:infra`)   |
+| `pnpm build`                                 | Build mọi package                         |
 
 Thêm thư viện cho app: `cd apps/mobile` rồi `pnpm exec expo install <tên>` (không dùng `pnpm add`, để Expo chọn đúng phiên bản).
 

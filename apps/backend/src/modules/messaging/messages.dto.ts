@@ -1,11 +1,13 @@
 import type {
+  MessageAttachment,
   MessageAuthor,
   MessageResponse,
   MessageType,
   Reaction,
   ReferencedMessage,
 } from '@nezfocus/shared';
-import { messageTypeCode } from '@nezfocus/shared';
+import { attachmentFilePath, messageTypeCode } from '@nezfocus/shared';
+import type { AttachmentRow } from '../attachments/attachments.schema.js';
 import { avatarUrls } from '../attachments/media.js';
 import type { MessageRow } from './messages.schema.js';
 
@@ -29,10 +31,26 @@ export const toMessageAuthor = (author: AuthorRow): MessageAuthor => ({
   avatar: avatarUrls(author.avatarKey),
 });
 
-// What a message needs from other rows: its reply line and reactions (REQ-MSG-05).
+// What a message needs from other rows: its reply line and reactions (REQ-MSG-05), its
+// images (REQ-MSG-04).
 export type MessageExtras = {
   referenced: { message: MessageRow; author: AuthorRow } | null;
   reactions: Reaction[];
+  attachments: AttachmentRow[];
+};
+
+export const toMessageAttachment = (a: AttachmentRow): MessageAttachment => {
+  const id = a.id.toString();
+  return {
+    id,
+    filename: a.filename,
+    content_type: a.contentType,
+    size_bytes: a.sizeBytes,
+    width: a.width,
+    height: a.height,
+    url: attachmentFilePath(id, 'original'),
+    thumbnail_url: attachmentFilePath(id, 'thumbnail'),
+  };
 };
 
 const toReferenced = (
@@ -47,7 +65,7 @@ const toReferenced = (
 export const toMessageResponse = (
   m: MessageRow,
   author: AuthorRow,
-  extras: MessageExtras = { referenced: null, reactions: [] },
+  extras: MessageExtras = { referenced: null, reactions: [], attachments: [] },
 ): MessageResponse =>
   ({
     id: m.id.toString(),
@@ -63,6 +81,7 @@ export const toMessageResponse = (
     reply_to_id: m.replyToId?.toString() ?? null,
     referenced_message: toReferenced(extras.referenced),
     reactions: extras.reactions,
+    attachments: extras.attachments.map(toMessageAttachment),
     edited_at: iso(m.editedAt),
     pinned_at: iso(m.pinnedAt),
     created_at: m.createdAt.toISOString(),

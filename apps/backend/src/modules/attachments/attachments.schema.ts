@@ -7,10 +7,11 @@ import {
   timestamp,
   varchar,
 } from 'drizzle-orm/pg-core';
+import { messages } from '../messaging/messages.schema.js';
+import { channels } from '../servers/servers.schema.js';
 import { users } from '../users/users.schema.js';
 
-// SRS 8.2 `attachments`. channel_id / message_id / thumbnail_key / duration_ms arrive with
-// message files (REQ-MSG-04, P3-A2.1 (#123)).
+// SRS 8.2 `attachments`. duration_ms is for video / audio (v1.x, CR-28).
 export const attachments = pgTable(
   'attachments',
   {
@@ -19,17 +20,28 @@ export const attachments = pgTable(
     uploaderId: bigint({ mode: 'bigint' })
       .notNull()
       .references(() => users.id),
-    purpose: varchar({ length: 20 }).notNull(), // avatar (server_icon, group_icon, message later)
+    purpose: varchar({ length: 20 }).notNull(), // avatar | server_icon | message
+    // A message file: the channel it was uploaded for; the message once sent (else NULL).
+    channelId: bigint({ mode: 'bigint' }).references(() => channels.id, {
+      onDelete: 'cascade',
+    }),
+    messageId: bigint({ mode: 'bigint' }).references(() => messages.id, {
+      onDelete: 'cascade',
+    }),
     filename: varchar({ length: 255 }).notNull(),
     contentType: varchar({ length: 100 }).notNull(), // declared until complete, then from the bytes
     sizeBytes: bigint({ mode: 'number' }).notNull(),
     width: integer(),
     height: integer(),
-    storageKey: text().notNull(), // upload key while pending; the variants' prefix once clean
+    storageKey: text().notNull(), // upload key while pending; the variants' prefix (avatar) or the original (message) once clean
+    thumbnailKey: text(), // message images (CR-28 #29)
     scanStatus: varchar({ length: 10 }).notNull().default('pending'), // pending | clean
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('idx_attachments_uploader').on(t.uploaderId)],
+  (t) => [
+    index('idx_attachments_uploader').on(t.uploaderId),
+    index('idx_attachments_message').on(t.messageId),
+  ],
 );
 
 export type AttachmentRow = typeof attachments.$inferSelect;

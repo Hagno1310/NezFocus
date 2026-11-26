@@ -15,6 +15,10 @@ import {
 } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
 import {
+  attachments,
+  type AttachmentRow,
+} from '../attachments/attachments.schema.js';
+import {
   channels,
   roles,
   serverMemberRoles,
@@ -30,6 +34,10 @@ import {
 } from './messages.schema.js';
 
 export type MessageWithAuthor = { message: MessageRow; author: AuthorRow };
+
+// REQ-MSG-04 AC5: an attachment id that is not a completed image of the author for this
+// channel, or was taken by another message meanwhile. Rolls the message back.
+export class AttachmentsUnavailable extends Error {}
 export type NewMessage = typeof messages.$inferInsert;
 
 const author = {
@@ -74,9 +82,28 @@ export class MessagesRepository {
   async create(
     row: NewMessage,
     concerned: readonly bigint[] = [],
+    attachmentIds: readonly bigint[] = [],
   ): Promise<MessageWithAuthor> {
     await this.db.transaction(async (tx) => {
       await tx.insert(messages).values(row);
+      if (attachmentIds.length) {
+        const taken = await tx
+          .update(attachments)
+          .set({ messageId: row.id })
+          .where(
+            and(
+              inArray(attachments.id, [...attachmentIds]),
+              eq(attachments.uploaderId, row.authorId),
+              eq(attachments.channelId, row.channelId),
+              eq(attachments.purpose, 'message'),
+              eq(attachments.scanStatus, 'clean'),
+              isNull(attachments.messageId),
+            ),
+          )
+          .returning({ id: attachments.id });
+        if (taken.length !== attachmentIds.length)
+          throw new AttachmentsUnavailable();
+      }
       await tx
         .update(channels)
         .set({ lastMessageId: row.id })
@@ -101,6 +128,16 @@ export class MessagesRepository {
     });
     const [saved] = await this.select().where(eq(messages.id, row.id));
     return saved!;
+  }
+
+  // REQ-MSG-04: the images of these messages, in upload order.
+  attachmentsOf(messageIds: readonly bigint[]): Promise<AttachmentRow[]> {
+    if (!messageIds.length) return Promise.resolve([]);
+    return this.db
+      .select()
+      .from(attachments)
+      .where(inArray(attachments.messageId, [...messageIds]))
+      .orderBy(asc(attachments.id));
   }
 
   // REQ-SEARCH-02: by id, so a message sent meanwhile never shifts a page. Oldest first.

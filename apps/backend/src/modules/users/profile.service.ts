@@ -79,8 +79,7 @@ export class ProfileService {
     return toCurrentUser(user);
   }
 
-  // ponytail: the files of a replaced avatar stay in storage; a cleanup job comes with the
-  // 24h attachment sweep of REQ-MSG-04, P3-A2.1 (#123).
+  // A replaced avatar's files go with the 24h sweep (AttachmentsService.sweep).
   async update(
     userId: bigint,
     body: UpdateProfileRequest,

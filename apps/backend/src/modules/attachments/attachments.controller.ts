@@ -6,9 +6,12 @@ import {
   HttpCode,
   Param,
   Post,
+  Res,
   StreamableFile,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import {
+  ATTACHMENT_VARIANTS,
   AttachmentRoutes,
   CreateAttachmentRequest,
   ErrorCode,
@@ -54,6 +57,22 @@ export class AttachmentsController {
     @CurrentUser() user: AuthUser,
   ): Promise<AttachmentResponse> {
     return this.attachments.complete(user.userId, BigInt(id));
+  }
+
+  // CR-28 #29: a message image, for who can view its message. The path stays the same, so the
+  // app caches the bytes; the redirect itself is never cached (its URL expires).
+  @Get(AttachmentRoutes.file)
+  async file(
+    @Param('id', idParam) id: string,
+    @Param('variant') variant: string,
+    @CurrentUser() user: AuthUser,
+    @Res() res: Response,
+  ) {
+    const known = ATTACHMENT_VARIANTS.find((v) => v === variant);
+    if (!known) throw new AppError(ErrorCode.NotFound, 'Unknown file');
+    const url = await this.attachments.fileUrl(user.userId, BigInt(id), known);
+    res.setHeader('Cache-Control', 'no-store');
+    res.redirect(302, url);
   }
 
   // Avatars and server icons are public like a CDN would serve them: no token, cached for

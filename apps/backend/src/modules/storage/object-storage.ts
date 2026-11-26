@@ -22,6 +22,9 @@ export abstract class ObjectStorage {
     size: number,
     expiresInSeconds: number,
   ): Promise<string>;
+  // A URL to read the object for a while. SRS 5.7: only a PDF is `inline`, so anything here
+  // is `attachment` (images, CR-28).
+  abstract presignGet(key: string, expiresInSeconds: number): Promise<string>;
   // Undefined when nothing is stored under the key.
   abstract get(key: string): Promise<Buffer | undefined>;
   abstract put(key: string, body: Buffer, contentType: string): Promise<void>;
@@ -80,6 +83,18 @@ export class S3ObjectStorage extends ObjectStorage implements OnModuleInit {
     );
   }
 
+  presignGet(key: string, expires: number) {
+    return getSignedUrl(
+      this.client,
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        ResponseContentDisposition: 'attachment',
+      }),
+      { expiresIn: expires },
+    );
+  }
+
   async get(key: string) {
     try {
       const res = await this.client.send(
@@ -120,6 +135,10 @@ export class MemoryObjectStorage extends ObjectStorage {
   readonly objects = new Map<string, { body: Buffer; contentType: string }>();
 
   async presignPut(key: string) {
+    return `memory://${key}`;
+  }
+
+  async presignGet(key: string) {
     return `memory://${key}`;
   }
 

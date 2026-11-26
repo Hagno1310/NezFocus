@@ -32,6 +32,7 @@ import {
   type MessageExtras,
 } from './messages.dto.js';
 import {
+  AttachmentsUnavailable,
   MessagesRepository,
   type MessageWithAuthor,
 } from './messages.repository.js';
@@ -44,6 +45,17 @@ const badReply = () =>
   new AppError(ErrorCode.ValidationError, 'Invalid request', {
     reply_to_id: [
       { code: 'invalid_reply', message: 'Not a message of this channel' },
+    ],
+  });
+
+// REQ-MSG-04 AC5: completed images of mine for this channel, not sent yet.
+const badAttachments = () =>
+  new AppError(ErrorCode.ValidationError, 'Invalid request', {
+    attachment_ids: [
+      {
+        code: 'invalid_attachment',
+        message: 'Not a completed image of yours for this channel',
+      },
     ],
   });
 
@@ -78,6 +90,8 @@ export class MessagesService {
   ): Promise<MessageResponse> {
     const channel = await this.viewable(userId, channelId);
     await this.requireSend(userId, channel);
+    const attachmentIds = (body.attachment_ids ?? []).map(BigInt);
+    if (attachmentIds.length) await this.requireAttach(userId, channel);
     // ponytail: timed-out members get 40302 instead of 40307 until P3-A3.1 (#126).
     // A retry of a message already saved gets it back without touching the rate limit.
     const sent = await this.repo.byNonce(userId, body.nonce);
@@ -120,8 +134,10 @@ export class MessagesService {
           ...mentions,
         },
         [...concerned.keys()].map(BigInt),
+        attachmentIds,
       );
     } catch (err) {
+      if (err instanceof AttachmentsUnavailable) throw badAttachments();
       if (!isUniqueViolation(err, 'uq_messages_author_nonce')) throw err;
       const raced = await this.repo.byNonce(userId, body.nonce);
       if (!raced) throw err;
@@ -233,11 +249,12 @@ export class MessagesService {
     viewerId: bigint,
   ): Promise<MessageResponse[]> {
     const ids = rows.map((r) => r.message.id);
-    const [referenced, reactions] = await Promise.all([
+    const [referenced, reactions, files] = await Promise.all([
       this.repo.referenced(
         rows.flatMap((r) => (r.message.replyToId ? [r.message.replyToId] : [])),
       ),
       this.repo.reactions(ids, viewerId),
+      this.repo.attachmentsOf(ids),
     ]);
     return rows.map((r) => {
       const extras: MessageExtras = {
@@ -247,6 +264,7 @@ export class MessagesService {
         reactions: reactions
           .filter((x) => x.messageId === r.message.id)
           .map(({ emoji, count, me }) => ({ emoji, count, me })),
+        attachments: files.filter((f) => f.messageId === r.message.id),
       };
       return toMessageResponse(r.message, r.author, extras);
     });
@@ -292,6 +310,24 @@ export class MessagesService {
     )
       throw unknownChannel();
     return channel;
+  }
+
+  // REQ-MSG-04: who may upload an image for this channel (POST /attachments) and send it.
+  // A DM has no server permissions: the DM send rule is enough.
+  async attachable(userId: bigint, channelId: bigint): Promise<ChannelRow> {
+    const channel = await this.viewable(userId, channelId);
+    await this.requireSend(userId, channel);
+    await this.requireAttach(userId, channel);
+    return channel;
+  }
+
+  private async requireAttach(userId: bigint, channel: ChannelRow) {
+    if (channel.serverId)
+      await this.permissions.require(
+        userId,
+        { channelId: channel.id },
+        Permission.ATTACH_FILES,
+      );
   }
 
   // REQ-DM-02 / FRIEND-03 AC1 in a DM: 40303 with one sentence; elsewhere SEND_MESSAGES.

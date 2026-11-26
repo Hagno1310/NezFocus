@@ -1,4 +1,5 @@
 import type { DmChannel, DmRecipient } from '@nezfocus/shared';
+import type { AttachmentRow } from '../attachments/attachments.schema.js';
 import { avatarUrls } from '../attachments/media.js';
 import {
   toMessageResponse,
@@ -35,11 +36,18 @@ export const toDmChannel = (r: {
   user: RecipientRow;
   last: MessageRow | null;
   lastAuthor: AuthorRow | null;
+  lastFiles: AttachmentRow[];
 }): DmChannel => ({
   id: r.channelId.toString(),
   type: 'dm',
   recipient: toDmRecipient(r.user),
   last_message_id: r.lastMessageId?.toString() ?? null,
   last_message:
-    r.last && r.lastAuthor ? toMessageResponse(r.last, r.lastAuthor) : null,
+    r.last && r.lastAuthor
+      ? toMessageResponse(r.last, r.lastAuthor, {
+          referenced: null,
+          reactions: [],
+          attachments: r.lastFiles,
+        })
+      : null,
 });

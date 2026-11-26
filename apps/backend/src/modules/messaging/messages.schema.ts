@@ -18,7 +18,7 @@ import { users } from '../users/users.schema.js';
 const id = () => bigint({ mode: 'bigint' });
 const tz = () => timestamp({ withTimezone: true });
 
-// SRS 8.2 messages. Embeds and pinned_by arrive with P3-A2 (#22).
+// SRS 8.2 messages. Embeds are link previews (REQ-MSG-02, v1.x CR-28 #8).
 export const messages = pgTable(
   'messages',
   {
@@ -45,7 +45,8 @@ export const messages = pgTable(
     mentionEveryone: boolean().notNull().default(false),
     systemData: jsonb(), // REQ-MSG-11: kind parameters only, never wording
     editedAt: tz(),
-    pinnedAt: tz(),
+    pinnedAt: tz(), // REQ-MSG-10
+    pinnedBy: id(),
     deletedAt: tz(), // REQ-MSG-05: soft-delete, gone for everyone
     createdAt: tz().notNull().defaultNow(),
   },
@@ -55,6 +56,9 @@ export const messages = pgTable(
       .on(t.authorId, t.nonce)
       .where(sql`${t.nonce} IS NOT NULL`),
     index('idx_messages_author_time').on(t.authorId, t.createdAt),
+    index('idx_messages_pins')
+      .on(t.channelId, t.pinnedAt.desc())
+      .where(sql`${t.pinnedAt} IS NOT NULL`),
   ],
 );
 

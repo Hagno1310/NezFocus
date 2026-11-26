@@ -409,6 +409,7 @@ Trong phiên học, dưới chip luôn có `SegmentedControl` **"Vòng / Lưới
 | `host` | Chỉ ở `list`: nhãn "Đang điều khiển" (nhãn chờ chốt, README câu hỏi #2) |
 | `camera-off` (`video`, `floating`) | Ô nền `surface-2`, `Avatar` 56 nằm giữa phần **phía trên dải tên**, không phải giữa cả ô (v1.9, CR-22 #8; DESIGN.md › video-tile) — áp cho lưới, cuộc gọi, dải ô chia sẻ, ô nổi |
 | `connecting` (`video`) | Ô nền `surface-2` + vòng xoay nhỏ |
+| `poor-network` (chốt 26/11/2026, P3-B1) | LiveKit báo chất lượng `poor`: icon `wifi-low` 14 `text-tertiary` trong dải tên, sau chỉ báo mic (REQ-VC-05); chưa có frame |
 | `deleted` | Tên "Tài khoản đã bị xóa", avatar mặc định |
 
 ### `floating` — ô nổi của cuộc gọi thu nhỏ (v1.9, CR-25 #7)

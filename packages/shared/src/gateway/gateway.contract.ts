@@ -5,6 +5,7 @@ import {
   PresenceUpdate,
 } from '../presence/presence.contract.js';
 import { SnowflakeId } from '../snowflake.js';
+import { VoiceStateUpdate } from '../voice/voice.contract.js';
 
 // SRS 5.4: wss://<host>/gateway?v=1&encoding=json. Not under /api/v1.
 export const GatewayRoutes = { connect: '/gateway' } as const;
@@ -72,13 +73,6 @@ export const AppState = z.object({
 export type AppState = z.infer<typeof AppState>;
 
 // Payloads SRS 5.4 does not spell out; their owner tickets refine them.
-// P3 voice; LiveKit token stays on REST (DEC-33)
-export const VoiceStateUpdate = z.object({
-  channel_id: SnowflakeId.nullable(), // null = leave
-  self_mute: z.boolean(),
-  self_deaf: z.boolean(),
-  self_video: z.boolean(),
-});
 // REQ-STUDY-15, every 60 s while in a Room Session
 export const FocusHeartbeat = z.object({ focus_session_id: SnowflakeId });
 // REQ-MSG-07: the open server, one per session (null stops); gates only TYPING_START / member-list presence.

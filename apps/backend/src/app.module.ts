@@ -16,6 +16,7 @@ import { StudyModule } from './modules/study/study.module.js';
 import { FriendsModule } from './modules/friends/friends.module.js';
 import { DmModule } from './modules/channels/dm.module.js';
 import { RedisModule } from './redis/redis.module.js';
+import { VoiceModule } from './modules/voice/voice.module.js';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { RedisModule } from './redis/redis.module.js';
     FriendsModule,
     DmModule,
     NotificationsModule,
+    VoiceModule,
   ],
 })
 export class AppModule {}

@@ -203,6 +203,7 @@ export class GatewayConnection implements SessionSocket {
       read_states: readStates,
       relationships,
       private_channels: dms,
+      voice_states: [], // ponytail: P3-B1.2 (#138) fills it from the voice state in Redis
     });
     // SRS 5.4: IDENTIFY may carry the status the app wants (a new login keeps the saved one).
     if (status)

@@ -102,6 +102,7 @@ describe('READY presence', () => {
         read_states: [],
         relationships: [],
         private_channels: [],
+        voice_states: [],
       },
     });
     expect(e?.t === 'READY' && e.d.preferred_status).toBe('invisible');

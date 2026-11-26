@@ -10,6 +10,9 @@ export const MemberRoutes = {
   // REQ-ROLE-04, CR-28 #23 · PUT / DELETE 204 · 40001 (@everyone), 40301 (role or member at or
   // above own highest; the Owner), 40302 (MANAGE_ROLES), 40401 (member, role)
   role: '/servers/:id/members/:userId/roles/:roleId',
+  // REQ-VC-04, CR-28 #2, #31 · PATCH UpdateMemberVoiceRequest (voice.contract.ts) · 204 · 40001,
+  // 40301 (role at or above own highest; the Owner), 40302 (MUTE_MEMBERS / MOVE_MEMBERS), 40401
+  voice: '/servers/:id/members/:userId/voice',
 } as const;
 
 export const MEMBER_PAGE_MAX = 1000;

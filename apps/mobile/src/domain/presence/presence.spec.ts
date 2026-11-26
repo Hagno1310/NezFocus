@@ -30,6 +30,7 @@ describe('presence store (REQ-AUTH-05)', () => {
           read_states: [],
           relationships: [],
           private_channels: [],
+          voice_states: [],
         },
       }),
     );

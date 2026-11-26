@@ -116,6 +116,7 @@ describe('relationship contract', () => {
         read_states: [],
         relationships: [rel],
         private_channels: [],
+        voice_states: [],
       },
     });
     expect(ready?.t === 'READY' && ready.d.relationships).toEqual([rel]);

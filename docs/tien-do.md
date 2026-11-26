@@ -171,7 +171,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 
 - [ ] **P3-B1** [#26](https://github.com/Hagno1310/NezFocus/issues/26) Phòng voice: LiveKit, TURN, vào phòng, mic / camera
   - Cần trước: P0-5
-  - [ ] mốc **P3-B1.1** [#137](https://github.com/Hagno1310/NezFocus/issues/137) Hợp đồng voice trong shared · hợp đồng · người kia chờ: P3-A3 (Hiếu)
+  - [x] mốc **P3-B1.1** [#137](https://github.com/Hagno1310/NezFocus/issues/137) Hợp đồng voice trong shared · hợp đồng · người kia chờ: P3-A3 (Hiếu)
 - [ ] **P3-B5** [#29](https://github.com/Hagno1310/NezFocus/issues/29) Push FCM (NOTIF-02)
   - Cần trước: P2-B4
   - [ ] mốc **P3-B5.1** [#152](https://github.com/Hagno1310/NezFocus/issues/152) Hợp đồng push trong shared · hợp đồng · người kia chờ: P4-A1 (Hiếu)

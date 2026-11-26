@@ -45,6 +45,7 @@ import {
   encodeMentions,
   type PickedMention,
 } from '../../../domain/messages/mentions';
+import { jumps } from '../../../domain/messages/jumps';
 import { messageSheet } from '../../../domain/messages/messageActions';
 import {
   linksOf,
@@ -77,6 +78,7 @@ import { ActionSheet, type Lifted } from '../../../shared/ui/Overlay';
 import { ReactionChips, ReplyLine } from '../../../shared/ui/Reactions';
 import { Text } from '../../../shared/ui/Text';
 import { showToast } from '../../../shared/ui/Toast';
+import { exitMs } from '../../../shared/ui/transitions';
 import { useOnline } from '../../gateway/hooks/useOnline';
 import { useMe } from '../../me/hooks/useMe';
 import { avatarUri } from '../../me/avatarUri';
@@ -256,8 +258,10 @@ export function ChatView({
   useEffect(() => {
     if (jumped.current || lineAt < 0) return;
     jumped.current = true;
+    // Opened at a message (link, push): that message, not the line (frame `message-link`).
+    if (jumps.getState()?.channelId === channelId) return;
     toLine(lineAt, false);
-  }, [lineAt, toLine]);
+  }, [lineAt, toLine, channelId]);
 
   const [loadingOlder, setLoadingOlder] = useState(false);
   const onTop = () => {
@@ -291,7 +295,9 @@ export function ChatView({
   const before = useRef<{ text: string; picked: PickedMention[] } | null>(null);
   // Hoisted: useMessageActions calls it from the sheet's rows, after this render.
   function beginContext(kind: 'reply' | 'edit', message: MessageResponse) {
-    input.current?.focus();
+    // `reply-mode` / `edit-mode`: keyboard open. Focus once the sheet has gone, or Android
+    // keeps the keyboard down behind the closing Modal.
+    setTimeout(() => input.current?.focus(), exitMs + 50);
     if (kind !== 'edit') {
       // From editing straight to a reply: the draft typed before comes back first.
       if (before.current) {
@@ -369,7 +375,7 @@ export function ChatView({
           }
     : undefined;
 
-  const { target, targetIndex, jumpTo } = useMessageJump(
+  const { target, targetIndex, jumpTo, jumpPosition } = useMessageJump(
     channelId,
     rows,
     list,
@@ -446,12 +452,9 @@ export function ChatView({
         : undefined);
     const sheet = message ? sheetOf(message) : null;
     const sheetOpens = sheet !== null;
-    const openSheet = (e: { currentTarget: unknown }) => {
-      if (!message) return;
-      const target = e.currentTarget as Measurable;
-      target.measureInWindow((_x, y) =>
-        actions.open({ message, lifted: { top: y, node: bubble(row, true) } }),
-      );
+    const openSheet = ({ top }: { top: number }) => {
+      if (message)
+        actions.open({ message, lifted: { top, node: bubble(row, true) } });
     };
     const chipsOff = !online || viewer.timedOut;
     return (
@@ -641,7 +644,15 @@ export function ChatView({
             offset: info.averageItemLength * info.index,
             animated: false,
           });
-          setTimeout(() => toLine(info.index, false), 100);
+          setTimeout(
+            () =>
+              list.current?.scrollToIndex({
+                index: info.index,
+                viewPosition: info.index === targetIndex ? jumpPosition : 1,
+                animated: false,
+              }),
+            100,
+          );
         }}
         onEndReached={onTop}
         onEndReachedThreshold={0.5}

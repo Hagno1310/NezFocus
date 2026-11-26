@@ -7,6 +7,9 @@ import type { ChatRow } from '../../../domain/messages/chatRows';
 import { jumps, requestJump } from '../../../domain/messages/jumps';
 import { showToast } from '../../../shared/ui/Toast';
 
+// Inverted list: viewPosition 1 is the top of the screen; a link's message sits a third down.
+const positionOf = (times: 1 | 2) => (times === 2 ? 2 / 3 : 0.5);
+
 // C-10 `highlight`: a reply jump flashes once; a link / push (CR-19 #2) twice, the message a
 // third from the top. The target lives in `jumps`, so a link opened elsewhere lands here too.
 export function useMessageJump(
@@ -49,10 +52,9 @@ export function useMessageJump(
   useEffect(() => {
     if (!target || targetIndex < 0 || scrolled.current === target.key) return;
     scrolled.current = target.key;
-    // Inverted list: viewPosition 1 is the top of the screen.
     list.current?.scrollToIndex({
       index: targetIndex,
-      viewPosition: target.times === 2 ? 2 / 3 : 0.5,
+      viewPosition: positionOf(target.times),
       animated: target.times === 1,
     });
     // After the flashes (2 × 400 ms, or 1 s held): done, so coming back does not jump again.
@@ -65,6 +67,8 @@ export function useMessageJump(
   return {
     target: targetIndex >= 0 ? target : null,
     targetIndex,
+    // For onScrollToIndexFailed: the same place once the rows are measured.
+    jumpPosition: positionOf(target?.times ?? 1),
     jumpTo: (messageId: string) =>
       requestJump({ channelId, messageId, times: 1 }),
   };

@@ -7,7 +7,7 @@ import {
   Menu,
   Users,
 } from 'lucide-react-native';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type ComponentRef, type ReactNode } from 'react';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -182,7 +182,9 @@ export function MessageBubble({
   // C-10: what the row offers a screen reader instead of its inner presses (links…).
   actions?: { label: string; onPress: () => void }[];
   onPress?: (e: GestureResponderEvent) => void;
-  onLongPress?: (e: GestureResponderEvent) => void;
+  // Gets where the row sits on screen (its own ref: a long-press event's currentTarget is null
+  // by the time it is read), for the `lifted` copy of S-HOME-04.
+  onLongPress?: (at: { top: number }) => void;
   // Avatar / name → S-HOME-10 (P2-B3.4, #117).
   onPressAuthor?: () => void;
   children: ReactNode;
@@ -190,8 +192,10 @@ export function MessageBubble({
   const { t } = useTranslation();
   const { colors } = useTheme();
   const pending = status?.kind === 'pending';
+  const row = useRef<ComponentRef<typeof View>>(null);
   return (
     <Pressable
+      ref={row}
       accessibilityLabel={accessibilityLabel}
       accessibilityActions={actions.map((a, i) => ({
         name: `a${i}`,
@@ -201,7 +205,10 @@ export function MessageBubble({
         actions[Number(e.nativeEvent.actionName.slice(1))]?.onPress()
       }
       onPress={onPress}
-      onLongPress={onLongPress}
+      onLongPress={
+        onLongPress &&
+        (() => row.current?.measureInWindow((_x, top) => onLongPress({ top })))
+      }
       disabled={!onPress && !onLongPress}
       style={[
         styles.message,

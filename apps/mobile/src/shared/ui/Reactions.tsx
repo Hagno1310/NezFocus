@@ -254,10 +254,10 @@ const styles = StyleSheet.create({
     borderWidth: size.hairline,
   },
   chipEmoji: emojiText(size.reaction.chipEmoji),
+  // Frame: spread across the width (space-between), so 7 × 44 still fits a 360 screen.
   quickRow: {
     flexGrow: 1,
     justifyContent: 'space-between',
-    gap: space[2],
     paddingTop: space[1],
     paddingHorizontal: space[3],
   },

@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { Vibration } from 'react-native';
 import { localKv } from '../../../data/db/kv';
 import { messageStore } from '../../../data/messages';
+import { messageLinkOf } from '../../../domain/messages/links';
 import type { Lifted } from '../../../shared/ui/Overlay';
 import { showToast } from '../../../shared/ui/Toast';
 
@@ -32,6 +33,7 @@ export type Target = { message: MessageResponse; lifted?: Lifted };
 // `onBegin`: reply / edit mode starts (the composer fills and focuses there, not in an effect).
 export function useMessageActions(
   channelId: string,
+  serverId: string | null,
   onBegin?: (kind: 'reply' | 'edit', message: MessageResponse) => void,
 ) {
   const { t } = useTranslation();
@@ -164,6 +166,13 @@ export function useMessageActions(
       onBegin?.('edit', message);
     },
     endContext: () => setContext(null),
+    // CR-19 #2: "Sao chép link tin".
+    copyLink: (message: MessageResponse) => {
+      setSheet(null);
+      void Clipboard.setStringAsync(
+        messageLinkOf(serverId, channelId, message.id),
+      ).then(() => showToast({ icon: Copy, message: t('chat.copied') }));
+    },
     copyText: (message: MessageResponse) => {
       setSheet(null);
       void Clipboard.setStringAsync(message.content).then(() =>

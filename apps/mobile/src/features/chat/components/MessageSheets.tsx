@@ -1,5 +1,5 @@
 import type { MessageAuthor, MessageResponse } from '@nezfocus/shared';
-import { Copy, Flag, Pencil, Reply, Trash2 } from 'lucide-react-native';
+import { Copy, Flag, Link, Pencil, Reply, Trash2 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import {
   Pressable,
@@ -33,6 +33,7 @@ const ICONS: Record<SheetRow, IconComponent> = {
   reply: Reply,
   edit: Pencil,
   copyText: Copy,
+  copyLink: Link,
   report: Flag,
   delete: Trash2,
 };
@@ -70,6 +71,7 @@ export function MessageSheets({
     reply: actions.reply,
     edit: actions.edit,
     copyText: actions.copyText,
+    copyLink: actions.copyLink,
     // ponytail: "Báo cáo" opens S-MOD-02 with P3-A5.2 (#135); until then the row only shows.
     report: () => actions.close(),
     delete: (m) => actions.askDelete({ message: m, lifted: target?.lifted }),

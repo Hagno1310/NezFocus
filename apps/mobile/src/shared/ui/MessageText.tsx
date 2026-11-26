@@ -24,6 +24,11 @@ import {
   useTheme,
   type Colors,
 } from '../theme';
+import {
+  parseNezfocusLink,
+  type NezfocusLink,
+} from '../../domain/messages/links';
+import { Icon, type IconComponent } from './Icon';
 import { holdSwipe } from './swipeGuard';
 import { Text } from './Text';
 
@@ -45,6 +50,15 @@ const plainMentions: MentionView = {
   onPress: () => {},
 };
 const Mentions = createContext<MentionView>(plainMentions);
+
+// C-10 chip link NezFocus (CR-19 #11): a channel / message / DM link shown as a chip, worded for
+// the viewer; `locked` = "Không xem được" (`text-secondary`, no name). null: an ordinary link.
+export type LinkChip = { label: string; icon: IconComponent; locked: boolean };
+export type LinkView = {
+  chip: (link: NezfocusLink) => LinkChip;
+  onPress: (link: NezfocusLink) => void;
+};
+const Links = createContext<LinkView | null>(null);
 
 // Spoilers opened in this message, by position. Kept here so a reveal can remount the blocks (below).
 const Opened = createContext<{
@@ -120,15 +134,7 @@ function Runs({
             {n.url}
           </Text>
         ) : (
-          <Text
-            key={i}
-            color="primary"
-            accessibilityRole="link"
-            onPress={() => open(n.url)}
-            style={styles.link}
-          >
-            {n.url}
-          </Text>
+          <Link key={i} url={n.url} colors={colors} />
         );
       case 'mention':
         return <Mention key={i} node={n} colors={colors} hidden={hidden} />;
@@ -143,6 +149,40 @@ function Runs({
         );
     }
   });
+}
+
+// An http(s) link; a NezFocus channel / message / DM link becomes a chip (C-10, CR-19 #11).
+function Link({ url, colors }: { url: string; colors: Colors }) {
+  const links = useContext(Links);
+  const parsed = links && parseNezfocusLink(url);
+  if (!links || !parsed)
+    return (
+      <Text
+        color="primary"
+        accessibilityRole="link"
+        onPress={() => open(url)}
+        style={styles.link}
+      >
+        {url}
+      </Text>
+    );
+  const chip = links.chip(parsed);
+  const tone = chip.locked ? 'text-secondary' : 'primary';
+  return (
+    <Text
+      weight="600"
+      color={tone}
+      accessibilityRole="link"
+      onPress={() => links.onPress(parsed)}
+      suppressHighlighting
+      style={{ backgroundColor: colors['surface-2'] }}
+    >
+      <View style={styles.chipIcon}>
+        <Icon as={chip.icon} size="xs" color={tone} />
+      </View>
+      {` ${chip.label}`}
+    </Text>
+  );
 }
 
 // C-10 › Mention trong chữ: `surface-2` (mine `surface-3`), `primary` 600.
@@ -275,9 +315,11 @@ function BlockView({
 export function MessageText({
   content,
   mentions = plainMentions,
+  links = null,
 }: {
   content: string;
   mentions?: MentionView;
+  links?: LinkView | null; // chips for NezFocus links (S-HOME-01 `nezfocus-links`)
 }) {
   const { colors, scheme } = useTheme();
   const blocks = useMemo(() => parseMessage(content), [content]);
@@ -301,13 +343,15 @@ export function MessageText({
   );
   return (
     <Mentions.Provider value={mentions}>
-      <Opened.Provider value={opened}>
-        {blocks.length === 1 && blocks[0]!.t === 'paragraph' ? (
-          view(blocks[0]!, 0)
-        ) : (
-          <View style={styles.blocks}>{blocks.map(view)}</View>
-        )}
-      </Opened.Provider>
+      <Links.Provider value={links}>
+        <Opened.Provider value={opened}>
+          {blocks.length === 1 && blocks[0]!.t === 'paragraph' ? (
+            view(blocks[0]!, 0)
+          ) : (
+            <View style={styles.blocks}>{blocks.map(view)}</View>
+          )}
+        </Opened.Provider>
+      </Links.Provider>
     </Mentions.Provider>
   );
 }
@@ -316,6 +360,7 @@ const QUOTE_BAR = 4;
 const CODE_PAD = 12;
 
 const styles = StyleSheet.create({
+  chipIcon: { transform: [{ translateY: 2 }] },
   flex: { flex: 1 },
   blocks: { gap: space[1] },
   italic: { fontStyle: 'italic' },

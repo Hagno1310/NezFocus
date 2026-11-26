@@ -1,6 +1,12 @@
 // S-HOME-04: which rows the sheet of a sent message has, for this viewer. A failed message
 // (`failed-message`) has its own two rows in ChatView.
-export type SheetRow = 'reply' | 'edit' | 'copyText' | 'report' | 'delete';
+export type SheetRow =
+  | 'reply'
+  | 'edit'
+  | 'copyText'
+  | 'copyLink' // CR-19: right after "Sao chép văn bản", every sent message
+  | 'report'
+  | 'delete';
 
 export type SheetTarget = { mine: boolean; system: boolean; hasText: boolean };
 
@@ -42,6 +48,7 @@ export function messageSheet(
     // `timed-out`: no reactions, no Trả lời; own message still deletable (CR-28 #27).
     rows = [
       ...(target.hasText ? ['copyText' as const] : []),
+      'copyLink',
       target.mine ? 'delete' : 'report',
     ];
     if (!target.mine && canDelete) rows.push('delete');
@@ -51,6 +58,7 @@ export function messageSheet(
       'reply',
       ...(target.mine ? ['edit' as const] : []),
       ...(target.hasText ? ['copyText' as const] : []),
+      'copyLink' as const,
       ...(target.mine ? [] : ['report' as const]),
       ...(canDelete ? ['delete' as const] : []),
     ];

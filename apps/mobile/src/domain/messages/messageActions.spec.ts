@@ -17,12 +17,19 @@ describe('messageSheet', () => {
   it('own-message: reactions · Trả lời · Sửa · Sao chép văn bản · Xóa', () => {
     const s = messageSheet({ ...text, mine: true }, member);
     expect(s?.reactions).toBe('on');
-    expect(rowsOf(s)).toEqual(['reply', 'edit', 'copyText', 'delete']);
+    expect(rowsOf(s)).toEqual([
+      'reply',
+      'edit',
+      'copyText',
+      'copyLink',
+      'delete',
+    ]);
   });
 
   it('others-message: no copy row without text; Báo cáo, no Xóa', () => {
     expect(rowsOf(messageSheet({ ...text, hasText: false }, member))).toEqual([
       'reply',
+      'copyLink',
       'report',
     ]);
   });
@@ -31,6 +38,7 @@ describe('messageSheet', () => {
     expect(rowsOf(messageSheet(text, { ...member, canManage: true }))).toEqual([
       'reply',
       'copyText',
+      'copyLink',
       'report',
       'delete',
     ]);
@@ -49,9 +57,10 @@ describe('messageSheet', () => {
     const timedOut = { ...member, timedOut: true };
     const s = messageSheet(text, timedOut);
     expect(s?.reactions).toBe('off');
-    expect(rowsOf(s)).toEqual(['copyText', 'report']);
+    expect(rowsOf(s)).toEqual(['copyText', 'copyLink', 'report']);
     expect(rowsOf(messageSheet({ ...text, mine: true }, timedOut))).toEqual([
       'copyText',
+      'copyLink',
       'delete',
     ]);
   });
@@ -81,6 +90,7 @@ describe('messageSheet', () => {
       { row: 'reply', disabled: false },
       { row: 'edit', disabled: true },
       { row: 'copyText', disabled: false },
+      { row: 'copyLink', disabled: false },
       { row: 'delete', disabled: true },
     ]);
   });

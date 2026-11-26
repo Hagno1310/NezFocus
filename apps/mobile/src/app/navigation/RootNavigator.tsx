@@ -96,6 +96,7 @@ import { openMemberProfile } from '../../domain/friends/profileSheet';
 import { ProfileSheetHost } from '../../features/friends/components/ProfileSheet';
 import { HomeDrawers } from './HomeDrawers';
 import { InviteRoute } from './InviteRoute';
+import { MessageLinkRoute } from './MessageLinkRoute';
 import { Placeholder } from './Placeholder';
 // Metro folds __DEV__ before collecting dependencies, so release bundles leave the gallery out.
 const UiGallery: ComponentType | null = __DEV__
@@ -116,7 +117,9 @@ export type RootStackParamList = {
   UpdateRequired: undefined; // S-AUTH-00
   Invite: { code: string; channel?: string }; // S-MOD-01; `channel` = ?channel= (STUDY-16)
   UiGallery: undefined; // dev only (P0-3b)
+  // SRS 7.3.5 App Links (REQ-MSG-05 CR-19): MessageLinkRoute.
   ChannelLink: { serverId: string; channelId: string; messageId?: string };
+  DmLink: { channelId: string; messageId?: string };
 };
 
 type StudyParamList = {
@@ -842,7 +845,6 @@ function MainTabs() {
 }
 
 export function RootNavigator() {
-  const { t } = useTranslation();
   const status = useStore(sessionStore, (s) => s.status);
   // Spec 01 › Phiên đăng nhập kết thúc: an ended session lands on S-AUTH-04, not Welcome.
   const sessionEnded = useStore(sessionStore, (s) => s.ended !== null);
@@ -928,10 +930,14 @@ export function RootNavigator() {
       />
       <Stack.Screen
         name="ChannelLink"
-        options={{ title: t('screens.channel') }}
-      >
-        {() => <Placeholder title={t('screens.channel')} />}
-      </Stack.Screen>
+        component={MessageLinkRoute}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="DmLink"
+        component={MessageLinkRoute}
+        options={{ headerShown: false }}
+      />
     </Stack.Navigator>
   );
 }

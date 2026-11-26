@@ -22,6 +22,9 @@ export const KEEP_PER_CHANNEL = 50;
 export const MAX_CACHED_CHANNELS = 200;
 const PAGE = 50;
 const CATCH_UP_PAGE = 100;
+// REQ-MSG-05 link / reply jump: pages walked back to reach an older message.
+// ponytail: khi cần mở tin cũ hơn 1000 tin: một cửa sổ `around` riêng, không nối vào cache.
+const REVEAL_PAGES = 20;
 
 // A message from the server, or one of mine still in the outbox (pending / retrying / failed).
 export type ChatItem =
@@ -326,6 +329,48 @@ export function createMessageStore(deps: MessageStoreDeps) {
       if (mine) await remote.unreact(channelId, messageId, emoji);
       else await remote.react(channelId, messageId, emoji);
       await reacted(channelId, messageId, emoji, mine ? 'remove' : 'add', true);
+    },
+
+    // REQ-MSG-05 AC8 / AC9 before leaving the screen: 40401 (cannot view) throws; false = the
+    // channel is fine but the message is gone. A one-message `around` page is enough.
+    // No messageId: only whether I can view the channel (a channel link, #95).
+    async peek(channelId: string, messageId?: string) {
+      if (!messageId) {
+        await remote.history(channelId, { limit: 1 });
+        return true;
+      }
+      const page = await remote.history(channelId, {
+        around: messageId,
+        limit: 2,
+      });
+      return page.some((m) => m.id === messageId);
+    },
+
+    // Loads back from the oldest cached message until `messageId` is in, so the cache stays one
+    // run with no hole (7.3.2). false: not there (deleted) or too far back.
+    async reveal(channelId: string, messageId: string) {
+      const target = BigInt(messageId);
+      const has = async () => {
+        const cached = await local.messages(channelId);
+        return {
+          found: cached.some((m) => m.id === messageId),
+          oldest: cached[0],
+        };
+      };
+      let { found, oldest } = await has();
+      for (let i = 0; !found && oldest && i < REVEAL_PAGES; i++) {
+        if (BigInt(oldest.id) <= target) break;
+        const page = await remote.history(channelId, {
+          before: oldest.id,
+          limit: PAGE,
+        });
+        await local.saveMessages(page);
+        if (page.length < PAGE) patchView(channelId, { reachedStart: true });
+        if (!page.length) break;
+        ({ found, oldest } = await has());
+      }
+      await refresh(channelId);
+      return found;
     },
 
     reactionUsers: (channelId: string, messageId: string, emoji: string) =>

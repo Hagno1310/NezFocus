@@ -45,6 +45,7 @@ import {
   encodeMentions,
   type PickedMention,
 } from '../../../domain/messages/mentions';
+import { jumps } from '../../../domain/messages/jumps';
 import { messageSheet } from '../../../domain/messages/messageActions';
 import { messageStore } from '../../../data/messages';
 import {
@@ -84,6 +85,7 @@ import { avatarUri } from '../../me/avatarUri';
 import { lastActive } from '../../../domain/account/sessions';
 import { useChannelAbilities } from '../hooks/useCanSend';
 import { useChannelMessages } from '../hooks/useChannelMessages';
+import { useLinkChips } from '../hooks/useLinkChips';
 import { useMessageActions } from '../hooks/useMessageActions';
 import { MessageSheets } from './MessageSheets';
 import { useChannelReading } from '../hooks/useChannelReading';
@@ -147,8 +149,9 @@ export function ChatView({
   const { now, timeZone } = useChatClock();
   const view = useChannelMessages(channelId, serverId);
   const outbox = useSendMessage(channelId);
-  const actions = useMessageActions(channelId, beginContext);
+  const actions = useMessageActions(channelId, serverId, beginContext);
   const abilities = useChannelAbilities(serverId, channelId);
+  const linkChips = useLinkChips(serverId);
   const viewer = {
     inDm: !serverId,
     canManage: abilities.canManage,
@@ -356,20 +359,52 @@ export function ChatView({
           }
     : undefined;
 
-  // C-10 `highlight` after a jump: one flash for a reply (02 S-HOME-01 › Tương tác).
-  const [flash, setFlash] = useState<{ id: string; key: number } | null>(null);
-  const jumpTo = (messageId: string) => {
-    const index = rows.findIndex(
-      (r) =>
-        r.kind === 'message' &&
-        r.item.kind === 'message' &&
-        r.item.message.id === messageId,
-    );
-    // ponytail: an original not loaded yet is fetched `around` it with P3-A1.3 (#122).
-    if (index < 0) return;
-    list.current?.scrollToIndex({ index, viewPosition: 0.5, animated: true });
-    setFlash({ id: messageId, key: Date.now() });
-  };
+  // C-10 `highlight`: a reply jump flashes once; a link / push (CR-19 #2) twice, the message a
+  // third from the top. The target lives in `jumps`, so a link opened elsewhere lands here too.
+  const target = useStore(jumps, (j) =>
+    j?.channelId === channelId ? j : null,
+  );
+  const targetIndex = target
+    ? rows.findIndex(
+        (r) =>
+          r.kind === 'message' &&
+          r.item.kind === 'message' &&
+          r.item.message.id === target.messageId,
+      )
+    : -1;
+  const jumpTo = (messageId: string, times: 1 | 2 = 1) =>
+    jumps.setState({ channelId, messageId, times, key: Date.now() }, true);
+  const walked = useRef<number | null>(null);
+  useEffect(() => {
+    // Not loaded yet: the cache walks back to it; gone meanwhile → AC9's Toast.
+    if (!target || view.loading || targetIndex >= 0) return;
+    if (walked.current === target.key) return;
+    walked.current = target.key;
+    void messageStore
+      .reveal(channelId, target.messageId)
+      .then((found) => {
+        if (found) return;
+        jumps.setState(null, true);
+        showToast({ message: t('chat.messageDeleted') });
+      })
+      .catch(() => jumps.setState(null, true));
+  }, [target, view.loading, targetIndex, channelId, t]);
+  const scrolled = useRef<number | null>(null);
+  useEffect(() => {
+    if (!target || targetIndex < 0 || scrolled.current === target.key) return;
+    scrolled.current = target.key;
+    // Inverted list: viewPosition 1 is the top of the screen.
+    list.current?.scrollToIndex({
+      index: targetIndex,
+      viewPosition: target.times === 2 ? 2 / 3 : 0.5,
+      animated: target.times === 1,
+    });
+    // After the flashes (2 × 400 ms, or 1 s held): done, so coming back does not jump again.
+    const done = setTimeout(() => {
+      if (jumps.getState()?.key === target.key) jumps.setState(null, true);
+    }, 1500);
+    return () => clearTimeout(done);
+  }, [target, targetIndex]);
   const pick = (key: string) => {
     if (!mentions.suggestion) return;
     const next = mentions.suggestion.pick(key, draft, draft.length);
@@ -503,8 +538,8 @@ export function ChatView({
           ) : undefined
         }
         highlight={
-          message && flash?.id === message.id
-            ? { key: flash.key, times: 1 }
+          message && targetIndex >= 0 && target?.messageId === message.id
+            ? { key: target.key, times: target.times }
             : undefined
         }
         actions={[
@@ -556,7 +591,11 @@ export function ChatView({
         // S-HOME-01 › Tương tác: long-press a sent message → S-HOME-04.
         onLongPress={message && sheetOpens && !lifted ? openSheet : undefined}
       >
-        <MessageText content={contentOf(row.item)} mentions={mentionView} />
+        <MessageText
+          content={contentOf(row.item)}
+          mentions={mentionView}
+          links={linkChips}
+        />
       </MessageBubble>
     );
   };

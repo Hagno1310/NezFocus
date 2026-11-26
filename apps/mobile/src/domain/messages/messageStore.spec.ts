@@ -494,3 +494,40 @@ describe('REQ-MSG-05 on the device', () => {
     ]);
   });
 });
+
+describe('opening a message (REQ-MSG-05 CR-19)', () => {
+  const many = (n: number) =>
+    Array.from({ length: n }, (_, i) => msg(String(i + 1)));
+
+  it('peek: there or deleted; a channel I cannot view throws', async () => {
+    const server = fakeRemote([msg('1'), msg('3')]);
+    const { store } = setup(server);
+    server.remote.history = async (_c, q) =>
+      q.around === '9'
+        ? Promise.reject(Object.assign(new Error('x'), { code: 40401 }))
+        : server.messages.filter((m) => m.id === q.around);
+    expect(await store.peek('7', '3')).toBe(true);
+    expect(await store.peek('7', '2')).toBe(false);
+    await expect(store.peek('7', '9')).rejects.toMatchObject({ code: 40401 });
+  });
+
+  it('reveal walks back page by page until the message is cached, no hole left', async () => {
+    const t = setup(fakeRemote(many(130)));
+    await t.store.open('7', '9');
+    expect(t.shown()[0]).toBe('81');
+    expect(await t.store.reveal('7', '12')).toBe(true);
+    const ids = t.shown().map(Number);
+    expect(ids[0]).toBeLessThanOrEqual(12);
+    expect(ids).toEqual(
+      Array.from({ length: ids.length }, (_, i) => ids[0]! + i),
+    );
+  });
+
+  it('reveal of a message not there (deleted) stops once past it', async () => {
+    const t = setup(fakeRemote(many(130).filter((m) => m.id !== '20')));
+    await t.store.open('7', '9');
+    expect(await t.store.reveal('7', '20')).toBe(false);
+    // 81 → 31 → 1: past 20 after two pages, then it stops.
+    expect(t.server.queries.filter((q) => q.before)).toHaveLength(2);
+  });
+});

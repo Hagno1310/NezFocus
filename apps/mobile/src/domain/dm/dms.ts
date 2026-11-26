@@ -50,7 +50,14 @@ export const closeDm = (s: DmState, id: string): DmState => {
 };
 
 export type DmLine2 =
-  | { kind: 'message'; text: string; own: boolean; bold: boolean }
+  // `image`: only images, read "Đã gửi một ảnh" (REQ-MSG-04).
+  | {
+      kind: 'message';
+      text: string;
+      image: boolean;
+      own: boolean;
+      bold: boolean;
+    }
   | { kind: 'activity'; activity: StudyActivity }
   | { kind: 'none' };
 
@@ -63,10 +70,11 @@ export function dmLine2(
   if (o.activity && !o.unread && !dm.recipient.deleted)
     return { kind: 'activity', activity: o.activity };
   if (!last) return { kind: 'none' };
-  // ponytail: "Đã gửi một ảnh / tệp" comes with P3-A2.2 (#124), call lines with P3-B6.3 (#157).
+  // ponytail: call lines come with P3-B6.3 (#157).
   return {
     kind: 'message',
     text: last.content,
+    image: !last.content.trim() && last.attachments.length > 0,
     own: last.author.id === o.meId,
     bold: o.unread,
   };

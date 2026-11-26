@@ -7,10 +7,12 @@ import {
   type MessageUpdateEvent,
 } from '@nezfocus/shared';
 import { createStore } from 'zustand/vanilla';
+import type { UploadRef, Uploads } from '../attachments/uploads';
 import type { LocalMessages } from './LocalMessages';
 import type { MessageRepository } from './MessageRepository';
 import { withReaction, type ReactionOp } from './reactions';
 import {
+  FILE_BLOCKED,
   afterFailure,
   classifySendError,
   isDue,
@@ -47,7 +49,11 @@ export type MessageStoreDeps = {
   newNonce: () => string;
   random?: () => number;
   setTimer: (fn: () => void, ms: number) => () => void;
+  uploads?: Pick<Uploads, 'ensure' | 'forget'>; // REQ-MSG-04
 };
+
+// An image is not uploaded yet for a reason a retry may fix: like a send without network.
+class UploadNotReady extends Error {}
 
 const emptyView = (serverId: string | null): ChannelView => ({
   serverId,
@@ -134,18 +140,56 @@ export function createMessageStore(deps: MessageStoreDeps) {
       );
   };
 
+  // S-HOME-05: a message only goes once every image is uploaded and passed `complete`. An
+  // image blocked meanwhile fails the message (C-10 `failed · file-blocked`); ids are kept, so
+  // a retry does not upload twice. null: blocked.
+  const attachmentIdsOf = async (entry: OutboxEntry) => {
+    const live = entry.attachments.filter((a) => !a.blocked);
+    if (!live.length) return [];
+    if (!deps.uploads) throw new UploadNotReady();
+    const uploads = deps.uploads;
+    const results = await Promise.all(
+      live.map((a) => uploads.ensure(entry.channelId, a)),
+    );
+    const attachments = entry.attachments.map((a) => {
+      const r = results[live.indexOf(a)];
+      if (!r) return a;
+      if (r.ok) return { ...a, attachmentId: r.id };
+      return r.kind === 'rejected' ? { ...a, blocked: true } : a;
+    });
+    await local.updateOutbox(entry.nonce, { attachments });
+    if (results.some((r) => !r.ok && r.kind === 'rejected')) return null;
+    if (results.some((r) => !r.ok && r.kind === 'refused'))
+      throw Object.assign(new Error('upload refused'), { status: 400 });
+    if (results.some((r) => !r.ok)) throw new UploadNotReady();
+    return results.flatMap((r) => (r.ok ? [r.id] : []));
+  };
+
   const sendOne = async (entry: OutboxEntry) => {
     try {
+      const attachmentIds = await attachmentIdsOf(entry);
+      if (!attachmentIds) {
+        await local.updateOutbox(entry.nonce, {
+          status: 'failed',
+          nextAttemptAt: null,
+          lastError: FILE_BLOCKED,
+        });
+        return true;
+      }
       const message = await remote.send(entry.channelId, {
         content: entry.content,
         nonce: entry.nonce,
         ...(entry.replyToId ? { reply_to_id: entry.replyToId } : {}),
+        ...(attachmentIds.length ? { attachment_ids: attachmentIds } : {}),
       });
       await local.saveMessages([message]);
       await local.removeOutbox(entry.nonce);
+      deps.uploads?.forget(entry.attachments.map((a) => a.key));
       return true;
     } catch (err) {
-      const failure = classifySendError(err);
+      const failure = classifySendError(
+        err instanceof UploadNotReady ? new TypeError('upload') : err,
+      );
       await local.updateOutbox(
         entry.nonce,
         afterFailure(entry, failure, deps.now(), deps.random),
@@ -225,6 +269,20 @@ export function createMessageStore(deps: MessageStoreDeps) {
     await refresh(channelId);
   };
 
+  // S-HOME-04 `failed-message` "Gửi lại": the 24 hours start again (19/11/2026).
+  async function retry(nonce: string) {
+    await local.updateOutbox(nonce, {
+      status: 'pending',
+      attempts: 0,
+      nextAttemptAt: null,
+      lastError: null,
+      queuedAt: deps.now(),
+    });
+    const entry = (await local.outbox()).find((e) => e.nonce === nonce);
+    if (entry) await refresh(entry.channelId);
+    await flush();
+  }
+
   return {
     state,
 
@@ -254,8 +312,13 @@ export function createMessageStore(deps: MessageStoreDeps) {
       await refresh(channelId);
     },
 
-    // `replyToId`: S-HOME-01 `reply-mode` (REQ-MSG-05).
-    async send(channelId: string, content: string, replyToId?: string) {
+    // `replyToId`: S-HOME-01 `reply-mode` (REQ-MSG-05); `attachments`: the tray (REQ-MSG-04).
+    async send(
+      channelId: string,
+      content: string,
+      replyToId?: string,
+      attachments: readonly UploadRef[] = [],
+    ) {
       const now = deps.now();
       await local.addOutbox({
         nonce: deps.newNonce(),
@@ -263,6 +326,7 @@ export function createMessageStore(deps: MessageStoreDeps) {
         serverId: state.getState().views[channelId]?.serverId ?? null,
         content,
         replyToId: replyToId ?? null,
+        attachments: attachments.map((a) => ({ ...a, blocked: false })),
         status: 'pending',
         attempts: 0,
         nextAttemptAt: null,
@@ -274,24 +338,31 @@ export function createMessageStore(deps: MessageStoreDeps) {
       void flush();
     },
 
-    // S-HOME-04 `failed-message` "Gửi lại": the 24 hours start again (19/11/2026).
-    async retry(nonce: string) {
-      await local.updateOutbox(nonce, {
-        status: 'pending',
-        attempts: 0,
-        nextAttemptAt: null,
-        lastError: null,
-        queuedAt: deps.now(),
-      });
+    retry,
+
+    // S-HOME-04 `failed-file-blocked` "Gửi không kèm tệp bị chặn" (CR-19 #7): the rest goes;
+    // nothing left to send (no text, every image blocked) → the message goes away.
+    async sendWithoutBlocked(nonce: string) {
       const entry = (await local.outbox()).find((e) => e.nonce === nonce);
-      if (entry) await refresh(entry.channelId);
-      await flush();
+      if (!entry) return;
+      const attachments = entry.attachments.filter((a) => !a.blocked);
+      deps.uploads?.forget(
+        entry.attachments.filter((a) => a.blocked).map((a) => a.key),
+      );
+      if (!attachments.length && !entry.content.trim()) {
+        await local.removeOutbox(nonce);
+        await refresh(entry.channelId);
+        return;
+      }
+      await local.updateOutbox(nonce, { attachments });
+      await retry(nonce);
     },
 
     // "Xóa tin nhắn": out of the outbox, never sent.
     async discard(nonce: string) {
       const entry = (await local.outbox()).find((e) => e.nonce === nonce);
       await local.removeOutbox(nonce);
+      deps.uploads?.forget(entry?.attachments.map((a) => a.key) ?? []);
       if (entry) await refresh(entry.channelId);
     },
 

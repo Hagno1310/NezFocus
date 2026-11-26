@@ -101,8 +101,8 @@ export function DmList({ onFriends }: { onFriends: () => void }) {
         message={
           line.kind === 'message'
             ? line.own
-              ? t('dm.mine', { text: line.text })
-              : line.text
+              ? t('dm.mine', { text: messageText(line) })
+              : messageText(line)
             : undefined
         }
         onPress={() => showDm(d.id)}
@@ -110,6 +110,11 @@ export function DmList({ onFriends }: { onFriends: () => void }) {
       />
     );
   };
+
+  // S-DM-01 › Nội dung chữ: "Đã gửi một ảnh" for a message of images only.
+  function messageText(line: { text: string; image: boolean }) {
+    return line.image ? t('chat.imageOnly') : line.text;
+  }
 
   const failed = () =>
     showToast({ message: t('friends.addSheet.errors.generic') });

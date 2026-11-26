@@ -55,6 +55,7 @@ const message = (
   reply_to_id: null,
   referenced_message: null,
   reactions: [],
+  attachments: [],
   edited_at: null,
   pinned_at: null,
   created_at: at.toISOString(),

@@ -36,6 +36,7 @@ import {
 } from '../theme';
 import { IconButton } from './Button';
 import { Icon, type IconComponent } from './Icon';
+import { MessageImages, type ChatImage } from './MessageImages';
 import { Avatar } from './People';
 import { Text } from './Text';
 
@@ -155,6 +156,7 @@ export function MessageBubble({
   onPress,
   onLongPress,
   onPressAuthor,
+  images,
   children,
 }: {
   name: string;
@@ -187,12 +189,21 @@ export function MessageBubble({
   onLongPress?: (at: { top: number }) => void;
   // Avatar / name → S-HOME-10 (P2-B3.4, #117).
   onPressAuthor?: () => void;
+  // C-10 Ảnh under the text; long-pressing one is long-pressing the message.
+  images?: {
+    items: readonly ChatImage[];
+    onOpen?: (index: number) => void;
+    onError?: () => void;
+  };
   children: ReactNode;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const pending = status?.kind === 'pending';
   const row = useRef<ComponentRef<typeof View>>(null);
+  const longPress =
+    onLongPress &&
+    (() => row.current?.measureInWindow((_x, top) => onLongPress({ top })));
   return (
     <Pressable
       ref={row}
@@ -205,10 +216,7 @@ export function MessageBubble({
         actions[Number(e.nativeEvent.actionName.slice(1))]?.onPress()
       }
       onPress={onPress}
-      onLongPress={
-        onLongPress &&
-        (() => row.current?.measureInWindow((_x, top) => onLongPress({ top })))
-      }
+      onLongPress={longPress}
       disabled={!onPress && !onLongPress}
       style={[
         styles.message,
@@ -274,6 +282,14 @@ export function MessageBubble({
           </View>
         )}
         {children}
+        {images && (
+          <MessageImages
+            images={images.items}
+            onOpen={images.onOpen}
+            onLongPress={longPress}
+            onError={images.onError}
+          />
+        )}
         {edited && (
           <Text variant="label" weight="400" color="text-tertiary">
             {edited}

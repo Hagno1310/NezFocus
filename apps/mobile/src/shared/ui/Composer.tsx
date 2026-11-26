@@ -53,11 +53,11 @@ export function Composer({
   counter: Counter | null;
   canSend: boolean;
   onSend: () => void;
-  // ponytail: `+` comes with attachments, P3-A2.2 (#124); ☺ with the EmojiPicker, P3-A1.2 (#121).
+  // `+` → S-HOME-05 `picking` (hidden without ATTACH_FILES, C-11 `no-attach`); ☺ → EmojiPicker.
   onAttach?: () => void;
   onEmoji?: () => void;
   disabled?: ComposerBlock;
-  // Tray over the input (attachments: P3-A2.2 #124).
+  // C-29 AttachmentTray over the input.
   above?: ReactNode;
   context?: ComposerContext;
   inputRef?: Ref<ComponentRef<typeof TextInput>>;

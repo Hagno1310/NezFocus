@@ -31,11 +31,17 @@ export function useChannelAbilities(
   );
   // A DM, or roles not known yet: the backend decides (40302 → Toast).
   if (!serverId || !access || !channel || !access.roles)
-    return { canManage: false, canReact: true, timedOut: false };
+    return {
+      canManage: false,
+      canReact: true,
+      canAttach: true,
+      timedOut: false,
+    };
   const perms = access.channelPerms(channel);
   return {
     canManage: hasPermission(perms, Permission.MANAGE_MESSAGES),
     canReact: hasPermission(perms, Permission.ADD_REACTIONS),
+    canAttach: hasPermission(perms, Permission.ATTACH_FILES), // C-11 `no-attach`
     timedOut: false,
   };
 }

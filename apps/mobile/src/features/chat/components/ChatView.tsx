@@ -1,4 +1,10 @@
-import { ArrowRight, CloudOff, RotateCw, Trash2 } from 'lucide-react-native';
+import {
+  ArrowRight,
+  CloudOff,
+  RotateCw,
+  SendHorizontal,
+  Trash2,
+} from 'lucide-react-native';
 import {
   useCallback,
   useEffect,
@@ -53,6 +59,11 @@ import {
   spokenText,
 } from '../../../domain/messages/markdown';
 import type { ChatItem } from '../../../domain/messages/messageStore';
+import { FILE_BLOCKED } from '../../../domain/messages/outbox';
+import { AttachmentTray } from '../../../shared/ui/AttachmentTray';
+import { PhotoSourceSheet } from '../../media/PhotoSourceSheet';
+import { useAttachmentTray } from '../hooks/useAttachmentTray';
+import { useChatImages } from '../hooks/useChatImages';
 import { size, space, useTheme } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import {
@@ -153,6 +164,8 @@ export function ChatView({
   const actions = useMessageActions(channelId, serverId, beginContext);
   const abilities = useChannelAbilities(serverId, channelId);
   const linkChips = useLinkChips(serverId);
+  const tray = useAttachmentTray(channelId);
+  const images = useChatImages();
   const viewer = {
     inDm: !serverId,
     canManage: abilities.canManage,
@@ -353,10 +366,15 @@ export function ChatView({
       actions.saveEdit(id, toSend);
       return;
     }
-    if (!count.canSend) return;
+    // MSG-01 AC2: text or images; never over 2000 characters.
+    if (count.counter?.kind === 'over') return;
+    if (!count.canSend && !tray.hasFiles) return;
+    const files = tray.take();
+    if (!files) return; // C-11 "Gỡ hoặc thử lại tệp lỗi để gửi"
     void outbox.send(
       toSend,
       context?.kind === 'reply' ? context.message.id : undefined,
+      files,
     );
     if (context) actions.endContext();
     drafts.set(channelId, '');
@@ -391,6 +409,7 @@ export function ChatView({
   const [failed, setFailed] = useState<{
     nonce: string;
     lifted: Lifted;
+    fileBlocked: boolean;
   } | null>(null);
 
   const author = (row: Extract<ChatRow, { kind: 'message' }>): Author => {
@@ -421,6 +440,14 @@ export function ChatView({
     // FRIEND-03 AC1 / S-DM-EDGE `blocked-mid-chat`: the one sentence, no "Thử lại".
     if (status === 'failed' && lastError === CANNOT_MESSAGE)
       return { kind: 'failed', text: CANNOT_MESSAGE_TEXT };
+    // C-10 `failed · file-blocked` (CR-19 #7): no "Thử lại", tap → S-HOME-04.
+    if (status === 'failed' && lastError === FILE_BLOCKED)
+      return {
+        kind: 'failed',
+        text: t('chat.fileBlocked', {
+          count: item.entry.attachments.filter((a) => a.blocked).length,
+        }),
+      };
     return status === 'failed'
       ? { kind: 'failed', text: t('chat.failed') }
       : { kind: 'pending', offline: !online };
@@ -434,7 +461,14 @@ export function ChatView({
     const blocks = parseMessage(contentOf(row.item));
     const message = row.item.kind === 'message' ? row.item.message : null;
     const mentionView = message ? mentions.viewOf(message) : undefined;
-    const content = spokenText(blocks, t('chat.spoiler'), mentionView?.label);
+    const pictures = images.imagesOf(row.item);
+    const spoken = spokenText(blocks, t('chat.spoiler'), mentionView?.label);
+    const content = [
+      spoken,
+      pictures.length ? t('chat.a11yImages', { count: pictures.length }) : '',
+    ]
+      .filter(Boolean)
+      .join(', ');
     const time = timeText(t, row.time);
     const status = statusOf(row.item);
     const isFailed = status?.kind === 'failed';
@@ -556,6 +590,9 @@ export function ChatView({
                   setFailed({
                     nonce,
                     lifted: { top: y, node: bubble(row, true) },
+                    fileBlocked:
+                      row.item.kind === 'outbox' &&
+                      row.item.entry.lastError === FILE_BLOCKED,
                   }),
                 );
               }
@@ -563,6 +600,24 @@ export function ChatView({
         }
         // S-HOME-01 › Tương tác: long-press a sent message → S-HOME-04.
         onLongPress={message && sheetOpens && !lifted ? openSheet : undefined}
+        images={
+          pictures.length
+            ? {
+                items: pictures,
+                // S-HOME-01 › Tương tác: an image → S-HOME-11 at it.
+                onOpen: lifted
+                  ? undefined
+                  : (i) =>
+                      images.open(
+                        row.item,
+                        i,
+                        { name: who.name, avatarUri: who.uri },
+                        time,
+                      ),
+                onError: images.onImageError,
+              }
+            : undefined
+        }
       >
         <MessageText
           content={contentOf(row.item)}
@@ -732,14 +787,42 @@ export function ChatView({
           onChangeText={(text) => drafts.set(channelId, text)}
           placeholder={placeholder}
           counter={count.counter}
-          canSend={count.canSend || (!!editing && !toSend.trim())}
+          canSend={
+            count.canSend ||
+            (!!editing && !toSend.trim()) ||
+            (!editing && tray.hasFiles && count.counter?.kind !== 'over')
+          }
           onSend={send}
           disabled={disabled}
           context={composerContext}
           onEmoji={actions.openComposerPicker}
+          // C-11 `no-attach`: no ATTACH_FILES, no `+`; an edit keeps its images (MSG-05).
+          onAttach={
+            abilities.canAttach && !editing ? tray.openPicker : undefined
+          }
+          above={
+            editing ? undefined : (
+              <AttachmentTray
+                tiles={tray.tiles}
+                line={tray.line}
+                onRemove={tray.remove}
+                onRetry={tray.retry}
+              />
+            )
+          }
           inputRef={input}
         />
       )}
+      {/* S-HOME-05 `picking`: "Ảnh" (photo picker, images only) · "Chụp ảnh" (CR-28). */}
+      <PhotoSourceSheet
+        visible={tray.picking}
+        title={t('chat.attachTitle')}
+        labels={{ pick: t('chat.attachPhoto'), take: t('chat.attachCamera') }}
+        cameraBody={t('chat.attachCameraBody')}
+        onPhotos={tray.add}
+        onDismiss={tray.closePicker}
+      />
+      {images.viewer}
       <MessageSheets
         actions={actions}
         sheetOf={sheetOf}
@@ -755,14 +838,27 @@ export function ChatView({
         groups={[
           {
             items: [
-              {
-                label: t('chat.resend'),
-                icon: RotateCw,
-                onPress: () => {
-                  if (failed) void outbox.retry(failed.nonce).catch(() => {});
-                  setFailed(null);
-                },
-              },
+              // S-HOME-04 `failed-file-blocked` (CR-19 #7) or `failed-message`.
+              failed?.fileBlocked
+                ? {
+                    label: t('chat.sendWithoutBlocked'),
+                    icon: SendHorizontal,
+                    onPress: () => {
+                      void outbox
+                        .sendWithoutBlocked(failed.nonce)
+                        .catch(() => {});
+                      setFailed(null);
+                    },
+                  }
+                : {
+                    label: t('chat.resend'),
+                    icon: RotateCw,
+                    onPress: () => {
+                      if (failed)
+                        void outbox.retry(failed.nonce).catch(() => {});
+                      setFailed(null);
+                    },
+                  },
               {
                 label: t('chat.deleteMessage'),
                 icon: Trash2,

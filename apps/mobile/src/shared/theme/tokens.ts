@@ -187,6 +187,14 @@ export const size = {
   emojiCell: 44,
   emojiGlyph: 24,
   composerContext: 36,
+  // C-29 AttachmentTray: 64 tiles, ✕ drawn 20 (chốt 26/11/2026), ✓ 24, progress ring 28.
+  attachTile: 64,
+  attachClose: 20,
+  attachMark: 24,
+  attachRing: 28,
+  // C-10 images: one keeps its ratio within 240 × 320; several are a 2-column grid of
+  // 100 × 75 cells, 4 apart (frame `attachments`, chốt 26/11/2026).
+  image: { maxWidth: 240, maxHeight: 320, cellWidth: 100, cellHeight: 75 },
   groupTitle: 28,
   settingsRow: 56,
   dialogMax: 320,

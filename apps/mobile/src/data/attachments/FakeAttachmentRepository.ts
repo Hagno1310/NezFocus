@@ -1,4 +1,10 @@
-import { AVATAR_MAX_BYTES, AVATAR_TYPES, ErrorCode } from '@nezfocus/shared';
+import {
+  AVATAR_MAX_BYTES,
+  AVATAR_TYPES,
+  ErrorCode,
+  MESSAGE_ATTACHMENT_MAX_BYTES,
+  MESSAGE_ATTACHMENT_TYPES,
+} from '@nezfocus/shared';
 import type { AttachmentRepository } from '../../domain/attachments/AttachmentRepository';
 import { ApiError } from '../api/client';
 
@@ -20,9 +26,16 @@ export function createFakeAttachmentRepository(
   return {
     async create(body) {
       await wait();
-      if (body.size_bytes > AVATAR_MAX_BYTES)
+      const message = body.purpose === 'message';
+      if (
+        body.size_bytes >
+        (message ? MESSAGE_ATTACHMENT_MAX_BYTES : AVATAR_MAX_BYTES)
+      )
         throw fail(413, ErrorCode.FileTooLarge);
-      if (!(AVATAR_TYPES as readonly string[]).includes(body.content_type))
+      const types: readonly string[] = message
+        ? MESSAGE_ATTACHMENT_TYPES
+        : AVATAR_TYPES;
+      if (!types.includes(body.content_type))
         throw fail(415, ErrorCode.UnsupportedFileType);
       nextId += 1;
       return {
@@ -31,8 +44,12 @@ export function createFakeAttachmentRepository(
         expires_at: new Date(Date.now() + 10 * 60_000).toISOString(),
       };
     },
-    async uploadFile(url, file) {
-      await wait();
+    async uploadFile(url, file, opts) {
+      for (const p of [0.25, 0.5, 0.75, 1]) {
+        await wait();
+        if (opts?.signal?.aborted) throw new Error('aborted');
+        opts?.onProgress?.(p);
+      }
       pending.set(url.split('/').pop()!, file.uri);
     },
     async complete(id) {

@@ -28,35 +28,58 @@ type CameraSheet = 'camera' | 'camera-blocked' | null;
 
 // 07 S-ME-01 `avatar-sheet` / 08 S-SET-01 "Đổi ảnh server": library, camera, remove. The
 // camera follows 10 S-MOD-05: explained first; once refused Android asks straight away;
-// blocked → the sheet that opens Settings.
+// blocked → the sheet that opens Settings. 02 S-HOME-05 `picking` passes `onPhotos`: several
+// photos at once, as they are (REQ-MSG-04).
 export function PhotoSourceSheet({
   visible,
   title,
   labels,
+  cameraBody,
   onRemove,
   onPicked,
+  onPhotos,
   onTypeError,
   onDismiss,
 }: {
   visible: boolean;
   title?: string;
-  labels: { pick: string; take: string; remove: string };
+  labels: { pick: string; take: string; remove?: string };
+  cameraBody?: string; // S-MOD-05 `camera` (ảnh) for this use
   onRemove?: () => void; // only when there is a photo
-  onPicked: (photo: PickedPhoto) => void;
-  onTypeError: () => void;
+  onPicked?: (photo: PickedPhoto) => void;
+  onPhotos?: (photos: ImagePicker.ImagePickerAsset[]) => void;
+  onTypeError?: () => void;
   onDismiss: () => void;
 }) {
   const { t } = useTranslation();
   const [cameraSheet, setCameraSheet] = useState<CameraSheet>(null);
 
-  const handle = (result: PickedPhoto | 'type' | null) => {
-    if (result === 'type') onTypeError();
-    else if (result) onPicked(result);
+  const handle = (result: ImagePicker.ImagePickerResult) => {
+    if (onPhotos) {
+      if (!result.canceled && result.assets.length) onPhotos(result.assets);
+      return;
+    }
+    const one = picked(result);
+    if (one === 'type') onTypeError?.();
+    else if (one) onPicked?.(one);
   };
 
+  // quality 1: the photo as taken; the library is the system photo picker (no permission).
   const shoot = async () =>
     handle(
-      picked(await ImagePicker.launchCameraAsync({ mediaTypes: ['images'] })),
+      await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        quality: 1,
+      }),
+    );
+  const library = async () =>
+    handle(
+      await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsMultipleSelection: !!onPhotos,
+        orderedSelection: true,
+        quality: 1,
+      }),
     );
 
   const takePhoto = async () => {
@@ -92,7 +115,7 @@ export function PhotoSourceSheet({
                 icon: ImageIcon,
                 onPress: () => {
                   onDismiss();
-                  void pickFromLibrary().then(handle);
+                  void library();
                 },
               },
               {
@@ -100,7 +123,7 @@ export function PhotoSourceSheet({
                 icon: Camera,
                 onPress: () => void takePhoto(),
               },
-              ...(onRemove
+              ...(onRemove && labels.remove
                 ? [
                     {
                       label: labels.remove,
@@ -144,7 +167,9 @@ export function PhotoSourceSheet({
         onDismiss={() => setCameraSheet(null)}
       >
         <Text color="text-secondary" style={styles.center}>
-          {t(blocked ? 'me.camera.blockedBody' : 'me.camera.body')}
+          {blocked
+            ? t('me.camera.blockedBody')
+            : (cameraBody ?? t('me.camera.body'))}
         </Text>
       </BottomSheet>
     </>

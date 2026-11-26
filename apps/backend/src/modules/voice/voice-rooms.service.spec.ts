@@ -17,14 +17,17 @@ const BINH = { userId: 2n, authSessionId: 20n };
 
 // REQ-VC-01 "Mất kết nối không phải rời phòng": a seat waits 3 minutes for its owner.
 describe('VoiceRoomsService away seats', () => {
-  const setup = async () => {
+  const setup = async (failRemoveOf?: string) => {
     const clock = fixedClock();
     const sent: { to: string; d: VoiceState }[] = [];
     const removed: string[] = [];
     const voice = new VoiceRoomsService(
       new MemoryVoiceSeats(),
       {
-        remove: async (room: string) => void removed.push(room),
+        remove: async (room: string, identity: string) => {
+          if (identity === failRemoveOf) throw new Error('LiveKit down');
+          removed.push(room);
+        },
       } as unknown as LiveKitRooms,
       {} as LiveKitKeys,
       {
@@ -78,6 +81,26 @@ describe('VoiceRoomsService away seats', () => {
     expect(sent.at(-2)).toMatchObject({ to: 'room', d: { channel_id: null } });
     expect(sent.at(-1)).toMatchObject({ to: 'device', d: { reason: 'left' } });
     expect(removed).toEqual([`voice:${ROOM}`]);
+  });
+
+  it('one person LiveKit fails to remove does not keep the others in the room', async () => {
+    const { voice, clock, left } = await setup('2');
+    const CHI = { userId: 3n, authSessionId: 30n };
+    await voice.update(CHI, {
+      channel_id: ROOM.toString(),
+      self_mute: true,
+      self_video: false,
+    });
+    await left(0);
+    await voice.webhook({
+      event: 'participant_left',
+      createdAt: BigInt(Math.floor(clock.now().getTime() / 1000)),
+      room: { name: `voice:${ROOM}` },
+      participant: { identity: '3', disconnectReason: 0 },
+    } as unknown as WebhookEvent);
+    clock.advance(180);
+    await voice.expireAway();
+    expect(await voice.seatOf(CHI.userId)).toBeNull();
   });
 
   it('coming back within 3 minutes keeps joined_at (Participation liền mạch)', async () => {

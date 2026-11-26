@@ -1,4 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   AuthRoutes,
   ChannelRoutes,
@@ -176,7 +177,8 @@ describe('Voice (e2e)', () => {
     it('signs one room for 10 minutes, identity = user id, mic and camera, no data', async () => {
       const { binh, voice } = await room();
       const { url, claims } = await grantOf(binh, voice.id);
-      expect(url).toBe('ws://localhost:7880');
+      // Whatever this machine's .env says (a phone test sets the LAN IP).
+      expect(url).toBe(app.get(ConfigService).get('LIVEKIT_URL'));
       expect(claims.sub).toBe(binh.id);
       const ttl = claims.exp! - Date.now() / 1000;
       expect(ttl).toBeGreaterThan(590);

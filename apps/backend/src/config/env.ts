@@ -3,6 +3,13 @@ import { z } from 'zod';
 // Sample values from .env.example, infra/.env.prod.example and CI.
 const PLACEHOLDER_SECRET = /^(change-me|dev-only|ci-only)/;
 
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0']);
+const publicUrl = (url: string | undefined, protocol: string) => {
+  if (!url) return false;
+  const u = new URL(url);
+  return u.protocol === protocol && !LOCAL_HOSTS.has(u.hostname);
+};
+
 export const Env = z
   .object({
     NODE_ENV: z
@@ -16,6 +23,9 @@ export const Env = z
     WORKER_ID: z.coerce.number().int().min(0).max(1023).default(0),
     // Object storage (SRS 5.3 Upload). Defaults match infra/docker-compose.yml (SeaweedFS).
     S3_ENDPOINT: z.string().url().default('http://localhost:8333'),
+    // What the phone reaches: presigned upload / read URLs are signed for this host. Unset =
+    // S3_ENDPOINT (fine on a PC; a phone needs the LAN IP, production https://S3_DOMAIN).
+    S3_PUBLIC_ENDPOINT: z.string().url().optional(),
     S3_REGION: z.string().default('us-east-1'),
     S3_ACCESS_KEY: z.string().default('nezfocus'),
     S3_SECRET_KEY: z.string().default('nezfocus-dev-secret'),
@@ -61,6 +71,25 @@ export const Env = z
     {
       path: ['LIVEKIT_API_SECRET'],
       message: 'still the dev value; set the real key',
+    },
+  )
+  // The phone gets these two: a localhost / plain-http default would boot fine and then hang
+  // every upload or every voice join.
+  .refine(
+    (env) =>
+      env.NODE_ENV !== 'production' ||
+      publicUrl(env.S3_PUBLIC_ENDPOINT, 'https:'),
+    {
+      path: ['S3_PUBLIC_ENDPOINT'],
+      message: 'set the https address phones upload to (https://S3_DOMAIN)',
+    },
+  )
+  .refine(
+    (env) =>
+      env.NODE_ENV !== 'production' || publicUrl(env.LIVEKIT_URL, 'wss:'),
+    {
+      path: ['LIVEKIT_URL'],
+      message: 'set the wss address phones dial (wss://API_DOMAIN/livekit)',
     },
   );
 

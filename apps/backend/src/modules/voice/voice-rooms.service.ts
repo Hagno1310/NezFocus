@@ -226,14 +226,23 @@ export class VoiceRoomsService
   }
 
   // Away for more than 3 minutes = left (VC-01 AC6, STUDY-15).
+  // One sweep at a time, and one person failing (LiveKit slow or down) never keeps the others
+  // in the room past their 3 minutes.
+  private sweeping = false;
   async expireAway() {
-    const now = this.clock.now().getTime();
-    for (const userId of await this.seats.expired(now))
-      await this.serial(userId, async () => {
-        const seat = await this.seats.get(userId);
-        if (seat?.awayUntil != null && seat.awayUntil <= now)
-          await this.vacate(seat, 'left');
-      });
+    if (this.sweeping) return;
+    this.sweeping = true;
+    try {
+      const now = this.clock.now().getTime();
+      for (const userId of await this.seats.expired(now))
+        await this.serial(userId, async () => {
+          const seat = await this.seats.get(userId);
+          if (seat?.awayUntil != null && seat.awayUntil <= now)
+            await this.vacate(seat, 'left');
+        }).catch((err: unknown) => this.logger.error(`away ${userId}`, err));
+    } finally {
+      this.sweeping = false;
+    }
   }
 
   // READY.voice_states: rooms of my servers that I can view.

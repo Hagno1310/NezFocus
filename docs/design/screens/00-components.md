@@ -847,7 +847,7 @@ Tên giữ là `MessageBubble` cho khớp SRS, nhưng **không vẽ bong bóng**
 | Ảnh / video | Thumbnail rộng tối đa 240, cao tối đa 320, `rounded.button`; video có nút `play` + thời lượng. Nhiều ảnh: lưới 2 cột. Thumbnail trước, ảnh gốc khi mở (NFR-MOB-07). Chạm ảnh → `MediaViewer · image` (C-36, vuốt giữa các ảnh của cùng tin); chạm video → `MediaViewer · video` (trình phát của nền tảng), không tự phát trong danh sách (v1.9, CR-19 #8) |
 | Âm thanh (mp3, m4a) 🆕 (v1.9, CR-19 #8) | Thẻ cao 56 như thẻ tệp: `IconButton` tròn 40 `play` / `pause` (nền `surface-3`, icon `text-primary`) + tên tệp (1 dòng, cắt giữa giữ đuôi) + thanh tiến độ cao 4 `rounded.full` (rãnh `surface-3`, phần đã phát `text-primary`) + "0:42 / 3:15" (`numeric-inline` `text-secondary`) + nút `download`. Phát ngay trong tin; một tệp một lúc (bấm tệp khác thì tệp đang phát dừng); rời màn chat thì dừng. `accessibilityLabel` "ghi-am-buoi-2.m4a, 0 phút 42 giây trên 3 phút 15 giây" |
 | Tệp | Thẻ cao 56: icon loại tệp 32 + tên (1 dòng, cắt giữa: "bao-cao-cu…ky.pdf") + cỡ (`label`) + nút `download`. **PDF** (v1.9): chạm thẻ → `MediaViewer · pdf` (C-36). **Office, nén, tệp chữ:** chạm thẻ → tải rồi mở bằng ứng dụng của máy; không có ứng dụng → Toast "Không có ứng dụng mở được tệp .docx". Nút `download` của mọi thẻ → lưu vào Tải xuống + Toast "Đã lưu vào Tải xuống" |
-| Đã sửa | "(đã chỉnh sửa)" `label` `text-tertiary` cuối nội dung |
+| Đã sửa | "(đã chỉnh sửa)" `label` `text-tertiary` trên dòng riêng ngay dưới nội dung (theo frame `message-states`, chốt 26/11/2026) |
 
 ### Trạng thái gửi (8.4.5)
 
@@ -997,6 +997,10 @@ Chữ cái trong avatar 20 dùng `type-tab` (11), avatar 28 (200%) dùng `type-l
 
 **Mục đích:** chọn emoji cho reaction hoặc chèn vào tin. **Dùng ở:** S-HOME-04, `Composer`.
 Panel cao bằng bàn phím (trong `Composer`) hoặc `BottomSheet` (reaction): `SearchField` "Tìm emoji" (tìm không dấu, từ khóa tiếng Việt và tiếng Anh) · hàng "Dùng gần đây" · lưới 8 cột ô 44 theo nhóm, thanh nhóm ở đáy. Emoji là emoji hệ thống. State: `default`, `search-results`, `search-empty` ("Không tìm thấy emoji").
+
+**Chốt 26/11/2026 (P3-A1 #21):**
+- Tìm **cả tiếng Việt lẫn tiếng Anh dù app đang ở ngôn ngữ nào** (tên + từ khóa CLDR của gói `emojibase-data`, bản `vi` và `en`), không phân biệt dấu ("cuoi" ra 😂, "do" ra "đỏ" và "đồ"). Thứ tự: khớp đầu tên trước, rồi khớp đầu từ khóa; ngang nhau thì kết quả khớp ngôn ngữ đang dùng đứng trước. Nhãn nhóm khi tìm: "KẾT QUẢ".
+- Nhãn nhóm viết hoa như frame, theo tên nhóm CLDR của gói: DÙNG GẦN ĐÂY · MẶT CƯỜI & CẢM XÚC · ĐỘNG VẬT & THIÊN NHIÊN · THỨC ĂN & ĐỒ UỐNG · HOẠT ĐỘNG · DU LỊCH & ĐỊA ĐIỂM · ĐỒ VẬT · KÝ HIỆU (tiếng Anh: tên nhóm `en` của gói). Thanh nhóm 8 icon theo frame: `history`, `smile`, `cat`, `apple`, `volleyball`, `car`, `lightbulb`, `heart`.
 
 **Pencil (22/10/2026):** master `EmojiPicker` trên bảng Chat (hàng EmojiPicker, dựng từ sheet của S-HOME-04 `emoji-picker`), kèm instance `search-results` ("tim") và `search-empty` (bật node ẩn `EP empty`). Frame S-HOME-04 `emoji-picker` giữ bản vẽ riêng.
 

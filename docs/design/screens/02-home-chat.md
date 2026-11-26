@@ -170,6 +170,9 @@ Không áp dụng: `os-permission` (kênh text không cần quyền hệ điều
 - Chạm avatar hoặc tên → S-HOME-10. Chạm mention `@Bình` → S-HOME-10 của Bình; chạm chip `#kênh` → mở kênh đó.
 - Chạm chip reaction → bật/tắt reaction của An (rung nhẹ); nhấn giữ chip → sheet "Ai đã thả cảm xúc" (danh sách người, C-09 BottomSheet).
 - Chạm dòng trả lời → cuộn tới tin gốc và nhấp nền tin gốc 1 lần (`short`); tin gốc đã xóa → không làm gì.
+- (chốt 26/11/2026, P3-A1 #21) Chạm chip `☺+` cuối hàng reaction của tin → `EmojiPicker` (C-25) cho tin đó, như S-HOME-04 `emoji-picker`. Sheet "Ai đã thả cảm xúc" (chưa vẽ frame): `BottomSheet` tiêu đề "Ai đã thả cảm xúc", hàng chip emoji của tin ở trên (chip vừa nhấn giữ được chọn, cuộn ngang), dưới là danh sách `MemberRow` người đã thả emoji đang chọn (`GET …/reactions/{emoji}`, CR-28 #26).
+- (chốt 26/11/2026) `highlight` dùng chung một hiệu ứng, số lần nhấp theo nguồn: chạm dòng trả lời nhấp **1** lần; mở link tin / mục hộp thư / push nhấp **2** lần (C-10). Giảm chuyển động: nền giữ 1 giây. `message-link`: mép nào của đoạn tải `around` chưa tải hết thì hiện Skeleton 2 hàng ở mép đó (theo frame).
+- (chốt 26/11/2026) Chip link NezFocus tới phòng học / phòng thoại: chip có icon như `nezfocus-links`; trước khi có màn phòng (P3-B1 #26) chạm mở kênh như kênh thường. Chip tới server mình chưa tham gia hoặc kênh không xem được: chip `lock` "Không xem được", chạm → `Toast` "Bạn không xem được kênh này" (link tin: "Bạn không xem được tin nhắn này"). App Link mở từ ngoài khi chưa là thành viên vẫn tới 10 S-MOD-01 `members-only`.
 - (v1.9, CR-19 #8) Chạm ảnh → S-HOME-11 `image`; chạm thẻ PDF → S-HOME-11 `pdf`; chạm thumbnail video → S-HOME-11 `video` (không tự phát trong danh sách). Chạm `play` / `pause` trên thẻ âm thanh → phát / dừng ngay trong tin. Chạm thẻ Office / nén / tệp chữ → tải rồi mở bằng ứng dụng của máy (không có ứng dụng → `Toast` "Không có ứng dụng mở được tệp .docx"). Nút `download` của mọi thẻ → lưu vào Tải xuống + `Toast` "Đã lưu vào Tải xuống".
 - (v1.9, CR-19 #11) Chạm chip link NezFocus → mở **ngay trong app** (không qua trình duyệt): kênh → S-HOME-01 kênh đó; phòng → S-ROOM-01/02 `not-joined` (không tự kết nối; đang ở phòng khác: nút "Chuyển sang phòng này"; phòng / cuộc gọi đang có giữ nguyên `MiniPlayer`); link tin → `message-link`; "Không xem được" → `Toast`, không chuyển màn. Link `/tasks/<id>` là link thường, chạm → S-TASK-02. Đường dẫn NezFocus khác → link thường, mở như link ngoài.
 - (v1.9, CR-19 #12) Chạm chữ link mời → S-MOD-01; nút trên thẻ lời mời như state `invite-cards`.
@@ -386,6 +389,15 @@ Icon: "Sao chép link tin" `link`, "Gỡ xem trước link" `link-2-off`. "Sao c
 - (v1.9, CR-18 #6) Xóa tin đang bị báo cáo → mọi báo cáo đang chờ về tin chuyển sang Đã xử lý; không có Toast thêm.
 - (v1.9, CR-19 #7) "Gửi không kèm tệp bị chặn" → gửi lại tin bỏ tệp bị chặn, các tệp còn lại giữ.
 - Thao tác thất bại do mất quyền giữa chừng (40302) → `Toast` "Bạn không còn quyền làm việc này".
+
+**Chốt khi code P3-A1 (#21), 26/11/2026** (SRS CR-28 #25–#27):
+- Ô reaction nhanh vẽ 44 như frame, vùng chạm 48; nút thêm cảm xúc dùng icon `smile-plus` (ký tự "☺+" trên board là cách vẽ nhanh). Sheet rộng hết màn, không có hàng "Hủy" (theo frame, không theo master C-09). Nút `x` của dải trả lời / sửa vẽ 36, vùng chạm 48.
+- Hàng "Gỡ xem trước link" của frame `moderator` không có ở MVP (CR-28 #8).
+- `delete-confirm`: bản xem trước có dòng "Khánh · 20:05" (`label` 600 `text-secondary`) trên 2 dòng nội dung, theo frame.
+- **Offline:** thả / gỡ cảm xúc, "Sửa tin nhắn", "Xóa tin nhắn", "Ghim", "Báo cáo" `disabled` kèm dòng lý do "Cần kết nối mạng"; "Trả lời" vẫn dùng được (tin vào outbox), hai hàng sao chép vẫn dùng được.
+- **Không có `ADD_REACTIONS`:** ẩn hàng reaction nhanh và nút thêm cảm xúc; chạm chip đã có trong tin vẫn thả thêm được (MSG-05).
+- **Đang bị tạm khóa:** chip reaction trong tin không phản hồi khi chạm; tin của chính mình: "Sao chép văn bản" · "Sao chép link tin" · "Xóa tin nhắn" (xóa tin của mình vẫn được, CR-28 #27).
+- Thả / gỡ quá 10 lần trong 5 giây (`40029`, CR-28 #25) → `Toast` giới hạn tần suất của 10 S-MOD-04.
 
 ### Checklist duyệt
 - [ ] 10 state, mỗi state một frame.

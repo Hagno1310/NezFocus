@@ -191,13 +191,19 @@ describe('PresenceService (REQ-AUTH-05)', () => {
   it('voice (CR-24): "Đang ở {phòng}" when there is no Solo; Solo shows over it', async () => {
     await connect(2n);
     await connect(1n);
-    const room = { channelId: 9n, name: 'Phòng học im lặng', studyRoom: true };
+    const room = {
+      channelId: 9n,
+      serverId: 10n,
+      name: 'Phòng học im lặng',
+      studyRoom: true,
+    };
     await presence.voiceChanged(1n, room);
     await flush();
     expect(lastSeenBy(2n)?.activity).toEqual({
       kind: 'voice',
       room: {
         channel_id: '9',
+        server_id: '10',
         channel_name: 'Phòng học im lặng',
         study_room: true,
       },

@@ -38,6 +38,7 @@ import { startPresenceLifecycle } from './presenceLifecycle';
 import { startFriendsLifecycle } from './friendsLifecycle';
 import { startDmLifecycle } from './dmLifecycle';
 import { startSettingsLifecycle } from './settingsLifecycle';
+import { startVoiceLifecycle } from './voiceLifecycle';
 import { interacted } from '../shared/interaction';
 import { linking } from './navigation/linking';
 import {
@@ -142,6 +143,8 @@ export default function App() {
   useEffect(startDmLifecycle, []);
   useEffect(startSettingsLifecycle, []);
   useEffect(startMessagesLifecycle, []);
+  // Before the Gateway: READY.voice_states must find its listener.
+  useEffect(startVoiceLifecycle, []);
   useEffect(startGatewayLifecycle, []);
   useEffect(startTypingLifecycle, []);
   useEffect(startUnreadLifecycle, []);

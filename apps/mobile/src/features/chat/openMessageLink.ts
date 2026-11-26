@@ -5,6 +5,7 @@ import { showDm, dmStore } from '../../domain/dm/dmStore';
 import { requestJump } from '../../domain/messages/jumps';
 import type { NezfocusLink } from '../../domain/messages/links';
 import { homeStore, openChannel } from '../../domain/servers/homeStore';
+import { openVoice } from '../../domain/voice/voiceView';
 import { i18n } from '../../shared/i18n';
 import { showToast } from '../../shared/ui/Toast';
 
@@ -32,6 +33,14 @@ export async function openMessageLink(
       .getState()
       .servers?.some((s) => s.id === link.serverId);
     if (!member) return fromOutside ? 'not-member' : cannotView();
+    // A link to a voice channel itself opens the room preview (S-ROOM-01 `not-joined`).
+    const channel = homeStore
+      .getState()
+      .channels[link.serverId]?.find((c) => c.id === link.channelId);
+    if (channel?.type === 'voice' && !link.messageId) {
+      openVoice({ serverId: link.serverId, channelId: link.channelId });
+      return 'opened';
+    }
   } else if (!dmStore.getState().byId[link.channelId]) return cannotView();
 
   let exists = true;

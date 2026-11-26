@@ -171,6 +171,7 @@ export class VoiceRoomsService
     if (!sameRoom)
       await this.presence.voiceChanged(who.userId, {
         channelId,
+        serverId: next.serverId,
         name: channel.name ?? '',
         studyRoom: channel.focusControl !== 'off',
       });

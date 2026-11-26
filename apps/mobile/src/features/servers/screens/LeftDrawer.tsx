@@ -1,5 +1,11 @@
 import type { ChannelResponse, ServerSummary } from '@nezfocus/shared';
-import { ChevronDown, ChevronRight, Plus, UserPlus } from 'lucide-react-native';
+import {
+  ChevronDown,
+  ChevronRight,
+  Lock,
+  Plus,
+  UserPlus,
+} from 'lucide-react-native';
 import { Fragment, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -330,6 +336,14 @@ function ChannelPanel({
                         access?.channelPerms(channel) ?? 0n,
                         channel.type,
                       );
+                // 02 S-HOME-02 `no-connect`: the row says so, a tap only explains.
+                const locked =
+                  channel.type === 'voice' &&
+                  !!access &&
+                  !hasPermission(
+                    access.channelPerms(channel),
+                    Permission.CONNECT,
+                  );
                 return (
                   <ChannelRow
                     key={channel.id}
@@ -337,10 +351,16 @@ function ChannelPanel({
                     selected={channel.id === selectedId}
                     unread={isUnread(unread[channel.id])}
                     mentions={unread[channel.id]?.mentions}
+                    locked={locked}
                     onPress={() =>
                       channel.type === 'text'
                         ? actions.onOpenChannel(channel)
-                        : actions.onOpenVoice(channel)
+                        : locked
+                          ? showToast({
+                              icon: Lock,
+                              message: t('voice.noConnect'),
+                            })
+                          : actions.onOpenVoice(channel)
                     }
                     onLongPress={
                       menuRows.length

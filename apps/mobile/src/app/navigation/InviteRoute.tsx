@@ -3,7 +3,6 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useEffect, useRef } from 'react';
 import { useStore } from 'zustand';
 import { pendingInvites } from '../../data/invites';
-import type { Destination } from '../../domain/invites/joinInvite';
 import { sessionStore } from '../../domain/session/sessionStore';
 import { InvitePreviewScreen } from '../../features/servers/screens/InvitePreviewScreen';
 import type { RootStackParamList } from './RootNavigator';
@@ -38,17 +37,11 @@ export function InviteRoute({ navigation, route }: Props) {
     navigation.reset({ index: 1, routes: [{ name: 'Welcome' }, { name: to }] });
   };
 
-  const home = (to: Destination | null, room?: string) =>
+  // `arrive` has opened the channel or the room preview (S-ROOM-01 `not-joined`) in the drawers.
+  const home = () =>
     navigation.popTo('Main', {
       screen: 'Home',
-      params:
-        to?.kind === 'room'
-          ? {
-              screen: 'HomePlaceholder',
-              // ponytail: the room preview `not-joined` is P3-B1 (#26).
-              params: { title: room ?? '', ticket: 'P3-B1 (#26)' },
-            }
-          : { screen: 'HomeRoot' },
+      params: { screen: 'HomeRoot' },
     });
 
   return (
@@ -83,7 +76,7 @@ export function InviteRoute({ navigation, route }: Props) {
         if (navigation.canGoBack()) navigation.goBack();
         else navigation.replace(status === 'signed-in' ? 'Main' : 'Welcome');
       }}
-      onArrive={(_serverId, to, room) => home(to, room)}
+      onArrive={home}
     />
   );
 }

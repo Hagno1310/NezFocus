@@ -13,8 +13,6 @@ import {
   type ServerSummary,
   type SessionEndReason,
   type UserSettings,
-  type VoiceRoomMember,
-  type VoiceStateUpdate,
 } from '@nezfocus/shared';
 import {
   HEARTBEAT_INTERVAL_MS,

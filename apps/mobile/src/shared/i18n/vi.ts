@@ -1214,6 +1214,43 @@ export const vi = {
       join: 'Vào',
     },
   },
+  // Spec 03 S-ROOM-01, S-ROOM-EDGE; 10 S-MOD-05 (P3-B1 #26).
+  voice: {
+    join: 'Vào phòng',
+    switchHere: 'Chuyển sang phòng này',
+    mic: 'Mic',
+    camera: 'Camera',
+    leave: 'Rời phòng',
+    modMuted: 'Bị tắt tiếng',
+    you: 'Bạn',
+    noSession: 'Chưa có phiên học',
+    noSessionJoin: 'Chưa có phiên học · vào phòng để bắt đầu',
+    managersOnly: 'Chưa có phiên học · chỉ người quản lý bắt đầu được',
+    startSession: 'Bắt đầu phiên học',
+    offline: 'Cần kết nối mạng để vào phòng',
+    noConnect: 'Bạn không có quyền vào phòng này',
+    left: 'Đã rời {{name}}',
+    rejoin: 'Vào lại',
+    gone: '{{name}} không còn khả dụng',
+    // Not in the spec: agent's line, waiting for approval (P3-B1 #26 report).
+    joinFailed: 'Chưa vào được phòng',
+    retry: 'Thử lại',
+    tile: {
+      micOn: 'đang bật mic',
+      speaking: 'đang nói',
+      away: 'tạm vắng',
+    },
+    micSheet: {
+      title: 'Cho phép NezFocus dùng mic',
+      body: 'Để nói chuyện với mọi người trong phòng. Bạn luôn có thể tắt mic bất cứ lúc nào.',
+      blockedTitle: 'Mic đang bị chặn',
+      blockedBody:
+        'Bật quyền Mic cho NezFocus trong Cài đặt của máy để nói trong phòng. Bạn vẫn nghe được mọi người.',
+      continue: 'Tiếp tục',
+      later: 'Để sau',
+      openSettings: 'Mở cài đặt',
+    },
+  },
   placeholder: {
     note: 'Màn tạm — thay bằng màn thật ở ticket sau',
     noteTicket: 'Màn tạm — thay bằng màn thật ở {{ticket}}',

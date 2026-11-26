@@ -87,6 +87,8 @@ const config: ExpoConfig = {
       { icon: './assets/android-icon-monochrome.png', color: '#547FE4' },
     ],
     ['expo-font', { android: { fonts } }],
+    // REQ-VC-01 (SRS 7.3.5): LiveKit's native setup; its manifest brings RECORD_AUDIO / CAMERA.
+    '@livekit/react-native-expo-plugin',
   ],
   // EAS project @hagnovn/nezfocus — shared by the team and CI.
   extra: { eas: { projectId: 'b3823344-a088-479a-a6d6-39e10015445f' } },

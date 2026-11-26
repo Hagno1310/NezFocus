@@ -1,5 +1,5 @@
 import type { ChannelResponse } from '@nezfocus/shared';
-import { Hash, LampDesk, Volume2 } from 'lucide-react-native';
+import { Hash, LampDesk, Lock, Volume2 } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { radius, space, useTheme } from '../../../shared/theme';
 import { Icon } from '../../../shared/ui/Icon';
@@ -24,6 +24,7 @@ export function ChannelRow({
   selected = false,
   unread = false,
   mentions = 0,
+  locked = false,
   onPress,
   onLongPress,
 }: {
@@ -31,6 +32,7 @@ export function ChannelRow({
   selected?: boolean;
   unread?: boolean;
   mentions?: number;
+  locked?: boolean; // C-05 `no-connect`: a voice channel without CONNECT (P3-B1.3 #139)
   onPress: () => void;
   onLongPress?: () => void;
 }) {
@@ -64,10 +66,17 @@ export function ChannelRow({
         style={styles.name}
         numberOfLines={1}
         weight={bold ? '600' : '500'}
-        color={selected || bold ? 'text-primary' : 'text-secondary'}
+        color={
+          locked
+            ? 'text-tertiary'
+            : selected || bold
+              ? 'text-primary'
+              : 'text-secondary'
+        }
       >
         {channel.name}
       </Text>
+      {locked && <Icon as={Lock} size="xs" color="text-tertiary" />}
       {mentions > 0 && <Badge count={mentions} />}
     </Pressable>
   );

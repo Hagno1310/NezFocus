@@ -10,6 +10,7 @@ import {
   type PresenceUpdate,
   type ClientFrame,
   type Identify,
+  type VoiceStateUpdate,
 } from '@nezfocus/shared';
 import type { GatewayClient } from '../../domain/gateway/GatewayClient';
 import {
@@ -64,6 +65,8 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
     send({ op: GatewayOp.PRESENCE_UPDATE, d: { status: pendingStatus, afk } });
     pendingStatus = undefined;
   };
+  // Op 4 made while the socket was down; only the latest one counts (REQ-VC-01).
+  let pendingVoice: VoiceStateUpdate | null = null;
   let paused = false; // closed on purpose in the background
   let identified = false;
   let awaitingAck = false;
@@ -191,6 +194,10 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
           if (appState === 'background')
             send({ op: GatewayOp.APP_STATE, d: { state: appState } });
           if (pendingStatus || afk) sendPresence();
+          if (pendingVoice) {
+            send({ op: GatewayOp.VOICE_STATE_UPDATE, d: pendingVoice });
+            pendingVoice = null;
+          }
           if (event.t === 'READY') sessionSubscribed = null;
           sendSubscribe();
         }
@@ -254,6 +261,7 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
     attempt = 0;
     pendingStatus = undefined; // the next account must not inherit this one's status
     afk = false;
+    pendingVoice = null;
     subscribed = sessionSubscribed = null;
     setStatus('idle');
   }
@@ -305,5 +313,18 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
     if (identified) sendSubscribe();
   }
 
-  return { start, stop, setAppState, setOnline, setPresence, subscribe };
+  function updateVoice(d: VoiceStateUpdate) {
+    if (identified) send({ op: GatewayOp.VOICE_STATE_UPDATE, d });
+    else pendingVoice = d;
+  }
+
+  return {
+    start,
+    stop,
+    setAppState,
+    setOnline,
+    setPresence,
+    subscribe,
+    updateVoice,
+  };
 }

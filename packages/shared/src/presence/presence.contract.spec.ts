@@ -174,6 +174,7 @@ describe('activity text (REQ-AUTH-05 CR-24/25, C-40)', () => {
       kind: 'group_study',
       room: {
         channel_id: '9',
+        server_id: '10',
         channel_name: 'Phòng học im lặng',
         phase: 'focus',
         state: 'running',
@@ -189,6 +190,7 @@ describe('activity text (REQ-AUTH-05 CR-24/25, C-40)', () => {
 
   const room = {
     channel_id: '9',
+    server_id: '10',
     channel_name: 'Phòng học im lặng',
     phase: 'focus' as const,
     state: 'running' as const,
@@ -217,6 +219,7 @@ describe('activity text (REQ-AUTH-05 CR-24/25, C-40)', () => {
       kind: 'voice',
       room: {
         channel_id: '9',
+        server_id: '10',
         channel_name: 'Phòng thảo luận nhóm',
         study_room: true,
       },
@@ -237,6 +240,7 @@ describe('block form (C-40 › block, S-HOME-10)', () => {
   };
   const room = {
     channel_id: '9',
+    server_id: '10',
     channel_name: 'Phòng học im lặng',
     phase: 'focus' as const,
     state: 'running' as const,
@@ -295,6 +299,7 @@ describe('activity icon (C-40 › Icon 14)', () => {
         kind: 'voice',
         room: {
           channel_id: '9',
+          server_id: '10',
           channel_name: 'Phòng thảo luận nhóm',
           study_room: true,
         },

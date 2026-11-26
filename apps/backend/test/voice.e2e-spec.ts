@@ -178,7 +178,7 @@ describe('Voice (e2e)', () => {
     });
 
     it('AC2 (âm): no CONNECT → 40302, and so when timed out (8.5.2 step 5)', async () => {
-      const { an, binh, server, voice } = await room();
+      const { binh, server, voice } = await room();
       await deny(server, P.CONNECT);
       const res = await binh
         .post(VoiceRoutes.token)
@@ -213,7 +213,7 @@ describe('Voice (e2e)', () => {
     });
 
     it('no SPEAK → no mic; mod-muted in the server → no mic (VC-04 AC5)', async () => {
-      const { an, binh, server, voice } = await room();
+      const { binh, server, voice } = await room();
       await deny(server, P.SPEAK);
       expect((await grantOf(binh, voice.id)).claims.video).toMatchObject({
         canPublishSources: ['camera'],
@@ -402,6 +402,7 @@ describe('Voice (e2e)', () => {
         kind: 'voice',
         room: {
           channel_id: voice.id,
+          server_id: server.id,
           channel_name: voice.name,
           study_room: false,
         },

@@ -37,7 +37,12 @@ export abstract class PresenceSink {
   abstract voiceChanged(userId: bigint, room: VoiceRoom | null): Promise<void>;
 }
 
-export type VoiceRoom = { channelId: bigint; name: string; studyRoom: boolean };
+export type VoiceRoom = {
+  channelId: bigint;
+  serverId: bigint;
+  name: string;
+  studyRoom: boolean;
+};
 
 // Read side for other modules: how many of these users others see online right now
 // (REQ-SRV-04 preview "N đang online"; Invisible counts as offline). Owner: gateway (B).
@@ -131,6 +136,7 @@ export class PresenceService
           kind: 'voice',
           room: {
             channel_id: room.channelId.toString(),
+            server_id: room.serverId.toString(),
             channel_name: room.name,
             study_room: room.studyRoom,
           },

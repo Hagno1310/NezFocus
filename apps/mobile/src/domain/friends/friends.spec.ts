@@ -169,6 +169,7 @@ describe('friends (REQ-FRIEND-04)', () => {
       kind: 'group_study' as const,
       room: {
         channel_id: id,
+        server_id: '10',
         channel_name: id,
         phase: 'focus' as const,
         state: 'running' as const,

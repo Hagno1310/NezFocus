@@ -30,6 +30,7 @@ import { motion, size, space, useTheme } from '../theme';
 import { IconButton } from './Button';
 import { Avatar } from './People';
 import { Text } from './Text';
+import { ToastHost } from './Toast';
 
 export type ViewerImage = {
   key: string;
@@ -42,6 +43,7 @@ export type ViewerImage = {
 // No spec value: zoom stops at 4×; a swipe down closes past 120 or faster than 800 / s, like
 // the sheets' drag to dismiss.
 const MAX_ZOOM = 4;
+const TAP_SLOP = space[2];
 const CLOSE_DRAG = 120;
 const CLOSE_SPEED = 800;
 
@@ -184,6 +186,8 @@ export function MediaViewer({
             {t('chat.viewer.count', { index: index + 1, count: images.length })}
           </Text>
         )}
+        {/* The app's host sits under this Modal window: "Đã lưu vào Tải xuống" shows here. */}
+        <ToastHost />
       </GestureHandlerRootView>
     </Modal>
   );
@@ -239,14 +243,17 @@ function Page({
       settle(scale.get() <= 1.05 ? 1 : scale.get());
     },
   });
+  // A tap that moved is a swipe between images, never a tap (else the strips hide).
   const doubleTap = useTapGesture({
     numberOfTaps: 2,
+    maxDistance: TAP_SLOP,
     onActivate: () => {
       'worklet';
       settle(base.get() > 1 ? 1 : 2);
     },
   });
   const tap = useTapGesture({
+    maxDistance: TAP_SLOP,
     onActivate: () => {
       'worklet';
       scheduleOnRN(onTap);

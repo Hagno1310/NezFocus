@@ -533,7 +533,6 @@ export const en: Strings = {
       tabMembers: 'Members',
       tabTasks: 'Tasks',
       tabPins: 'Pins',
-      tabPinsCount: 'Pins · {{count}}',
     },
     drawer: {
       subtitleStudy: 'Study Server · {{count}} members',

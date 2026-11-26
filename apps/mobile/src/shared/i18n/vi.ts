@@ -529,7 +529,6 @@ export const vi = {
       tabMembers: 'Thành viên',
       tabTasks: 'Việc',
       tabPins: 'Ghim',
-      tabPinsCount: 'Ghim · {{count}}',
     },
     drawer: {
       subtitleStudy: 'Study Server · {{count}} thành viên',

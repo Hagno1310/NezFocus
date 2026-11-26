@@ -163,9 +163,8 @@ function ChannelMembers({
             // "Ghim · 3" once there are pins (S-HOME-03 › Nội dung chữ).
             {
               key: 'pins',
-              label: pins?.length
-                ? t('servers.members.tabPinsCount', { count: pins.length })
-                : t('servers.members.tabPins'),
+              label: t('servers.members.tabPins'),
+              count: pins?.length || undefined,
             },
           ]}
           value={tab}

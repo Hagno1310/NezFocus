@@ -35,6 +35,7 @@ import {
   type MessageResponse,
   type ServerMember,
 } from '@nezfocus/shared';
+import { useIsFocused } from '@react-navigation/native';
 import { useStore } from 'zustand';
 import {
   chatRows,
@@ -89,7 +90,7 @@ import { MessageText } from '../../../shared/ui/MessageText';
 import { ActionSheet, type Lifted } from '../../../shared/ui/Overlay';
 import { ReactionChips, ReplyLine } from '../../../shared/ui/Reactions';
 import { Text } from '../../../shared/ui/Text';
-import { showToast } from '../../../shared/ui/Toast';
+import { showToast, useToastAnchor } from '../../../shared/ui/Toast';
 import { exitMs } from '../../../shared/ui/transitions';
 import { useOnline } from '../../gateway/hooks/useOnline';
 import { useMe } from '../../me/hooks/useMe';
@@ -166,6 +167,8 @@ export function ChatView({
   const abilities = useChannelAbilities(serverId, channelId);
   const linkChips = useLinkChips(serverId);
   const tray = useAttachmentTray(channelId);
+  const [composerHeight, setComposerHeight] = useState(0);
+  useToastAnchor(useIsFocused() ? composerHeight : 0);
   const images = useChatImages();
   const viewer = {
     inDm: !serverId,
@@ -794,38 +797,41 @@ export function ChatView({
       {mentions.suggestion && !disabled && (
         <MentionSuggest sections={mentions.suggestion.sections} onPick={pick} />
       )}
-      {composer ?? (
-        <Composer
-          value={draft}
-          onChangeText={(text) => drafts.set(channelId, text)}
-          placeholder={placeholder}
-          counter={count.counter}
-          canSend={
-            count.canSend ||
-            (!!editing && !toSend.trim()) ||
-            (!editing && tray.hasFiles && count.counter?.kind !== 'over')
-          }
-          onSend={send}
-          disabled={disabled}
-          context={composerContext}
-          onEmoji={actions.openComposerPicker}
-          // C-11 `no-attach`: no ATTACH_FILES, no `+`; an edit keeps its images (MSG-05).
-          onAttach={
-            abilities.canAttach && !editing ? tray.openPicker : undefined
-          }
-          above={
-            editing ? undefined : (
-              <AttachmentTray
-                tiles={tray.tiles}
-                line={tray.line}
-                onRemove={tray.remove}
-                onRetry={tray.retry}
-              />
-            )
-          }
-          inputRef={input}
-        />
-      )}
+      {/* S-MOD-04 › Vị trí toast: the composer is a bottom bar too (frame `too-many`). */}
+      <View onLayout={(e) => setComposerHeight(e.nativeEvent.layout.height)}>
+        {composer ?? (
+          <Composer
+            value={draft}
+            onChangeText={(text) => drafts.set(channelId, text)}
+            placeholder={placeholder}
+            counter={count.counter}
+            canSend={
+              count.canSend ||
+              (!!editing && !toSend.trim()) ||
+              (!editing && tray.hasFiles && count.counter?.kind !== 'over')
+            }
+            onSend={send}
+            disabled={disabled}
+            context={composerContext}
+            onEmoji={actions.openComposerPicker}
+            // C-11 `no-attach`: no ATTACH_FILES, no `+`; an edit keeps its images (MSG-05).
+            onAttach={
+              abilities.canAttach && !editing ? tray.openPicker : undefined
+            }
+            above={
+              editing ? undefined : (
+                <AttachmentTray
+                  tiles={tray.tiles}
+                  line={tray.line}
+                  onRemove={tray.remove}
+                  onRetry={tray.retry}
+                />
+              )
+            }
+            inputRef={input}
+          />
+        )}
+      </View>
       {/* S-HOME-05 `picking`: "Ảnh" (photo picker, images only) · "Chụp ảnh" (CR-28). */}
       <PhotoSourceSheet
         visible={tray.picking}

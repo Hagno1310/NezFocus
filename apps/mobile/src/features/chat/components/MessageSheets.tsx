@@ -1,5 +1,14 @@
 import type { MessageAuthor, MessageResponse } from '@nezfocus/shared';
-import { Copy, Flag, Link, Pencil, Reply, Trash2 } from 'lucide-react-native';
+import {
+  Copy,
+  Flag,
+  Link,
+  Pencil,
+  Pin,
+  PinOff,
+  Reply,
+  Trash2,
+} from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type {
@@ -25,6 +34,8 @@ import type { MessageActions } from '../hooks/useMessageActions';
 const ICONS: Record<SheetRow, IconComponent> = {
   reply: Reply,
   edit: Pencil,
+  pin: Pin,
+  unpin: PinOff,
   copyText: Copy,
   copyLink: Link,
   report: Flag,
@@ -54,6 +65,8 @@ export function MessageSheets({
   const run: Record<SheetRow, (m: MessageResponse) => void> = {
     reply: actions.reply,
     edit: actions.edit,
+    pin: actions.pin,
+    unpin: actions.unpin,
     copyText: actions.copyText,
     copyLink: actions.copyLink,
     // ponytail: "Báo cáo" opens S-MOD-02 with P3-A5.2 (#135); until then the row only shows.

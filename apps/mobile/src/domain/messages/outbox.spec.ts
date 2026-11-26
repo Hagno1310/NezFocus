@@ -16,6 +16,7 @@ const entry = (over: Partial<OutboxEntry> = {}): OutboxEntry => ({
   serverId: '9',
   content: 'Chào cả nhóm',
   replyToId: null,
+  attachments: [],
   status: 'pending',
   attempts: 0,
   nextAttemptAt: null,

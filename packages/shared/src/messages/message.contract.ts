@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import {
+  MAX_ATTACHMENTS_PER_MESSAGE,
+  MessageAttachment,
+} from '../attachments/attachment.contract.js';
 import { AvatarUrls } from '../auth/auth.contract.js';
 import { ClientRequestId } from '../idempotency.js';
 import { SnowflakeId } from '../snowflake.js';
@@ -19,7 +23,15 @@ export const MessageRoutes = {
   myReaction: '/channels/:id/messages/:messageId/reactions/:emoji/@me',
   // CR-28 #26 · GET → ReactionUsersResponse, oldest first, at most 100 · 40001, 40401
   reaction: '/channels/:id/messages/:messageId/reactions/:emoji',
+  // REQ-MSG-10 · GET → MessageListResponse, newest pin first · 40401
+  pins: '/channels/:id/pins',
+  // REQ-MSG-10 · PUT / DELETE 204 · 40302 (no MANAGE_MESSAGES in a server, a system message,
+  // timed out), 40303 (DM), 40401, 40904 (51st pin)
+  pin: '/channels/:id/pins/:messageId',
 } as const;
+
+// REQ-MSG-10 AC2: at most 50 pinned messages per channel (40904).
+export const MAX_PINS = 50;
 
 // REQ-MSG-05: at most 20 different emoji on a message (40905).
 export const MAX_REACTION_EMOJI = 20;
@@ -113,6 +125,7 @@ const messageFields = {
   reply_to_id: SnowflakeId.nullable(),
   referenced_message: ReferencedMessage.nullable().default(null),
   reactions: z.array(Reaction).default([]), // none on MESSAGE_CREATE
+  attachments: z.array(MessageAttachment).default([]), // REQ-MSG-04, in upload order
   edited_at: z.iso.datetime().nullable(),
   pinned_at: z.iso.datetime().nullable(),
   created_at: z.iso.datetime(),
@@ -130,6 +143,11 @@ export const MessageResponse = z.discriminatedUnion('type', [
     ...messageFields,
     type: z.literal('member_join'), // into servers.system_channel_id (P2-A4.1)
     system_data: z.object({ user_id: SnowflakeId }),
+  }),
+  z.object({
+    ...messageFields,
+    type: z.literal('channel_pinned'), // REQ-MSG-10: author = who pinned
+    system_data: z.object({ message_id: SnowflakeId }),
   }),
 ]);
 export type MessageResponse = z.infer<typeof MessageResponse>;
@@ -163,9 +181,15 @@ export const CreateMessageRequest = z
     nonce: ClientRequestId,
     // REQ-MSG-05: a message of this channel, not a system one (40001); a deleted one is fine.
     reply_to_id: SnowflakeId.optional(),
+    // REQ-MSG-04 AC5: completed images of mine for this channel, not yet sent (else 40001).
+    attachment_ids: z
+      .array(SnowflakeId)
+      .max(MAX_ATTACHMENTS_PER_MESSAGE)
+      .refine((ids) => new Set(ids).size === ids.length, 'duplicate id')
+      .optional(),
   })
-  // MSG-01 AC2: "empty and no file"; P3-A2 relaxes this when attachments are sent.
-  .refine((b) => b.content.trim() !== '', {
+  // MSG-01 AC2: refused when empty and no file.
+  .refine((b) => b.content.trim() !== '' || !!b.attachment_ids?.length, {
     message: 'Message is empty',
     path: ['content'],
   });
@@ -286,3 +310,12 @@ export const parseMentions = (content: string) => {
     mention_here: here,
   };
 };
+
+// CHANNEL_PINS_UPDATE (REQ-MSG-10 AC1, CR-28 #28): to who can view the channel.
+export const ChannelPinsUpdateEvent = z.object({
+  channel_id: SnowflakeId,
+  server_id: SnowflakeId.nullable(),
+  message_id: SnowflakeId,
+  pinned_at: z.iso.datetime().nullable(), // null: unpinned. A deleted pin: MESSAGE_DELETE only
+});
+export type ChannelPinsUpdateEvent = z.infer<typeof ChannelPinsUpdateEvent>;

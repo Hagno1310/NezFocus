@@ -3,17 +3,23 @@ import type { MessageHistoryQuery } from '@nezfocus/shared';
 import {
   and,
   asc,
+  count,
   desc,
   eq,
   gt,
   gte,
   inArray,
+  isNotNull,
   isNull,
   lt,
   sql,
   type SQL,
 } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
+import {
+  attachments,
+  type AttachmentRow,
+} from '../attachments/attachments.schema.js';
 import {
   channels,
   roles,
@@ -30,6 +36,10 @@ import {
 } from './messages.schema.js';
 
 export type MessageWithAuthor = { message: MessageRow; author: AuthorRow };
+
+// REQ-MSG-04 AC5: an attachment id that is not a completed image of the author for this
+// channel, or was taken by another message meanwhile. Rolls the message back.
+export class AttachmentsUnavailable extends Error {}
 export type NewMessage = typeof messages.$inferInsert;
 
 const author = {
@@ -74,9 +84,28 @@ export class MessagesRepository {
   async create(
     row: NewMessage,
     concerned: readonly bigint[] = [],
+    attachmentIds: readonly bigint[] = [],
   ): Promise<MessageWithAuthor> {
     await this.db.transaction(async (tx) => {
       await tx.insert(messages).values(row);
+      if (attachmentIds.length) {
+        const taken = await tx
+          .update(attachments)
+          .set({ messageId: row.id })
+          .where(
+            and(
+              inArray(attachments.id, [...attachmentIds]),
+              eq(attachments.uploaderId, row.authorId),
+              eq(attachments.channelId, row.channelId),
+              eq(attachments.purpose, 'message'),
+              eq(attachments.scanStatus, 'clean'),
+              isNull(attachments.messageId),
+            ),
+          )
+          .returning({ id: attachments.id });
+        if (taken.length !== attachmentIds.length)
+          throw new AttachmentsUnavailable();
+      }
       await tx
         .update(channels)
         .set({ lastMessageId: row.id })
@@ -101,6 +130,77 @@ export class MessagesRepository {
     });
     const [saved] = await this.select().where(eq(messages.id, row.id));
     return saved!;
+  }
+
+  // REQ-MSG-10 AC2: under a lock on the channel, so two pins at 49 do not make 51.
+  async pin(
+    channelId: bigint,
+    messageId: bigint,
+    by: bigint,
+    at: Date,
+    max: number,
+  ): Promise<'pinned' | 'already' | 'full'> {
+    return this.db.transaction(async (tx) => {
+      await tx
+        .select({ id: channels.id })
+        .from(channels)
+        .where(eq(channels.id, channelId))
+        .for('update');
+      const [target] = await tx
+        .select({ pinnedAt: messages.pinnedAt })
+        .from(messages)
+        .where(eq(messages.id, messageId));
+      if (target?.pinnedAt) return 'already';
+      const [pinned] = await tx
+        .select({ n: count() })
+        .from(messages)
+        .where(
+          and(
+            eq(messages.channelId, channelId),
+            isNotNull(messages.pinnedAt),
+            isNull(messages.deletedAt),
+          ),
+        );
+      if ((pinned?.n ?? 0) >= max) return 'full';
+      await tx
+        .update(messages)
+        .set({ pinnedAt: at, pinnedBy: by })
+        .where(eq(messages.id, messageId));
+      return 'pinned';
+    });
+  }
+
+  // False: it was not pinned, so no CHANNEL_PINS_UPDATE goes out.
+  async unpin(messageId: bigint): Promise<boolean> {
+    const rows = await this.db
+      .update(messages)
+      .set({ pinnedAt: null, pinnedBy: null })
+      .where(and(eq(messages.id, messageId), isNotNull(messages.pinnedAt)))
+      .returning({ id: messages.id });
+    return rows.length > 0;
+  }
+
+  // S-HOME-03 `pins`: newest pin first; a deleted message is not one (CR-28 #28).
+  pins(channelId: bigint): Promise<MessageWithAuthor[]> {
+    return this.select()
+      .where(
+        and(
+          eq(messages.channelId, channelId),
+          isNotNull(messages.pinnedAt),
+          isNull(messages.deletedAt),
+        ),
+      )
+      .orderBy(desc(messages.pinnedAt), desc(messages.id));
+  }
+
+  // REQ-MSG-04: the images of these messages, in upload order.
+  attachmentsOf(messageIds: readonly bigint[]): Promise<AttachmentRow[]> {
+    if (!messageIds.length) return Promise.resolve([]);
+    return this.db
+      .select()
+      .from(attachments)
+      .where(inArray(attachments.messageId, [...messageIds]))
+      .orderBy(asc(attachments.id));
   }
 
   // REQ-SEARCH-02: by id, so a message sent meanwhile never shifts a page. Oldest first.

@@ -1,5 +1,6 @@
 import { randomUUID } from 'expo-crypto';
 import { createMessageStore } from '../../domain/messages/messageStore';
+import { uploads } from '../attachments/uploads';
 import { localDb } from '../db';
 import { pickRepository } from '../fake';
 import { fakeMessageRepository } from './FakeMessageRepository';
@@ -20,6 +21,7 @@ export const messageStore = createMessageStore({
   remote: messageRepository,
   now: Date.now,
   newNonce: randomUUID,
+  uploads,
   setTimer: (fn, ms) => {
     const timer = setTimeout(fn, ms);
     return () => clearTimeout(timer);

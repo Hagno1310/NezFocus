@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { DB, type Db } from '../../db/db.module.js';
+import { attachments } from '../attachments/attachments.schema.js';
 import { pairKey } from '../friends/friends.repository.js';
 import { FriendshipStatus, friendships } from '../friends/friends.schema.js';
 import { messages } from '../messaging/messages.schema.js';
@@ -44,7 +45,24 @@ export class DmRepository {
   }
 
   // My DMs as I see them: the other person, newest activity first. One channel or all open.
+  // The last message's images too: S-DM-01 reads "Đã gửi một ảnh" (REQ-MSG-04).
   async seenBy(userId: bigint, only?: bigint) {
+    const rows = await this.dmRows(userId, only);
+    const lastIds = rows.flatMap((r) => (r.last ? [r.last.id] : []));
+    const files = lastIds.length
+      ? await this.db
+          .select()
+          .from(attachments)
+          .where(inArray(attachments.messageId, lastIds))
+          .orderBy(asc(attachments.id))
+      : [];
+    return rows.map((r) => ({
+      ...r,
+      lastFiles: files.filter((f) => f.messageId === r.last?.id),
+    }));
+  }
+
+  private dmRows(userId: bigint, only?: bigint) {
     const other = alias(channelRecipients, 'other');
     const lastAuthor = alias(users, 'last_author');
     return this.db

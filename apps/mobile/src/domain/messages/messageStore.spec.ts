@@ -7,6 +7,8 @@ import {
 import { describe, expect, it } from 'vitest';
 import { createTestDb } from '../../data/db/testDb';
 import { createLocalMessages } from '../../data/messages/localMessages';
+import type { PickedImage } from '../attachments/tray';
+import type { UploadRef, UploadResult } from '../attachments/uploads';
 import type { LocalMessages } from './LocalMessages';
 import type { MessageRepository } from './MessageRepository';
 import { createMessageStore, type ChatItem } from './messageStore';
@@ -87,6 +89,9 @@ function fakeRemote(messages: MessageResponse[] = []) {
       calls.push(`unreact ${messageId} ${emoji}`);
     },
     reactionUsers: async () => [],
+    pins: async () => messages.filter((m) => m.pinned_at),
+    pin: async (_c, messageId) => void calls.push(`pin ${messageId}`),
+    unpin: async (_c, messageId) => void calls.push(`unpin ${messageId}`),
   };
   return {
     remote,
@@ -107,6 +112,7 @@ function setup(
       return async () => db;
     })(),
   ),
+  uploads?: Parameters<typeof createMessageStore>[0]['uploads'],
 ) {
   let now = T0;
   let nonces = 0;
@@ -117,6 +123,7 @@ function setup(
     now: () => now,
     newNonce: () => `nonce-${++nonces}`,
     random: () => 1,
+    uploads,
     setTimer: (fn, ms) => {
       const t = { at: now + ms, fn };
       timers.push(t);
@@ -529,5 +536,199 @@ describe('opening a message (REQ-MSG-05 CR-19)', () => {
     expect(await t.store.reveal('7', '20')).toBe('missing');
     // 81 → 31 → 1: past 20 after two pages, then it stops.
     expect(t.server.queries.filter((q) => q.before)).toHaveLength(2);
+  });
+});
+
+const photo = (name: string): PickedImage => ({
+  uri: `file:///${name}`,
+  name,
+  size: 1_000,
+  type: 'image/png',
+  width: 10,
+  height: 10,
+});
+
+// Uploads we answer by hand, one `ensure` per image per try.
+function fakeUploads() {
+  const waits: {
+    ref: UploadRef;
+    answer: (r: UploadResult) => void;
+  }[] = [];
+  const forgotten: string[] = [];
+  const staled: string[] = [];
+  return {
+    waits,
+    forgotten,
+    staled,
+    uploads: {
+      ensure: (_channelId: string, ref: UploadRef) =>
+        ref.attachmentId
+          ? Promise.resolve<UploadResult>({ ok: true, id: ref.attachmentId })
+          : new Promise<UploadResult>((answer) => waits.push({ ref, answer })),
+      forget: (keys: readonly string[]) => void forgotten.push(...keys),
+      stale: (keys: readonly string[]) => void staled.push(...keys),
+    },
+  };
+}
+
+describe('sending images (REQ-MSG-04, S-HOME-05, CR-28 #29)', () => {
+  const refs = (...names: string[]): UploadRef[] =>
+    names.map((n) => ({ key: n, file: photo(n), attachmentId: null }));
+
+  it('➤ while uploading: pending with the images at once, sent with the ids once all are done', async () => {
+    const fake = fakeUploads();
+    const { store, server, items, settle } = setup(
+      fakeRemote(),
+      undefined,
+      fake.uploads,
+    );
+    await store.open('7', '9');
+    await store.send('7', 'Ảnh lời giải', undefined, refs('a.png', 'b.png'));
+    const [pending] = items();
+    expect(pending).toMatchObject({
+      kind: 'outbox',
+      entry: { status: 'pending', content: 'Ảnh lời giải' },
+    });
+    expect(
+      pending!.kind === 'outbox' &&
+        pending!.entry.attachments.map((a) => a.file.name),
+    ).toEqual(['a.png', 'b.png']);
+    await settle();
+    expect(server.sends).toHaveLength(0);
+    fake.waits[0]!.answer({ ok: true, id: '501' });
+    fake.waits[1]!.answer({ ok: true, id: '502' });
+    await settle();
+    expect(server.sends[0]!.body).toEqual({
+      content: 'Ảnh lời giải',
+      nonce: 'nonce-1',
+      attachment_ids: ['501', '502'],
+    });
+    server.sends[0]!.resolve(msg('10', { nonce: 'nonce-1' }));
+    await settle();
+    expect(fake.forgotten).toEqual(['a.png', 'b.png']);
+  });
+
+  it('an image blocked after ➤ → failed "1 tệp bị chặn"; "Gửi không kèm tệp bị chặn" sends the rest', async () => {
+    const fake = fakeUploads();
+    const { store, server, items, settle } = setup(
+      fakeRemote(),
+      undefined,
+      fake.uploads,
+    );
+    await store.open('7', '9');
+    await store.send(
+      '7',
+      'Công thức',
+      undefined,
+      refs('ok.png', 'cong-thuc.png'),
+    );
+    await settle();
+    fake.waits[0]!.answer({ ok: true, id: '501' });
+    fake.waits[1]!.answer({ ok: false, kind: 'rejected' });
+    await settle();
+    expect(server.sends).toHaveLength(0);
+    const failed = items()[0]!;
+    expect(failed).toMatchObject({
+      kind: 'outbox',
+      entry: { status: 'failed', lastError: 'file-blocked' },
+    });
+    const entry = failed.kind === 'outbox' ? failed.entry : null;
+    expect(entry!.attachments.map((a) => [a.key, a.blocked])).toEqual([
+      ['ok.png', false],
+      ['cong-thuc.png', true],
+    ]);
+    expect(entry!.attachments[0]!.attachmentId).toBe('501');
+
+    void store.sendWithoutBlocked(entry!.nonce);
+    await settle();
+    expect(server.sends[0]!.body).toEqual({
+      content: 'Công thức',
+      nonce: 'nonce-1',
+      attachment_ids: ['501'],
+    });
+  });
+
+  it('ids swept meanwhile (40001 attachment_ids) → failed, and "Gửi lại" uploads again', async () => {
+    const fake = fakeUploads();
+    const { store, server, items, settle } = setup(
+      fakeRemote(),
+      undefined,
+      fake.uploads,
+    );
+    await store.open('7', '9');
+    await store.send('7', '', undefined, [
+      { key: 'a.png', file: photo('a.png'), attachmentId: '501' },
+    ]);
+    await settle();
+    server.sends[0]!.reject(
+      Object.assign(new Error('x'), {
+        status: 400,
+        code: ErrorCode.ValidationError,
+        errors: { attachment_ids: [{ code: 'invalid_attachment' }] },
+      }),
+    );
+    await settle();
+    expect(fake.staled).toEqual(['a.png']);
+    const entry = items()[0]!;
+    expect(entry.kind === 'outbox' && entry.entry).toMatchObject({
+      status: 'failed',
+      attachments: [{ key: 'a.png', attachmentId: null }],
+    });
+    void store.retry(entry.kind === 'outbox' ? entry.entry.nonce : '');
+    await settle();
+    expect(fake.waits).toHaveLength(1); // uploading again, not sending the old id
+  });
+
+  it('AC4: the network drops during the upload → retrying, same nonce; never two messages', async () => {
+    const fake = fakeUploads();
+    const { store, server, shown, settle, tick } = setup(
+      fakeRemote(),
+      undefined,
+      fake.uploads,
+    );
+    await store.open('7', '9');
+    await store.send('7', '', undefined, refs('a.png'));
+    await settle();
+    fake.waits[0]!.answer({ ok: false, kind: 'network' });
+    await settle();
+    expect(shown()).toEqual(['retrying:']);
+    await tick(1000);
+    fake.waits[1]!.answer({ ok: true, id: '501' });
+    await settle();
+    expect(server.sends).toHaveLength(1);
+    expect(server.sends[0]!.body.nonce).toBe('nonce-1');
+  });
+});
+
+describe('pins (REQ-MSG-10)', () => {
+  it('pin / unpin go to the server and change the cached copy; CHANNEL_PINS_UPDATE does too', async () => {
+    const { store, server } = setup(fakeRemote([msg('1'), msg('2')]));
+    await store.open('7', '9');
+    const pinnedOf = (id: string) =>
+      store.state
+        .getState()
+        .views['7']!.items.find(
+          (i) => i.kind === 'message' && i.message.id === id,
+        )?.kind === 'message'
+        ? (
+            store.state
+              .getState()
+              .views['7']!.items.find(
+                (i) => i.kind === 'message' && i.message.id === id,
+              ) as Extract<ChatItem, { kind: 'message' }>
+          ).message.pinned_at
+        : undefined;
+    await store.pin('7', '1');
+    expect(server.calls).toContain('pin 1');
+    expect(pinnedOf('1')).toBe(new Date(T0).toISOString());
+    await store.unpin('7', '1');
+    expect(pinnedOf('1')).toBeNull();
+    await store.applyPins({
+      channel_id: '7',
+      server_id: '9',
+      message_id: '2',
+      pinned_at: '2026-11-19T13:05:00.000Z',
+    });
+    expect(pinnedOf('2')).toBe('2026-11-19T13:05:00.000Z');
   });
 });

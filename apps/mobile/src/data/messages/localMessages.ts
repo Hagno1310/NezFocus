@@ -1,7 +1,11 @@
 import type { MessageResponse } from '@nezfocus/shared';
 import { and, asc, desc, eq, inArray, lt } from 'drizzle-orm';
 import type { LocalMessages } from '../../domain/messages/LocalMessages';
-import type { OutboxEntry, OutboxStatus } from '../../domain/messages/outbox';
+import type {
+  OutboxAttachment,
+  OutboxEntry,
+  OutboxStatus,
+} from '../../domain/messages/outbox';
 import { cachedChannels, cachedMessages, outbox } from '../db/schema';
 import { padId, unpadId, type LocalDb } from '../db/types';
 
@@ -10,6 +14,7 @@ type OutboxPayload = {
   content: string;
   queued_at: number;
   reply_to_id?: string | null; // from P3-A1; older rows have none
+  attachments?: OutboxAttachment[]; // from P3-A2
 };
 
 const toEntry = (r: OutboxRow): OutboxEntry => {
@@ -20,6 +25,7 @@ const toEntry = (r: OutboxRow): OutboxEntry => {
     serverId: r.serverId && unpadId(r.serverId),
     content: payload.content,
     replyToId: payload.reply_to_id ?? null,
+    attachments: payload.attachments ?? [],
     status: r.status as OutboxStatus,
     attempts: r.attempts,
     nextAttemptAt: r.nextAttemptAt,
@@ -40,6 +46,7 @@ export function createLocalMessages(db: () => Promise<LocalDb>): LocalMessages {
       content: e.content,
       queued_at: e.queuedAt,
       reply_to_id: e.replyToId,
+      attachments: e.attachments,
     } satisfies OutboxPayload),
     status: e.status,
     attempts: e.attempts,
@@ -83,6 +90,7 @@ export function createLocalMessages(db: () => Promise<LocalDb>): LocalMessages {
           ...m,
           referenced_message: m.referenced_message ?? null,
           reactions: m.reactions ?? [],
+          attachments: m.attachments ?? [], // cached before P3-A2
         };
       });
     },

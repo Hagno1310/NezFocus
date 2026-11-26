@@ -5,9 +5,10 @@ import { useStore } from 'zustand';
 import { createStore } from 'zustand/vanilla';
 
 // A drawer over the chat (S-HOME-02 / S-HOME-03); HomeDrawers sets it. BottomSheets do not count.
-export const chatCover = createStore<{ covered: boolean }>(() => ({
-  covered: false,
-}));
+// `viewing`: the full-screen image viewer (S-HOME-11, NOTIF-01) is over it.
+export const chatCover = createStore<{ covered: boolean; viewing: boolean }>(
+  () => ({ covered: false, viewing: false }),
+);
 
 function useAppActive() {
   const [active, setActive] = useState(AppState.currentState === 'active');
@@ -25,6 +26,6 @@ function useAppActive() {
 export function useReadTracking() {
   const active = useAppActive();
   const focused = useIsFocused();
-  const covered = useStore(chatCover, (s) => s.covered);
+  const covered = useStore(chatCover, (s) => s.covered || s.viewing);
   return { active, canAck: active && focused && !covered };
 }

@@ -201,3 +201,82 @@ describe('CreateMessageRequest reply_to_id', () => {
     ).toBe(false);
   });
 });
+
+describe('CreateMessageRequest attachment_ids (REQ-MSG-04)', () => {
+  const ids = (n: number) => Array.from({ length: n }, (_, i) => String(i + 1));
+
+  it('sends images with no text (MSG-01 AC2: "empty and no file")', () => {
+    const body = CreateMessageRequest.parse({
+      content: '',
+      nonce: 'n-1',
+      attachment_ids: ['7'],
+    });
+    expect(body.attachment_ids).toEqual(['7']);
+    expect(
+      CreateMessageRequest.safeParse({
+        content: ' ',
+        nonce: 'n-1',
+        attachment_ids: [],
+      }).success,
+    ).toBe(false);
+  });
+
+  it('takes at most 10, each once', () => {
+    const base = { content: 'ảnh', nonce: 'n-1' };
+    expect(
+      CreateMessageRequest.safeParse({ ...base, attachment_ids: ids(10) })
+        .success,
+    ).toBe(true);
+    expect(
+      CreateMessageRequest.safeParse({ ...base, attachment_ids: ids(11) })
+        .success,
+    ).toBe(false);
+    expect(
+      CreateMessageRequest.safeParse({ ...base, attachment_ids: ['7', '7'] })
+        .success,
+    ).toBe(false);
+  });
+});
+
+describe('MessageResponse attachments and pins', () => {
+  const base = {
+    id: '1300000000000000001',
+    channel_id: '1200000000000000001',
+    author: { id: '1', username: 'chi.le', display_name: 'Chi', avatar: null },
+    content: '',
+    nonce: null,
+    mention_user_ids: [],
+    mention_role_ids: [],
+    mention_everyone: false,
+    reply_to_id: null,
+    edited_at: null,
+    pinned_at: null,
+    created_at: '2026-10-18T12:30:00.000Z',
+  };
+
+  it('defaults attachments to none, so cached messages from before still parse', () => {
+    const m = MessageResponse.parse({
+      ...base,
+      type: 'default',
+      system_data: null,
+    });
+    expect(m.attachments).toEqual([]);
+  });
+
+  it('a pin is a channel_pinned system message pointing at the pinned one (MSG-10, MSG-11)', () => {
+    expect(
+      MessageResponse.safeParse({
+        ...base,
+        type: 'channel_pinned',
+        system_data: { message_id: '1300000000000000000' },
+      }).success,
+    ).toBe(true);
+    expect(
+      MessageResponse.safeParse({
+        ...base,
+        type: 'channel_pinned',
+        system_data: null,
+      }).success,
+    ).toBe(false);
+  });
+});

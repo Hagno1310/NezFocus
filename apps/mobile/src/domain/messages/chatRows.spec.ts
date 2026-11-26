@@ -56,6 +56,7 @@ const queued = (day: number, hhmm: string, nonce = `n${++seq}`): ChatItem => {
     serverId: '100',
     content: 'x',
     replyToId: null,
+    attachments: [],
     status: 'pending',
     attempts: 0,
     nextAttemptAt: null,

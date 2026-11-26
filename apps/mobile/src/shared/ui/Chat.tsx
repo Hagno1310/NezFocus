@@ -36,6 +36,7 @@ import {
 } from '../theme';
 import { IconButton } from './Button';
 import { Icon, type IconComponent } from './Icon';
+import { MessageImages, type ChatImage } from './MessageImages';
 import { Avatar } from './People';
 import { Text } from './Text';
 
@@ -155,6 +156,7 @@ export function MessageBubble({
   onPress,
   onLongPress,
   onPressAuthor,
+  images,
   children,
 }: {
   name: string;
@@ -187,12 +189,21 @@ export function MessageBubble({
   onLongPress?: (at: { top: number }) => void;
   // Avatar / name → S-HOME-10 (P2-B3.4, #117).
   onPressAuthor?: () => void;
+  // C-10 Ảnh under the text; long-pressing one is long-pressing the message.
+  images?: {
+    items: readonly ChatImage[];
+    onOpen?: (index: number) => void;
+    onError?: () => void;
+  };
   children: ReactNode;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const pending = status?.kind === 'pending';
   const row = useRef<ComponentRef<typeof View>>(null);
+  const longPress =
+    onLongPress &&
+    (() => row.current?.measureInWindow((_x, top) => onLongPress({ top })));
   return (
     <Pressable
       ref={row}
@@ -205,10 +216,7 @@ export function MessageBubble({
         actions[Number(e.nativeEvent.actionName.slice(1))]?.onPress()
       }
       onPress={onPress}
-      onLongPress={
-        onLongPress &&
-        (() => row.current?.measureInWindow((_x, top) => onLongPress({ top })))
-      }
+      onLongPress={longPress}
       disabled={!onPress && !onLongPress}
       style={[
         styles.message,
@@ -274,6 +282,14 @@ export function MessageBubble({
           </View>
         )}
         {children}
+        {images && (
+          <MessageImages
+            images={images.items}
+            onOpen={images.onOpen}
+            onLongPress={longPress}
+            onError={images.onError}
+          />
+        )}
         {edited && (
           <Text variant="label" weight="400" color="text-tertiary">
             {edited}
@@ -404,6 +420,7 @@ export function SystemLine({
   surface,
   onLongPress,
   deleteLabel,
+  action,
 }: {
   icon: IconComponent;
   parts: string[];
@@ -413,21 +430,27 @@ export function SystemLine({
   // S-HOME-04 `system-message`: only with MANAGE_MESSAGES (MSG-11); where the row sits.
   onLongPress?: (at: { top: number }) => void;
   deleteLabel?: string; // the same, for a screen reader
+  // C-10 › Tin hệ thống: "· **Xem**" (`primary`, 600) after the sentence (a pin → the message).
+  action?: { label: string; onPress: () => void };
 }) {
   const { colors } = useTheme();
   const row = useRef<ComponentRef<typeof View>>(null);
+  const a11yActions = [
+    ...(action ? [{ name: 'activate', label: action.label }] : []),
+    ...(onLongPress && deleteLabel
+      ? [{ name: 'longpress', label: deleteLabel }]
+      : []),
+  ];
   return (
     <Pressable
       ref={row}
       accessible
       accessibilityLabel={accessibilityLabel}
-      accessibilityActions={
-        onLongPress && deleteLabel
-          ? [{ name: 'longpress', label: deleteLabel }]
-          : undefined
-      }
-      onAccessibilityAction={() =>
-        row.current?.measureInWindow((_x, top) => onLongPress?.({ top }))
+      accessibilityActions={a11yActions.length ? a11yActions : undefined}
+      onAccessibilityAction={(e) =>
+        e.nativeEvent.actionName === 'activate'
+          ? action?.onPress()
+          : row.current?.measureInWindow((_x, top) => onLongPress?.({ top }))
       }
       disabled={!onLongPress}
       onLongPress={
@@ -457,6 +480,20 @@ export function SystemLine({
           ) : (
             part
           ),
+        )}
+        {action && (
+          <>
+            {' · '}
+            <Text
+              variant="label"
+              weight="600"
+              color="primary"
+              onPress={action.onPress}
+              suppressHighlighting
+            >
+              {action.label}
+            </Text>
+          </>
         )}
       </Text>
       <Text variant="label" weight="400" color="text-tertiary">

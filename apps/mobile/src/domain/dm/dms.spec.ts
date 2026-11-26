@@ -26,6 +26,7 @@ const msg = (id: string, authorId: string, content: string): MessageResponse =>
     reply_to_id: null,
     referenced_message: null,
     reactions: [],
+    attachments: [],
     edited_at: null,
     pinned: false,
     created_at: '2026-10-18T13:08:00Z',
@@ -131,6 +132,7 @@ describe('DMRow line 2 (S-DM-01 › Nội dung chữ, CR-25 #16)', () => {
     ).toEqual({
       kind: 'message',
       text: 'Mai đi thư viện không?',
+      image: false,
       own: false,
       bold: true,
     });
@@ -146,11 +148,32 @@ describe('DMRow line 2 (S-DM-01 › Nội dung chữ, CR-25 #16)', () => {
     expect(dmLine2(minh, { meId: AN, unread: false, activity: null })).toEqual({
       kind: 'message',
       text: 'Cảm ơn nha',
+      image: false,
       own: true,
       bold: false,
     });
     expect(dmLine2(lan, { meId: AN, unread: false, activity: null })).toEqual({
       kind: 'none',
+    });
+  });
+
+  it('a last message with only images reads as an image (S-DM-01 "Đã gửi một ảnh")', () => {
+    const photo = {
+      ...msg('901', '950', ''),
+      attachments: [{ id: '7' }],
+    } as unknown as MessageResponse;
+    expect(
+      dmLine2(dm('54', 'Hà', photo), {
+        meId: AN,
+        unread: false,
+        activity: null,
+      }),
+    ).toEqual({
+      kind: 'message',
+      text: '',
+      image: true,
+      own: false,
+      bold: false,
     });
   });
 

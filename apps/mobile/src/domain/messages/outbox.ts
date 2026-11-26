@@ -1,8 +1,16 @@
 import { ErrorCode } from '@nezfocus/shared';
+import type { UploadRef } from '../attachments/uploads';
 
 // SRS 8.4.5 message outbox (CR-28 #7: messages only). `sent` is not a status: a sent
 // message leaves the outbox and lives in the cache.
 export type OutboxStatus = 'pending' | 'retrying' | 'failed';
+
+// REQ-MSG-04: an image of a message waiting to be sent; `blocked` once complete refused it
+// (C-10 `failed · file-blocked`).
+export type OutboxAttachment = UploadRef & { blocked: boolean };
+
+// lastError of a message an image of which was blocked after ➤ (CR-19 #7).
+export const FILE_BLOCKED = 'file-blocked';
 
 export type OutboxEntry = {
   nonce: string;
@@ -10,6 +18,7 @@ export type OutboxEntry = {
   serverId: string | null;
   content: string;
   replyToId: string | null; // REQ-MSG-05
+  attachments: OutboxAttachment[]; // REQ-MSG-04, in the tray's order
   status: OutboxStatus;
   attempts: number;
   nextAttemptAt: number | null; // epoch ms

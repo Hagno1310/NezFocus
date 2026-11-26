@@ -339,6 +339,8 @@ Không áp dụng: `error` (dữ liệu có từ cache / `READY`), `forbidden` (
 - [ ] Hạn ở hàng việc luôn có giờ; việc Xong ghi "Xong · …", không "Quá hạn"; task quá hạn có icon + chữ "Quá hạn", không chỉ màu (C-12).
 - [ ] Ở 200%: tên thành viên cắt `…`, username xuống dòng riêng một dòng, role xuống dòng dưới tên; tiêu đề task tối đa 2 dòng.
 
+**Chốt khi code P3-A2 (#22), 26/11/2026** (SRS CR-28 #28): hàng tin ghim theo frame (avatar 24, tên `body-sm` 600, giờ `label` `text-tertiary`, nội dung `body-sm` `text-secondary` tối đa 3 dòng, kẻ dưới mỗi hàng). Tin ghim chỉ có ảnh: nội dung là "Đã gửi một ảnh" (câu của S-DM-01). Tin ghim bị xóa thì rời danh sách. Bỏ ghim không tạo tin hệ thống; ghim lại tin đang ghim không tạo thêm. Chạm tin ghim → đóng drawer, nhảy tới tin, nền nhấp 1 lần như chạm dòng trả lời.
+
 ---
 
 ## S-HOME-04 · Action sheet tin nhắn (nhấn giữ)
@@ -446,6 +448,13 @@ Không áp dụng: `empty`, `loading`, `forbidden` (không có `ATTACH_FILES` th
 ### Checklist duyệt
 - [ ] 8 state (9 frame: `rejected` 2 frame); thumbnail ảnh hiện trước khi tải xong (NFR-MOB-07); ô tệp 64 × 160 có tên cắt giữa giữ đuôi.
 - [ ] Lỗi tệp có icon + chữ, không chỉ viền đỏ.
+
+**Chốt khi code P3-A2 (#22), 26/11/2026** (SRS CR-28 #29):
+- `picking` có tiêu đề sheet "Đính kèm" (theo frame).
+- Ô ảnh đang tải luôn là ảnh xem trước cắt vuông (frame `uploading` vẽ ô icon + "JPG" là vẽ sót; theo frame `too-many`). Nút `x` của ô vẽ 20 như frame, vùng chạm 48.
+- "Đang tải lên 1/3" = số ô đã tải xong / tổng số ô (frame `too-many`: 3/10).
+- Offline: ô hiện `upload-failed` với dòng "Sẽ tải lên khi có mạng", **tự tải** khi có mạng lại (không phải chạm). Bấm ➤ lúc đó thì tin vào `pending` như khi ảnh đang tải; tin chờ còn sau khi tắt app. "Gỡ hoặc thử lại tệp lỗi để gửi" chỉ áp cho ô tải lỗi thật và ô bị chặn.
+- Tin `pending` / `failed` kèm ảnh hiện ảnh xem trước trên máy (lưới như tin đã gửi, mờ như `pending`); ảnh bị chặn không hiện (frame `failed-file-blocked` chỉ vẽ phần chữ).
 
 ---
 
@@ -736,6 +745,8 @@ Không áp dụng: `empty`, `forbidden` (ai thấy tin thì xem được tệp),
 ### Checklist duyệt
 - [ ] 5 state; `image` cả hai theme; nền không đen.
 - [ ] Tên tệp cắt giữa giữ đuôi; "2 / 3", "Trang 3 / 12" đọc được ở 200%.
+
+**Chốt khi code P3-A2 (#22), 26/11/2026** (SRS CR-28 #29): dải trên theo frame: nút đóng `x`, tên `body` 600 (C-36 sửa theo). "Tải về" lưu vào thư mục Download của máy qua MediaStore, không xin quyền (Android 10 trở lên).
 
 ---
 

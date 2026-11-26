@@ -78,8 +78,10 @@ const config: ExpoConfig = {
     'expo-dev-client',
     'expo-localization',
     'expo-secure-store',
-    // Camera for "Chụp ảnh mới" (S-ME-01); the photo picker needs no permission.
+    // Camera for "Chụp ảnh mới" (S-ME-01) and "Chụp ảnh" (S-HOME-05); the photo picker needs
+    // no permission.
     'expo-image-picker',
+    'expo-image', // chat images and the viewer (REQ-MSG-04, S-HOME-11)
     [
       'expo-notifications',
       { icon: './assets/android-icon-monochrome.png', color: '#547FE4' },

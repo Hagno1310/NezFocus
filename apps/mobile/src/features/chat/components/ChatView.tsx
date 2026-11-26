@@ -1,4 +1,11 @@
-import { ArrowRight, CloudOff, RotateCw, Trash2 } from 'lucide-react-native';
+import {
+  ArrowRight,
+  CloudOff,
+  Pin,
+  RotateCw,
+  SendHorizontal,
+  Trash2,
+} from 'lucide-react-native';
 import {
   useCallback,
   useEffect,
@@ -28,6 +35,7 @@ import {
   type MessageResponse,
   type ServerMember,
 } from '@nezfocus/shared';
+import { useIsFocused } from '@react-navigation/native';
 import { useStore } from 'zustand';
 import {
   chatRows,
@@ -53,6 +61,11 @@ import {
   spokenText,
 } from '../../../domain/messages/markdown';
 import type { ChatItem } from '../../../domain/messages/messageStore';
+import { FILE_BLOCKED } from '../../../domain/messages/outbox';
+import { AttachmentTray } from '../../../shared/ui/AttachmentTray';
+import { PhotoSourceSheet } from '../../media/PhotoSourceSheet';
+import { useAttachmentTray } from '../hooks/useAttachmentTray';
+import { useChatImages } from '../hooks/useChatImages';
 import { size, space, useTheme } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import {
@@ -77,7 +90,7 @@ import { MessageText } from '../../../shared/ui/MessageText';
 import { ActionSheet, type Lifted } from '../../../shared/ui/Overlay';
 import { ReactionChips, ReplyLine } from '../../../shared/ui/Reactions';
 import { Text } from '../../../shared/ui/Text';
-import { showToast } from '../../../shared/ui/Toast';
+import { showToast, useToastAnchor } from '../../../shared/ui/Toast';
 import { exitMs } from '../../../shared/ui/transitions';
 import { useOnline } from '../../gateway/hooks/useOnline';
 import { useMe } from '../../me/hooks/useMe';
@@ -153,6 +166,10 @@ export function ChatView({
   const actions = useMessageActions(channelId, serverId, beginContext);
   const abilities = useChannelAbilities(serverId, channelId);
   const linkChips = useLinkChips(serverId);
+  const tray = useAttachmentTray(channelId);
+  const [composerHeight, setComposerHeight] = useState(0);
+  useToastAnchor(useIsFocused() ? composerHeight : 0);
+  const images = useChatImages();
   const viewer = {
     inDm: !serverId,
     canManage: abilities.canManage,
@@ -280,6 +297,7 @@ export function ChatView({
         mine: m.author.id === myId,
         system: m.type !== 'default',
         hasText: m.content.trim() !== '',
+        pinned: m.pinned_at !== null,
       },
       viewer,
     );
@@ -353,10 +371,15 @@ export function ChatView({
       actions.saveEdit(id, toSend);
       return;
     }
-    if (!count.canSend) return;
+    // MSG-01 AC2: text or images; never over 2000 characters.
+    if (count.counter?.kind === 'over') return;
+    if (!count.canSend && !tray.hasFiles) return;
+    const files = tray.take();
+    if (!files) return; // C-11 "Gỡ hoặc thử lại tệp lỗi để gửi"
     void outbox.send(
       toSend,
       context?.kind === 'reply' ? context.message.id : undefined,
+      files,
     );
     if (context) actions.endContext();
     drafts.set(channelId, '');
@@ -391,6 +414,7 @@ export function ChatView({
   const [failed, setFailed] = useState<{
     nonce: string;
     lifted: Lifted;
+    fileBlocked: boolean;
   } | null>(null);
 
   const author = (row: Extract<ChatRow, { kind: 'message' }>): Author => {
@@ -421,6 +445,14 @@ export function ChatView({
     // FRIEND-03 AC1 / S-DM-EDGE `blocked-mid-chat`: the one sentence, no "Thử lại".
     if (status === 'failed' && lastError === CANNOT_MESSAGE)
       return { kind: 'failed', text: CANNOT_MESSAGE_TEXT };
+    // C-10 `failed · file-blocked` (CR-19 #7): no "Thử lại", tap → S-HOME-04.
+    if (status === 'failed' && lastError === FILE_BLOCKED)
+      return {
+        kind: 'failed',
+        text: t('chat.fileBlocked', {
+          count: item.entry.attachments.filter((a) => a.blocked).length,
+        }),
+      };
     return status === 'failed'
       ? { kind: 'failed', text: t('chat.failed') }
       : { kind: 'pending', offline: !online };
@@ -434,7 +466,14 @@ export function ChatView({
     const blocks = parseMessage(contentOf(row.item));
     const message = row.item.kind === 'message' ? row.item.message : null;
     const mentionView = message ? mentions.viewOf(message) : undefined;
-    const content = spokenText(blocks, t('chat.spoiler'), mentionView?.label);
+    const pictures = images.imagesOf(row.item);
+    const spoken = spokenText(blocks, t('chat.spoiler'), mentionView?.label);
+    const content = [
+      spoken,
+      pictures.length ? t('chat.a11yImages', { count: pictures.length }) : '',
+    ]
+      .filter(Boolean)
+      .join(', ');
     const time = timeText(t, row.time);
     const status = statusOf(row.item);
     const isFailed = status?.kind === 'failed';
@@ -556,6 +595,9 @@ export function ChatView({
                   setFailed({
                     nonce,
                     lifted: { top: y, node: bubble(row, true) },
+                    fileBlocked:
+                      row.item.kind === 'outbox' &&
+                      row.item.entry.lastError === FILE_BLOCKED,
                   }),
                 );
               }
@@ -563,6 +605,24 @@ export function ChatView({
         }
         // S-HOME-01 › Tương tác: long-press a sent message → S-HOME-04.
         onLongPress={message && sheetOpens && !lifted ? openSheet : undefined}
+        images={
+          pictures.length
+            ? {
+                items: pictures,
+                // S-HOME-01 › Tương tác: an image → S-HOME-11 at it.
+                onOpen: lifted
+                  ? undefined
+                  : (i) =>
+                      images.open(
+                        row.item,
+                        i,
+                        { name: who.name, avatarUri: who.uri },
+                        time,
+                      ),
+                onError: images.onImageError,
+              }
+            : undefined
+        }
       >
         <MessageText
           content={contentOf(row.item)}
@@ -600,18 +660,29 @@ export function ChatView({
     lifted = false,
   ) => {
     const m = row.message;
-    if (m.type !== 'member_join') return null;
+    if (m.type !== 'member_join' && m.type !== 'channel_pinned') return null;
     const name =
       m.author.display_name ?? m.author.username ?? t('ui.deletedUser');
-    const parts = t('chat.memberJoin', { name: '\u0000' }).split('\u0000');
+    // MSG-11: "Dũng đã tham gia server" · MSG-10: "Chi đã ghim một tin nhắn · Xem".
+    const sentence =
+      m.type === 'member_join' ? 'chat.memberJoin' : 'chat.pinned';
+    const parts = t(sentence, { name: '\u0000' }).split('\u0000');
     // S-HOME-04 `system-message`: "Xóa tin nhắn" with MANAGE_MESSAGES, else no sheet (MSG-11).
     const opens = !lifted && sheetOf(m) !== null;
     return (
       <SystemLine
-        icon={ArrowRight}
+        icon={m.type === 'member_join' ? ArrowRight : Pin}
         parts={[parts[0] ?? '', name, parts[1] ?? '']}
         time={timeText(t, row.time)}
-        accessibilityLabel={`${t('chat.memberJoin', { name })}, ${timeText(t, row.time, true)}`}
+        action={
+          m.type === 'channel_pinned' && !lifted
+            ? {
+                label: t('chat.pinnedSee'),
+                onPress: () => jumpTo(m.system_data.message_id),
+              }
+            : undefined
+        }
+        accessibilityLabel={`${t(sentence, { name })}, ${timeText(t, row.time, true)}`}
         surface={lifted ? 'surface-2' : undefined}
         deleteLabel={t('chat.deleteMessage')}
         onLongPress={
@@ -726,20 +797,51 @@ export function ChatView({
       {mentions.suggestion && !disabled && (
         <MentionSuggest sections={mentions.suggestion.sections} onPick={pick} />
       )}
-      {composer ?? (
-        <Composer
-          value={draft}
-          onChangeText={(text) => drafts.set(channelId, text)}
-          placeholder={placeholder}
-          counter={count.counter}
-          canSend={count.canSend || (!!editing && !toSend.trim())}
-          onSend={send}
-          disabled={disabled}
-          context={composerContext}
-          onEmoji={actions.openComposerPicker}
-          inputRef={input}
-        />
-      )}
+      {/* S-MOD-04 › Vị trí toast: the composer is a bottom bar too (frame `too-many`). */}
+      <View onLayout={(e) => setComposerHeight(e.nativeEvent.layout.height)}>
+        {composer ?? (
+          <Composer
+            value={draft}
+            onChangeText={(text) => drafts.set(channelId, text)}
+            placeholder={placeholder}
+            counter={count.counter}
+            canSend={
+              count.canSend ||
+              (!!editing && !toSend.trim()) ||
+              (!editing && tray.hasFiles && count.counter?.kind !== 'over')
+            }
+            onSend={send}
+            disabled={disabled}
+            context={composerContext}
+            onEmoji={actions.openComposerPicker}
+            // C-11 `no-attach`: no ATTACH_FILES, no `+`; an edit keeps its images (MSG-05).
+            onAttach={
+              abilities.canAttach && !editing ? tray.openPicker : undefined
+            }
+            above={
+              editing ? undefined : (
+                <AttachmentTray
+                  tiles={tray.tiles}
+                  line={tray.line}
+                  onRemove={tray.remove}
+                  onRetry={tray.retry}
+                />
+              )
+            }
+            inputRef={input}
+          />
+        )}
+      </View>
+      {/* S-HOME-05 `picking`: "Ảnh" (photo picker, images only) · "Chụp ảnh" (CR-28). */}
+      <PhotoSourceSheet
+        visible={tray.picking}
+        title={t('chat.attachTitle')}
+        labels={{ pick: t('chat.attachPhoto'), take: t('chat.attachCamera') }}
+        cameraBody={t('chat.attachCameraBody')}
+        onPhotos={tray.add}
+        onDismiss={tray.closePicker}
+      />
+      {images.viewer}
       <MessageSheets
         actions={actions}
         sheetOf={sheetOf}
@@ -755,14 +857,27 @@ export function ChatView({
         groups={[
           {
             items: [
-              {
-                label: t('chat.resend'),
-                icon: RotateCw,
-                onPress: () => {
-                  if (failed) void outbox.retry(failed.nonce).catch(() => {});
-                  setFailed(null);
-                },
-              },
+              // S-HOME-04 `failed-file-blocked` (CR-19 #7) or `failed-message`.
+              failed?.fileBlocked
+                ? {
+                    label: t('chat.sendWithoutBlocked'),
+                    icon: SendHorizontal,
+                    onPress: () => {
+                      void outbox
+                        .sendWithoutBlocked(failed.nonce)
+                        .catch(() => {});
+                      setFailed(null);
+                    },
+                  }
+                : {
+                    label: t('chat.resend'),
+                    icon: RotateCw,
+                    onPress: () => {
+                      if (failed)
+                        void outbox.retry(failed.nonce).catch(() => {});
+                      setFailed(null);
+                    },
+                  },
               {
                 label: t('chat.deleteMessage'),
                 icon: Trash2,

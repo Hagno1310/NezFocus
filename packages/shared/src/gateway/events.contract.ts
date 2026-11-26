@@ -10,6 +10,7 @@ import {
   RelationshipRemove,
 } from '../friends/relationship.contract.js';
 import {
+  ChannelPinsUpdateEvent,
   MessageAck,
   MessageCreateEvent,
   MessageDeleteEvent,
@@ -77,6 +78,7 @@ export const DispatchEvents = {
   CHANNEL_CREATE: z.union([ChannelResponse, DmChannel]),
   CHANNEL_UPDATE: ChannelResponse, // also when its overwrites or sync change (REQ-ROLE-03)
   CHANNEL_DELETE: ChannelDeleted,
+  CHANNEL_PINS_UPDATE: ChannelPinsUpdateEvent, // REQ-MSG-10 AC1: to who can view the channel
   MESSAGE_CREATE: MessageCreateEvent, // REQ-MSG-01: to who can view the channel, nonce echoed (MSG-09)
   MESSAGE_UPDATE: MessageUpdateEvent, // REQ-MSG-05 AC1: to who can view the channel
   MESSAGE_DELETE: MessageDeleteEvent, // REQ-MSG-05 AC3

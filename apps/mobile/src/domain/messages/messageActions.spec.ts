@@ -14,7 +14,7 @@ const rowsOf = (s: ReturnType<typeof messageSheet>) =>
 
 // S-HOME-04 › Trạng thái, and the chốt of 26/11/2026 (offline, ADD_REACTIONS, timed out).
 describe('messageSheet', () => {
-  it('own-message: reactions · Trả lời · Sửa · Sao chép văn bản · Xóa', () => {
+  it('own-message (a plain member): reactions · Trả lời · Sửa · Sao chép văn bản · Xóa', () => {
     const s = messageSheet({ ...text, mine: true }, member);
     expect(s?.reactions).toBe('on');
     expect(rowsOf(s)).toEqual([
@@ -34,9 +34,10 @@ describe('messageSheet', () => {
     ]);
   });
 
-  it('moderator: Xóa on someone else’s message', () => {
+  it('moderator: Ghim and Xóa on someone else’s message', () => {
     expect(rowsOf(messageSheet(text, { ...member, canManage: true }))).toEqual([
       'reply',
+      'pin',
       'copyText',
       'copyLink',
       'report',
@@ -93,5 +94,42 @@ describe('messageSheet', () => {
       { row: 'copyLink', disabled: false },
       { row: 'delete', disabled: true },
     ]);
+  });
+});
+
+describe('messageSheet pins (REQ-MSG-10, CR-28 #28)', () => {
+  const moderator = { ...member, canManage: true };
+
+  it('AC3: a member without MANAGE_MESSAGES has no Ghim row', () => {
+    expect(rowsOf(messageSheet(text, member))).not.toContain('pin');
+  });
+
+  it('own-message with MANAGE_MESSAGES: Ghim after Sửa; a pinned one says Bỏ ghim', () => {
+    expect(
+      rowsOf(messageSheet({ ...text, mine: true }, moderator))?.slice(0, 3),
+    ).toEqual(['reply', 'edit', 'pin']);
+    expect(
+      rowsOf(messageSheet({ ...text, pinned: true }, moderator)),
+    ).toContain('unpin');
+  });
+
+  it('AC4: anyone in a DM pins', () => {
+    expect(rowsOf(messageSheet(text, { ...member, inDm: true }))).toContain(
+      'pin',
+    );
+  });
+
+  it('not on a system message, not while timed out; offline disabled', () => {
+    expect(rowsOf(messageSheet({ ...text, system: true }, moderator))).toEqual([
+      'delete',
+    ]);
+    expect(
+      rowsOf(messageSheet(text, { ...moderator, timedOut: true })),
+    ).not.toContain('pin');
+    expect(
+      messageSheet(text, { ...moderator, online: false })?.rows.find(
+        (r) => r.row === 'pin',
+      ),
+    ).toEqual({ row: 'pin', disabled: true });
   });
 });

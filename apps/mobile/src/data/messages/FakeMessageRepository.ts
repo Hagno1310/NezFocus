@@ -55,6 +55,7 @@ const message = (
   reply_to_id: null,
   referenced_message: null,
   reactions: [],
+  attachments: [],
   edited_at: null,
   pinned_at: null,
   created_at: at.toISOString(),
@@ -226,6 +227,24 @@ export function createFakeMessageRepository(delayMs = 400): MessageRepository {
       const m = of(channelId).find((x) => x.id === messageId);
       if (!m) throw notFound();
       m.reactions = withReaction(m.reactions, emoji, 'remove', true);
+    },
+    async pins(channelId) {
+      await wait();
+      return of(channelId)
+        .filter((m) => m.pinned_at)
+        .sort((a, b) => (b.pinned_at! > a.pinned_at! ? 1 : -1));
+    },
+    async pin(channelId, messageId) {
+      await wait();
+      const m = of(channelId).find((x) => x.id === messageId);
+      if (!m) throw notFound();
+      m.pinned_at ??= new Date().toISOString();
+    },
+    async unpin(channelId, messageId) {
+      await wait();
+      const m = of(channelId).find((x) => x.id === messageId);
+      if (!m) throw notFound();
+      m.pinned_at = null;
     },
     async reactionUsers(channelId, messageId, emoji) {
       await wait();

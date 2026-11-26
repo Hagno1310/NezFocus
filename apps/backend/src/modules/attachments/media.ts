@@ -10,13 +10,22 @@ import {
 export const PUBLIC_PREFIX = 'public/';
 export const MEDIA_ROUTE = 'media';
 
+// Public images (avatars, server icons); a message image is private (CR-28 #29).
+export type PublicPurpose = Exclude<AttachmentPurpose, 'message'>;
+
 export const MEDIA_FOLDERS = {
   avatar: 'avatars',
   server_icon: 'server-icons',
-} as const satisfies Record<AttachmentPurpose, string>;
+} as const satisfies Record<PublicPurpose, string>;
 
-export const mediaPrefix = (purpose: AttachmentPurpose, attachmentId: bigint) =>
+export const mediaPrefix = (purpose: PublicPurpose, attachmentId: bigint) =>
   `${PUBLIC_PREFIX}${MEDIA_FOLDERS[purpose]}/${attachmentId}`;
+
+// Message images are private (CR-28 #29): read through AttachmentsController.file.
+export const messageImageKeys = (attachmentId: bigint, ext: string) => ({
+  storageKey: `attachments/${attachmentId}/original.${ext}`,
+  thumbnailKey: `attachments/${attachmentId}/thumbnail.webp`,
+});
 
 export const avatarKey = (prefix: string, size: number) =>
   `${prefix}/${size}.webp`;

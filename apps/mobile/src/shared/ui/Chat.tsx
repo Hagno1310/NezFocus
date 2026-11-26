@@ -393,17 +393,44 @@ export function SystemLine({
   parts,
   time,
   accessibilityLabel,
+  surface,
+  onLongPress,
+  deleteLabel,
 }: {
   icon: IconComponent;
   parts: string[];
   time: string;
   accessibilityLabel: string;
+  surface?: ColorToken; // `lifted` over the scrim (S-HOME-04 `system-message`)
+  // S-HOME-04 `system-message`: only with MANAGE_MESSAGES (MSG-11); where the row sits.
+  onLongPress?: (at: { top: number }) => void;
+  deleteLabel?: string; // the same, for a screen reader
 }) {
+  const { colors } = useTheme();
+  const row = useRef<ComponentRef<typeof View>>(null);
   return (
-    <View
+    <Pressable
+      ref={row}
       accessible
       accessibilityLabel={accessibilityLabel}
-      style={[styles.message, styles.systemRow]}
+      accessibilityActions={
+        onLongPress && deleteLabel
+          ? [{ name: 'longpress', label: deleteLabel }]
+          : undefined
+      }
+      onAccessibilityAction={() =>
+        row.current?.measureInWindow((_x, top) => onLongPress?.({ top }))
+      }
+      disabled={!onLongPress}
+      onLongPress={
+        onLongPress &&
+        (() => row.current?.measureInWindow((_x, top) => onLongPress({ top })))
+      }
+      style={[
+        styles.message,
+        styles.systemRow,
+        surface && { backgroundColor: colors[surface] },
+      ]}
     >
       <View style={[styles.avatarCell, styles.systemIcon]}>
         <Icon as={icon} size="sm" color="text-tertiary" />
@@ -427,7 +454,7 @@ export function SystemLine({
       <Text variant="label" weight="400" color="text-tertiary">
         {time}
       </Text>
-    </View>
+    </Pressable>
   );
 }
 

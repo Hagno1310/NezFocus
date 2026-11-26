@@ -131,7 +131,10 @@ export function MessageSheets({
               {`${nameOf(deleting.author)} · ${timeOf(deleting)}`}
             </Text>
             <Text variant="body-sm" numberOfLines={2}>
-              {deleting.content}
+              {/* A system message has no content of its own: its wording (CR-24). */}
+              {deleting.type === 'member_join'
+                ? t('chat.memberJoin', { name: nameOf(deleting.author) })
+                : deleting.content}
             </Text>
           </View>
         )}

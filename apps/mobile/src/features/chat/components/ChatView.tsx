@@ -595,18 +595,34 @@ export function ChatView({
   };
 
   // C-10 › Tin hệ thống, worded for the viewer in the app's language (CR-24).
-  const systemLine = (row: Extract<ChatRow, { kind: 'system' }>) => {
+  const systemLine = (
+    row: Extract<ChatRow, { kind: 'system' }>,
+    lifted = false,
+  ) => {
     const m = row.message;
     if (m.type !== 'member_join') return null;
     const name =
       m.author.display_name ?? m.author.username ?? t('ui.deletedUser');
     const parts = t('chat.memberJoin', { name: '\u0000' }).split('\u0000');
+    // S-HOME-04 `system-message`: "Xóa tin nhắn" with MANAGE_MESSAGES, else no sheet (MSG-11).
+    const opens = !lifted && sheetOf(m) !== null;
     return (
       <SystemLine
         icon={ArrowRight}
         parts={[parts[0] ?? '', name, parts[1] ?? '']}
         time={timeText(t, row.time)}
         accessibilityLabel={`${t('chat.memberJoin', { name })}, ${timeText(t, row.time, true)}`}
+        surface={lifted ? 'surface-2' : undefined}
+        deleteLabel={t('chat.deleteMessage')}
+        onLongPress={
+          opens
+            ? ({ top }) =>
+                actions.open({
+                  message: m,
+                  lifted: { top, node: systemLine(row, true) },
+                })
+            : undefined
+        }
       />
     );
   };

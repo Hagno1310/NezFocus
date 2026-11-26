@@ -11,6 +11,7 @@ import type { GatewaySessions } from './gateway-sessions.js';
 // Ids as strings: an envelope crosses Redis Pub/Sub as JSON.
 export type FanoutTarget =
   | { kind: 'user'; userId: string }
+  | { kind: 'login'; authSessionId: string }
   | { kind: 'channel'; channelId: string }
   | { kind: 'server'; serverId: string }
   | {
@@ -43,6 +44,8 @@ export class Fanout {
   async deliver({ target, t, d }: Envelope) {
     if (target.kind === 'user')
       return this.sessions.dispatchToUser(BigInt(target.userId), t, d);
+    if (target.kind === 'login')
+      return this.sessions.dispatchToLogin(BigInt(target.authSessionId), t, d);
 
     if (target.kind === 'server') {
       for (const userId of await this.online(BigInt(target.serverId)))

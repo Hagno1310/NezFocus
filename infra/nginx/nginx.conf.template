@@ -1,0 +1,21 @@
+# REQ-VC-08 (CR-28 #4): one IP, one 443. TLS with SNI ${TURN_DOMAIN} goes to LiveKit's TURN/TLS,
+# everything else to Caddy (API, admin web). The bytes pass through untouched (ssl_preread).
+worker_processes auto;
+events {}
+
+stream {
+  # Named upstreams: a hostname straight in proxy_pass $variable would need a resolver.
+  upstream turn { server livekit:443; }
+  upstream web { server caddy:443; }
+
+  map $ssl_preread_server_name $upstream {
+    ${TURN_DOMAIN} turn;
+    default        web;
+  }
+
+  server {
+    listen 443;
+    ssl_preread on;
+    proxy_pass $upstream;
+  }
+}

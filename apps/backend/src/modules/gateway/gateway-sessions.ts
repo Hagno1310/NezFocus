@@ -122,6 +122,15 @@ export class GatewaySessions {
       if (session.userId === userId) this.dispatch(session, t, d);
   }
 
+  dispatchToLogin<T extends DispatchEventName>(
+    authSessionId: bigint,
+    t: T,
+    d: DispatchPayload<T>,
+  ) {
+    for (const session of this.sessions.values())
+      if (session.authSessionId === authSessionId) this.dispatch(session, t, d);
+  }
+
   // REQ-MSG-07: one server per session; another id replaces it, null stops.
   subscribe(session: GatewaySession, serverId: bigint | null) {
     session.subscribedServerId = serverId;

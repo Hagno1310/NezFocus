@@ -1,3 +1,4 @@
+import type { PermissionService } from '../permissions/permission.service.js';
 import {
   GatewayOp,
   type PresenceEvent,
@@ -69,7 +70,9 @@ beforeEach(() => {
   shared['3'] = [];
   inbox.clear();
   sessions = new GatewaySessions({ next: () => nextId++ });
-  presence = new PresenceService(sessions, repo, blockQuery);
+  presence = new PresenceService(sessions, repo, blockQuery, {
+    can: async () => true,
+  } as unknown as PermissionService);
   presence.onModuleInit();
 });
 afterEach(() => {

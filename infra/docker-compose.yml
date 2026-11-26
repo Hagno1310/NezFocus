@@ -1,5 +1,5 @@
 # Local dev services for MVP-Đồ án (SRS 7.1.1). Credentials match apps/backend/.env.example.
-# Add LiveKit / Meilisearch / ClamAV when the features that need them start.
+# Add Meilisearch / ClamAV when the features that need them start.
 name: nezfocus
 
 services:
@@ -28,6 +28,20 @@ services:
     volumes:
       - ./seaweedfs/s3.dev.json:/etc/seaweedfs/s3.json:ro
       - s3data:/data
+
+  # REQ-VC-01 / VC-08: SFU + built-in TURN/UDP. LIVEKIT_NODE_IP = this PC's LAN IP so a phone on
+  # the same Wi-Fi reaches the media ports (docs/getting-started.md).
+  livekit:
+    image: livekit/livekit-server:v1.9
+    command: --config /etc/livekit.yaml --node-ip ${LIVEKIT_NODE_IP:-127.0.0.1}
+    ports:
+      - '7880:7880'
+      - '7881:7881'
+      - '3478:3478/udp'
+      - '50000-50100:50000-50100/udp'
+    volumes:
+      - ./livekit/livekit.dev.yaml:/etc/livekit.yaml:ro
+    extra_hosts: ['host.docker.internal:host-gateway']
 
 volumes:
   pgdata:

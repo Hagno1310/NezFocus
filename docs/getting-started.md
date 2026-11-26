@@ -154,7 +154,7 @@ Cần chạy **cả ba**, mỗi lệnh một terminal, ở thư mục gốc repo
 
 | Terminal | Lệnh               | Tác dụng                                                          |
 | -------- | ------------------ | ----------------------------------------------------------------- |
-| 1        | `pnpm dev:infra`   | Bật Postgres, Redis, S3 (chạy nền; chỉ cần 1 lần sau khi bật máy) |
+| 1        | `pnpm dev:infra`   | Bật Postgres, Redis, S3, LiveKit (chạy nền; 1 lần sau khi bật máy) |
 | 2        | `pnpm dev:backend` | API ở cổng 3000, tự reload khi sửa code                           |
 | 3        | `pnpm dev:mobile`  | Metro. Mở app dev client trên điện thoại để tải code              |
 
@@ -163,6 +163,7 @@ Cần chạy **cả ba**, mỗi lệnh một terminal, ở thư mục gốc repo
 - Mỗi người có database riêng trên máy mình, dữ liệu thử không ảnh hưởng nhau.
 - Tắt hạ tầng: `docker compose -f infra/docker-compose.yml down` (dữ liệu vẫn giữ).
 - Ở Wi-Fi trường/quán không kết nối được: xem [mục 4.3](#43-mạng-chặn-kết-nối-giữa-các-thiết-bị).
+- Phòng voice trên điện thoại (P3-B1): tạo `infra/.env` có `LIVEKIT_NODE_IP=<IP Wi-Fi của máy tính>` và đặt `LIVEKIT_URL=ws://<IP đó>:7880` trong `apps/backend/.env`, rồi `pnpm dev:infra` lại. Thiếu bước này điện thoại vẫn lấy được token nhưng không nghe được ai (media đi tới `127.0.0.1`). Firewall Windows phải cho UDP 3478, 50000–50100 và TCP 7880, 7881.
 
 ---
 
@@ -306,8 +307,10 @@ pnpm db:studio       # (tùy chọn) giao diện xem dữ liệu
 |                     | `WORKER_ID`                                                       | 0–1023, phần worker của Snowflake ID (mỗi instance backend một giá trị) |
 |                     | `REDIS_URL`, `S3_*`                                               | Redis và object storage (SeaweedFS)                                     |
 |                     | `JWT_SECRET`                                                      | Khóa ký access token (≥ 32 ký tự); production không nhận giá trị mẫu    |
+|                     | `LIVEKIT_URL`, `LIVEKIT_API_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | LiveKit (REQ-VC-01): app gọi `LIVEKIT_URL` (dev: `ws://<IP Wi-Fi>:7880`), backend gọi `LIVEKIT_API_URL`; khóa khớp `infra/livekit/livekit.dev.yaml` |
+| `infra/.env`        | `LIVEKIT_NODE_IP`                                                 | IP Wi-Fi của máy tính, để LiveKit báo đúng địa chỉ media cho điện thoại |
 | `apps/mobile/.env`  | `EXPO_PUBLIC_API_URL`                                             | Địa chỉ API điện thoại gọi tới; dùng IP Wi-Fi của máy tính              |
-| `infra/.env.prod`   | `API_DOMAIN`, `BACKEND_IMAGE`, `POSTGRES_*`, `S3_*`, `JWT_SECRET` | Chỉ dùng trên server deploy                                             |
+| `infra/.env.prod`   | `API_DOMAIN`, `TURN_DOMAIN`, `BACKEND_IMAGE`, `POSTGRES_*`, `S3_*`, `JWT_SECRET`, `LIVEKIT_API_*` | Chỉ dùng trên server deploy                                             |
 
 Biến có tiền tố `EXPO_PUBLIC_` được đóng vào app và **ai cũng đọc được**: không đặt secret vào đó.
 
@@ -320,7 +323,7 @@ Chạy ở thư mục gốc repo, trừ khi ghi khác.
 | Lệnh                                         | Tác dụng                                |
 | -------------------------------------------- | --------------------------------------- |
 | `pnpm install`                               | Cài dependency, build `packages/shared` |
-| `pnpm dev:infra`                             | Bật Postgres, Redis, S3 (Docker)        |
+| `pnpm dev:infra`                             | Bật Postgres, Redis, S3, LiveKit (Docker) |
 | `pnpm dev:backend`                           | Chạy API ở chế độ watch                 |
 | `pnpm dev:mobile`                            | Chạy Metro cho dev client               |
 | `pnpm --filter mobile start:go`              | Chạy Metro cho Expo Go                  |
@@ -388,7 +391,16 @@ pnpm build:dev
 
 Build mất khoảng 10–20 phút, chưa tính hàng đợi của tài khoản miễn phí. EAS trả về link/QR tải APK; **gửi link cho cả nhóm**, mọi người dùng chung một APK. Muốn thành viên tự build được: expo.dev → project → **Members**.
 
-### 9.4. Cấp quyền cho thành viên mới
+### 9.4. Phòng voice khi deploy (REQ-VC-08, CR-28 #4)
+
+- DNS: hai bản ghi A về VM, `API_DOMAIN` và `TURN_DOMAIN` (`turn.nezfocus.app`).
+- Cổng 443 do `router` (nginx `stream` + `ssl_preread`, `infra/nginx/nginx.conf.template`) giữ: TLS có SNI `TURN_DOMAIN` chuyển sang TURN/TLS của LiveKit, còn lại sang Caddy (API, web quản trị). Caddy chỉ còn nghe 80 ra ngoài.
+- Caddy xin chứng chỉ cho `TURN_DOMAIN`; LiveKit đọc chứng chỉ đó từ volume của Caddy. Lần `up` đầu LiveKit có thể khởi động lại vài lần tới khi chứng chỉ có. Caddy gia hạn chứng chỉ (~60 ngày) thì `docker compose … restart livekit`.
+- Firewall VM: TCP 80, 443, 7881; UDP 3478, 50000–50200.
+- App gọi LiveKit qua `wss://API_DOMAIN/livekit` (Caddy chuyển tới `livekit:7880`).
+- Kiểm sau deploy (P4-B2.3 #193): API và web quản trị vẫn chạy qua 443; chặn UDP trên điện thoại (hoặc dùng Wi-Fi chặn UDP) vẫn vào phòng được qua `TURN_DOMAIN:443`.
+
+### 9.5. Cấp quyền cho thành viên mới
 
 | Nơi                         | Việc cần làm                                       |
 | --------------------------- | -------------------------------------------------- |

@@ -28,6 +28,15 @@ export const Env = z
     // REQ-SRV-07 App Links: SHA-256 fingerprints of the app signing certificates, comma separated
     // (`eas credentials` shows them). Empty: assetlinks.json lists none, links open the browser.
     ANDROID_CERT_SHA256: z.string().default(''),
+    // REQ-VC-01 LiveKit. LIVEKIT_URL is what the app dials (dev: ws://<LAN IP>:7880); the API URL is
+    // what the backend calls. Defaults match infra/docker-compose.yml.
+    LIVEKIT_URL: z.string().url().default('ws://localhost:7880'),
+    LIVEKIT_API_URL: z.string().url().default('http://localhost:7880'),
+    LIVEKIT_API_KEY: z.string().min(1).default('devkey'),
+    LIVEKIT_API_SECRET: z
+      .string()
+      .min(32)
+      .default('dev-only-livekit-secret-0123456789abcdef'),
   })
   .refine(
     (env) =>
@@ -43,6 +52,15 @@ export const Env = z
       env.S3_SECRET_KEY !== 'nezfocus-dev-secret',
     {
       path: ['S3_SECRET_KEY'],
+      message: 'still the dev value; set the real key',
+    },
+  )
+  .refine(
+    (env) =>
+      env.NODE_ENV !== 'production' ||
+      !PLACEHOLDER_SECRET.test(env.LIVEKIT_API_SECRET),
+    {
+      path: ['LIVEKIT_API_SECRET'],
       message: 'still the dev value; set the real key',
     },
   );

@@ -114,7 +114,8 @@ class RedisKeyValueStore extends KeyValueStore {
       useFactory: (redis: Redis) => new RedisKeyValueStore(redis),
     },
   ],
-  // REDIS: for Pub/Sub (gateway, REQ-MSG-07); everything else goes through KeyValueStore.
+  // REDIS: for Pub/Sub (gateway, REQ-MSG-07) and sets the voice seats need (voice-seats.ts);
+  // everything else goes through KeyValueStore.
   exports: [REDIS, KeyValueStore],
 })
 export class RedisModule implements OnApplicationShutdown {

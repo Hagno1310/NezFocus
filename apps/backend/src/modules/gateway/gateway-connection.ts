@@ -13,6 +13,8 @@ import {
   type ServerSummary,
   type SessionEndReason,
   type UserSettings,
+  type VoiceRoomMember,
+  type VoiceStateUpdate,
 } from '@nezfocus/shared';
 import {
   HEARTBEAT_INTERVAL_MS,
@@ -51,6 +53,20 @@ export interface PresenceHooks {
   update(session: GatewaySession, d: PresenceUpdate): Promise<void>;
   changed(userId: bigint): Promise<void>;
 }
+
+// REQ-VC-01, implemented by VoiceRoomsService (op 4 and READY.voice_states).
+export interface VoiceHooks {
+  ready(userId: bigint): Promise<VoiceRoomMember[]>;
+  update(
+    who: { userId: bigint; authSessionId: bigint },
+    d: VoiceStateUpdate,
+  ): Promise<void>;
+}
+
+const noVoice: VoiceHooks = {
+  ready: async () => [],
+  update: async () => {},
+};
 
 const noPresence: PresenceHooks = {
   ready: async () => ({ preferred_status: 'online', presences: [] }),
@@ -92,6 +108,7 @@ export class GatewayConnection implements SessionSocket {
     private readonly loadRelationships: LoadRelationships = async () => [],
     private readonly loadReadStates: LoadReadStates = async () => [],
     private readonly loadDms: LoadDms = async () => [],
+    private readonly voice: VoiceHooks = noVoice,
   ) {}
 
   open() {
@@ -182,7 +199,9 @@ export class GatewayConnection implements SessionSocket {
       // Membership is checked per event (Fanout), so subscribing needs no lookup.
       return this.sessions.subscribe(this.session, id ? BigInt(id) : null);
     }
-    // VOICE_STATE_UPDATE (P3), FOCUS_HEARTBEAT: not yet.
+    if (frame.op === GatewayOp.VOICE_STATE_UPDATE)
+      return this.voice.update(this.session, frame.d);
+    // FOCUS_HEARTBEAT: P3-B3.3 (#147).
   }
 
   private async identify(auth: Authenticated, status?: PresenceStatus) {
@@ -192,6 +211,7 @@ export class GatewayConnection implements SessionSocket {
     const relationships = await this.loadRelationships(auth.userId);
     const readStates = await this.loadReadStates(auth.userId);
     const dms = await this.loadDms(auth.userId);
+    const voiceStates = await this.voice.ready(auth.userId);
     if (this.isClosed) return;
     this.session = this.sessions.create(auth.userId, auth.authSessionId, this);
     this.sessions.dispatch(this.session, 'READY', {
@@ -203,7 +223,7 @@ export class GatewayConnection implements SessionSocket {
       read_states: readStates,
       relationships,
       private_channels: dms,
-      voice_states: [], // ponytail: P3-B1.2 (#138) fills it from the voice state in Redis
+      voice_states: voiceStates,
     });
     // SRS 5.4: IDENTIFY may carry the status the app wants (a new login keeps the saved one).
     if (status)

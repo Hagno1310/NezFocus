@@ -16,14 +16,32 @@ x-backend-env: &backend-env
   S3_BUCKET: nezfocus
   APP_DOWNLOAD_URL: ${APP_DOWNLOAD_URL:-https://play.google.com/store/apps/details?id=app.nezfocus}
   ANDROID_CERT_SHA256: ${ANDROID_CERT_SHA256:-}
+  LIVEKIT_URL: wss://${API_DOMAIN}/livekit
+  LIVEKIT_API_URL: http://livekit:7880
+  LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+  LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
 
 services:
+  # REQ-VC-08 (CR-28 #4): owns 443 and splits it by SNI (nginx/nginx.conf.template).
+  router:
+    image: nginx:1-alpine
+    restart: unless-stopped
+    ports: ['443:443']
+    environment:
+      TURN_DOMAIN: ${TURN_DOMAIN}
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
+    volumes:
+      - ./nginx/nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro
+    depends_on: [caddy, livekit]
+
+  # 80 for ACME and redirects; 443 only behind the router.
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
-    ports: ['80:80', '443:443', '443:443/udp']
+    ports: ['80:80']
     environment:
       API_DOMAIN: ${API_DOMAIN}
+      TURN_DOMAIN: ${TURN_DOMAIN}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -72,6 +90,36 @@ services:
     volumes:
       - ./seaweedfs/s3.prod.json:/etc/seaweedfs/s3.json:ro
       - s3data:/data
+
+  # REQ-VC-01 / VC-08: SFU with TURN/UDP 3478 and TURN/TLS (443 through the router, Caddy's
+  # certificate for TURN_DOMAIN). Media: 7881/tcp and 50000-50200/udp open on the VM firewall.
+  # ponytail: khi chứng chỉ TURN_DOMAIN được Caddy gia hạn (~60 ngày): restart livekit để nạp lại.
+  livekit:
+    image: livekit/livekit-server:v1.9
+    restart: unless-stopped
+    ports: ['7881:7881', '3478:3478/udp', '50000-50200:50000-50200/udp']
+    environment:
+      LIVEKIT_KEYS: '${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}'
+      LIVEKIT_CONFIG: |
+        port: 7880
+        rtc:
+          tcp_port: 7881
+          port_range_start: 50000
+          port_range_end: 50200
+          use_external_ip: true
+        turn:
+          enabled: true
+          domain: ${TURN_DOMAIN}
+          tls_port: 443
+          udp_port: 3478
+          cert_file: /caddy/caddy/certificates/acme-v02.api.letsencrypt.org-directory/${TURN_DOMAIN}/${TURN_DOMAIN}.crt
+          key_file: /caddy/caddy/certificates/acme-v02.api.letsencrypt.org-directory/${TURN_DOMAIN}/${TURN_DOMAIN}.key
+        webhook:
+          api_key: ${LIVEKIT_API_KEY}
+          urls: ['http://backend:3000/api/v1/voice/webhook']
+    volumes:
+      - caddy_data:/caddy:ro
+    depends_on: [caddy]
 
 volumes:
   caddy_data:

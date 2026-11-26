@@ -22,6 +22,7 @@ describe('Env', () => {
         NODE_ENV: 'production',
         JWT_SECRET: 'q'.repeat(48),
         S3_SECRET_KEY: 's'.repeat(40),
+        LIVEKIT_API_SECRET: 'l'.repeat(40),
       }).success,
     ).toBe(true);
   });
@@ -31,10 +32,24 @@ describe('Env', () => {
       ...base,
       NODE_ENV: 'production',
       JWT_SECRET: 'q'.repeat(48),
+      LIVEKIT_API_SECRET: 'l'.repeat(40),
     };
     expect(Env.safeParse(prod).success).toBe(false);
     expect(Env.safeParse({ ...prod, NODE_ENV: 'development' }).success).toBe(
       true,
     );
+  });
+
+  it('refuses the dev LiveKit secret in production (REQ-VC-01)', () => {
+    const prod = {
+      ...base,
+      NODE_ENV: 'production',
+      JWT_SECRET: 'q'.repeat(48),
+      S3_SECRET_KEY: 's'.repeat(40),
+    };
+    expect(Env.safeParse(prod).success).toBe(false);
+    expect(
+      Env.safeParse({ ...prod, LIVEKIT_API_SECRET: 'l'.repeat(40) }).success,
+    ).toBe(true);
   });
 });

@@ -4,13 +4,15 @@ import {
   type OnModuleDestroy,
   type OnModuleInit,
 } from '@nestjs/common';
-import type {
-  PresenceEvent,
-  PresenceUpdate,
-  SoloSession,
-  StudyActivity,
+import {
+  Permission,
+  type PresenceEvent,
+  type PresenceUpdate,
+  type SoloSession,
+  type StudyActivity,
 } from '@nezfocus/shared';
 import { BlockQuery } from '../friends/block-query.js';
+import { PermissionService } from '../permissions/permission.service.js';
 import { GatewaySessions, type GatewaySession } from './gateway-sessions.js';
 import {
   aggregate,
@@ -31,7 +33,11 @@ export abstract class PresenceSink {
   abstract settingsChanged(userId: bigint): Promise<void>;
   // P2-B2.2 (#111): friend added / removed, block added / removed between a and b.
   abstract relationshipChanged(a: bigint, b: bigint): Promise<void>;
+  // P3-B1.2 (#138), AUTH-05 CR-24: the voice room the user sits in; null = none.
+  abstract voiceChanged(userId: bigint, room: VoiceRoom | null): void;
 }
+
+export type VoiceRoom = { channelId: bigint; name: string; studyRoom: boolean };
 
 // Read side for other modules: how many of these users others see online right now
 // (REQ-SRV-04 preview "N đang online"; Invisible counts as offline). Owner: gateway (B).
@@ -41,7 +47,8 @@ export abstract class PresenceReader {
 
 type UserPresence = {
   settings: PresenceSettings;
-  activity: StudyActivity | null;
+  activity: StudyActivity | null; // Solo
+  voice: StudyActivity | null; // shown when there is no Solo
   sent: string; // JSON of the last PRESENCE_UPDATE, to send only real changes
 };
 
@@ -66,6 +73,7 @@ export class PresenceService
     private readonly sessions: GatewaySessions,
     private readonly repo: PresenceRepository,
     private readonly blocks: BlockQuery,
+    private readonly permissions: PermissionService,
   ) {
     super();
   }
@@ -83,9 +91,11 @@ export class PresenceService
   async ready(userId: bigint) {
     const me = await this.load(userId);
     const hidden = await this.blockedEitherWay(userId);
-    const presences = (await this.repo.receivers(userId))
-      .map((id) => this.eventFor(id, hidden.has(id)))
-      .filter((e) => e.status !== 'offline');
+    const presences: PresenceEvent[] = [];
+    for (const id of await this.repo.receivers(userId)) {
+      const e = this.eventFor(id, hidden.has(id));
+      if (e.status !== 'offline') presences.push(await this.roomFor(e, userId));
+    }
     return { preferred_status: me.settings.preferred, presences };
   }
 
@@ -112,6 +122,24 @@ export class PresenceService
       );
   }
 
+  voiceChanged(userId: bigint, room: VoiceRoom | null) {
+    this.load(userId)
+      .then((me) => {
+        me.voice = room && {
+          kind: 'voice',
+          room: {
+            channel_id: room.channelId.toString(),
+            channel_name: room.name,
+            study_room: room.studyRoom,
+          },
+        };
+        return this.changed(userId);
+      })
+      .catch((err: unknown) =>
+        this.logger.error(`voice ${userId}: ${String(err)}`),
+      );
+  }
+
   async settingsChanged(userId: bigint) {
     const me = await this.load(userId);
     me.settings = await this.repo.settings(userId);
@@ -132,7 +160,9 @@ export class PresenceService
       await this.sessions.dispatchToUser(
         receiver,
         'PRESENCE_UPDATE',
-        hidden.has(receiver) ? { ...event, activity: null } : event,
+        hidden.has(receiver)
+          ? { ...event, activity: null }
+          : await this.roomFor(event, receiver),
       );
     this.forgetIfGone(userId);
   }
@@ -148,7 +178,7 @@ export class PresenceService
         await this.sessions.dispatchToUser(
           to,
           'PRESENCE_UPDATE',
-          this.eventFor(from, blocked),
+          await this.roomFor(this.eventFor(from, blocked), to),
         );
   }
 
@@ -167,6 +197,7 @@ export class PresenceService
     if (
       me &&
       !me.activity &&
+      !me.voice &&
       me.sent === JSON.stringify(OFFLINE(userId)) &&
       !this.sessions.devicesOf(userId).length
     )
@@ -180,6 +211,21 @@ export class PresenceService
       this.blocks.blockerIds(userId),
     ]);
     return new Set([...blocked, ...blockers]);
+  }
+
+  // AUTH-05 (CR-24): the room's name only to who can view it, else "Đang ở một phòng voice".
+  private async roomFor(
+    e: PresenceEvent,
+    receiver: bigint,
+  ): Promise<PresenceEvent> {
+    const a = e.activity;
+    if (a?.kind !== 'voice' || !a.room) return e;
+    const sees = await this.permissions.can(
+      receiver,
+      { channelId: BigInt(a.room.channel_id) },
+      Permission.VIEW_CHANNEL,
+    );
+    return sees ? e : { ...e, activity: { kind: 'voice', room: null } };
   }
 
   private eventFor(userId: bigint, hideActivity: boolean): PresenceEvent {
@@ -198,7 +244,7 @@ export class PresenceService
     return {
       user_id: userId.toString(),
       status,
-      activity: visibleActivity(me.activity, {
+      activity: visibleActivity(me.activity ?? me.voice, {
         status,
         showActivity: me.settings.showActivity,
       }),
@@ -215,6 +261,7 @@ export class PresenceService
       me = this.users.get(userId) ?? {
         settings,
         activity: null,
+        voice: null,
         sent: JSON.stringify(OFFLINE(userId)),
       };
       this.users.set(userId, me);

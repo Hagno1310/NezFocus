@@ -1,0 +1,1 @@
+ALTER TABLE "server_members" ADD COLUMN "mod_muted" boolean DEFAULT false NOT NULL;

@@ -1,4 +1,3 @@
-import { Injectable, Logger } from '@nestjs/common';
 import type { VoiceLeaveReason } from '@nezfocus/shared';
 
 // Which rooms count: kicked from server S → only S's rooms; 'any' for logout / another device.
@@ -15,22 +14,9 @@ export abstract class VoiceService {
     scope: VoiceScope,
     reason: VoiceLeaveReason,
   ): Promise<boolean>;
+  // CR-28 #32: a voice channel was deleted with people inside → everyone out, `channel_deleted`.
+  // Viewers learn it from CHANNEL_DELETE; each one inside gets their own leave with the reason.
+  abstract roomDeleted(serverId: bigint, channelId: bigint): Promise<void>;
   // The room the user is in (away included), for "Bạn cũng sẽ rời {phòng}" and the timeout sheet.
   abstract seatOf(userId: bigint): Promise<VoiceSeat | null>;
-}
-
-// ponytail: logs only, nobody is ever in a room; P3-B1.2 (#138) replaces it with LiveKit.
-@Injectable()
-export class LogVoiceService extends VoiceService {
-  private readonly logger = new Logger('VoiceService');
-
-  disconnect(userId: bigint, scope: VoiceScope, reason: VoiceLeaveReason) {
-    const where = typeof scope === 'string' ? scope : Object.values(scope)[0];
-    this.logger.log(`disconnect ${userId} from ${where} (${reason})`);
-    return Promise.resolve(false);
-  }
-
-  seatOf() {
-    return Promise.resolve(null);
-  }
 }

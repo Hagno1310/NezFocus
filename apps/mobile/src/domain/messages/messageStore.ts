@@ -50,7 +50,7 @@ export type MessageStoreDeps = {
   newNonce: () => string;
   random?: () => number;
   setTimer: (fn: () => void, ms: number) => () => void;
-  uploads?: Pick<Uploads, 'ensure' | 'forget'>; // REQ-MSG-04
+  uploads?: Pick<Uploads, 'ensure' | 'forget' | 'stale'>; // REQ-MSG-04
 };
 
 // An image is not uploaded yet for a reason a retry may fix: like a send without network.
@@ -191,6 +191,19 @@ export function createMessageStore(deps: MessageStoreDeps) {
       const failure = classifySendError(
         err instanceof UploadNotReady ? new TypeError('upload') : err,
       );
+      // MSG-04 AC5 at the send: the ids went stale (the 24h sweep). Forget them, so "Gửi lại"
+      // uploads the photos again instead of failing for good.
+      if (
+        (err as { errors?: object }).errors?.hasOwnProperty('attachment_ids')
+      ) {
+        deps.uploads?.stale(entry.attachments.map((a) => a.key));
+        await local.updateOutbox(entry.nonce, {
+          attachments: entry.attachments.map((a) => ({
+            ...a,
+            attachmentId: null,
+          })),
+        });
+      }
       await local.updateOutbox(
         entry.nonce,
         afterFailure(entry, failure, deps.now(), deps.random),

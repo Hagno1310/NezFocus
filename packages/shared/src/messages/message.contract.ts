@@ -316,6 +316,6 @@ export const ChannelPinsUpdateEvent = z.object({
   channel_id: SnowflakeId,
   server_id: SnowflakeId.nullable(),
   message_id: SnowflakeId,
-  pinned_at: z.iso.datetime().nullable(), // null: unpinned (or the pinned message deleted)
+  pinned_at: z.iso.datetime().nullable(), // null: unpinned. A deleted pin: MESSAGE_DELETE only
 });
 export type ChannelPinsUpdateEvent = z.infer<typeof ChannelPinsUpdateEvent>;

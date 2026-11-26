@@ -39,6 +39,8 @@ export type ViewerImage = {
   detail: string; // "loi-giai-2.jpg · 1,2 MB"
 };
 
+// No spec value: zoom stops at 4×; a swipe down closes past 120 or faster than 800 / s, like
+// the sheets' drag to dismiss.
 const MAX_ZOOM = 4;
 const CLOSE_DRAG = 120;
 const CLOSE_SPEED = 800;
@@ -250,7 +252,8 @@ function Page({
       scheduleOnRN(onTap);
     },
   });
-  // Zoomed: move around the image.
+  // Two pans, not one: zoomed, the image moves any way; not zoomed, sideways must stay with
+  // the pager, so only a downward drag is ours.
   const move = usePanGesture({
     enabled: zoomed,
     onActivate: () => {

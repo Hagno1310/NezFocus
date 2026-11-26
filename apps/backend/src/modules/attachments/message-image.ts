@@ -1,13 +1,22 @@
-import sharp from 'sharp';
+import { MESSAGE_ATTACHMENT_TYPES } from '@nezfocus/shared';
+import sharp, { type Sharp } from 'sharp';
 
 // CR-28 #29: the longer side of the thumbnail the chat shows first (NFR-MOB-07).
 export const THUMBNAIL_SIDE = 720;
 
-const EXT: Record<string, string> = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-  'image/gif': 'gif',
+// REQ-MSG-04 (CR-28): each image type MVP takes, its file extension and how it is written
+// again (sharp keeps no metadata unless asked).
+const FORMATS: Record<
+  (typeof MESSAGE_ATTACHMENT_TYPES)[number],
+  { ext: string; write: (img: Sharp) => Sharp }
+> = {
+  'image/jpeg': {
+    ext: 'jpg',
+    write: (img) => img.jpeg({ quality: 90, mozjpeg: true }),
+  },
+  'image/png': { ext: 'png', write: (img) => img.png() },
+  'image/webp': { ext: 'webp', write: (img) => img.webp({ quality: 90 }) },
+  'image/gif': { ext: 'gif', write: (img) => img.gif() },
 };
 
 export type MessageImage = {
@@ -25,19 +34,12 @@ export async function messageImage(
   buf: Buffer,
   type: string,
 ): Promise<MessageImage> {
-  const ext = EXT[type];
-  if (!ext) throw new Error(`not a message image: ${type}`);
+  const format = FORMATS[type as keyof typeof FORMATS];
+  if (!format) throw new Error(`not a message image: ${type}`);
   const gif = type === 'image/gif';
+  // A GIF has no EXIF orientation; anything else is turned upright before the EXIF goes.
   const source = gif ? sharp(buf, { animated: true }) : sharp(buf).rotate();
-  const original = await (
-    gif
-      ? source.gif()
-      : type === 'image/png'
-        ? source.png()
-        : type === 'image/webp'
-          ? source.webp({ quality: 90 })
-          : source.jpeg({ quality: 90, mozjpeg: true })
-  ).toBuffer();
+  const original = await format.write(source).toBuffer();
   const meta = await sharp(original, { animated: gif }).metadata();
   const thumbnail = await sharp(original)
     .resize(THUMBNAIL_SIDE, THUMBNAIL_SIDE, {
@@ -48,7 +50,7 @@ export async function messageImage(
     .toBuffer();
   return {
     original,
-    ext,
+    ext: format.ext,
     width: meta.width ?? 0,
     height: meta.pageHeight ?? meta.height ?? 0,
     thumbnail,

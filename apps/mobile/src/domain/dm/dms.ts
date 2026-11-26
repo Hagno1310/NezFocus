@@ -1,3 +1,4 @@
+import { imagesOnly } from '../messages/content';
 import type { DispatchEvent, DmChannel, StudyActivity } from '@nezfocus/shared';
 import { newerId } from '../messages/unread';
 
@@ -74,7 +75,7 @@ export function dmLine2(
   return {
     kind: 'message',
     text: last.content,
-    image: !last.content.trim() && last.attachments.length > 0,
+    image: imagesOnly(last),
     own: last.author.id === o.meId,
     bold: o.unread,
   };

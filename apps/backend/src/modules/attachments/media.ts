@@ -21,6 +21,12 @@ export const MEDIA_FOLDERS = {
 export const mediaPrefix = (purpose: PublicPurpose, attachmentId: bigint) =>
   `${PUBLIC_PREFIX}${MEDIA_FOLDERS[purpose]}/${attachmentId}`;
 
+// Message images are private (CR-28 #29): read through AttachmentsController.file.
+export const messageImageKeys = (attachmentId: bigint, ext: string) => ({
+  storageKey: `attachments/${attachmentId}/original.${ext}`,
+  thumbnailKey: `attachments/${attachmentId}/thumbnail.webp`,
+});
+
 export const avatarKey = (prefix: string, size: number) =>
   `${prefix}/${size}.webp`;
 

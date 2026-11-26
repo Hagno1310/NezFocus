@@ -56,10 +56,13 @@ export function trayLine(
 export const traySendable = (items: readonly Upload[]) =>
   !items.some((i) => i.status === 'failed' || i.status === 'rejected');
 
-// C-29: "1,8 MB" — one decimal with a comma; under 1 MB in whole KB.
-export function fileSize(bytes: number) {
+// C-29: "1,8 MB" — one decimal (the language's separator); under 1 MB in whole KB.
+export function fileSize(bytes: number, locale: string) {
   const mb = bytes / (1024 * 1024);
   if (mb >= 1)
-    return `${(Math.round(mb * 10) / 10).toFixed(1).replace('.', ',')} MB`;
+    return `${new Intl.NumberFormat(locale, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }).format(mb)} MB`;
   return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }

@@ -227,11 +227,7 @@ export class MessageActionsService {
         `At most ${MAX_PINS} pinned messages`,
       );
     if (done === 'already') return;
-    this.emit(channel, 'CHANNEL_PINS_UPDATE', {
-      channel_id: channelId.toString(),
-      message_id: messageId.toString(),
-      pinned_at: at.toISOString(),
-    });
+    this.pinsChanged(channel, messageId, at);
     await this.messages.createSystemMessage(
       channelId,
       userId,
@@ -247,11 +243,16 @@ export class MessageActionsService {
     const { channel } = await this.target(userId, channelId, messageId);
     await this.mayPin(userId, channel);
     if (await this.repo.unpin(messageId))
-      this.emit(channel, 'CHANNEL_PINS_UPDATE', {
-        channel_id: channelId.toString(),
-        message_id: messageId.toString(),
-        pinned_at: null,
-      });
+      this.pinsChanged(channel, messageId, null);
+  }
+
+  // CR-28 #28 (g): the app updates its cached copy from message_id + pinned_at.
+  private pinsChanged(channel: ChannelRow, messageId: bigint, at: Date | null) {
+    this.emit(channel, 'CHANNEL_PINS_UPDATE', {
+      channel_id: channel.id.toString(),
+      message_id: messageId.toString(),
+      pinned_at: at?.toISOString() ?? null,
+    });
   }
 
   async pins(userId: bigint, channelId: bigint): Promise<MessageResponse[]> {

@@ -2,7 +2,10 @@ import type { ImagePickerAsset } from 'expo-image-picker';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from 'zustand';
-import { toPickedImages } from '../../../data/attachments/pickedImages';
+import {
+  releaseImage,
+  toPickedImages,
+} from '../../../data/attachments/pickedImages';
 import { uploads } from '../../../data/attachments/uploads';
 import {
   admit,
@@ -28,15 +31,17 @@ export function useAttachmentTray(channelId: string) {
   const [sendTried, setSendTried] = useState(false);
 
   const add = async (assets: ImagePickerAsset[]) => {
-    const photos = await toPickedImages(assets).catch(() => []);
+    const photos = await toPickedImages(assets).catch(() => null);
+    if (!photos) return showToast({ message: t('chat.somethingWrong') });
     const { accepted, tooLarge, tooMany } = admit(
       trayOf(channelId).length,
       photos,
     );
-    // One toast at a time (S-MOD-04): the size one names the first file (MSG-04 AC1).
+    // S-MOD-04 queues them, one at a time; the size one names the first file (MSG-04 AC1).
     if (tooLarge[0])
       showToast({ message: t('chat.tooLarge', { name: tooLarge[0].name }) });
-    else if (tooMany) showToast({ message: t('chat.tooMany') });
+    if (tooMany) showToast({ message: t('chat.tooMany') });
+    for (const p of photos) if (!accepted.includes(p)) releaseImage(p);
     if (!accepted.length) return;
     const added = accepted.map((p) => uploads.add(channelId, p));
     setTray(channelId, [...trayOf(channelId), ...added]);

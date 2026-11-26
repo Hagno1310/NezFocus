@@ -1,8 +1,7 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import { PermissionsAndroid, Platform } from 'react-native';
 import SaveToDownloads from '../../../modules/save-to-downloads';
-import { apiBaseUrl } from '../api';
-import { imageAuth } from './imageAuth';
+import { imageAuth, imageSource } from './imageAuth';
 
 // S-HOME-11 "Tải về" (CR-28 #29): the original into the phone's Download folder. A sent image is
 // fetched with the bearer first; a pending one is already on the phone. Throws when it fails
@@ -26,14 +25,11 @@ export async function saveImage(image: {
   if (image.path) {
     const dir = new Directory(Paths.cache, 'image-downloads');
     if (!dir.exists) dir.create({ intermediates: true });
-    const token = imageAuth.getState().token;
+    const source = imageSource(image.path, '', imageAuth.getState().token);
     const file = await File.downloadFileAsync(
-      `${apiBaseUrl}${image.path}`,
+      source.uri,
       new File(dir, `${Date.now()}-${image.name}`),
-      {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        idempotent: true,
-      },
+      { headers: source.headers, idempotent: true },
     );
     uri = file.uri;
   }

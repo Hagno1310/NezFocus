@@ -170,7 +170,7 @@ export class MessagesRepository {
     });
   }
 
-  // True when it was pinned.
+  // False: it was not pinned, so no CHANNEL_PINS_UPDATE goes out.
   async unpin(messageId: bigint): Promise<boolean> {
     const rows = await this.db
       .update(messages)

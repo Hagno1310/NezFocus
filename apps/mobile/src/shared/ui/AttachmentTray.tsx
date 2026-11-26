@@ -25,7 +25,7 @@ export type TrayTile = {
 const TILE = size.attachTile;
 const CLOSE = size.attachClose;
 const RING = size.attachRing;
-const STROKE = 3;
+const STROKE = size.attachRingStroke;
 
 // C-29: one row of 64 tiles over the input, scrolling sideways; the line under it (C-11 › Dòng
 // dưới khay). A failed tile is tapped to retry; a blocked one can only be removed.
@@ -207,7 +207,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
     overflow: 'hidden',
   },
-  center: { alignItems: 'center', justifyContent: 'center', gap: 2 },
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: size.attachInset,
+  },
   mark: {
     width: size.attachMark,
     height: size.attachMark,
@@ -217,8 +221,8 @@ const styles = StyleSheet.create({
   },
   close: {
     position: 'absolute',
-    top: 2,
-    right: 2,
+    top: size.attachInset,
+    right: size.attachInset,
     width: CLOSE,
     height: CLOSE,
     borderRadius: radius.full,

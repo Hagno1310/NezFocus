@@ -951,6 +951,7 @@ export const vi = {
     trayFix: 'Gỡ hoặc thử lại tệp lỗi để gửi',
     tooLarge: '"{{name}}" lớn hơn 25MB nên không gửi được',
     tooMany: 'Mỗi tin gửi tối đa 10 tệp',
+    somethingWrong: 'Có lỗi xảy ra · thử lại sau ít phút',
     fileBlocked: 'Không gửi được · {{count}} tệp bị chặn',
     sendWithoutBlocked: 'Gửi không kèm tệp bị chặn',
     imageOnly: 'Đã gửi một ảnh',

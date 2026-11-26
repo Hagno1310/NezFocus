@@ -61,26 +61,31 @@ export class AttachmentsRepository {
   }
 
   // SRS 8.2 "Job dọn attachment chưa gắn vào tin sau 24h": never completed, message images
-  // never sent, and avatars / server icons no account or server uses any more.
-  stale(before: Date): Promise<AttachmentRow[]> {
+  // never sent, and avatars / server icons no account or server uses any more. SRS 8.6:
+  // images of a message deleted `deletedBefore` (30 days) ago go too.
+  stale(before: Date, deletedBefore: Date): Promise<AttachmentRow[]> {
+    const deletedLongAgo = sql`exists (select 1 from ${messages} where ${messages.id} = ${attachments.messageId} and ${messages.deletedAt} < ${deletedBefore})`;
     const usedAvatar = sql`exists (select 1 from ${users} where ${users.avatarKey} = ${attachments.storageKey})`;
     const usedIcon = sql`exists (select 1 from ${servers} where ${servers.iconKey} = ${attachments.storageKey})`;
     return this.db
       .select()
       .from(attachments)
       .where(
-        and(
-          lt(attachments.createdAt, before),
-          or(
-            eq(attachments.scanStatus, 'pending'),
-            and(
-              eq(attachments.purpose, 'message'),
-              isNull(attachments.messageId),
-            ),
-            and(
-              ne(attachments.purpose, 'message'),
-              sql`not ${usedAvatar}`,
-              sql`not ${usedIcon}`,
+        or(
+          deletedLongAgo,
+          and(
+            lt(attachments.createdAt, before),
+            or(
+              eq(attachments.scanStatus, 'pending'),
+              and(
+                eq(attachments.purpose, 'message'),
+                isNull(attachments.messageId),
+              ),
+              and(
+                ne(attachments.purpose, 'message'),
+                sql`not ${usedAvatar}`,
+                sql`not ${usedIcon}`,
+              ),
             ),
           ),
         ),

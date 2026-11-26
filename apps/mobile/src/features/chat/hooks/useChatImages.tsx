@@ -1,4 +1,4 @@
-import { Download } from 'lucide-react-native';
+import { Download, WifiOff } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from 'zustand';
@@ -14,6 +14,7 @@ import type { ChatItem } from '../../../domain/messages/messageStore';
 import type { ChatImage } from '../../../shared/ui/MessageImages';
 import { MediaViewer, type ViewerImage } from '../../../shared/ui/MediaViewer';
 import { showToast } from '../../../shared/ui/Toast';
+import { useOnline } from '../../gateway/hooks/useOnline';
 import { chatCover } from './useReadTracking';
 
 type Shown = {
@@ -27,13 +28,16 @@ type Open = {
   start: number;
   sender: { name: string; avatarUri: string | null };
   time: string;
+  retried: boolean; // the token was refreshed once for a failing original
 };
 
 // REQ-MSG-04 images of chat messages: thumbnails in the list (C-10), the originals in C-36
 // (S-HOME-11), "Tải về" into Download. A pending message shows the photos on the phone.
 export function useChatImages() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const size = (bytes: number) => fileSize(bytes, i18n.language);
   const token = useStore(imageAuth, (s) => s.token);
+  const online = useOnline();
   useEffect(() => {
     void loadImageToken();
   }, []);
@@ -62,7 +66,7 @@ export function useChatImages() {
             token,
           ),
           name: a.filename,
-          detail: `${a.filename} · ${fileSize(a.size_bytes)}`,
+          detail: `${a.filename} · ${size(a.size_bytes)}`,
         },
         save: {
           path: a.url,
@@ -85,7 +89,7 @@ export function useChatImages() {
           source: { uri: file.uri },
           placeholder: { uri: file.uri },
           name: file.name,
-          detail: `${file.name} · ${fileSize(file.size)}`,
+          detail: `${file.name} · ${size(file.size)}`,
         },
         save: {
           path: null,
@@ -109,7 +113,8 @@ export function useChatImages() {
       start: number,
       sender: Open['sender'],
       time: string,
-    ) => setOpen({ images: shownOf(item), start, sender, time }),
+    ) =>
+      setOpen({ images: shownOf(item), start, sender, time, retried: false }),
     // A thumbnail answered 401: the token expired; one refresh redraws them.
     onImageError: () => void refreshImageToken(),
     viewer: open && (
@@ -123,7 +128,20 @@ export function useChatImages() {
           const target = open.images[i]?.save;
           if (target) void download(target);
         }}
-        onError={() => void refreshImageToken()}
+        // S-HOME-11: an original that cannot load (offline, not saved on the phone) → back to
+        // the chat with the generic Toast; an expired token gets one refresh first.
+        onError={() => {
+          const close = () => {
+            setOpen(null);
+            showToast({ icon: WifiOff, message: t('chat.cannotConnect') });
+          };
+          if (!online || open.retried) return close();
+          setOpen({ ...open, retried: true });
+          const before = imageAuth.getState().token;
+          void refreshImageToken().then(() => {
+            if (imageAuth.getState().token === before) close();
+          });
+        }}
       />
     ),
   };

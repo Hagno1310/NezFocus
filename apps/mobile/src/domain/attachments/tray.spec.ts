@@ -109,10 +109,11 @@ describe('traySendable (S-HOME-05 uploading: ➤ works while uploading)', () => 
 });
 
 describe('fileSize (C-29: one decimal, comma)', () => {
-  it('reads like the frames', () => {
-    expect(fileSize(1.2 * MB)).toBe('1,2 MB');
-    expect(fileSize(3.25 * MB)).toBe('3,3 MB');
-    expect(fileSize(820 * 1024)).toBe('820 KB');
-    expect(fileSize(300)).toBe('1 KB');
+  it('reads like the frames, with the separator of the language', () => {
+    expect(fileSize(1.2 * MB, 'vi')).toBe('1,2 MB');
+    expect(fileSize(1.84 * MB, 'vi')).toBe('1,8 MB');
+    expect(fileSize(1.2 * MB, 'en')).toBe('1.2 MB');
+    expect(fileSize(820 * 1024, 'vi')).toBe('820 KB');
+    expect(fileSize(300, 'vi')).toBe('1 KB');
   });
 });

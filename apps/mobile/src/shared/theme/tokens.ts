@@ -192,6 +192,10 @@ export const size = {
   attachClose: 20,
   attachMark: 24,
   attachRing: 28,
+  attachRingStroke: 3,
+  attachInset: 2, // the ✕ 2 from the tile corner; icon and "Bị chặn" 2 apart (frame)
+  // S-HOME-03 `pins`: a pinned row's padding [12, 16] (frame).
+  pinRowPad: 12,
   // C-10 images: one keeps its ratio within 240 × 320; several are a 2-column grid of
   // 100 × 75 cells, 4 apart (frame `attachments`, chốt 26/11/2026).
   image: { maxWidth: 240, maxHeight: 320, cellWidth: 100, cellHeight: 75 },

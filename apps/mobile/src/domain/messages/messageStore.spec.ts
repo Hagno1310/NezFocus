@@ -555,15 +555,18 @@ function fakeUploads() {
     answer: (r: UploadResult) => void;
   }[] = [];
   const forgotten: string[] = [];
+  const staled: string[] = [];
   return {
     waits,
     forgotten,
+    staled,
     uploads: {
       ensure: (_channelId: string, ref: UploadRef) =>
         ref.attachmentId
           ? Promise.resolve<UploadResult>({ ok: true, id: ref.attachmentId })
           : new Promise<UploadResult>((answer) => waits.push({ ref, answer })),
       forget: (keys: readonly string[]) => void forgotten.push(...keys),
+      stale: (keys: readonly string[]) => void staled.push(...keys),
     },
   };
 }
@@ -643,6 +646,37 @@ describe('sending images (REQ-MSG-04, S-HOME-05, CR-28 #29)', () => {
       nonce: 'nonce-1',
       attachment_ids: ['501'],
     });
+  });
+
+  it('ids swept meanwhile (40001 attachment_ids) → failed, and "Gửi lại" uploads again', async () => {
+    const fake = fakeUploads();
+    const { store, server, items, settle } = setup(
+      fakeRemote(),
+      undefined,
+      fake.uploads,
+    );
+    await store.open('7', '9');
+    await store.send('7', '', undefined, [
+      { key: 'a.png', file: photo('a.png'), attachmentId: '501' },
+    ]);
+    await settle();
+    server.sends[0]!.reject(
+      Object.assign(new Error('x'), {
+        status: 400,
+        code: ErrorCode.ValidationError,
+        errors: { attachment_ids: [{ code: 'invalid_attachment' }] },
+      }),
+    );
+    await settle();
+    expect(fake.staled).toEqual(['a.png']);
+    const entry = items()[0]!;
+    expect(entry.kind === 'outbox' && entry.entry).toMatchObject({
+      status: 'failed',
+      attachments: [{ key: 'a.png', attachmentId: null }],
+    });
+    void store.retry(entry.kind === 'outbox' ? entry.entry.nonce : '');
+    await settle();
+    expect(fake.waits).toHaveLength(1); // uploading again, not sending the old id
   });
 
   it('AC4: the network drops during the upload → retrying, same nonce; never two messages', async () => {

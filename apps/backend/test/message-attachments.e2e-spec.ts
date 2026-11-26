@@ -19,6 +19,7 @@ import { eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import { DB, type Db } from '../src/db/db.module.js';
 import { attachments } from '../src/modules/attachments/attachments.schema.js';
+import { messages } from '../src/modules/messaging/messages.schema.js';
 import { AttachmentsService } from '../src/modules/attachments/attachments.service.js';
 import {
   FriendshipStatus,
@@ -435,7 +436,7 @@ describe('Message attachments (e2e)', () => {
         .expect(302);
       expect(thumb.headers.location).toBe(`memory://${row!.thumbnailKey}`);
       await out.get(attachmentFilePath(image.id, 'original')).expect(404);
-      await an.get(`/attachments/${image.id}/large`).expect(404);
+      await an.get(`/attachments/${image.id}/large`).expect(400);
       await binh.del(messagePath(server.text, sent.id)).expect(204);
       await an.get(attachmentFilePath(image.id, 'original')).expect(404);
     });
@@ -507,6 +508,23 @@ describe('Message attachments (e2e)', () => {
       expect(left.has(fresh.id)).toBe(true);
       expect(left.has(sentOne.id)).toBe(true);
       expect(left.has(currentAvatar)).toBe(true);
+
+      // SRS 8.6: a deleted message's images go 30 days after the delete, not before.
+      const goneImage = await upload(an, server.text);
+      const goneMessage = (
+        await send(an, server.text, { attachment_ids: [goneImage.id] }).expect(
+          201,
+        )
+      ).body as MessageResponse;
+      await an.del(messagePath(server.text, goneMessage.id)).expect(204);
+      await app.get(AttachmentsService).sweep();
+      expect(keysOf(goneImage.id)).not.toEqual([]);
+      await db
+        .update(messages)
+        .set({ deletedAt: new Date(Date.now() - 31 * 24 * 3600_000) })
+        .where(eq(messages.id, BigInt(goneMessage.id)));
+      await app.get(AttachmentsService).sweep();
+      expect(keysOf(goneImage.id)).toEqual([]);
       expect(keysOf(unsent.id)).toEqual([]);
       expect(keysOf(oldAvatar)).toEqual([]);
       expect(keysOf(currentAvatar)).not.toEqual([]);

@@ -177,7 +177,7 @@ function ChannelMembers({
       {tab === 'pins' ? (
         <PinnedList
           channelId={channelId}
-          pins={pins}
+          pins={pins ?? null}
           canUnpin={abilities.canManage}
           online={!offline}
           // S-HOME-03 › Tương tác: close the drawer, bring the message into view.

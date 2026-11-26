@@ -140,7 +140,7 @@ export function createUploads(deps: UploadsDeps) {
         void run(key);
     },
 
-    // The network is back: every `waiting` tile goes again.
+    // CR-28 #29: offline tiles need no tap, they go again when the network is back.
     resume() {
       for (const item of Object.values(state.getState().items))
         if (item.status === 'waiting') void run(item.key);
@@ -158,7 +158,14 @@ export function createUploads(deps: UploadsDeps) {
       });
     },
 
-    // Sent: nothing to show any more.
+    // The backend no longer takes these ids (40001, e.g. swept after 24h): the next try
+    // uploads the photos again.
+    stale(keys: readonly string[]) {
+      for (const key of keys)
+        patch(key, { status: 'failed', attachmentId: null, progress: 0 });
+    },
+
+    // Sent or dropped with its message: the app's copy of the photo is not needed any more.
     forget(keys: readonly string[]) {
       for (const key of keys) {
         const item = state.getState().items[key];

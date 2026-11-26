@@ -1,16 +1,6 @@
-import {
-  ErrorCode,
-  type MessageAuthor,
-  type MessageResponse,
-} from '@nezfocus/shared';
+import { type MessageAuthor, type MessageResponse } from '@nezfocus/shared';
 import * as Clipboard from 'expo-clipboard';
-import {
-  CircleAlert,
-  Copy,
-  MessageSquareX,
-  Timer,
-  WifiOff,
-} from 'lucide-react-native';
+import { Copy } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Vibration } from 'react-native';
@@ -19,6 +9,7 @@ import { messageStore } from '../../../data/messages';
 import { messageLinkOf } from '../../../domain/messages/links';
 import type { Lifted } from '../../../shared/ui/Overlay';
 import { showToast } from '../../../shared/ui/Toast';
+import { showActionError } from '../actionError';
 
 const RECENT_KEY = 'emoji.recent';
 const RECENT_MAX = 8; // one row of the picker (frame `emoji-picker`)
@@ -60,33 +51,7 @@ export function useMessageActions(
       .catch(() => {});
   }, []);
 
-  // S-HOME-04 › Tương tác, 10 S-MOD-04 Toast chung theo mã.
-  const failed = useCallback(
-    (err: unknown) => {
-      const e = err as { code?: number; retry_after?: number | null };
-      if (e.code === ErrorCode.MaxReactionsReached)
-        showToast({ message: t('chat.maxReactions') });
-      // REQ-MSG-10 AC2.
-      else if (e.code === ErrorCode.MaxPinsReached)
-        showToast({ message: t('chat.maxPins') });
-      else if (
-        e.code === ErrorCode.Forbidden ||
-        e.code === ErrorCode.CannotMessageUser
-      )
-        showToast({ icon: CircleAlert, message: t('chat.noLongerAllowed') });
-      else if (e.code === ErrorCode.RateLimited)
-        showToast({
-          icon: Timer,
-          message: t('chat.tooFast', {
-            count: Math.max(1, Math.ceil(e.retry_after ?? 1)),
-          }),
-        });
-      else if (e.code === ErrorCode.NotFound)
-        showToast({ icon: MessageSquareX, message: t('chat.messageDeleted') });
-      else showToast({ icon: WifiOff, message: t('chat.cannotConnect') });
-    },
-    [t],
-  );
+  const failed = useCallback((err: unknown) => showActionError(t, err), [t]);
 
   const toggle = useCallback(
     (message: MessageResponse, emoji: string) => {

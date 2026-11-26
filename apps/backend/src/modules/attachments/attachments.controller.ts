@@ -17,8 +17,10 @@ import {
   ErrorCode,
   SnowflakeId,
   type AttachmentResponse,
+  type AttachmentVariant,
   type AttachmentUploadResponse,
 } from '@nezfocus/shared';
+import { z } from 'zod';
 import { AppError } from '../../common/app-error.js';
 import { ZodValidationPipe } from '../../common/zod-validation.pipe.js';
 import { CurrentUser, Public, type AuthUser } from '../auth/auth.decorators.js';
@@ -32,6 +34,7 @@ import {
 } from './media.js';
 
 const idParam = new ZodValidationPipe(SnowflakeId);
+const variantParam = new ZodValidationPipe(z.enum(ATTACHMENT_VARIANTS));
 
 @Controller()
 export class AttachmentsController {
@@ -64,13 +67,15 @@ export class AttachmentsController {
   @Get(AttachmentRoutes.file)
   async file(
     @Param('id', idParam) id: string,
-    @Param('variant') variant: string,
+    @Param('variant', variantParam) variant: AttachmentVariant,
     @CurrentUser() user: AuthUser,
     @Res() res: Response,
   ) {
-    const known = ATTACHMENT_VARIANTS.find((v) => v === variant);
-    if (!known) throw new AppError(ErrorCode.NotFound, 'Unknown file');
-    const url = await this.attachments.fileUrl(user.userId, BigInt(id), known);
+    const url = await this.attachments.fileUrl(
+      user.userId,
+      BigInt(id),
+      variant,
+    );
     res.setHeader('Cache-Control', 'no-store');
     res.redirect(302, url);
   }

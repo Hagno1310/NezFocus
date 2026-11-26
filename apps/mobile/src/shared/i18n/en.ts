@@ -955,6 +955,7 @@ export const en: Strings = {
     trayFix: 'Remove or retry the failed files to send',
     tooLarge: '"{{name}}" is over 25MB, so it can\'t be sent',
     tooMany: 'You can send up to 10 files per message',
+    somethingWrong: 'Something went wrong · try again in a few minutes',
     fileBlocked: "Couldn't send · {{count}} file blocked",
     sendWithoutBlocked: 'Send without the blocked file',
     imageOnly: 'Sent a photo',

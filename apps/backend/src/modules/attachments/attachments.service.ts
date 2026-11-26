@@ -11,6 +11,7 @@ import {
   ErrorCode,
   MESSAGE_ATTACHMENT_MAX_BYTES,
   MESSAGE_ATTACHMENT_TYPES,
+  type AttachmentPurpose,
   type AttachmentResponse,
   type AttachmentUploadResponse,
   type AttachmentVariant,
@@ -24,13 +25,19 @@ import { ObjectStorage } from '../storage/object-storage.js';
 import { AttachmentsRepository } from './attachments.repository.js';
 import type { AttachmentRow } from './attachments.schema.js';
 import { avatarVariants, detectImageType } from './avatar-image.js';
-import { avatarKey, mediaPrefix, type PublicPurpose } from './media.js';
+import {
+  avatarKey,
+  mediaPrefix,
+  messageImageKeys,
+  type PublicPurpose,
+} from './media.js';
 import { messageImage } from './message-image.js';
 
 const UPLOAD_URL_SECONDS = 10 * 60;
 const READ_URL_SECONDS = 10 * 60;
 const SWEEP_EVERY_MS = 60 * 60_000;
 const UNUSED_FOR_MS = 24 * 60 * 60_000;
+const DELETED_FOR_MS = 30 * 24 * 60 * 60_000; // SRS 8.6: soft-deleted, purged after 30 days
 
 const tooBig = () =>
   new AppError(ErrorCode.FileTooLarge, 'File is too large for this purpose');
@@ -46,9 +53,10 @@ const RULES = {
     maxBytes: MESSAGE_ATTACHMENT_MAX_BYTES,
     types: MESSAGE_ATTACHMENT_TYPES,
   },
-} as const;
+} as const satisfies Record<AttachmentPurpose, unknown>;
 
-const rulesOf = (purpose: string) => RULES[purpose as keyof typeof RULES];
+// The column is text; only these purposes are ever written (CreateAttachmentRequest).
+const rulesOf = (purpose: string) => RULES[purpose as AttachmentPurpose];
 
 const toResponse = (row: AttachmentRow): AttachmentResponse => ({
   id: row.id.toString(),
@@ -190,8 +198,7 @@ export class AttachmentsService implements OnModuleInit, OnModuleDestroy {
   ) {
     const image = await messageImage(bytes, type).catch(() => undefined);
     if (!image) return undefined;
-    const storageKey = `attachments/${row.id}/original.${image.ext}`;
-    const thumbnailKey = `attachments/${row.id}/thumbnail.webp`;
+    const { storageKey, thumbnailKey } = messageImageKeys(row.id, image.ext);
     await this.storage.put(storageKey, image.original, type);
     await this.storage.put(thumbnailKey, image.thumbnail, 'image/webp');
     return {
@@ -227,11 +234,14 @@ export class AttachmentsService implements OnModuleInit, OnModuleDestroy {
       : undefined;
   }
 
-  // SRS 8.2: files nothing points at after 24h, in batches, every hour.
+  // SRS 8.2 / 8.6: files nothing points at after 24h, and those of messages deleted 30 days
+  // ago, in batches, every hour.
   async sweep() {
-    const before = new Date(this.clock.now().getTime() - UNUSED_FOR_MS);
+    const now = this.clock.now().getTime();
+    const before = new Date(now - UNUSED_FOR_MS);
+    const deletedBefore = new Date(now - DELETED_FOR_MS);
     for (;;) {
-      const rows = await this.attachments.stale(before);
+      const rows = await this.attachments.stale(before, deletedBefore);
       if (!rows.length) return;
       await this.storage.delete(rows.flatMap(keysOf));
       await this.attachments.deleteMany(rows.map((r) => r.id));

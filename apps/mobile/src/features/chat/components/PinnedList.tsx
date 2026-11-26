@@ -5,13 +5,14 @@ import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { messageStore } from '../../../data/messages';
 import { lastActive } from '../../../domain/account/sessions';
+import { imagesOnly } from '../../../domain/messages/content';
 import { parseMessage, spokenText } from '../../../domain/messages/markdown';
 import { size, space, useTheme } from '../../../shared/theme';
 import { EmptyState, Skeleton } from '../../../shared/ui/Feedback';
 import { ActionSheet } from '../../../shared/ui/Overlay';
 import { Avatar } from '../../../shared/ui/People';
 import { Text } from '../../../shared/ui/Text';
-import { showToast } from '../../../shared/ui/Toast';
+import { showActionError } from '../actionError';
 import { avatarUri } from '../../me/avatarUri';
 import { timeText } from '../chatText';
 import { useChatClock } from '../hooks/useChatClock';
@@ -56,11 +57,9 @@ export function PinnedList({
     m.author.display_name ?? m.author.username ?? t('ui.deletedUser');
   // C-10 `pinned`: 3 lines of the text; images only read as S-DM-01 does.
   const textOf = (m: MessageResponse) =>
-    m.content.trim()
-      ? spokenText(parseMessage(m.content), t('chat.spoiler'))
-      : m.attachments.length
-        ? t('chat.imageOnly')
-        : '';
+    imagesOnly(m)
+      ? t('chat.imageOnly')
+      : spokenText(parseMessage(m.content), t('chat.spoiler'));
 
   return (
     <>
@@ -133,9 +132,7 @@ export function PinnedList({
                   if (target)
                     void messageStore
                       .unpin(channelId, target.id)
-                      .catch(() =>
-                        showToast({ message: t('chat.cannotConnect') }),
-                      );
+                      .catch((err: unknown) => showActionError(t, err));
                 },
               },
             ],
@@ -151,8 +148,8 @@ const styles = StyleSheet.create({
   loading: { gap: space[4], padding: space[3] },
   skeleton: { gap: space[2] },
   row: {
-    gap: 6,
-    paddingVertical: 12,
+    gap: size.iconGap,
+    paddingVertical: size.pinRowPad,
     paddingHorizontal: space[3],
     borderBottomWidth: StyleSheet.hairlineWidth,
   },

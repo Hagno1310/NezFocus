@@ -1,24 +1,14 @@
-import type { MessageResponse } from '@nezfocus/shared';
-import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { messageStore } from '../../../data/messages';
 import { onGatewayEvent } from '../../../domain/gateway/gatewayStore';
 
-// S-HOME-03 `pins` (REQ-MSG-10): loaded while the drawer is open, again when a pin of this
-// channel changes or a pinned message is edited / deleted. Offline: the last list stays.
+export const pinsKey = (channelId: string) => ['pins', channelId] as const;
+
+// S-HOME-03 `pins` (REQ-MSG-10): asked while the drawer is open; a pin of this channel
+// changing, or a pinned message edited / deleted, asks again. Offline: the last list stays.
 export function usePins(channelId: string, open: boolean) {
-  const [pins, setPins] = useState<MessageResponse[] | null>(null);
-  const [version, setVersion] = useState(0);
-  useEffect(() => {
-    if (!open) return;
-    let live = true;
-    void messageStore
-      .pins(channelId)
-      .then((list) => live && setPins(list))
-      .catch(() => {});
-    return () => {
-      live = false;
-    };
-  }, [channelId, open, version]);
+  const client = useQueryClient();
   useEffect(
     () =>
       onGatewayEvent((e) => {
@@ -28,9 +18,14 @@ export function usePins(channelId: string, open: boolean) {
             e.t === 'MESSAGE_UPDATE') &&
           e.d.channel_id === channelId
         )
-          setVersion((v) => v + 1);
+          void client.invalidateQueries({ queryKey: pinsKey(channelId) });
       }),
-    [channelId],
+    [client, channelId],
   );
-  return pins;
+  return useQuery({
+    queryKey: pinsKey(channelId),
+    queryFn: () => messageStore.pins(channelId),
+    enabled: open,
+    networkMode: 'offlineFirst',
+  }).data;
 }

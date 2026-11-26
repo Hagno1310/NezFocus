@@ -4,6 +4,7 @@ import {
   ChannelRoutes,
   ErrorCode,
   GatewayOp,
+  MemberRoutes,
   Permission as P,
   ServerRoutes,
   VoiceRoutes,
@@ -19,8 +20,15 @@ import { AccessToken } from 'livekit-server-sdk';
 import { createHash } from 'node:crypto';
 import { DB, type Db } from '../src/db/db.module.js';
 import { PermissionCache } from '../src/modules/permissions/permission-cache.js';
-import { roles, serverMembers } from '../src/modules/servers/servers.schema.js';
-import { LiveKitRooms } from '../src/modules/voice/livekit.js';
+import {
+  roles,
+  serverMemberRoles,
+  serverMembers,
+} from '../src/modules/servers/servers.schema.js';
+import {
+  LiveKitRooms,
+  type Publishable,
+} from '../src/modules/voice/livekit.js';
 import { VoiceService } from '../src/modules/voice/voice.service.js';
 import {
   CapturingMailer,
@@ -50,14 +58,18 @@ describe('Voice (e2e)', () => {
   let mailer: CapturingMailer;
   let db: Db;
   const removed: string[] = [];
+  const liveKit: string[] = [];
 
   beforeAll(async () => {
     ({ app, mailer } = await createTestApp((b) =>
       b.overrideProvider(LiveKitRooms).useValue({
         remove: async (room: string, identity: string) =>
           void removed.push(`${room}/${identity}`),
-        allow: async () => {},
         close: async () => {},
+        setPublish: async (room: string, identity: string, p: Publishable) =>
+          void liveKit.push(`publish ${room}/${identity} mic=${p.mic}`),
+        muteMic: async (room: string, identity: string) =>
+          void liveKit.push(`mute ${room}/${identity}`),
       }),
     ));
     await app.listen(0);
@@ -82,6 +94,8 @@ describe('Voice (e2e)', () => {
         http(app).post(path).auth(token, { type: 'bearer' }),
       put: (path: string) =>
         http(app).put(path).auth(token, { type: 'bearer' }),
+      patch: (path: string) =>
+        http(app).patch(path).auth(token, { type: 'bearer' }),
     });
     return {
       id: session.user.id,
@@ -459,6 +473,122 @@ describe('Voice (e2e)', () => {
       );
       expect(await app.get(VoiceService).seatOf(binh.userId)).toBeNull();
       binhGw.close();
+    });
+  });
+
+  describe('PATCH …/members/:userId/voice (VC-04, CR-28 #31)', () => {
+    let nextRole = 0n;
+    // Chi moderates: one role at position 1 with these bits (An owns, Bình has no role).
+    const moderated = async (bits = P.MUTE_MEMBERS | P.MOVE_MEMBERS) => {
+      const r = await room();
+      const chi = await signedIn('Chi');
+      const serverId = BigInt(r.server.id);
+      const roleId = BigInt(Date.now()) * 4_194_304n + nextRole++;
+      await db.insert(serverMembers).values({ serverId, userId: chi.userId });
+      await db.insert(roles).values({
+        id: roleId,
+        serverId,
+        name: 'Điều hành',
+        permissions: bits,
+        position: 1,
+      });
+      await db
+        .insert(serverMemberRoles)
+        .values({ serverId, userId: chi.userId, roleId });
+      await app.get(PermissionCache).invalidateServer(serverId);
+      const voiceOf = (userId: string) =>
+        MemberRoutes.voice
+          .replace(':id', r.server.id)
+          .replace(':userId', userId);
+      return { ...r, chi, roleId, voiceOf };
+    };
+
+    it('AC1: mute in a room → LiveKit takes the mic away, the room sees mod_muted; un-mute gives it back', async () => {
+      const { binh, chi, voice, voiceOf } = await moderated();
+      const gw = await connectGateway(app, binh.token);
+      join(gw, voice.id);
+      await gw.next('VOICE_STATE_UPDATE', isState({ channel_id: voice.id }));
+      await chi.patch(voiceOf(binh.id)).send({ mute: true }).expect(204);
+      await gw.next(
+        'VOICE_STATE_UPDATE',
+        isState({ user_id: binh.id, mod_muted: true }),
+      );
+      expect(liveKit).toContain(
+        `publish voice:${voice.id}/${binh.id} mic=false`,
+      );
+      expect(liveKit).toContain(`mute voice:${voice.id}/${binh.id}`);
+      await chi.patch(voiceOf(binh.id)).send({ mute: false }).expect(204);
+      await gw.next(
+        'VOICE_STATE_UPDATE',
+        isState({ user_id: binh.id, mod_muted: false }),
+      );
+      expect(liveKit).toContain(
+        `publish voice:${voice.id}/${binh.id} mic=true`,
+      );
+      gw.close();
+    });
+
+    it('AC5: a mute given out of a room holds: the next token has no mic', async () => {
+      const { binh, chi, voice, voiceOf } = await moderated();
+      await chi.patch(voiceOf(binh.id)).send({ mute: true }).expect(204);
+      const { claims } = await grantOf(binh, voice.id);
+      expect(claims.video).toMatchObject({ canPublishSources: ['camera'] });
+    });
+
+    it('disconnect: out at once with disconnected_by_mod; not in a room → 204, nothing', async () => {
+      const { binh, chi, voice, voiceOf } = await moderated();
+      const before = removed.length;
+      await chi.patch(voiceOf(binh.id)).send({ disconnect: true }).expect(204);
+      expect(removed).toHaveLength(before);
+      const gw = await connectGateway(app, binh.token);
+      join(gw, voice.id);
+      await gw.next('VOICE_STATE_UPDATE', isState({ channel_id: voice.id }));
+      await chi.patch(voiceOf(binh.id)).send({ disconnect: true }).expect(204);
+      await gw.next(
+        'VOICE_STATE_UPDATE',
+        isState({ reason: 'disconnected_by_mod' }),
+      );
+      expect(removed).toContain(`voice:${voice.id}/${binh.id}`);
+      expect(await app.get(VoiceService).seatOf(binh.userId)).toBeNull();
+      gw.close();
+    });
+
+    it('AC2 (âm): no MUTE_MEMBERS → 40302; no MOVE_MEMBERS to disconnect → 40302', async () => {
+      const mover = await moderated(P.MOVE_MEMBERS);
+      const mute = await mover.chi
+        .patch(mover.voiceOf(mover.binh.id))
+        .send({ mute: true })
+        .expect(403);
+      expect(mute.body.code).toBe(ErrorCode.Forbidden);
+      const muter = await moderated(P.MUTE_MEMBERS);
+      const out = await muter.chi
+        .patch(muter.voiceOf(muter.binh.id))
+        .send({ disconnect: true })
+        .expect(403);
+      expect(out.body.code).toBe(ErrorCode.Forbidden);
+    });
+
+    it('AC2 (âm): someone level with or above, or the Owner → 40301', async () => {
+      const { an, binh, chi, server, roleId, voiceOf } = await moderated();
+      await db
+        .insert(serverMemberRoles)
+        .values({ serverId: BigInt(server.id), userId: binh.userId, roleId });
+      await app.get(PermissionCache).invalidateServer(BigInt(server.id));
+      for (const target of [binh.id, an.id]) {
+        const res = await chi
+          .patch(voiceOf(target))
+          .send({ mute: true })
+          .expect(403);
+        expect(res.body.code).toBe(ErrorCode.InsufficientRoleHierarchy);
+      }
+    });
+
+    it('a body with neither → 40001; someone not in the server → 40401', async () => {
+      const { an, chi, voiceOf } = await moderated();
+      await chi.patch(voiceOf(an.id)).send({}).expect(400);
+      const stranger = await signedIn('Lạ');
+      const res = await chi.patch(voiceOf(stranger.id)).send({ mute: true });
+      expect(res.body.code).toBe(ErrorCode.NotFound);
     });
   });
 

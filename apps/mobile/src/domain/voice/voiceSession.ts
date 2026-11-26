@@ -24,6 +24,7 @@ export type VoiceCall = VoiceTarget & {
   mic: boolean;
   camera: boolean;
   seated: boolean;
+  modMuted: boolean; // REQ-VC-04: a moderator took my mic in this server
 };
 
 export type VoiceState = {
@@ -78,6 +79,7 @@ export function createVoiceSession({
   wait?: (ms: number) => Promise<void>;
 }) {
   const endListeners = new Set<(end: VoiceEnd) => void>();
+  const mutedListeners = new Set<() => void>();
   // One LiveKit room at a time: connect / disconnect / publish run one after another.
   let chain: Promise<unknown> = Promise.resolve();
   const serial = <T>(task: () => Promise<T>): Promise<T> => {
@@ -146,6 +148,7 @@ export function createVoiceSession({
         mic: false,
         camera: false,
         seated: false,
+        modMuted: false,
       },
     });
     const id = gen;
@@ -185,6 +188,7 @@ export function createVoiceSession({
   function toggle(kind: keyof VoiceMedia, on: boolean): Promise<boolean> {
     const c = call();
     if (!c || c.phase !== 'in') return Promise.resolve(false);
+    if (kind === 'mic' && on && c.modMuted) return Promise.resolve(false);
     const id = gen;
     patch(id, { [kind]: on });
     if (kind === 'camera' && on) store.setState({ cameraPreviewed: true });
@@ -243,17 +247,38 @@ export function createVoiceSession({
     const mine = me();
     let c = s.call;
     let ended = false;
+    let muted = false;
     if (c && mine) {
       const seat = seats[mine];
       if (seat?.channel_id === c.channelId) {
         if (!c.seated) c = { ...c, seated: true };
+        // VC-04 AC1: LiveKit already stopped the mic; the button follows.
+        muted = seat.mod_muted && !c.modMuted;
+        if (seat.mod_muted !== c.modMuted)
+          c = {
+            ...c,
+            modMuted: seat.mod_muted,
+            mic: seat.mod_muted ? false : c.mic,
+          };
       } else if (
         c.seated &&
         (event.t === 'READY' || event.t === 'VOICE_STATE_UPDATE')
       )
         ended = true;
     }
-    if (!ended) return store.setState({ seats, call: c });
+    if (!ended) {
+      store.setState({ seats, call: c });
+      if (muted && s.call?.mic) {
+        const id = gen;
+        void serial(async () => {
+          await client.setMic(false).catch(() => {});
+          const now = call();
+          if (gen === id && now) sendState(now);
+        });
+      }
+      if (muted) mutedListeners.forEach((l) => l());
+      return;
+    }
     const end: VoiceEnd = {
       serverId: c!.serverId,
       channelId: c!.channelId,
@@ -281,6 +306,13 @@ export function createVoiceSession({
       endListeners.add(listener);
       return () => {
         endListeners.delete(listener);
+      };
+    },
+    // S-ROOM-02 `mod-muted`: "Bạn đã bị người quản lý tắt mic".
+    onModMuted(listener: () => void) {
+      mutedListeners.add(listener);
+      return () => {
+        mutedListeners.delete(listener);
       };
     },
   };

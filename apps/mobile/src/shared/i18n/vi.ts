@@ -1233,6 +1233,16 @@ export const vi = {
     rejoin: 'Vào lại',
     gone: '{{name}} không còn khả dụng',
     rejoined: 'Đã vào lại {{name}} · mic đang tắt',
+    // S-ROOM-02 `mod-muted`, S-SET-EDGE `disconnected-by-mod` (REQ-VC-04).
+    modMutedToast: 'Bạn đã bị người quản lý tắt mic',
+    disconnectedByMod: 'Bạn đã bị ngắt khỏi phòng',
+    // 02 S-HOME-10 `moderator-voice`.
+    moderation: {
+      title: 'KIỂM DUYỆT',
+      mute: 'Tắt mic',
+      unmute: 'Bật lại mic',
+      disconnect: 'Ngắt khỏi phòng',
+    },
     // SRS 7.3.5 channel, REQ-VC-01 AC4 notification.
     service: {
       channel: 'Phòng học đang chạy',

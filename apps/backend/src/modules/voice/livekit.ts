@@ -19,7 +19,7 @@ export const channelOfRoom = (room: string) =>
 export type Publishable = { mic: boolean; camera: boolean };
 
 // SRS 5.5 grant: publish by SPEAK / VIDEO, always subscribe, never data.
-const publishGrant = (p: Publishable) => {
+export const publishGrant = (p: Publishable) => {
   const canPublishSources = [
     ...(p.mic ? [TrackSource.MICROPHONE] : []),
     ...(p.camera ? [TrackSource.CAMERA] : []),
@@ -36,6 +36,14 @@ const publishGrant = (p: Publishable) => {
 export abstract class LiveKitRooms {
   abstract remove(room: string, identity: string): Promise<void>;
   abstract close(room: string): Promise<void>;
+  // SRS 5.5 UpdateParticipant: what the person may publish from now on (REQ-VC-04).
+  abstract setPublish(
+    room: string,
+    identity: string,
+    publish: Publishable,
+  ): Promise<void>;
+  // SRS 5.5 MutePublishedTrack of their microphone (REQ-VC-04 AC1).
+  abstract muteMic(room: string, identity: string): Promise<void>;
 }
 
 @Injectable()
@@ -67,6 +75,26 @@ export class ServerApiRooms extends LiveKitRooms {
       .catch((err: unknown) =>
         this.logger.warn(`close ${room}: ${String(err)}`),
       );
+  }
+
+  // Not in LiveKit right now (away): the token of their next join carries the same rule.
+  async setPublish(room: string, identity: string, publish: Publishable) {
+    await this.client
+      .updateParticipant(room, identity, { permission: publishGrant(publish) })
+      .catch((err: unknown) =>
+        this.logger.warn(`permission ${identity}: ${String(err)}`),
+      );
+  }
+
+  async muteMic(room: string, identity: string) {
+    try {
+      const who = await this.client.getParticipant(room, identity);
+      for (const track of who.tracks)
+        if (track.source === TrackSource.MICROPHONE && !track.muted)
+          await this.client.mutePublishedTrack(room, identity, track.sid, true);
+    } catch (err) {
+      this.logger.warn(`mute ${identity}: ${String(err)}`);
+    }
   }
 }
 

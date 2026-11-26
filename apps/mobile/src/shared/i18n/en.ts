@@ -1228,6 +1228,14 @@ export const en: Strings = {
     rejoin: 'Rejoin',
     gone: '{{name}} is no longer available',
     rejoined: 'Rejoined {{name}} · mic is off',
+    modMutedToast: 'A moderator turned your mic off',
+    disconnectedByMod: 'You were disconnected from the room',
+    moderation: {
+      title: 'MODERATION',
+      mute: 'Turn mic off',
+      unmute: 'Turn mic back on',
+      disconnect: 'Disconnect from room',
+    },
     service: {
       channel: 'Study room running',
       title: 'In a voice room',

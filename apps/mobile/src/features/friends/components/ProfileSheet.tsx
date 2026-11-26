@@ -66,6 +66,7 @@ import { usePresence } from '../../presence/hooks/usePresence';
 import { useMembers } from '../../servers/hooks/useMembers';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { BlockDialog } from './BlockDialog';
+import { ModeratorVoice } from '../../voice/components/ModeratorVoice';
 import { RelationIcon, type RelationIconKind } from './RelationIcon';
 
 // S-HOME-10, mounted once above the tabs; it keeps the last person while it animates out.
@@ -514,6 +515,10 @@ function ProfileSheet({
                 {CANNOT_MESSAGE_TEXT}
               </Text>
             </View>
+          )}
+          {/* P3-B1.6 (#142): the voice rows of "Kiểm duyệt"; P3-A3.1 (#126) adds its rows here. */}
+          {serverId && !self && (
+            <ModeratorVoice serverId={serverId} userId={userId} />
           )}
         </View>
       </BottomSheet>

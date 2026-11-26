@@ -7,7 +7,9 @@ import {
 import {
   ErrorCode,
   Permission,
+  canActOnMember,
   type CreateVoiceTokenRequest,
+  type UpdateMemberVoiceRequest,
   type VoiceLeaveReason,
   type VoiceRoomMember,
   type VoiceState,
@@ -270,6 +272,57 @@ export class VoiceRoomsService
       if (!seat || !inScope(seat, scope)) return false;
       await this.vacate(seat, reason);
       return true;
+    });
+  }
+
+  // REQ-VC-04 (CR-28 #31): PATCH MemberRoutes.voice. MUTE_MEMBERS / MOVE_MEMBERS where the
+  // person sits (their room's overwrites), else on the server; 8.5.2 hierarchy → 40301.
+  async moderate(
+    actorId: bigint,
+    serverId: bigint,
+    targetId: bigint,
+    body: UpdateMemberVoiceRequest,
+  ) {
+    const people = await this.repo.hierarchy(serverId, actorId, targetId);
+    if (!people?.actor)
+      throw new AppError(ErrorCode.NotFound, 'Unknown server');
+    if (!people.target)
+      throw new AppError(ErrorCode.NotFound, 'Unknown member');
+    const seat = await this.seats.get(targetId);
+    const scope =
+      seat?.serverId === serverId
+        ? { channelId: seat.channelId }
+        : { serverId };
+    if (body.mute !== undefined)
+      await this.permissions.require(actorId, scope, Permission.MUTE_MEMBERS);
+    if (body.disconnect)
+      await this.permissions.require(actorId, scope, Permission.MOVE_MEMBERS);
+    if (!canActOnMember(people.server, people.actor, people.target))
+      throw new AppError(
+        ErrorCode.InsufficientRoleHierarchy,
+        'The member is the Owner or level with or above you',
+      );
+    if (body.mute !== undefined)
+      await this.modMute(serverId, targetId, body.mute);
+    if (body.disconnect)
+      await this.disconnect(targetId, { serverId }, 'disconnected_by_mod');
+  }
+
+  // AC1: LiveKit stops the mic at once and refuses a new one; the room sees `mod_muted`.
+  private async modMute(serverId: bigint, userId: bigint, muted: boolean) {
+    if (!(await this.repo.setModMuted(serverId, userId, muted))) return;
+    await this.serial(userId, async () => {
+      const seat = await this.seats.get(userId);
+      if (seat?.serverId !== serverId) return;
+      const room = roomOf(seat.channelId);
+      const identity = userId.toString();
+      await this.rooms.setPublish(
+        room,
+        identity,
+        await this.publishable(userId, { id: seat.channelId, serverId }),
+      );
+      if (muted) await this.rooms.muteMic(room, identity);
+      await this.publish(seat);
     });
   }
 

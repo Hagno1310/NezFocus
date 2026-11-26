@@ -1,4 +1,4 @@
-import { RotateCw } from 'lucide-react-native';
+import { MicOff, RotateCw } from 'lucide-react-native';
 import { AppState } from 'react-native';
 import { gatewayClient } from '../data/gateway';
 import { voiceSession } from '../data/voice';
@@ -28,8 +28,14 @@ const channelName = ({ serverId, channelId }: VoiceTarget) =>
     ?.name;
 
 // CR-28 #30: what my seat ending by the backend looks like. Kick / ban / leaving the server have
-// their own screens (02 S-HOME-EDGE); P3-B1.6 adds `disconnected_by_mod`.
+// their own screens (02 S-HOME-EDGE).
 function onEnded(end: VoiceEnd, name: string | undefined) {
+  if (end.reason === 'disconnected_by_mod') {
+    // S-SET-EDGE `disconnected-by-mod`: this room's preview, joinable again at once.
+    openVoice(end);
+    showToast({ message: i18n.t('voice.disconnectedByMod') });
+    return;
+  }
   if (end.reason === 'other_device') {
     // S-ROOM-EDGE `other-device`: back to this room's preview, with the Dialog.
     openVoice(end);
@@ -128,6 +134,9 @@ export function startVoiceLifecycle() {
   const stopEnded = voiceSession.onEnded((end) =>
     onEnded(end, channelName(end) ?? callName),
   );
+  const stopMuted = voiceSession.onModMuted(() =>
+    showToast({ icon: MicOff, message: i18n.t('voice.modMutedToast') }),
+  );
   const stopSession = sessionStore.subscribe((s, prev) => {
     if (s.status === prev.status || s.status === 'signed-in') return;
     void voiceSession.signOut();
@@ -161,6 +170,7 @@ export function startVoiceLifecycle() {
     stopCall();
     clearInterval(alive);
     stopEnded();
+    stopMuted();
     stopSession();
     stopHome();
     stopDm();

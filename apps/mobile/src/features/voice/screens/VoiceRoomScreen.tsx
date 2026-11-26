@@ -144,8 +144,9 @@ export function VoiceRoomScreen({
       {layout.mic && (
         <RoomControl
           icon={micOn ? Mic : MicOff}
-          label={t('voice.mic')}
-          state={state(room.denied.mic, micOn)}
+          // C-17 `mod-muted` (REQ-VC-04): disabled until a moderator turns it back on.
+          label={t(here?.modMuted ? 'voice.modMuted' : 'voice.mic')}
+          state={here?.modMuted ? 'mod-muted' : state(room.denied.mic, micOn)}
           onPress={() => void pressMic()}
         />
       )}

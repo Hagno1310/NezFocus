@@ -250,6 +250,33 @@ describe('seats and my seat ending (CR-28 #30)', () => {
   });
 });
 
+describe('mod-mute (REQ-VC-04)', () => {
+  it('AC1: my seat mod-muted → the mic goes off, op 4 says so, the screen is told; unmute only lets me', async () => {
+    let told = 0;
+    session.onModMuted(() => told++);
+    await session.join(A, { mic: true, camera: false });
+    session.apply(seatEvent({ user_id: ME, self_mute: false }));
+    session.apply(
+      seatEvent({ user_id: ME, self_mute: false, mod_muted: true }),
+    );
+    expect(call()).toMatchObject({ modMuted: true, mic: false });
+    expect(told).toBe(1);
+    await vi.waitFor(() => expect(client.state.mic).toBe(false));
+    expect(sent.at(-1)).toMatchObject({ self_mute: true });
+    expect(await session.setMic(true)).toBe(false);
+    session.apply(seatEvent({ user_id: ME, mod_muted: false }));
+    expect(call()).toMatchObject({ modMuted: false, mic: false });
+    expect(await session.setMic(true)).toBe(true);
+  });
+
+  it('disconnected by a moderator ends the call with its reason', async () => {
+    await session.join(A);
+    session.apply(seatEvent({ user_id: ME }));
+    session.apply(left('disconnected_by_mod'));
+    expect(ends).toEqual([{ ...A, reason: 'disconnected_by_mod' }]);
+  });
+});
+
 describe('LiveKit link', () => {
   it('poor quality from LiveKit marks the tile (REQ-VC-05)', async () => {
     await session.join(A);

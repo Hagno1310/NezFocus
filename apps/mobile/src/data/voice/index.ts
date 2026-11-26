@@ -1,4 +1,9 @@
-import { VoiceRoutes, VoiceTokenResponse } from '@nezfocus/shared';
+import {
+  MemberRoutes,
+  VoiceRoutes,
+  VoiceTokenResponse,
+  type UpdateMemberVoiceRequest,
+} from '@nezfocus/shared';
 import type {
   VoiceClient,
   VoiceRepository,
@@ -27,6 +32,18 @@ const fakeRepo: VoiceRepository = {
     token: `fake-${channelId}`,
     url: 'ws://fake',
   }),
+};
+
+// REQ-VC-04 (CR-28 #31): mod-mute / disconnect someone (S-HOME-10 `moderator-voice`).
+export const moderateVoice = async (
+  serverId: string,
+  userId: string,
+  body: UpdateMemberVoiceRequest,
+) => {
+  await api.request(
+    MemberRoutes.voice.replace(':id', serverId).replace(':userId', userId),
+    { method: 'PATCH', body },
+  );
 };
 
 export const liveKitClient = createLiveKitVoiceClient();

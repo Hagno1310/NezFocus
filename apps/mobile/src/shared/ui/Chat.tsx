@@ -231,7 +231,15 @@ export function MessageBubble({
         style={[styles.avatarCell, !head && !liftedTime && styles.collapsed]}
       >
         {!head && liftedTime && (
-          <Text variant="label" weight="400" color="text-tertiary">
+          // One line in the 40 column even at 200% text: it shrinks instead of wrapping.
+          <Text
+            variant="label"
+            weight="400"
+            color="text-tertiary"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.5}
+          >
             {liftedTime}
           </Text>
         )}

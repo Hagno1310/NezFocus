@@ -1,4 +1,4 @@
-import { LogOut, Mic, MicOff } from 'lucide-react-native';
+import { LogOut, Mic, MicOff, Video, VideoOff } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -10,6 +10,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { voiceSession } from '../../../data/voice';
 import { micPermission } from '../../../data/voice/micPermission';
+import {
+  CameraPreview,
+  ParticipantVideo,
+} from '../../../data/voice/VoiceVideo';
 import type { VoiceTarget } from '../../../domain/voice/voiceSession';
 import { closeVoice, openVoice } from '../../../domain/voice/voiceView';
 import { radius, size, space, useTheme } from '../../../shared/theme';
@@ -25,11 +29,13 @@ import {
 import { Text } from '../../../shared/ui/Text';
 import { showToast, useToastTop } from '../../../shared/ui/Toast';
 import { channelIcon } from '../../servers/components/ChannelRow';
-import { MicSheet } from '../components/MicSheet';
-import { useMicFlow } from '../hooks/useMicFlow';
+import { CameraPreviewSheet } from '../components/CameraPreviewSheet';
+import { MediaSheet } from '../components/MediaSheet';
+import { useMediaFlow } from '../hooks/useMediaFlow';
 import { useVoiceRoom } from '../hooks/useVoiceRoom';
 
 const BODY_X = space[3];
+const SELF_TILE = 96; // C-07 `video · self` in the preview: 96 × 128
 const TOAST_NAME_MAX = 24; // S-ROOM-05 › Rời phòng: the room name in a Toast
 
 const shortName = (name: string) =>
@@ -47,9 +53,12 @@ export function VoiceRoomScreen({
   const { width } = useWindowDimensions();
   const { top } = useSafeAreaInsets();
   const room = useVoiceRoom(serverId, channelId);
-  const mic = useMicFlow();
-  // Preview Mic (CR-22 #4): joins with the mic as chosen here.
+  const media = useMediaFlow();
+  // Preview Mic / Camera (CR-22 #4): joins with them as chosen here.
   const [previewMic, setPreviewMic] = useState(false);
+  const [previewCamera, setPreviewCamera] = useState(false);
+  // `camera-self-preview`: the first Camera in a room this login, unless seen in the preview.
+  const [selfPreview, setSelfPreview] = useState(false);
   const [joining, setJoining] = useState(false);
   useToastTop(top + size.header);
 
@@ -59,10 +68,15 @@ export function VoiceRoomScreen({
 
   const join = async () => {
     setJoining(true);
-    const result = await voiceSession.join(target, { mic: previewMic });
+    const result = await voiceSession.join(target, {
+      mic: previewMic,
+      camera: previewCamera,
+    });
     setJoining(false);
-    if (result === 'joined') setPreviewMic(false);
-    else if (result === 'no-connect')
+    if (result === 'joined') {
+      setPreviewMic(false);
+      setPreviewCamera(false);
+    } else if (result === 'no-connect')
       showToast({ message: t('voice.noConnect') });
     else if (result === 'gone') {
       closeVoice();
@@ -97,22 +111,46 @@ export function VoiceRoomScreen({
       else setPreviewMic(false);
       return;
     }
-    if (!(await mic.ensure())) return;
+    if (!(await media.ensure('mic'))) return;
     if (joined) void voiceSession.setMic(true);
     else setPreviewMic(true);
   };
-  const micState: RoomControlState = room.micDenied
-    ? 'no-permission'
-    : micOn
-      ? 'on'
-      : 'off';
-  const micButton = layout.mic && (
-    <RoomControl
-      icon={micOn ? Mic : MicOff}
-      label={t('voice.mic')}
-      state={micState}
-      onPress={() => void pressMic()}
-    />
+
+  const cameraOn = joined ? !!here?.camera : previewCamera;
+  const pressCamera = async () => {
+    if (cameraOn) {
+      if (joined) void voiceSession.setCamera(false);
+      else setPreviewCamera(false);
+      return;
+    }
+    if (!(await media.ensure('camera'))) return;
+    if (!joined) setPreviewCamera(true);
+    // VC-01 AC7: seen once this login → straight on; else `camera-self-preview` first.
+    else if (room.cameraPreviewed) void voiceSession.setCamera(true);
+    else setSelfPreview(true);
+  };
+
+  const state = (denied: boolean, on: boolean): RoomControlState =>
+    denied ? 'no-permission' : on ? 'on' : 'off';
+  const toggles = (
+    <>
+      {layout.mic && (
+        <RoomControl
+          icon={micOn ? Mic : MicOff}
+          label={t('voice.mic')}
+          state={state(room.denied.mic, micOn)}
+          onPress={() => void pressMic()}
+        />
+      )}
+      {layout.camera && (
+        <RoomControl
+          icon={cameraOn ? Video : VideoOff}
+          label={t('voice.camera')}
+          state={state(room.denied.camera, cameraOn)}
+          onPress={() => void pressCamera()}
+        />
+      )}
+    </>
   );
 
   const tileWidth = gridTileWidth(width - BODY_X * 2, room.tiles.length);
@@ -121,7 +159,7 @@ export function VoiceRoomScreen({
   ) : !room.online || here?.link === 'reconnecting' ? (
     <SystemBanner kind="reconnecting" />
   ) : (
-    room.micDenied && (
+    room.denied.mic && (
       <SystemBanner
         kind="mic-denied"
         onOpenSettings={() => void micPermission.openSettings()}
@@ -150,6 +188,11 @@ export function VoiceRoomScreen({
                 speaking={tile.speaking}
                 away={tile.away}
                 width={tileWidth}
+                video={
+                  tile.camera && (
+                    <ParticipantVideo userId={tile.userId} mirror={tile.self} />
+                  )
+                }
               />
             ))}
           </VideoGrid>
@@ -175,7 +218,7 @@ export function VoiceRoomScreen({
         )}
         {joined ? (
           <View style={styles.controls}>
-            {micButton}
+            {toggles}
             <RoomControl
               icon={LogOut}
               label={t('voice.leave')}
@@ -184,7 +227,21 @@ export function VoiceRoomScreen({
           </View>
         ) : layout.access === 'ok' ? (
           <View style={styles.preview}>
-            {micButton}
+            {previewCamera && (
+              // CR-22 #4: floats over the grid, 16 from the edge and the buttons, never pushes.
+              <View style={styles.selfTile}>
+                <ParticipantTile
+                  name=""
+                  self
+                  mic={null}
+                  width={SELF_TILE}
+                  video={<CameraPreview />}
+                />
+              </View>
+            )}
+            {(layout.mic || layout.camera) && (
+              <View style={styles.toggles}>{toggles}</View>
+            )}
             <View style={styles.cta}>
               <Button
                 label={t(room.elsewhere ? 'voice.switchHere' : 'voice.join')}
@@ -208,11 +265,19 @@ export function VoiceRoomScreen({
           </View>
         )}
       </View>
-      <MicSheet
-        sheet={mic.sheet}
-        onContinue={() => void mic.onContinue()}
-        onSettings={mic.onSettings}
-        onLater={mic.onLater}
+      <MediaSheet
+        sheet={media.sheet}
+        onContinue={() => void media.onContinue()}
+        onSettings={media.onSettings}
+        onLater={media.onLater}
+      />
+      <CameraPreviewSheet
+        visible={selfPreview}
+        onTurnOn={() => {
+          setSelfPreview(false);
+          void voiceSession.setCamera(true);
+        }}
+        onDismiss={() => setSelfPreview(false)}
       />
     </View>
   );
@@ -242,6 +307,13 @@ const styles = StyleSheet.create({
   controls: { flexDirection: 'row', justifyContent: 'space-around' },
   // CR-22 #4: Mic · Camera, then "Vào phòng" takes the rest, its top on the discs' top + 4.
   preview: { flexDirection: 'row', gap: space[3] },
+  toggles: { flexDirection: 'row', gap: space[2] },
+  selfTile: {
+    position: 'absolute',
+    right: 0,
+    bottom: '100%',
+    marginBottom: space[3],
+  },
   cta: { flex: 1, paddingTop: space[1] },
   locked: { gap: space[2] },
   center: { textAlign: 'center' },

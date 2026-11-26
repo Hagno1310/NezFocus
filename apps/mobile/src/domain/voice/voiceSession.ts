@@ -30,9 +30,19 @@ export type VoiceState = {
   seats: VoiceSeats;
   call: VoiceCall | null;
   speaking: readonly string[];
+  // REQ-VC-01: the camera was seen once this login (preview Camera or `camera-self-preview`),
+  // so turning it on in a room goes straight on (VC-01 AC7).
+  cameraPreviewed: boolean;
 };
 
-export const emptyVoice: VoiceState = { seats: {}, call: null, speaking: [] };
+export const emptyVoice: VoiceState = {
+  seats: {},
+  call: null,
+  speaking: [],
+  cameraPreviewed: false,
+};
+
+export type VoiceMedia = { mic: boolean; camera: boolean };
 
 export const voiceStore = createStore<VoiceState>(() => emptyVoice);
 
@@ -93,8 +103,17 @@ export function createVoiceSession({
     store.setState({ call: null, speaking: [], ...extra });
   };
 
-  // REQ-VC-01: op 4 only after LiveKit has connected; the mic only when asked for (STUDY-02).
-  async function connect(id: number, channelId: string, mic: boolean) {
+  const publish = (on: boolean, set: (on: boolean) => Promise<void>) =>
+    on
+      ? set(true).then(
+          () => true,
+          () => false,
+        )
+      : Promise.resolve(false);
+
+  // REQ-VC-01: op 4 only after LiveKit has connected; mic and camera only when asked for
+  // (STUDY-02 AC1, AC4; VC-01 AC7).
+  async function connect(id: number, channelId: string, media: VoiceMedia) {
     const grant = await repo.token(channelId);
     if (gen !== id) return false;
     await client.connect(grant.url, grant.token);
@@ -102,13 +121,9 @@ export function createVoiceSession({
       await client.disconnect();
       return false;
     }
-    const on =
-      mic &&
-      (await client.setMic(true).then(
-        () => true,
-        () => false,
-      ));
-    patch(id, { phase: 'in', link: 'connected', mic: on });
+    const mic = await publish(media.mic, client.setMic);
+    const camera = await publish(media.camera, client.setCamera);
+    patch(id, { phase: 'in', link: 'connected', mic, camera });
     const c = call();
     if (c) sendState(c);
     return true;
@@ -116,7 +131,7 @@ export function createVoiceSession({
 
   function join(
     target: VoiceTarget,
-    media: { mic: boolean } = { mic: false },
+    media: VoiceMedia = { mic: false, camera: false },
   ): Promise<JoinResult> {
     const prev = call();
     if (prev?.channelId === target.channelId) return Promise.resolve('joined');
@@ -136,7 +151,8 @@ export function createVoiceSession({
       if (gen !== id) return 'cancelled';
       if (prev) await client.disconnect();
       try {
-        return (await connect(id, target.channelId, media.mic))
+        if (media.camera) store.setState({ cameraPreviewed: true });
+        return (await connect(id, target.channelId, media))
           ? 'joined'
           : 'cancelled';
       } catch (err) {
@@ -164,17 +180,18 @@ export function createVoiceSession({
   }
 
   // STUDY-02 AC2: the button turns on at once; Android refusing puts it back.
-  function setMic(on: boolean): Promise<boolean> {
+  function toggle(kind: keyof VoiceMedia, on: boolean): Promise<boolean> {
     const c = call();
     if (!c || c.phase !== 'in') return Promise.resolve(false);
     const id = gen;
-    patch(id, { mic: on });
+    patch(id, { [kind]: on });
+    if (kind === 'camera' && on) store.setState({ cameraPreviewed: true });
     return serial(async () => {
       if (gen !== id) return false;
       try {
-        await client.setMic(on);
+        await (kind === 'mic' ? client.setMic : client.setCamera)(on);
       } catch {
-        patch(id, { mic: false });
+        patch(id, { [kind]: false });
         return false;
       }
       const now = call();
@@ -183,7 +200,7 @@ export function createVoiceSession({
     });
   }
 
-  // LiveKit gave up on the network by itself: a new token and the same room, same mic, until
+  // LiveKit gave up on the network by itself: a new token and the same room, same media, until
   // the backend says the seat is gone or I leave.
   function rejoin(id: number) {
     patch(id, { link: 'reconnecting' });
@@ -192,7 +209,7 @@ export function createVoiceSession({
         const c = call();
         if (!c) return;
         try {
-          if (await connect(id, c.channelId, c.mic)) return;
+          if (await connect(id, c.channelId, c)) return;
         } catch (err) {
           const code = asApiError(err)?.code;
           if (code === ErrorCode.Forbidden || code === ErrorCode.NotFound) {
@@ -246,14 +263,15 @@ export function createVoiceSession({
 
   // Signed out: the backend already freed the seat (`logout`), so no op 4.
   function signOut() {
-    reset({ seats: {} });
+    reset({ seats: {}, cameraPreviewed: false });
     return serial(() => client.disconnect());
   }
 
   return {
     join,
     leave,
-    setMic,
+    setMic: (on: boolean) => toggle('mic', on),
+    setCamera: (on: boolean) => toggle('camera', on),
     apply,
     signOut,
     onEnded(listener: (end: VoiceEnd) => void) {

@@ -1,5 +1,6 @@
 import { AppState } from 'react-native';
 import { voiceSession } from '../data/voice';
+import { cameraPermission } from '../data/voice/cameraPermission';
 import { micPermission } from '../data/voice/micPermission';
 import { dmView } from '../domain/dm/dmStore';
 import { onGatewayEvent } from '../domain/gateway/gatewayStore';
@@ -11,7 +12,7 @@ import {
   type VoiceTarget,
 } from '../domain/voice/voiceSession';
 import { closeVoice, voiceView } from '../domain/voice/voiceView';
-import { micDenied } from '../domain/voice/micDenied';
+import { mediaDenied } from '../domain/voice/mediaDenied';
 import { i18n } from '../shared/i18n';
 import { showToast } from '../shared/ui/Toast';
 
@@ -46,7 +47,7 @@ export function startVoiceLifecycle() {
     if (s.status === prev.status || s.status === 'signed-in') return;
     void voiceSession.signOut();
     closeVoice();
-    micDenied.setState({ denied: false });
+    mediaDenied.setState({ mic: false, camera: false });
   });
   const stopHome = homeStore.subscribe((s, prev) => {
     if (s.open !== prev.open && s.open) closeVoice();
@@ -54,12 +55,18 @@ export function startVoiceLifecycle() {
   const stopDm = dmView.subscribe((s, prev) => {
     if (s.open && s.open !== prev.open) closeVoice();
   });
-  // S-ROOM-EDGE `mic-denied`: back from Settings, check again; granted → the Mic is just `off`.
+  // S-ROOM-EDGE `mic-denied`: back from Settings, check again; granted → the button is just `off`.
+  const recheck = (kind: 'mic' | 'camera') =>
+    void (kind === 'mic' ? micPermission : cameraPermission)
+      .check()
+      .then((p) => {
+        if (p.granted) mediaDenied.setState({ [kind]: false });
+      });
   const app = AppState.addEventListener('change', (state) => {
-    if (state !== 'active' || !micDenied.getState().denied) return;
-    void micPermission.check().then((p) => {
-      if (p.granted) micDenied.setState({ denied: false });
-    });
+    if (state !== 'active') return;
+    const denied = mediaDenied.getState();
+    if (denied.mic) recheck('mic');
+    if (denied.camera) recheck('camera');
   });
   return () => {
     stopEvents();

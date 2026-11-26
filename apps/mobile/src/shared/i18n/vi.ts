@@ -1246,9 +1246,24 @@ export const vi = {
       blockedTitle: 'Mic đang bị chặn',
       blockedBody:
         'Bật quyền Mic cho NezFocus trong Cài đặt của máy để nói trong phòng. Bạn vẫn nghe được mọi người.',
+    },
+    cameraSheet: {
+      title: 'Cho phép NezFocus dùng camera',
+      body: 'Để bạn bè thấy bạn khi học cùng. Bạn sẽ xem trước hình của mình trước khi bật.',
+      blockedTitle: 'Camera đang bị chặn',
+      blockedBody:
+        'Bật quyền Camera cho NezFocus trong Cài đặt của máy để bật camera.',
+    },
+    sheet: {
       continue: 'Tiếp tục',
       later: 'Để sau',
       openSettings: 'Mở cài đặt',
+    },
+    cameraPreview: {
+      title: 'Xem trước camera',
+      body: 'Chỉ bạn thấy hình này. Mọi người chỉ thấy bạn sau khi bấm Bật camera.',
+      turnOn: 'Bật camera',
+      cancel: 'Hủy',
     },
   },
   placeholder: {

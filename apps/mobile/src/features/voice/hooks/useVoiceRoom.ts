@@ -5,7 +5,7 @@ import { friendsStore } from '../../../domain/friends/friends';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
 import { homeStore } from '../../../domain/servers/homeStore';
 import { sessionStore } from '../../../domain/session/sessionStore';
-import { micDenied } from '../../../domain/voice/micDenied';
+import { mediaDenied } from '../../../domain/voice/mediaDenied';
 import { roomLayout } from '../../../domain/voice/roomLayout';
 import { keepOrder, seatsIn } from '../../../domain/voice/voiceRooms';
 import { voiceStore } from '../../../domain/voice/voiceSession';
@@ -24,6 +24,7 @@ export type RoomTile = {
   avatar: string | null;
   self: boolean;
   mic: 'on' | 'mod-muted' | null;
+  camera: boolean;
   speaking: boolean;
   away: boolean;
 };
@@ -38,8 +39,9 @@ export function useVoiceRoom(serverId: string, channelId: string) {
   const call = useStore(voiceStore, (s) => s.call);
   const seats = useStore(voiceStore, (s) => s.seats);
   const speaking = useStore(voiceStore, (s) => s.speaking);
+  const cameraPreviewed = useStore(voiceStore, (s) => s.cameraPreviewed);
   const online = useStore(gatewayStore, (s) => s.online);
-  const denied = useStore(micDenied, (s) => s.denied);
+  const denied = useStore(mediaDenied);
   const byUser = useStore(friendsStore, (s) => s.byUser);
   const members = useMembers(serverId, channelId).data;
 
@@ -97,6 +99,7 @@ export function useVoiceRoom(serverId: string, channelId: string) {
         avatar: avatarUri(user?.avatar ?? null, '128') ?? null,
         self,
         mic: seat.mod_muted ? 'mod-muted' : micOn ? 'on' : null,
+        camera: self && here ? here.camera : seat.self_video,
         speaking: speakingSet.has(id),
         away: seat.away,
       },
@@ -122,6 +125,7 @@ export function useVoiceRoom(serverId: string, channelId: string) {
     joined,
     elsewhere: !!call && !here,
     online,
-    micDenied: denied,
+    denied,
+    cameraPreviewed,
   };
 }

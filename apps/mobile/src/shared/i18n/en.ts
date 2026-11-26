@@ -1240,9 +1240,24 @@ export const en: Strings = {
       blockedTitle: 'Mic is blocked',
       blockedBody:
         "Allow the Mic for NezFocus in your phone's Settings to talk in the room. You can still hear everyone.",
+    },
+    cameraSheet: {
+      title: 'Let NezFocus use the camera',
+      body: "So friends can see you while you study together. You'll see yourself before it turns on.",
+      blockedTitle: 'Camera is blocked',
+      blockedBody:
+        "Allow the Camera for NezFocus in your phone's Settings to turn the camera on.",
+    },
+    sheet: {
       continue: 'Continue',
       later: 'Not now',
       openSettings: 'Open settings',
+    },
+    cameraPreview: {
+      title: 'Camera preview',
+      body: 'Only you can see this. Others see you after you tap Turn on camera.',
+      turnOn: 'Turn on camera',
+      cancel: 'Cancel',
     },
   },
   placeholder: {

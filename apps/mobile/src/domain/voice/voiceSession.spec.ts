@@ -81,7 +81,7 @@ describe('join (REQ-VC-01, STUDY-02)', () => {
   });
 
   it('STUDY-02 AC4: Mic turned on in the preview → on as soon as I am in', async () => {
-    await session.join(A, { mic: true });
+    await session.join(A, { mic: true, camera: false });
     expect(client.state.mic).toBe(true);
     expect(sent.at(-1)).toMatchObject({ self_mute: false });
     expect(call()?.mic).toBe(true);
@@ -116,6 +116,29 @@ describe('join (REQ-VC-01, STUDY-02)', () => {
       'connect t-701',
     ]);
     expect(sent.map((d) => d.channel_id)).toEqual(['700', '701']);
+  });
+});
+
+describe('camera (VC-01 AC7, STUDY-02)', () => {
+  it('Camera on in the preview → on at once in the room, and no preview step this login', async () => {
+    await session.join(A, { mic: false, camera: true });
+    expect(client.state.camera).toBe(true);
+    expect(sent.at(-1)).toMatchObject({ self_video: true });
+    expect(store.getState().cameraPreviewed).toBe(true);
+  });
+
+  it('turning it on in the room tells the backend and remembers the preview', async () => {
+    await session.join(A);
+    expect(store.getState().cameraPreviewed).toBe(false);
+    expect(await session.setCamera(true)).toBe(true);
+    expect(sent.at(-1)).toMatchObject({ self_video: true, self_mute: true });
+    expect(store.getState().cameraPreviewed).toBe(true);
+  });
+
+  it('signing out forgets the preview (it is per login)', async () => {
+    await session.join(A, { mic: false, camera: true });
+    await session.signOut();
+    expect(store.getState().cameraPreviewed).toBe(false);
   });
 });
 
@@ -235,7 +258,7 @@ describe('LiveKit link', () => {
   });
 
   it('LiveKit giving up on the network: a new token, same room, same mic', async () => {
-    await session.join(A, { mic: true });
+    await session.join(A, { mic: true, camera: false });
     client.emit({ type: 'ended', removed: false });
     await vi.waitFor(() => expect(token).toHaveBeenCalledTimes(2));
     await vi.waitFor(() => expect(call()?.link).toBe('connected'));

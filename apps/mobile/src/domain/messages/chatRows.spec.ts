@@ -170,6 +170,21 @@ describe('chatRows: vạch ngày và giờ đầu tin', () => {
     ).toEqual([{ kind: 'yesterday' }, { kind: 'yesterday', time: '20:02' }]);
   });
 
+  it('a pending message written yesterday, below today’s messages, opens no second divider', () => {
+    const r = rows([
+      sent('2', 17, '20:24'),
+      sent('2', 18, '01:12'),
+      queued(17, '20:30'),
+    ]);
+    const days = r.filter((x) => x.kind === 'day');
+    expect(days.map((x) => x.key)).toEqual(['d2026-10-17', 'd2026-10-18']);
+    expect(new Set(r.map((x) => x.key)).size).toBe(r.length);
+    expect(r.at(-1)).toMatchObject({
+      kind: 'message',
+      time: { kind: 'yesterday', time: '20:30' },
+    });
+  });
+
   it('an outbox entry is mine, dated when it was written', () => {
     const [, row] = rows([queued(18, '20:12')]);
     expect(row).toMatchObject({

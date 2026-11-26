@@ -96,7 +96,9 @@ export function chatRows(
   for (const item of items) {
     const at = timeOf(item);
     const date = localTime(new Date(at).toISOString(), timeZone).date;
-    if (date !== day) {
+    // Days only move forward: my outbox sits below the sent messages, so one written yesterday
+    // and sent today stays under today's divider (its own time still says "Hôm qua").
+    if (day === null || date > day) {
       day = date;
       group = null;
       rows.push({

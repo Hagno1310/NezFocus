@@ -164,6 +164,7 @@ Cần chạy **cả ba**, mỗi lệnh một terminal, ở thư mục gốc repo
 - Tắt hạ tầng: `docker compose -f infra/docker-compose.yml down` (dữ liệu vẫn giữ).
 - Ở Wi-Fi trường/quán không kết nối được: xem [mục 4.3](#43-mạng-chặn-kết-nối-giữa-các-thiết-bị).
 - Phòng voice trên điện thoại (P3-B1): tạo `infra/.env` có `LIVEKIT_NODE_IP=<IP Wi-Fi của máy tính>` và đặt `LIVEKIT_URL=ws://<IP đó>:7880` trong `apps/backend/.env`, rồi `pnpm dev:infra` lại. Thiếu bước này điện thoại vẫn lấy được token nhưng không nghe được ai (media đi tới `127.0.0.1`). Firewall Windows phải cho UDP 3478, 50000–50100 và TCP 7880, 7881.
+- Gửi ảnh / tệp từ điện thoại: đặt `S3_ENDPOINT=http://<IP Wi-Fi của máy tính>:8333` trong `apps/backend/.env`. Link tải lên là link ký sẵn trỏ thẳng tới S3; để `localhost` thì điện thoại gọi vào chính nó, tin có tệp nằm mờ (`pending`) mãi và chặn cả các tin gửi sau trong kênh.
 
 ---
 

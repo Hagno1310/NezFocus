@@ -1382,7 +1382,8 @@ App Background, KHÔNG trong  → Giữ kết nối tối đa ~30s (thời gian 
   voice/call/Room Session      chủ động đóng socket; sự kiện quan trọng tới qua push (FCM/APNs)
 App Background, ĐANG trong   → Giữ socket + LiveKit sống nhờ iOS background mode audio
   voice/Room Session           (audio session active) / Android foreground service type
-                               microphone (notification cố định "Đang trong phòng thoại", REQ-VC-01 AC4);
+                               microphone (notification cố định "Đang trong phòng thoại", REQ-VC-01 AC4;
+                               chưa có quyền mic thì mediaPlayback, CR-28 #34);
                                heartbeat Focus 60s tiếp tục (REQ-STUDY-15, DEC-06)
 App Foreground trở lại       → Kết nối lại + RESUME {session_id, seq} → backend phát lại event bị lỡ
                                (≤ 60s / 1000 event); nếu INVALID_SESSION → IDENTIFY + tải lại

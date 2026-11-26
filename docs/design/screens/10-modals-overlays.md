@@ -375,7 +375,7 @@ Hộp thoại Android: Cho phép ─▶ tiếp tục bình thường
 | `mic-blocked` (cuộc gọi) | "Cần quyền mic để gọi" | "Bật quyền Mic cho NezFocus trong Cài đặt của máy để Bình nghe thấy bạn." | "Mở cài đặt" / "Để sau" — **thay dialog tạm ở 09 S-CALL-01 `mic-denied`** |
 | `camera-blocked` | "Camera đang bị chặn" | "Bật quyền Camera cho NezFocus trong Cài đặt của máy để bật camera." | "Mở cài đặt" / "Để sau" |
 | `camera` (ảnh) | "Cho phép NezFocus dùng camera" | "Để chụp ảnh mới làm ảnh đại diện hoặc ảnh server." | "Tiếp tục" / "Để sau" |
-| `camera` (ảnh trong tin) 🆕 | "Cho phép NezFocus dùng camera" | "Để chụp ảnh gửi trong tin nhắn." | "Tiếp tục" / "Để sau" — (26/11/2026, P3-A2.2 (#124)) "Chụp ảnh" ở 02 S-HOME-05 `picking`; spec chưa có câu cho ngữ cảnh này, agent thêm, chờ người duyệt. `camera-blocked` (ảnh) dùng chung |
+| `camera` (ảnh trong tin) 🆕 | "Cho phép NezFocus dùng camera" | "Để chụp ảnh gửi trong tin nhắn." | "Tiếp tục" / "Để sau" — (26/11/2026, P3-A2.2 (#124)) "Chụp ảnh" ở 02 S-HOME-05 `picking`; câu do agent đề xuất, đã duyệt 27/11/2026. `camera-blocked` (ảnh) dùng chung |
 | `camera-blocked` (ảnh) | "Camera đang bị chặn" | "Bật quyền Camera cho NezFocus trong Cài đặt của máy để chụp ảnh. Bạn vẫn chọn được ảnh có sẵn trong máy." | "Mở cài đặt" / "Để sau" |
 
 ### Trạng thái

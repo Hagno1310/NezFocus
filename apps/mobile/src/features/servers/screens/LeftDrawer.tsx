@@ -59,6 +59,7 @@ import { ReorderList } from '../components/ReorderList';
 import { useChannelActions } from '../hooks/useChannelActions';
 import { useChannelText } from '../hooks/useChannelText';
 import { useServerAccess } from '../hooks/useServerAccess';
+import { useDrawerVoice } from '../../voice/hooks/useDrawerVoice';
 import { ChannelRow } from '../components/ChannelRow';
 import { ServerMenu, type ServerMenuActions } from '../components/ServerMenu';
 import { ServerRail } from '../components/ServerRail';
@@ -212,6 +213,7 @@ function ChannelPanel({
   const text = useChannelText();
   const channelActions = useChannelActions(server.id);
   const access = useServerAccess(server.id);
+  const voice = useDrawerVoice(server.id);
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollOffset(scrollRef);
   const viewport = useSharedValue(0);
@@ -352,6 +354,10 @@ function ChannelPanel({
                     unread={isUnread(unread[channel.id])}
                     mentions={unread[channel.id]?.mentions}
                     locked={locked}
+                    connected={channel.id === voice.inRoom}
+                    people={
+                      channel.type === 'voice' ? voice.peopleOf(channel.id) : []
+                    }
                     onPress={() =>
                       channel.type === 'text'
                         ? actions.onOpenChannel(channel)

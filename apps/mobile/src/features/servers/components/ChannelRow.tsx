@@ -1,9 +1,9 @@
 import type { ChannelResponse } from '@nezfocus/shared';
 import { Hash, LampDesk, Lock, Volume2 } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { radius, space, useTheme } from '../../../shared/theme';
+import { radius, size, space, useTheme } from '../../../shared/theme';
 import { Icon } from '../../../shared/ui/Icon';
-import { Badge } from '../../../shared/ui/People';
+import { AvatarStack, Badge } from '../../../shared/ui/People';
 import { Text } from '../../../shared/ui/Text';
 
 type Row = Pick<ChannelResponse, 'type' | 'name' | 'focus_control'>;
@@ -15,8 +15,8 @@ export const channelIcon = (c: Row) =>
 const ROW = 40; // C-05: 40 high, 4 apart; slop grows the target to 48
 const UNREAD_DOT = { width: 4, height: 8 };
 
-// C-05 ChannelRow: default / selected / pressed / unread / mention; the Room Session line
-// comes with P3-B3 (#28).
+// C-05 ChannelRow: default / selected / pressed / unread / mention / voice-occupied /
+// connected / no-connect; the Room Session line comes with P3-B3 (#28).
 const noop = () => {};
 
 export function ChannelRow({
@@ -25,6 +25,8 @@ export function ChannelRow({
   unread = false,
   mentions = 0,
   locked = false,
+  connected = false,
+  people = [],
   onPress,
   onLongPress,
 }: {
@@ -33,6 +35,8 @@ export function ChannelRow({
   unread?: boolean;
   mentions?: number;
   locked?: boolean; // C-05 `no-connect`: a voice channel without CONNECT (P3-B1.3 #139)
+  connected?: boolean; // C-05 `connected`: I am in this voice room
+  people?: { name: string; uri: string | null }[]; // C-05 `voice-occupied`
   onPress: () => void;
   onLongPress?: () => void;
 }) {
@@ -60,7 +64,11 @@ export function ChannelRow({
         />
       )}
       <View importantForAccessibility="no-hide-descendants">
-        <Icon as={channelIcon(channel)} size="md" color="text-tertiary" />
+        <Icon
+          as={channelIcon(channel)}
+          size="md"
+          color={connected ? 'primary' : 'text-tertiary'}
+        />
       </View>
       <Text
         style={styles.name}
@@ -69,15 +77,23 @@ export function ChannelRow({
         color={
           locked
             ? 'text-tertiary'
-            : selected || bold
-              ? 'text-primary'
-              : 'text-secondary'
+            : connected
+              ? 'primary'
+              : selected || bold
+                ? 'text-primary'
+                : 'text-secondary'
         }
       >
         {channel.name}
       </Text>
       {locked && <Icon as={Lock} size="xs" color="text-tertiary" />}
       {mentions > 0 && <Badge count={mentions} />}
+      {people.length > 0 && (
+        // Wraps under the name (board C-05 `CR sub`: 36 from the row's left edge).
+        <View style={styles.people}>
+          <AvatarStack people={people} size={20} ring="surface-1" />
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -90,9 +106,11 @@ const styles = StyleSheet.create({
     paddingVertical: space[2],
     borderRadius: radius.input,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: space[2],
   },
+  people: { width: '100%', paddingLeft: size.icon.md + space[2] },
   unread: {
     position: 'absolute',
     left: 0,

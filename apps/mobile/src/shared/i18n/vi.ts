@@ -1253,7 +1253,7 @@ export const vi = {
       rejoin: 'Vào lại ở đây',
       close: 'Đóng',
     },
-    // Not in the spec: agent's line, waiting for approval (P3-B1 #26 report).
+    // Spec 03 S-ROOM-01 (chốt 27/11/2026).
     joinFailed: 'Chưa vào được phòng',
     retry: 'Thử lại',
     tile: {

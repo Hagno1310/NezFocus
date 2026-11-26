@@ -152,7 +152,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 
 ### P3 · Hiếu
 
-- [ ] **P3-A1** [#21](https://github.com/Hagno1310/NezFocus/issues/21) Sửa / xóa / trả lời / react tin nhắn, link tin (MSG-05, S-HOME-04)
+- [x] **P3-A1** [#21](https://github.com/Hagno1310/NezFocus/issues/21) Sửa / xóa / trả lời / react tin nhắn, link tin (MSG-05, S-HOME-04)
   - Cần trước: P2-A1, P2-A3
 - [ ] **P3-A2** [#22](https://github.com/Hagno1310/NezFocus/issues/22) Đính kèm ảnh (MSG-04) và ghim tin (MSG-10) · **Thùy chạy phiên**
   - Cần trước: P2-A3, P2-A4, P3-A1

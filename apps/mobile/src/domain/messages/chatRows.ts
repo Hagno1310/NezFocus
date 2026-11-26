@@ -136,8 +136,14 @@ export function chatRows(
       });
       continue;
     }
+    const reply =
+      item.kind === 'message'
+        ? item.message.reply_to_id !== null
+        : item.entry.replyToId !== null;
     const head =
       !group ||
+      // C-10 `reply`: the reply line sits above the name, so a reply starts its own group.
+      reply ||
       group.author !== author ||
       // Outbox entries sit below sent messages, so one can be older than the group head.
       at < group.at ||

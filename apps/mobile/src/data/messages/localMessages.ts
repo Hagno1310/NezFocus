@@ -6,7 +6,11 @@ import { cachedChannels, cachedMessages, outbox } from '../db/schema';
 import { padId, unpadId, type LocalDb } from '../db/types';
 
 type OutboxRow = typeof outbox.$inferSelect;
-type OutboxPayload = { content: string; queued_at: number };
+type OutboxPayload = {
+  content: string;
+  queued_at: number;
+  reply_to_id?: string | null; // from P3-A1; older rows have none
+};
 
 const toEntry = (r: OutboxRow): OutboxEntry => {
   const payload = JSON.parse(r.payload) as OutboxPayload;
@@ -15,6 +19,7 @@ const toEntry = (r: OutboxRow): OutboxEntry => {
     channelId: unpadId(r.channelId ?? ''),
     serverId: r.serverId && unpadId(r.serverId),
     content: payload.content,
+    replyToId: payload.reply_to_id ?? null,
     status: r.status as OutboxStatus,
     attempts: r.attempts,
     nextAttemptAt: r.nextAttemptAt,
@@ -34,6 +39,7 @@ export function createLocalMessages(db: () => Promise<LocalDb>): LocalMessages {
     payload: JSON.stringify({
       content: e.content,
       queued_at: e.queuedAt,
+      reply_to_id: e.replyToId,
     } satisfies OutboxPayload),
     status: e.status,
     attempts: e.attempts,
@@ -70,7 +76,22 @@ export function createLocalMessages(db: () => Promise<LocalDb>): LocalMessages {
         .from(cachedMessages)
         .where(eq(cachedMessages.channelId, padId(channelId)))
         .orderBy(asc(cachedMessages.id));
-      return rows.map((r) => JSON.parse(r.json) as MessageResponse);
+      // Cached before P3-A1: no reply line, no reactions yet.
+      return rows.map((r) => {
+        const m = JSON.parse(r.json) as MessageResponse;
+        return {
+          ...m,
+          referenced_message: m.referenced_message ?? null,
+          reactions: m.reactions ?? [],
+        };
+      });
+    },
+    async deleteMessage(id) {
+      await (
+        await db()
+      )
+        .delete(cachedMessages)
+        .where(eq(cachedMessages.id, padId(id)));
     },
 
     async saveMessages(messages) {

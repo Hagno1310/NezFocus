@@ -4,7 +4,8 @@ import { messageStore } from '../../../data/messages';
 // S-HOME-04 `failed-message`: retry = "Gửi lại", discard = "Xóa tin nhắn".
 export function useSendMessage(channelId: string) {
   return {
-    send: (content: string) => messageStore.send(channelId, content),
+    send: (content: string, replyToId?: string) =>
+      messageStore.send(channelId, content, replyToId),
     retry: (nonce: string) => messageStore.retry(nonce),
     discard: (nonce: string) => messageStore.discard(nonce),
   };

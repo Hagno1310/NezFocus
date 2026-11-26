@@ -73,4 +73,36 @@ describe('REQ-MSG-03 mentionRecipients', () => {
     });
     expect(got.get('5')).toEqual({ via: 'here' });
   });
+  // CR-12 / MSG-03 AC3, AC4: a reply to my message concerns me unless I am also mentioned.
+  it('the replied author joins as `reply`, after any mention, never the sender', () => {
+    const base = {
+      roleMembers: [],
+      everyoneIds: [],
+      everyoneVia: 'here' as const,
+    };
+    expect(
+      mentionRecipients({
+        ...base,
+        authorId: '1',
+        userIds: [],
+        replyAuthorId: '2',
+      }).get('2'),
+    ).toEqual({ via: 'reply' });
+    expect(
+      mentionRecipients({
+        ...base,
+        authorId: '1',
+        userIds: ['2'],
+        replyAuthorId: '2',
+      }).get('2'),
+    ).toEqual({ via: 'user' });
+    expect(
+      mentionRecipients({
+        ...base,
+        authorId: '1',
+        userIds: [],
+        replyAuthorId: '1',
+      }).size,
+    ).toBe(0);
+  });
 });

@@ -197,10 +197,13 @@ export function Dialog({
   children,
   row = false,
   onDismiss,
+  lifted,
 }: {
   visible: boolean;
   title: string;
   body?: string;
+  // S-HOME-04 `delete-confirm`: the message stays lifted over the scrim, under the dialog.
+  lifted?: Lifted;
   confirm: DialogAction;
   cancel?: { label: string; onPress: () => void };
   // Side by side whatever the label length, where a frame overrides C-09's stacking rule
@@ -240,6 +243,7 @@ export function Dialog({
       onDismiss={onDismiss}
       dismissible={!busy}
       placement="center"
+      lifted={lifted}
     >
       <Animated.View
         entering={fadeIn}
@@ -474,6 +478,50 @@ export function BottomSheet({
   );
 }
 
+// A bare bottom sheet: handle, then the caller's own layout and scrolling (C-25 EmojiPicker
+// in S-HOME-04 `emoji-picker`, which keeps the lifted message over the scrim).
+export function PlainSheet({
+  visible,
+  onDismiss,
+  lifted,
+  children,
+}: {
+  visible: boolean;
+  onDismiss: () => void;
+  lifted?: Lifted;
+  children: ReactNode;
+}) {
+  const { colors } = useTheme();
+  return (
+    <Overlay
+      visible={visible}
+      onDismiss={onDismiss}
+      dismissible
+      placement="bottom"
+      lifted={lifted}
+    >
+      <SheetFrame
+        onDismiss={onDismiss}
+        dismissible
+        handleGap={space[2]}
+        style={[
+          styles.sheet,
+          styles.actionSheet,
+          { backgroundColor: colors['surface-1'] },
+          sheetShadow(colors),
+        ]}
+      >
+        {(handle) => (
+          <>
+            {handle}
+            {children}
+          </>
+        )}
+      </SheetFrame>
+    </Overlay>
+  );
+}
+
 export type ActionItem = {
   label: string;
   icon: IconComponent;
@@ -481,6 +529,7 @@ export type ActionItem = {
   destructive?: boolean;
   selected?: boolean;
   disabled?: boolean; // e.g. offline (chốt 25/11/2026): shown, not pressable
+  hint?: string; // the reason under a disabled row (S-HOME-04 offline: "Cần kết nối mạng")
 };
 
 export type ActionGroup = { title?: string; items: ActionItem[] };
@@ -496,6 +545,7 @@ export function ActionSheet({
   cancel = true,
   onDismiss,
   lifted,
+  top,
 }: {
   visible: boolean;
   title?: string;
@@ -511,6 +561,8 @@ export function ActionSheet({
   onDismiss: () => void;
   // C-09 "Nhấn giữ một hàng": the row drawn again over the scrim, where it sits on screen.
   lifted?: Lifted;
+  // Under the handle, above the rows: S-HOME-04's quick reactions, with a hairline below.
+  top?: ReactNode;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -571,6 +623,16 @@ export function ActionSheet({
                       </Text>
                     )}
                   </View>
+                </View>
+              )}
+              {top && (
+                <View
+                  style={[
+                    styles.actionTop,
+                    { borderBottomColor: colors.border },
+                  ]}
+                >
+                  {top}
                 </View>
               )}
               <ScrollView style={styles.shrink}>
@@ -638,7 +700,9 @@ function ActionRow({
   return (
     <Pressable
       accessibilityRole={pickOne ? 'radio' : 'button'}
-      accessibilityLabel={item.label}
+      accessibilityLabel={
+        item.disabled && item.hint ? `${item.label}, ${item.hint}` : item.label
+      }
       accessibilityState={
         pickOne
           ? { selected: !!item.selected }
@@ -664,9 +728,14 @@ function ActionRow({
               : 'text-secondary'
         }
       />
-      <Text color={tone} style={styles.flex}>
-        {item.label}
-      </Text>
+      <View style={styles.flex}>
+        <Text color={tone}>{item.label}</Text>
+        {item.disabled && item.hint && (
+          <Text variant="label" color="text-tertiary">
+            {item.hint}
+          </Text>
+        )}
+      </View>
       {pickOne && item.selected && (
         <Icon as={Check} size="md" color="primary" />
       )}
@@ -675,6 +744,10 @@ function ActionRow({
 }
 
 const styles = StyleSheet.create({
+  actionTop: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingBottom: space[2],
+  },
   above: { marginHorizontal: space[3], marginBottom: space[2] },
   flex: { flex: 1 },
   lifted: { position: 'absolute', left: 0, right: 0 },

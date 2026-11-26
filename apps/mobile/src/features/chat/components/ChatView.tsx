@@ -2,9 +2,11 @@ import { ArrowRight, CloudOff, RotateCw, Trash2 } from 'lucide-react-native';
 import {
   useCallback,
   useEffect,
+  useEffectEvent,
   useMemo,
   useRef,
   useState,
+  type ComponentRef,
   type ReactElement,
   type ReactNode,
 } from 'react';
@@ -14,6 +16,7 @@ import {
   KeyboardAvoidingView,
   Linking,
   StyleSheet,
+  TextInput,
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -21,6 +24,8 @@ import {
 import {
   CANNOT_MESSAGE_TEXT,
   ErrorCode,
+  type MessageAuthor,
+  type MessageResponse,
   type ServerMember,
 } from '@nezfocus/shared';
 import { useStore } from 'zustand';
@@ -36,9 +41,12 @@ import {
 import { drafts } from '../../../domain/messages/drafts';
 import {
   activeTrigger,
+  decodeMentions,
   encodeMentions,
   type PickedMention,
 } from '../../../domain/messages/mentions';
+import { jumps } from '../../../domain/messages/jumps';
+import { messageSheet } from '../../../domain/messages/messageActions';
 import {
   linksOf,
   parseMessage,
@@ -57,18 +65,30 @@ import {
   UnreadStrip,
   type MessageStatus,
 } from '../../../shared/ui/Chat';
-import { Composer, type ComposerBlock } from '../../../shared/ui/Composer';
+import {
+  Composer,
+  type ComposerBlock,
+  type ComposerContext,
+} from '../../../shared/ui/Composer';
 import { Skeleton } from '../../../shared/ui/Feedback';
 import { Icon } from '../../../shared/ui/Icon';
 import { MentionSuggest } from '../../../shared/ui/MentionSuggest';
 import { MessageText } from '../../../shared/ui/MessageText';
 import { ActionSheet, type Lifted } from '../../../shared/ui/Overlay';
+import { ReactionChips, ReplyLine } from '../../../shared/ui/Reactions';
 import { Text } from '../../../shared/ui/Text';
+import { showToast } from '../../../shared/ui/Toast';
+import { exitMs } from '../../../shared/ui/transitions';
 import { useOnline } from '../../gateway/hooks/useOnline';
 import { useMe } from '../../me/hooks/useMe';
 import { avatarUri } from '../../me/avatarUri';
 import { lastActive } from '../../../domain/account/sessions';
+import { useChannelAbilities } from '../hooks/useCanSend';
 import { useChannelMessages } from '../hooks/useChannelMessages';
+import { useLinkChips } from '../hooks/useLinkChips';
+import { useMessageJump } from '../hooks/useMessageJump';
+import { useMessageActions } from '../hooks/useMessageActions';
+import { MessageSheets } from './MessageSheets';
 import { useChannelReading } from '../hooks/useChannelReading';
 import { useChatMentions } from '../hooks/useChatMentions';
 import { useChatClock } from '../hooks/useChatClock';
@@ -130,6 +150,17 @@ export function ChatView({
   const { now, timeZone } = useChatClock();
   const view = useChannelMessages(channelId, serverId);
   const outbox = useSendMessage(channelId);
+  const actions = useMessageActions(channelId, serverId, beginContext);
+  const abilities = useChannelAbilities(serverId, channelId);
+  const linkChips = useLinkChips(serverId);
+  const viewer = {
+    inDm: !serverId,
+    canManage: abilities.canManage,
+    canReact: abilities.canReact,
+    timedOut: abilities.timedOut,
+    online,
+  };
+  const input = useRef<ComponentRef<typeof TextInput>>(null);
 
   const draft = useStore(drafts.state, (s) => s[channelId] ?? '');
   // Gotcha: setState in onSelectionChange makes Android drop the '' after ➤ (text piles up),
@@ -227,8 +258,10 @@ export function ChatView({
   useEffect(() => {
     if (jumped.current || lineAt < 0) return;
     jumped.current = true;
+    // Opened at a message (link, push): that message, not the line (frame `message-link`).
+    if (jumps.getState()?.channelId === channelId) return;
     toLine(lineAt, false);
-  }, [lineAt, toLine]);
+  }, [lineAt, toLine, channelId]);
 
   const [loadingOlder, setLoadingOlder] = useState(false);
   const onTop = () => {
@@ -240,15 +273,114 @@ export function ChatView({
       .finally(() => setLoadingOlder(false));
   };
 
+  // S-HOME-04 for this viewer; the a11y actions offer the same rows.
+  const sheetOf = (m: MessageResponse) =>
+    messageSheet(
+      {
+        mine: m.author.id === myId,
+        system: m.type !== 'default',
+        hasText: m.content.trim() !== '',
+      },
+      viewer,
+    );
+
+  function nameOf(a: MessageAuthor) {
+    if (a.id === myId) return me?.display_name ?? me?.username ?? '';
+    return a.display_name ?? a.username ?? t('ui.deletedUser');
+  }
+
+  // S-HOME-01 `reply-mode` / `edit-mode`. Editing borrows the composer: the draft typed before
+  // comes back when the edit ends.
+  const context = actions.context;
+  const before = useRef<{ text: string; picked: PickedMention[] } | null>(null);
+  // Hoisted: useMessageActions calls it from the sheet's rows, after this render.
+  function beginContext(kind: 'reply' | 'edit', message: MessageResponse) {
+    // `reply-mode` / `edit-mode`: keyboard open. Focus once the sheet has gone, or Android
+    // keeps the keyboard down behind the closing Modal.
+    setTimeout(() => input.current?.focus(), exitMs + 50);
+    if (kind !== 'edit') {
+      // From editing straight to a reply: the draft typed before comes back first.
+      if (before.current) {
+        drafts.set(channelId, before.current.text);
+        setPicked(before.current.picked);
+        before.current = null;
+      }
+      return;
+    }
+    before.current ??= {
+      text: drafts.state.getState()[channelId] ?? '',
+      picked,
+    };
+    const shown = decodeMentions(message.content, (n) =>
+      mentions.viewOf(message).label({ t: 'mention', ...n }),
+    );
+    drafts.set(channelId, shown.text);
+    setPicked(shown.picked);
+  }
+  const endContext = () => {
+    if (context?.kind === 'edit' && before.current) {
+      drafts.set(channelId, before.current.text);
+      setPicked(before.current.picked);
+      before.current = null;
+    }
+    actions.endContext();
+  };
+  // 02 edge cases: the message being answered or edited was deleted meanwhile.
+  const contextGone =
+    !!context &&
+    !view.items.some(
+      (i) => i.kind === 'message' && i.message.id === context.message.id,
+    );
+  const editGone = useEffectEvent(() => {
+    endContext();
+    showToast({ message: t('chat.messageDeleted') });
+  });
+  const editingGone = contextGone && context?.kind === 'edit';
+  useEffect(() => {
+    if (editingGone) editGone();
+  }, [editingGone]);
+
   // Counted as sent: with the tokens, as the backend counts.
   const count = composerCount(toSend);
+  const editing = context?.kind === 'edit' ? context.message : null;
   const send = () => {
+    if (editing) {
+      // `edit-mode`: "Lưu rỗng → hỏi xóa tin".
+      if (!toSend.trim()) return actions.askDelete({ message: editing });
+      if (!count.canSend) return;
+      const id = editing.id;
+      endContext();
+      actions.saveEdit(id, toSend);
+      return;
+    }
     if (!count.canSend) return;
-    void outbox.send(toSend);
+    void outbox.send(
+      toSend,
+      context?.kind === 'reply' ? context.message.id : undefined,
+    );
+    if (context) actions.endContext();
     drafts.set(channelId, '');
     setPicked([]);
     toBottom();
   };
+  const composerContext: ComposerContext | undefined = context
+    ? context.kind === 'edit'
+      ? { text: t('chat.editing'), edit: true, onClose: endContext }
+      : contextGone
+        ? { text: t('chat.replyingDeleted'), onClose: endContext }
+        : {
+            text: t('chat.replyingTo'),
+            name: nameOf(context.message.author),
+            onClose: endContext,
+          }
+    : undefined;
+
+  const { target, jumpTo, onScrollFailed } = useMessageJump(
+    channelId,
+    rows,
+    list,
+    view.loading,
+  );
   const pick = (key: string) => {
     if (!mentions.suggestion) return;
     const next = mentions.suggestion.pick(key, draft, draft.length);
@@ -307,6 +439,24 @@ export function ChatView({
     const status = statusOf(row.item);
     const isFailed = status?.kind === 'failed';
     const nonce = row.item.kind === 'outbox' ? row.item.entry.nonce : null;
+    const replyTo =
+      message?.reply_to_id ??
+      (row.item.kind === 'outbox' ? row.item.entry.replyToId : null);
+    const original =
+      message?.referenced_message ??
+      (replyTo
+        ? view.items.find(
+            (i): i is Extract<ChatItem, { kind: 'message' }> =>
+              i.kind === 'message' && i.message.id === replyTo,
+          )?.message
+        : undefined);
+    const sheet = message ? sheetOf(message) : null;
+    const sheetOpens = sheet !== null;
+    const openSheet = ({ top }: { top: number }) => {
+      if (message)
+        actions.open({ message, lifted: { top, node: bubble(row, true) } });
+    };
+    const chipsOff = !online || viewer.timedOut;
     return (
       <MessageBubble
         name={who.name}
@@ -325,10 +475,65 @@ export function ChatView({
           })
         }
         liftedTime={lifted ? row.time.time : undefined}
-        actions={linksOf(blocks).map((url) => ({
-          label: url,
-          onPress: () => void Linking.openURL(url).catch(() => {}),
-        }))}
+        reply={
+          replyTo ? (
+            <ReplyLine
+              name={original ? nameOf(original.author) : null}
+              text={original ? original.content : t('chat.replyDeleted')}
+              onPress={
+                original && !lifted ? () => jumpTo(original.id) : undefined
+              }
+            />
+          ) : undefined
+        }
+        edited={message?.edited_at ? t('chat.edited') : undefined}
+        reactions={
+          message && message.reactions.length > 0 ? (
+            <ReactionChips
+              reactions={message.reactions}
+              disabled={lifted || chipsOff}
+              onToggle={(emoji) => actions.toggle(message, emoji)}
+              onLongPress={(emoji) => actions.showReactors(message, emoji)}
+              onAdd={
+                viewer.inDm || viewer.canReact
+                  ? () => actions.openPicker({ message })
+                  : undefined
+              }
+            />
+          ) : undefined
+        }
+        highlight={
+          message && target?.landed && target.messageId === message.id
+            ? { key: target.key, times: target.times }
+            : undefined
+        }
+        actions={[
+          ...linksOf(blocks).map((url) => ({
+            label: url,
+            onPress: () => void Linking.openURL(url).catch(() => {}),
+          })),
+          // C-10 a11y: what long-press offers, as actions.
+          ...(message && sheet && !lifted
+            ? [
+                ...(sheet.rows.some((r) => r.row === 'reply')
+                  ? [
+                      {
+                        label: t('chat.reply'),
+                        onPress: () => actions.reply(message),
+                      },
+                    ]
+                  : []),
+                ...(sheet.reactions === 'on'
+                  ? [
+                      {
+                        label: t('chat.addReaction'),
+                        onPress: () => actions.openPicker({ message }),
+                      },
+                    ]
+                  : []),
+              ]
+            : []),
+        ]}
         accessibilityLabel={[
           t('chat.a11yMessage', {
             name: who.name,
@@ -356,8 +561,14 @@ export function ChatView({
               }
             : undefined
         }
+        // S-HOME-01 › Tương tác: long-press a sent message → S-HOME-04.
+        onLongPress={message && sheetOpens && !lifted ? openSheet : undefined}
       >
-        <MessageText content={contentOf(row.item)} mentions={mentionView} />
+        <MessageText
+          content={contentOf(row.item)}
+          mentions={mentionView}
+          links={linkChips}
+        />
       </MessageBubble>
     );
   };
@@ -384,18 +595,34 @@ export function ChatView({
   };
 
   // C-10 › Tin hệ thống, worded for the viewer in the app's language (CR-24).
-  const systemLine = (row: Extract<ChatRow, { kind: 'system' }>) => {
+  const systemLine = (
+    row: Extract<ChatRow, { kind: 'system' }>,
+    lifted = false,
+  ) => {
     const m = row.message;
     if (m.type !== 'member_join') return null;
     const name =
       m.author.display_name ?? m.author.username ?? t('ui.deletedUser');
     const parts = t('chat.memberJoin', { name: '\u0000' }).split('\u0000');
+    // S-HOME-04 `system-message`: "Xóa tin nhắn" with MANAGE_MESSAGES, else no sheet (MSG-11).
+    const opens = !lifted && sheetOf(m) !== null;
     return (
       <SystemLine
         icon={ArrowRight}
         parts={[parts[0] ?? '', name, parts[1] ?? '']}
         time={timeText(t, row.time)}
         accessibilityLabel={`${t('chat.memberJoin', { name })}, ${timeText(t, row.time, true)}`}
+        surface={lifted ? 'surface-2' : undefined}
+        deleteLabel={t('chat.deleteMessage')}
+        onLongPress={
+          opens
+            ? ({ top }) =>
+                actions.open({
+                  message: m,
+                  lifted: { top, node: systemLine(row, true) },
+                })
+            : undefined
+        }
       />
     );
   };
@@ -429,11 +656,16 @@ export function ChatView({
         viewabilityConfigCallbackPairs={reading.viewPairs}
         // Rows not laid out yet: go near by the average height, then try again.
         onScrollToIndexFailed={(info) => {
+          if (onScrollFailed(info)) return;
           list.current?.scrollToOffset({
             offset: info.averageItemLength * info.index,
             animated: false,
           });
-          setTimeout(() => toLine(info.index, false), 100);
+          // The rows may have changed meanwhile: an index past the end throws.
+          setTimeout(() => {
+            if (info.index < (list.current?.props.data?.length ?? 0))
+              toLine(info.index, false);
+          }, 100);
         }}
         onEndReached={onTop}
         onEndReachedThreshold={0.5}
@@ -447,7 +679,7 @@ export function ChatView({
         ListFooterComponent={
           view.reachedStart || empty ? (
             (start ?? <ChannelStart name={channelName} />)
-          ) : loadingOlder ? (
+          ) : loadingOlder || view.revealing ? (
             <SkeletonRows count={2} />
           ) : undefined
         }
@@ -500,11 +732,21 @@ export function ChatView({
           onChangeText={(text) => drafts.set(channelId, text)}
           placeholder={placeholder}
           counter={count.counter}
-          canSend={count.canSend}
+          canSend={count.canSend || (!!editing && !toSend.trim())}
           onSend={send}
           disabled={disabled}
+          context={composerContext}
+          onEmoji={actions.openComposerPicker}
+          inputRef={input}
         />
       )}
+      <MessageSheets
+        actions={actions}
+        sheetOf={sheetOf}
+        nameOf={nameOf}
+        timeOf={(m) => timeText(t, lastActive(m.created_at, now, timeZone))}
+        onInsert={(emoji) => drafts.set(channelId, `${draft}${emoji}`)}
+      />
       <ActionSheet
         visible={failed !== null}
         cancel={false}

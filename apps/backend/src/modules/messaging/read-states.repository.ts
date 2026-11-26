@@ -48,16 +48,20 @@ export class ReadStatesRepository {
             eq(messages.channelId, channelId),
             sql`${messages.id} > ${lastRead}`,
             sql`${messages.authorId} <> ${userId}`,
+            isNull(messages.deletedAt),
             eq(messages.type, messageTypeCode.default),
             sql`${channels.serverId} IS NOT NULL`,
-            // REQ-MSG-03 (CR-12): mentioned me, everyone, or a role I have.
+            // REQ-MSG-03 (CR-12): mentioned me, everyone, a role I have, or replied to me.
             // ponytail: a @here counts here even if I was offline then (chốt 22/11/2026).
             sql`(${userId} = ANY(${messages.mentionUserIds})
               OR ${messages.mentionEveryone}
               OR ${messages.mentionRoleIds} && ARRAY(
                 SELECT ${serverMemberRoles.roleId} FROM ${serverMemberRoles}
                 WHERE ${serverMemberRoles.serverId} = ${channels.serverId}
-                  AND ${serverMemberRoles.userId} = ${userId}))`,
+                  AND ${serverMemberRoles.userId} = ${userId})
+              OR EXISTS (SELECT 1 FROM ${messages} AS original
+                WHERE original.id = ${messages.replyToId}
+                  AND original.author_id = ${userId}))`,
           ),
         )) as [{ n: number }];
       await tx

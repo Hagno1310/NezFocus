@@ -7,7 +7,16 @@ import {
   Menu,
   Users,
 } from 'lucide-react-native';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ComponentRef, type ReactNode } from 'react';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import {
   Pressable,
@@ -17,6 +26,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  motion,
   radius,
   size,
   space,
@@ -137,6 +147,9 @@ export function MessageBubble({
   mention = false,
   surface,
   liftedTime,
+  edited,
+  reactions,
+  highlight,
   accessibilityLabel,
   actions = [],
   onPress,
@@ -159,11 +172,19 @@ export function MessageBubble({
   surface?: ColorToken;
   // C-10 `lifted` of a grouped message: its own "20:04" in the avatar column.
   liftedTime?: string;
+  // "(đã chỉnh sửa)" on its own line under the text (frame `message-states`, 26/11/2026).
+  edited?: string;
+  reactions?: ReactNode; // C-10 `reaction` chips
+  // C-10 `highlight`: the background flashes `times` (reply 1, link / push 2); a new `key`
+  // flashes again.
+  highlight?: { key: number; times: 1 | 2 };
   accessibilityLabel: string;
   // C-10: what the row offers a screen reader instead of its inner presses (links…).
   actions?: { label: string; onPress: () => void }[];
   onPress?: (e: GestureResponderEvent) => void;
-  onLongPress?: (e: GestureResponderEvent) => void;
+  // Gets where the row sits on screen (its own ref: a long-press event's currentTarget is null
+  // by the time it is read), for the `lifted` copy of S-HOME-04.
+  onLongPress?: (at: { top: number }) => void;
   // Avatar / name → S-HOME-10 (P2-B3.4, #117).
   onPressAuthor?: () => void;
   children: ReactNode;
@@ -171,8 +192,10 @@ export function MessageBubble({
   const { t } = useTranslation();
   const { colors } = useTheme();
   const pending = status?.kind === 'pending';
+  const row = useRef<ComponentRef<typeof View>>(null);
   return (
     <Pressable
+      ref={row}
       accessibilityLabel={accessibilityLabel}
       accessibilityActions={actions.map((a, i) => ({
         name: `a${i}`,
@@ -182,7 +205,10 @@ export function MessageBubble({
         actions[Number(e.nativeEvent.actionName.slice(1))]?.onPress()
       }
       onPress={onPress}
-      onLongPress={onLongPress}
+      onLongPress={
+        onLongPress &&
+        (() => row.current?.measureInWindow((_x, top) => onLongPress({ top })))
+      }
       disabled={!onPress && !onLongPress}
       style={[
         styles.message,
@@ -197,6 +223,7 @@ export function MessageBubble({
         },
       ]}
     >
+      {highlight && <Flash key={highlight.key} times={highlight.times} />}
       <Pressable
         disabled={!head || !onPressAuthor}
         onPress={onPressAuthor}
@@ -204,7 +231,15 @@ export function MessageBubble({
         style={[styles.avatarCell, !head && !liftedTime && styles.collapsed]}
       >
         {!head && liftedTime && (
-          <Text variant="label" weight="400" color="text-tertiary">
+          // One line in the 40 column even at 200% text: it shrinks instead of wrapping.
+          <Text
+            variant="label"
+            weight="400"
+            color="text-tertiary"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.5}
+          >
             {liftedTime}
           </Text>
         )}
@@ -239,6 +274,12 @@ export function MessageBubble({
           </View>
         )}
         {children}
+        {edited && (
+          <Text variant="label" weight="400" color="text-tertiary">
+            {edited}
+          </Text>
+        )}
+        {reactions}
         {status?.kind === 'pending' && status.offline && (
           <StatusLine icon={Clock3} color="text-tertiary" weight="400">
             {t('chat.willSend')}
@@ -251,6 +292,40 @@ export function MessageBubble({
         )}
       </View>
     </Pressable>
+  );
+}
+
+// Each flash `short` on, `short` off; reduce motion: held 1 s, no flashing (C-10).
+function Flash({ times }: { times: 1 | 2 }) {
+  const { colors } = useTheme();
+  const reduced = useReducedMotion();
+  const on = useSharedValue(0);
+  useEffect(() => {
+    on.set(
+      reduced
+        ? withSequence(
+            withTiming(1, { duration: 0 }),
+            withDelay(1000, withTiming(0, { duration: 0 })),
+          )
+        : withRepeat(
+            withSequence(
+              withTiming(1, { duration: motion.short }),
+              withTiming(0, { duration: motion.short }),
+            ),
+            times,
+          ),
+    );
+  }, [on, reduced, times]);
+  const style = useAnimatedStyle(() => ({ opacity: on.value }));
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        StyleSheet.absoluteFill,
+        { backgroundColor: colors['surface-2'] },
+        style,
+      ]}
+    />
   );
 }
 
@@ -326,17 +401,44 @@ export function SystemLine({
   parts,
   time,
   accessibilityLabel,
+  surface,
+  onLongPress,
+  deleteLabel,
 }: {
   icon: IconComponent;
   parts: string[];
   time: string;
   accessibilityLabel: string;
+  surface?: ColorToken; // `lifted` over the scrim (S-HOME-04 `system-message`)
+  // S-HOME-04 `system-message`: only with MANAGE_MESSAGES (MSG-11); where the row sits.
+  onLongPress?: (at: { top: number }) => void;
+  deleteLabel?: string; // the same, for a screen reader
 }) {
+  const { colors } = useTheme();
+  const row = useRef<ComponentRef<typeof View>>(null);
   return (
-    <View
+    <Pressable
+      ref={row}
       accessible
       accessibilityLabel={accessibilityLabel}
-      style={[styles.message, styles.systemRow]}
+      accessibilityActions={
+        onLongPress && deleteLabel
+          ? [{ name: 'longpress', label: deleteLabel }]
+          : undefined
+      }
+      onAccessibilityAction={() =>
+        row.current?.measureInWindow((_x, top) => onLongPress?.({ top }))
+      }
+      disabled={!onLongPress}
+      onLongPress={
+        onLongPress &&
+        (() => row.current?.measureInWindow((_x, top) => onLongPress({ top })))
+      }
+      style={[
+        styles.message,
+        styles.systemRow,
+        surface && { backgroundColor: colors[surface] },
+      ]}
     >
       <View style={[styles.avatarCell, styles.systemIcon]}>
         <Icon as={icon} size="sm" color="text-tertiary" />
@@ -360,7 +462,7 @@ export function SystemLine({
       <Text variant="label" weight="400" color="text-tertiary">
         {time}
       </Text>
-    </View>
+    </Pressable>
   );
 }
 

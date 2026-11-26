@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   CreateMessageRequest,
+  EditMessageRequest,
+  isReactionEmoji,
   MESSAGE_MAX_CHARS,
   MessageResponse,
   MessageHistoryQuery,
@@ -163,5 +165,39 @@ describe('mention tokens (REQ-MSG-03, read by P2-A4.1)', () => {
       mention_everyone: false,
       mention_here: true,
     });
+  });
+});
+
+describe('isReactionEmoji (REQ-MSG-05)', () => {
+  it('takes one emoji, joined sequences, skin tones, flags and keycaps', () => {
+    for (const e of ['👍', '❤️', '😂', '👨‍👩‍👧', '👍🏽', '🇻🇳', '1️⃣', '🏳️‍🌈'])
+      expect(isReactionEmoji(e)).toBe(true);
+  });
+
+  it('refuses text, two emoji, blanks and padding', () => {
+    for (const e of ['', 'a', '1', ' 👍', '👍👍', '🇻', '🇻🇳🇺🇸', 'ok👍'])
+      expect(isReactionEmoji(e)).toBe(false);
+  });
+});
+
+describe('EditMessageRequest', () => {
+  it('saves NFC and refuses blank content (S-HOME-01 edit-mode)', () => {
+    expect(
+      EditMessageRequest.parse({ content: 'Giải tích'.normalize('NFD') })
+        .content,
+    ).toBe('Giải tích');
+    expect(EditMessageRequest.safeParse({ content: '  ' }).success).toBe(false);
+  });
+});
+
+describe('CreateMessageRequest reply_to_id', () => {
+  it('takes a snowflake and nothing else', () => {
+    const base = { content: 'ừ', nonce: 'n-1' };
+    expect(
+      CreateMessageRequest.parse({ ...base, reply_to_id: '42' }).reply_to_id,
+    ).toBe('42');
+    expect(
+      CreateMessageRequest.safeParse({ ...base, reply_to_id: 'abc' }).success,
+    ).toBe(false);
   });
 });

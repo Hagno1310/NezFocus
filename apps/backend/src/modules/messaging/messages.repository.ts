@@ -8,6 +8,7 @@ import {
   gt,
   gte,
   inArray,
+  isNull,
   lt,
   sql,
   type SQL,
@@ -21,7 +22,12 @@ import {
 } from '../servers/servers.schema.js';
 import { users } from '../users/users.schema.js';
 import type { AuthorRow } from './messages.dto.js';
-import { messages, readStates, type MessageRow } from './messages.schema.js';
+import {
+  messageReactions,
+  messages,
+  readStates,
+  type MessageRow,
+} from './messages.schema.js';
 
 export type MessageWithAuthor = { message: MessageRow; author: AuthorRow };
 export type NewMessage = typeof messages.$inferInsert;
@@ -102,10 +108,9 @@ export class MessagesRepository {
     channelId: bigint,
     { before, after, around, limit }: MessageHistoryQuery,
   ): Promise<MessageWithAuthor[]> {
+    // REQ-MSG-05 AC3: a deleted message is gone for everyone.
     const inChannel = (cond?: SQL) =>
-      cond
-        ? and(eq(messages.channelId, channelId), cond)
-        : eq(messages.channelId, channelId);
+      and(eq(messages.channelId, channelId), isNull(messages.deletedAt), cond);
     const newest = (cond: SQL | undefined, n: number) =>
       this.select()
         .where(inChannel(cond))
@@ -126,6 +131,141 @@ export class MessagesRepository {
       ];
     }
     return newest(undefined, limit);
+  }
+
+  // Deleted ones too: a reply may point at one (REQ-MSG-05 AC6).
+  async one(
+    channelId: bigint,
+    messageId: bigint,
+  ): Promise<MessageWithAuthor | undefined> {
+    const [row] = await this.select().where(
+      and(eq(messages.channelId, channelId), eq(messages.id, messageId)),
+    );
+    return row;
+  }
+
+  // The reply line of each message; deleted originals are left out (AC6).
+  async referenced(ids: bigint[]): Promise<Map<bigint, MessageWithAuthor>> {
+    if (!ids.length) return new Map();
+    const rows = await this.select().where(
+      and(inArray(messages.id, ids), isNull(messages.deletedAt)),
+    );
+    return new Map(rows.map((r) => [r.message.id, r]));
+  }
+
+  async edit(
+    id: bigint,
+    set: Pick<
+      MessageRow,
+      'content' | 'mentionUserIds' | 'mentionRoleIds' | 'mentionEveryone'
+    > & { editedAt: Date },
+  ): Promise<MessageWithAuthor> {
+    await this.db.update(messages).set(set).where(eq(messages.id, id));
+    const [row] = await this.select().where(eq(messages.id, id));
+    return row!;
+  }
+
+  // false = someone deleted it first. The channel's last_message_id steps back past it, so a
+  // deleted last message leaves nothing unread (NOTIF-01).
+  async softDelete(channelId: bigint, id: bigint, at: Date) {
+    return this.db.transaction(async (tx) => {
+      const done = await tx
+        .update(messages)
+        .set({ deletedAt: at })
+        .where(and(eq(messages.id, id), isNull(messages.deletedAt)))
+        .returning({ id: messages.id });
+      if (!done.length) return false;
+      const [last] = await tx
+        .select({ id: messages.id })
+        .from(messages)
+        .where(
+          and(eq(messages.channelId, channelId), isNull(messages.deletedAt)),
+        )
+        .orderBy(desc(messages.id))
+        .limit(1);
+      await tx
+        .update(channels)
+        .set({ lastMessageId: last?.id ?? null })
+        .where(and(eq(channels.id, channelId), eq(channels.lastMessageId, id)));
+      return true;
+    });
+  }
+
+  // Per message, emoji in the order first put, with whether `viewerId` put it.
+  async reactions(messageIds: bigint[], viewerId: bigint) {
+    if (!messageIds.length) return [];
+    return this.db
+      .select({
+        messageId: messageReactions.messageId,
+        emoji: messageReactions.emoji,
+        count: sql<number>`count(*)::int`,
+        me: sql<boolean>`bool_or(${messageReactions.userId} = ${viewerId})`,
+      })
+      .from(messageReactions)
+      .where(inArray(messageReactions.messageId, messageIds))
+      .groupBy(messageReactions.messageId, messageReactions.emoji)
+      .orderBy(sql`min(${messageReactions.createdAt})`);
+  }
+
+  async emojiOn(messageId: bigint): Promise<string[]> {
+    const rows = await this.db
+      .selectDistinct({ emoji: messageReactions.emoji })
+      .from(messageReactions)
+      .where(eq(messageReactions.messageId, messageId));
+    return rows.map((r) => r.emoji);
+  }
+
+  // true = it was not there yet.
+  async addReaction(messageId: bigint, emoji: string, userId: bigint) {
+    const rows = await this.db
+      .insert(messageReactions)
+      .values({ messageId, emoji, userId })
+      .onConflictDoNothing()
+      .returning({ userId: messageReactions.userId });
+    return rows.length > 0;
+  }
+
+  async removeReaction(messageId: bigint, emoji: string, userId: bigint) {
+    const rows = await this.db
+      .delete(messageReactions)
+      .where(
+        and(
+          eq(messageReactions.messageId, messageId),
+          eq(messageReactions.emoji, emoji),
+          eq(messageReactions.userId, userId),
+        ),
+      )
+      .returning({ userId: messageReactions.userId });
+    return rows.length > 0;
+  }
+
+  // CR-28 #26: oldest first; a deleted account still answers ("Tài khoản đã bị xóa").
+  reactionUsers(messageId: bigint, emoji: string, limit = 100) {
+    return this.db
+      .select(author)
+      .from(messageReactions)
+      .innerJoin(users, eq(users.id, messageReactions.userId))
+      .where(
+        and(
+          eq(messageReactions.messageId, messageId),
+          eq(messageReactions.emoji, emoji),
+        ),
+      )
+      .orderBy(asc(messageReactions.createdAt), asc(messageReactions.userId))
+      .limit(limit);
+  }
+
+  async timeoutUntil(serverId: bigint, userId: bigint) {
+    const [row] = await this.db
+      .select({ until: serverMembers.timeoutUntil })
+      .from(serverMembers)
+      .where(
+        and(
+          eq(serverMembers.serverId, serverId),
+          eq(serverMembers.userId, userId),
+        ),
+      );
+    return row?.until ?? null;
   }
 
   // REQ-MSG-03: which of these users are in the server.

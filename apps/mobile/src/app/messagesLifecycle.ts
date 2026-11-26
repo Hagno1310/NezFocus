@@ -12,6 +12,22 @@ export function startMessagesLifecycle() {
   const stopEvents = onGatewayEvent((event) => {
     if (event.t === 'MESSAGE_CREATE')
       quietly(messageStore.applyCreate(event.d));
+    // REQ-MSG-05
+    if (event.t === 'MESSAGE_UPDATE')
+      quietly(messageStore.applyUpdate(event.d));
+    if (event.t === 'MESSAGE_DELETE')
+      quietly(messageStore.applyDelete(event.d));
+    if (
+      event.t === 'MESSAGE_REACTION_ADD' ||
+      event.t === 'MESSAGE_REACTION_REMOVE'
+    )
+      quietly(
+        messageStore.applyReaction(
+          event.d,
+          event.t === 'MESSAGE_REACTION_ADD' ? 'add' : 'remove',
+          sessionStore.getState().user?.id ?? '',
+        ),
+      );
     // RESUMED, or READY again after INVALID_SESSION: what the open channels missed.
     if (event.t === 'READY' || event.t === 'RESUMED')
       quietly(messageStore.catchUp());

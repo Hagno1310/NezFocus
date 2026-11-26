@@ -2,6 +2,8 @@ import type {
   MessageAuthor,
   MessageResponse,
   MessageType,
+  Reaction,
+  ReferencedMessage,
 } from '@nezfocus/shared';
 import { messageTypeCode } from '@nezfocus/shared';
 import { avatarUrls } from '../attachments/media.js';
@@ -27,9 +29,25 @@ export const toMessageAuthor = (author: AuthorRow): MessageAuthor => ({
   avatar: avatarUrls(author.avatarKey),
 });
 
+// What a message needs from other rows: its reply line and reactions (REQ-MSG-05).
+export type MessageExtras = {
+  referenced: { message: MessageRow; author: AuthorRow } | null;
+  reactions: Reaction[];
+};
+
+const toReferenced = (
+  r: MessageExtras['referenced'],
+): ReferencedMessage | null =>
+  r && {
+    id: r.message.id.toString(),
+    author: toMessageAuthor(r.author),
+    content: r.message.content,
+  };
+
 export const toMessageResponse = (
   m: MessageRow,
   author: AuthorRow,
+  extras: MessageExtras = { referenced: null, reactions: [] },
 ): MessageResponse =>
   ({
     id: m.id.toString(),
@@ -43,6 +61,8 @@ export const toMessageResponse = (
     mention_everyone: m.mentionEveryone,
     system_data: m.systemData ?? null,
     reply_to_id: m.replyToId?.toString() ?? null,
+    referenced_message: toReferenced(extras.referenced),
+    reactions: extras.reactions,
     edited_at: iso(m.editedAt),
     pinned_at: iso(m.pinnedAt),
     created_at: m.createdAt.toISOString(),

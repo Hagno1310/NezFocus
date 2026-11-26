@@ -9,6 +9,7 @@ const NONE: ChannelView = {
   loading: true,
   error: false,
   reachedStart: false,
+  revealing: false,
 };
 
 // S-HOME-01: the channel's messages, cache first (7.3.2). Opening it fetches what is newer.

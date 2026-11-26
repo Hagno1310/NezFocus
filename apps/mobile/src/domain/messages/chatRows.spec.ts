@@ -40,6 +40,8 @@ const sent = (
     mention_everyone: false,
     system_data: null,
     reply_to_id: null,
+    referenced_message: null,
+    reactions: [],
     edited_at: null,
     pinned_at: null,
     created_at: new Date(at(day, hhmm)).toISOString(),
@@ -53,6 +55,7 @@ const queued = (day: number, hhmm: string, nonce = `n${++seq}`): ChatItem => {
     channelId: '7',
     serverId: '100',
     content: 'x',
+    replyToId: null,
     status: 'pending',
     attempts: 0,
     nextAttemptAt: null,
@@ -356,5 +359,15 @@ describe('chatRows: "Tin nhắn mới" line (NOTIF-01, P2-A4.4)', () => {
       true,
       false,
     ]);
+  });
+});
+
+describe('C-10 reply', () => {
+  it('a reply heads its own group, even right after the same author', () => {
+    const r = rows([
+      sent(AN, 18, '20:00'),
+      sent(AN, 18, '20:01', { reply_to_id: '1' }),
+    ]);
+    expect(heads(r)).toEqual(['day', true, true]);
   });
 });

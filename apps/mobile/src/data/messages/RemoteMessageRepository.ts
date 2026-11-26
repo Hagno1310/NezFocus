@@ -2,12 +2,27 @@ import {
   MessageListResponse,
   MessageResponse,
   MessageRoutes,
+  ReactionUsersResponse,
 } from '@nezfocus/shared';
 import type { MessageRepository } from '../../domain/messages/MessageRepository';
 import { api } from '../api';
 
 const path = (channelId: string) =>
   MessageRoutes.list.replace(':id', channelId);
+const messagePath = (channelId: string, messageId: string) =>
+  MessageRoutes.message
+    .replace(':id', channelId)
+    .replace(':messageId', messageId);
+const reaction = (
+  route: string,
+  channelId: string,
+  messageId: string,
+  emoji: string,
+) =>
+  route
+    .replace(':id', channelId)
+    .replace(':messageId', messageId)
+    .replace(':emoji', encodeURIComponent(emoji));
 
 export const remoteMessageRepository: MessageRepository = {
   async history(channelId, query) {
@@ -30,4 +45,32 @@ export const remoteMessageRepository: MessageRepository = {
       { method: 'POST' },
     );
   },
+  edit: async (channelId, messageId, content) =>
+    MessageResponse.parse(
+      await api.request(messagePath(channelId, messageId), {
+        method: 'PATCH',
+        body: { content },
+      }),
+    ),
+  async remove(channelId, messageId) {
+    await api.request(messagePath(channelId, messageId), { method: 'DELETE' });
+  },
+  async react(channelId, messageId, emoji) {
+    await api.request(
+      reaction(MessageRoutes.myReaction, channelId, messageId, emoji),
+      { method: 'PUT' },
+    );
+  },
+  async unreact(channelId, messageId, emoji) {
+    await api.request(
+      reaction(MessageRoutes.myReaction, channelId, messageId, emoji),
+      { method: 'DELETE' },
+    );
+  },
+  reactionUsers: async (channelId, messageId, emoji) =>
+    ReactionUsersResponse.parse(
+      await api.request(
+        reaction(MessageRoutes.reaction, channelId, messageId, emoji),
+      ),
+    ),
 };

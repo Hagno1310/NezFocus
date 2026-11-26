@@ -159,13 +159,39 @@ export function encodeMentions(text: string, picked: readonly PickedMention[]) {
   return out;
 }
 
+// S-HOME-01 `edit-mode`: the stored text back as the composer shows it, "<@12>" → "@Bình",
+// with the picks encodeMentions needs to turn it back on save.
+export function decodeMentions(
+  content: string,
+  label: (node: { kind: 'user' | 'role' | 'channel'; id: string }) => string,
+): { text: string; picked: PickedMention[] } {
+  const picked: PickedMention[] = [];
+  const text = content.replace(
+    /<@(\d{1,20})>|<@&(\d{1,20})>|<#(\d{1,20})>/g,
+    (token, user?: string, role?: string, channel?: string) => {
+      const node = user
+        ? { kind: 'user' as const, id: user }
+        : role
+          ? { kind: 'role' as const, id: role }
+          : { kind: 'channel' as const, id: channel! };
+      const shown = label(node);
+      picked.push({ label: shown, token });
+      return shown;
+    },
+  );
+  return { text, picked };
+}
+
 type MentionFields = Pick<
   MessageResponse,
   'type' | 'mention_user_ids' | 'mention_role_ids' | 'mention_everyone'
-> & { author: { id: string } };
+> & {
+  author: { id: string };
+  referenced_message?: { author: { id: string } } | null;
+};
 
-// REQ-MSG-03 (CR-12): mentioned me, my role, or everyone; never my own; not system messages.
-// ponytail: replies to my message join here with P3-A1 (#21).
+// REQ-MSG-03 (CR-12): mentioned me, my role, or everyone, or a reply to my message; never my
+// own; not system messages.
 export function concernsMe(
   m: MentionFields,
   myId: string,
@@ -176,6 +202,7 @@ export function concernsMe(
     m.author.id !== myId &&
     (m.mention_everyone ||
       m.mention_user_ids.includes(myId) ||
-      m.mention_role_ids.some((id) => myRoleIds.includes(id)))
+      m.mention_role_ids.some((id) => myRoleIds.includes(id)) ||
+      m.referenced_message?.author.id === myId)
   );
 }

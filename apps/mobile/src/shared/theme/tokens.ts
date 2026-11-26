@@ -175,6 +175,18 @@ export const size = {
   tri: { width: 40, height: 32 },
   switch: { width: 48, height: 28, knob: 22, inset: 3 },
   actionRow: 56,
+  // C-10 ReactionChip (32, emoji 16, sides 10); S-HOME-04 quick reactions (44, emoji 22);
+  // C-25 EmojiPicker cell (44, emoji 24); C-11 context strip and its ✕ (36).
+  reaction: {
+    chip: 32,
+    chipEmoji: 16,
+    chipSide: 10,
+    quick: 44,
+    quickEmoji: 22,
+  },
+  emojiCell: 44,
+  emojiGlyph: 24,
+  composerContext: 36,
   groupTitle: 28,
   settingsRow: 56,
   dialogMax: 320,

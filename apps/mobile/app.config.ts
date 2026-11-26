@@ -65,6 +65,9 @@ const config: ExpoConfig = {
         autoVerify: true,
         data: [
           { scheme: 'https', host: 'nezfocus.app', pathPrefix: '/invite/' },
+          // MSG-05 CR-19: message / channel links (needs a dev client rebuild).
+          { scheme: 'https', host: 'nezfocus.app', pathPrefix: '/channels/' },
+          { scheme: 'https', host: 'nezfocus.app', pathPrefix: '/dm/' },
         ],
         category: ['BROWSABLE', 'DEFAULT'],
       },

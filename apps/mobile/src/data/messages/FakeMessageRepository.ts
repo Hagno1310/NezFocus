@@ -5,8 +5,12 @@ import {
   type MessageResponse,
 } from '@nezfocus/shared';
 import type { MessageRepository } from '../../domain/messages/MessageRepository';
+import { withReaction } from '../../domain/messages/reactions';
 import { ApiError } from '../api/client';
 import { fakeServerRepository } from '../servers/FakeServerRepository';
+
+const notFound = () =>
+  new ApiError(404, { code: ErrorCode.NotFound, message: 'Unknown message' });
 
 // Typing these plays the failures of S-HOME-01 / S-HOME-04.
 export const FAKE_REFUSED_TEXT = 'Không gửi được'; // 40302 → failed, "Gửi lại" / "Xóa tin nhắn"
@@ -49,6 +53,8 @@ const message = (
   mention_everyone: false,
   system_data: null,
   reply_to_id: null,
+  referenced_message: null,
+  reactions: [],
   edited_at: null,
   pinned_at: null,
   created_at: at.toISOString(),
@@ -88,9 +94,28 @@ const hoiDapSample = (channelId: string) =>
       ],
       ['20:11', FAKE_AUTHORS.an, 'Ok, mình vào sớm giữ chỗ'],
     ] as const
-  ).map(([time, author, text]) =>
-    message(channelId, author, text, today(time)),
-  );
+  )
+    .map(([time, author, text]) =>
+      message(channelId, author, text, today(time)),
+    )
+    // S-HOME-04 `emoji-picker` frame: Dũng answers Chi, with reactions under it.
+    .map((m, i, all) =>
+      i === 3
+        ? {
+            ...m,
+            reply_to_id: all[1]!.id,
+            referenced_message: {
+              id: all[1]!.id,
+              author: all[1]!.author,
+              content: all[1]!.content,
+            },
+            reactions: [
+              { emoji: '👍', count: 3, me: false },
+              { emoji: '🎉', count: 1, me: true },
+            ],
+          }
+        : m,
+    );
 
 export const fakeHoiDapId = () =>
   fakeServerRepository.channelId('100', 'hoi-dap');
@@ -133,7 +158,7 @@ export function createFakeMessageRepository(delayMs = 400): MessageRepository {
       if (after) return list.filter((m) => n(m.id) > n(after)).slice(0, limit);
       return list.slice(-limit);
     },
-    async send(channelId, { content, nonce }) {
+    async send(channelId, { content, nonce, reply_to_id }) {
       await wait();
       if (content === FAKE_REFUSED_TEXT)
         throw new ApiError(403, {
@@ -153,18 +178,67 @@ export function createFakeMessageRepository(delayMs = 400): MessageRepository {
       const list = of(channelId);
       const sent = list.find((m) => m.nonce === nonce);
       if (sent) return sent; // MSG-09: same nonce, same message
-      const created = message(
-        channelId,
-        FAKE_AUTHORS.an,
-        content,
-        new Date(),
-        nonce,
-      );
+      const original = list.find((m) => m.id === reply_to_id);
+      const created: MessageResponse = {
+        ...message(channelId, FAKE_AUTHORS.an, content, new Date(), nonce),
+        reply_to_id: reply_to_id ?? null,
+        referenced_message: original
+          ? {
+              id: original.id,
+              author: original.author,
+              content: original.content,
+            }
+          : null,
+      };
       list.push(created);
       return created;
     },
     // No other device in the Fake: nothing to sync.
     async ack() {},
+    async edit(channelId, messageId, content) {
+      await wait();
+      const list = of(channelId);
+      const at = list.findIndex((m) => m.id === messageId);
+      if (at < 0) throw notFound();
+      const edited = {
+        ...list[at]!,
+        content,
+        edited_at: new Date().toISOString(),
+      } as MessageResponse;
+      list[at] = edited;
+      return edited;
+    },
+    async remove(channelId, messageId) {
+      await wait();
+      const list = of(channelId);
+      const at = list.findIndex((m) => m.id === messageId);
+      if (at < 0) throw notFound();
+      list.splice(at, 1);
+    },
+    async react(channelId, messageId, emoji) {
+      await wait();
+      const m = of(channelId).find((x) => x.id === messageId);
+      if (!m) throw notFound();
+      m.reactions = withReaction(m.reactions, emoji, 'add', true);
+    },
+    async unreact(channelId, messageId, emoji) {
+      await wait();
+      const m = of(channelId).find((x) => x.id === messageId);
+      if (!m) throw notFound();
+      m.reactions = withReaction(m.reactions, emoji, 'remove', true);
+    },
+    async reactionUsers(channelId, messageId, emoji) {
+      await wait();
+      const r = of(channelId)
+        .find((x) => x.id === messageId)
+        ?.reactions.find((x) => x.emoji === emoji);
+      if (!r) return [];
+      const others = [FAKE_AUTHORS.binh, FAKE_AUTHORS.chi, FAKE_AUTHORS.khanh];
+      return [
+        ...(r.me ? [FAKE_AUTHORS.an] : []),
+        ...others.slice(0, r.count - (r.me ? 1 : 0)),
+      ];
+    },
   };
 }
 

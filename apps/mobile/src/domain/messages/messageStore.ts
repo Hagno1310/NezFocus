@@ -1,7 +1,15 @@
-import type { MessageCreateEvent, MessageResponse } from '@nezfocus/shared';
+import {
+  ErrorCode,
+  type MessageCreateEvent,
+  type MessageDeleteEvent,
+  type MessageReactionEvent,
+  type MessageResponse,
+  type MessageUpdateEvent,
+} from '@nezfocus/shared';
 import { createStore } from 'zustand/vanilla';
 import type { LocalMessages } from './LocalMessages';
 import type { MessageRepository } from './MessageRepository';
+import { withReaction, type ReactionOp } from './reactions';
 import {
   afterFailure,
   classifySendError,
@@ -14,6 +22,9 @@ export const KEEP_PER_CHANNEL = 50;
 export const MAX_CACHED_CHANNELS = 200;
 const PAGE = 50;
 const CATCH_UP_PAGE = 100;
+// REQ-MSG-05 link / reply jump: pages walked back to reach an older message.
+// ponytail: khi cần mở tin cũ hơn 1000 tin: một cửa sổ `around` riêng, không nối vào cache.
+const REVEAL_PAGES = 20;
 
 // A message from the server, or one of mine still in the outbox (pending / retrying / failed).
 export type ChatItem =
@@ -26,6 +37,7 @@ export type ChannelView = {
   loading: boolean; // nothing to show yet and the network is being asked
   error: boolean; // S-HOME-01 `error`: no cache and the network failed
   reachedStart: boolean; // the channel's first message is loaded
+  revealing: boolean; // walking back to a linked message: Skeleton at the top (02 `message-link`)
 };
 
 export type MessageStoreDeps = {
@@ -43,6 +55,7 @@ const emptyView = (serverId: string | null): ChannelView => ({
   loading: true, // until the cache is read: S-HOME-01 `loading`, never a flash of `empty`
   error: false,
   reachedStart: false,
+  revealing: false,
 });
 
 // The one place the app reads and sends channel messages (SRS 7.3.1 sync engine, 8.4.5).
@@ -126,6 +139,7 @@ export function createMessageStore(deps: MessageStoreDeps) {
       const message = await remote.send(entry.channelId, {
         content: entry.content,
         nonce: entry.nonce,
+        ...(entry.replyToId ? { reply_to_id: entry.replyToId } : {}),
       });
       await local.saveMessages([message]);
       await local.removeOutbox(entry.nonce);
@@ -173,6 +187,44 @@ export function createMessageStore(deps: MessageStoreDeps) {
     return flushing;
   }
 
+  // Rewrites cached messages of a channel; untouched ones are not saved again.
+  const rewrite = async (
+    channelId: string,
+    change: (m: MessageResponse) => MessageResponse,
+  ) => {
+    const changed = (await local.messages(channelId)).flatMap((m) => {
+      const next = change(m);
+      return next === m ? [] : [next];
+    });
+    if (changed.length) await local.saveMessages(changed);
+  };
+
+  const reacted = async (
+    channelId: string,
+    messageId: string,
+    emoji: string,
+    op: ReactionOp,
+    mine: boolean,
+  ) => {
+    await rewrite(channelId, (m) =>
+      m.id === messageId
+        ? { ...m, reactions: withReaction(m.reactions, emoji, op, mine) }
+        : m,
+    );
+    await refresh(channelId);
+  };
+
+  // REQ-MSG-05 AC3 / AC6: gone here, and replies to it show "Tin nhắn gốc đã bị xóa".
+  const deleted = async (channelId: string, messageId: string) => {
+    await local.deleteMessage(messageId);
+    await rewrite(channelId, (m) =>
+      m.reply_to_id === messageId && m.referenced_message
+        ? { ...m, referenced_message: null }
+        : m,
+    );
+    await refresh(channelId);
+  };
+
   return {
     state,
 
@@ -202,13 +254,15 @@ export function createMessageStore(deps: MessageStoreDeps) {
       await refresh(channelId);
     },
 
-    async send(channelId: string, content: string) {
+    // `replyToId`: S-HOME-01 `reply-mode` (REQ-MSG-05).
+    async send(channelId: string, content: string, replyToId?: string) {
       const now = deps.now();
       await local.addOutbox({
         nonce: deps.newNonce(),
         channelId,
         serverId: state.getState().views[channelId]?.serverId ?? null,
         content,
+        replyToId: replyToId ?? null,
         status: 'pending',
         attempts: 0,
         nextAttemptAt: null,
@@ -250,6 +304,113 @@ export function createMessageStore(deps: MessageStoreDeps) {
         await local.saveMessages([message]);
       await refresh(message.channel_id);
     },
+
+    // REQ-MSG-05: these need the network (CR-28 #7, no outbox); errors go to the caller.
+    async edit(channelId: string, messageId: string, content: string) {
+      const message = await remote.edit(channelId, messageId, content);
+      await local.saveMessages([message]);
+      await refresh(channelId);
+    },
+
+    // 02 edge case "Hai người cùng xóa một tin": already gone (40401) is what was wanted.
+    async remove(channelId: string, messageId: string) {
+      try {
+        await remote.remove(channelId, messageId);
+      } catch (err) {
+        if ((err as { code?: number }).code !== ErrorCode.NotFound) throw err;
+      }
+      await deleted(channelId, messageId);
+    },
+
+    // A chip I already put is removed, any other is put (S-HOME-01 › Tương tác).
+    async toggleReaction(channelId: string, messageId: string, emoji: string) {
+      const message = (await local.messages(channelId)).find(
+        (m) => m.id === messageId,
+      );
+      const mine = message?.reactions.some((r) => r.emoji === emoji && r.me);
+      if (mine) await remote.unreact(channelId, messageId, emoji);
+      else await remote.react(channelId, messageId, emoji);
+      await reacted(channelId, messageId, emoji, mine ? 'remove' : 'add', true);
+    },
+
+    // REQ-MSG-05 AC8 / AC9 before leaving the screen: 40401 (cannot view) throws; false = the
+    // channel is fine but the message is gone. A one-message `around` page is enough.
+    // No messageId: only whether I can view the channel (a channel link, #95).
+    async peek(channelId: string, messageId?: string) {
+      if (!messageId) {
+        await remote.history(channelId, { limit: 1 });
+        return true;
+      }
+      const page = await remote.history(channelId, {
+        around: messageId,
+        limit: 2,
+      });
+      return page.some((m) => m.id === messageId);
+    },
+
+    // Loads back from the oldest cached message until `messageId` is in, so the cache stays one
+    // run with no hole (7.3.2). `missing`: walked past it (deleted); `far`: not reached in time.
+    async reveal(
+      channelId: string,
+      messageId: string,
+    ): Promise<'found' | 'missing' | 'far'> {
+      const target = BigInt(messageId);
+      const has = async () => {
+        const cached = await local.messages(channelId);
+        return {
+          found: cached.some((m) => m.id === messageId),
+          oldest: cached[0],
+        };
+      };
+      let { found, oldest } = await has();
+      let past = !oldest || BigInt(oldest.id) <= target;
+      if (!found && !past) patchView(channelId, { revealing: true });
+      for (let i = 0; !found && !past && i < REVEAL_PAGES; i++) {
+        const page = await remote.history(channelId, {
+          before: oldest.id,
+          limit: PAGE,
+        });
+        await local.saveMessages(page);
+        if (page.length < PAGE) patchView(channelId, { reachedStart: true });
+        ({ found, oldest } = await has());
+        past = page.length < PAGE || !oldest || BigInt(oldest.id) <= target;
+      }
+      patchView(channelId, { revealing: false });
+      await refresh(channelId);
+      return found ? 'found' : past ? 'missing' : 'far';
+    },
+
+    reactionUsers: (channelId: string, messageId: string, emoji: string) =>
+      remote.reactionUsers(channelId, messageId, emoji),
+
+    // MESSAGE_UPDATE: the message, and the reply lines quoting it.
+    async applyUpdate(e: MessageUpdateEvent) {
+      const { id, content, edited_at } = e;
+      await rewrite(e.channel_id, (m) => {
+        if (m.id === id)
+          return {
+            ...m,
+            content,
+            edited_at,
+            mention_user_ids: e.mention_user_ids,
+            mention_role_ids: e.mention_role_ids,
+            mention_everyone: e.mention_everyone,
+          };
+        if (m.referenced_message?.id === id)
+          return {
+            ...m,
+            referenced_message: { ...m.referenced_message, content },
+          };
+        return m;
+      });
+      await refresh(e.channel_id);
+    },
+
+    applyDelete: (e: MessageDeleteEvent) => deleted(e.channel_id, e.id),
+
+    // MESSAGE_REACTION_ADD / REMOVE; my own one again changes nothing (withReaction).
+    applyReaction: (e: MessageReactionEvent, op: ReactionOp, myId: string) =>
+      reacted(e.channel_id, e.message_id, e.emoji, op, e.user_id === myId),
 
     // RESUMED / READY after a drop (7.3.2): what each open channel missed, then the outbox.
     async catchUp() {

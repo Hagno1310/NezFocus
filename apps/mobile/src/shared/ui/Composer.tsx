@@ -1,15 +1,17 @@
 import {
+  Check,
   CircleAlert,
   Plus,
   SendHorizontal,
   Smile,
+  X,
   type LucideIcon,
 } from 'lucide-react-native';
-import type { ReactNode } from 'react';
+import type { ComponentRef, ReactNode, Ref } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import type { Counter } from '../../domain/messages/chatRows';
-import { radius, size, space, typography, useTheme } from '../theme';
+import { radius, size, space, touchSlop, typography, useTheme } from '../theme';
 import { IconButton } from './Button';
 import { Icon } from './Icon';
 import { Text } from './Text';
@@ -17,7 +19,17 @@ import { Text } from './Text';
 // C-11 `disabled`: the reason line in place of the input row.
 export type ComposerBlock = { icon: LucideIcon; text: string };
 
+// C-11 `reply` / `edit`: the strip over the input ("Đang trả lời **Chi**" · "Đang sửa tin nhắn").
+export type ComposerContext = {
+  text: string;
+  name?: string; // bold after the text (C-11)
+  edit?: boolean; // ➤ becomes `check`
+  onClose: () => void;
+};
+
 const LINES = 5;
+const CONTEXT = size.composerContext;
+const CONTEXT_CLOSE = size.composerContext;
 const BOX_MIN = 40;
 
 // C-11: Enter is a new line, only ➤ sends (SRS 3.4); `+` and ☺ show once given a handler.
@@ -32,6 +44,8 @@ export function Composer({
   onEmoji,
   disabled,
   above,
+  context,
+  inputRef,
 }: {
   value: string;
   onChangeText: (text: string) => void;
@@ -43,8 +57,10 @@ export function Composer({
   onAttach?: () => void;
   onEmoji?: () => void;
   disabled?: ComposerBlock;
-  // Context strip / tray over the input (reply, edit, attachments: P3).
+  // Tray over the input (attachments: P3-A2.2 #124).
   above?: ReactNode;
+  context?: ComposerContext;
+  inputRef?: Ref<ComponentRef<typeof TextInput>>;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -84,6 +100,39 @@ export function Composer({
           </Text>
         </View>
       )}
+      {context && (
+        <View
+          style={[styles.context, { backgroundColor: colors['surface-2'] }]}
+        >
+          <Text
+            variant="label"
+            weight="400"
+            color="text-secondary"
+            numberOfLines={1}
+            style={styles.flex}
+          >
+            {context.text}
+            {context.name && (
+              <Text variant="label" weight="600" color="text-secondary">
+                {` ${context.name}`}
+              </Text>
+            )}
+          </Text>
+          {/* 36 drawn, 48 to touch (chốt 26/11/2026). */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('chat.cancelContext')}
+            onPress={context.onClose}
+            hitSlop={touchSlop(CONTEXT_CLOSE)}
+            style={({ pressed }) => [
+              styles.contextClose,
+              pressed && { backgroundColor: colors['surface-3'] },
+            ]}
+          >
+            <Icon as={X} size="base" color="text-secondary" />
+          </Pressable>
+        </View>
+      )}
       {above}
       <View style={styles.row}>
         {onAttach && (
@@ -97,6 +146,7 @@ export function Composer({
           ]}
         >
           <TextInput
+            ref={inputRef}
             value={value}
             onChangeText={onChangeText}
             placeholder={placeholder}
@@ -128,8 +178,8 @@ export function Composer({
           <IconButton icon={Smile} label={t('chat.emoji')} onPress={onEmoji} />
         )}
         <IconButton
-          icon={SendHorizontal}
-          label={t('chat.send')}
+          icon={context?.edit ? Check : SendHorizontal}
+          label={t(context?.edit ? 'chat.saveEdit' : 'chat.send')}
           onPress={onSend}
           disabled={!canSend}
           color="primary"
@@ -179,4 +229,19 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   counter: { paddingBottom: 2 },
+  context: {
+    height: CONTEXT,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2],
+    paddingLeft: space[3],
+    paddingRight: space[1],
+  },
+  contextClose: {
+    width: CONTEXT_CLOSE,
+    height: CONTEXT_CLOSE,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

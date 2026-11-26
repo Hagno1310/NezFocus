@@ -1,0 +1,13 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- REQ-VC-01 AC4, SRS 7.3.5: keeps the room going with the screen locked. -->
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+  <application>
+    <service
+      android:name="expo.modules.voiceservice.VoiceForegroundService"
+      android:exported="false"
+      android:foregroundServiceType="microphone|camera|mediaPlayback" />
+  </application>
+</manifest>

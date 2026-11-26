@@ -684,7 +684,8 @@ export function ActionSheet({
   );
 }
 
-function ActionRow({
+// One ActionSheet row, also used in a sheet's own list (S-HOME-10 `moderator-voice`).
+export function ActionRow({
   item,
   pickOne = false,
 }: {

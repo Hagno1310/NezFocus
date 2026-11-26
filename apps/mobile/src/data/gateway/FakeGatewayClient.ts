@@ -76,5 +76,7 @@ export function createFakeGatewayClient(
     setOnline() {},
     setPresence() {},
     subscribe() {},
+    updateVoice() {},
+    setKeepAlive() {},
   };
 }

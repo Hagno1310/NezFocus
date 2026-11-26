@@ -180,6 +180,52 @@ describe('uploads (S-HOME-05, SRS 5.3 Upload)', () => {
     await expect(blocked).resolves.toEqual({ ok: false, kind: 'rejected' });
   });
 
+  it.each([
+    [
+      'storage refusing the URL (403 signature / expired)',
+      'refused',
+      Object.assign(new Error('x'), { status: 403, code: ErrorCode.Forbidden }),
+    ],
+    [
+      'storage down (503)',
+      'network',
+      Object.assign(new Error('x'), {
+        status: 503,
+        code: ErrorCode.InternalError,
+      }),
+    ],
+    [
+      'no answer (fetch TypeError)',
+      'network',
+      new TypeError('Network request failed'),
+    ],
+    [
+      'a request timing out',
+      'network',
+      Object.assign(new Error('Aborted'), { name: 'AbortError' }),
+    ],
+    [
+      'the photo file gone from the phone',
+      'refused',
+      new Error('file missing'),
+    ],
+    [
+      'an answer that does not parse (ZodError)',
+      'refused',
+      Object.assign(new Error('invalid'), { name: 'ZodError', issues: [] }),
+    ],
+  ])('a PUT failing with %s → %s', async (_, kind, error) => {
+    const { uploads, storage } = setup();
+    const result = uploads.ensure('7', {
+      key: 'k',
+      file: photo,
+      attachmentId: null,
+    });
+    await settle();
+    storage.puts[0]!.fail(error);
+    await expect(result).resolves.toEqual({ ok: false, kind });
+  });
+
   it('ensure on a failed one retries it; a network drop answers `network` for the outbox backoff', async () => {
     const { uploads, storage } = setup();
     const key = uploads.add('7', photo);

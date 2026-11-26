@@ -131,6 +131,8 @@ export const serverMembers = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     joinedAt: tz().notNull().defaultNow(),
     timeoutUntil: tz(), // CR-28 #17: until then only VIEW_CHANNEL (set by P3-A3 #23)
+    // REQ-VC-04 AC5: no mic in any room of the server until a moderator turns it back on
+    modMuted: boolean().notNull().default(false),
   },
   (t) => [
     primaryKey({ columns: [t.serverId, t.userId] }),

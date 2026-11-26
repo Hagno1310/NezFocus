@@ -1,5 +1,9 @@
 import type { SoloAction } from '@nezfocus/shared';
-import { StackActions, useNavigation } from '@react-navigation/native';
+import {
+  CommonActions,
+  StackActions,
+  useNavigation,
+} from '@react-navigation/native';
 import {
   BellOff,
   Flame,
@@ -15,6 +19,7 @@ import { useStudyStats } from '../hooks/useStudyStats';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { useStore } from 'zustand';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
+import { openVoice } from '../../../domain/voice/voiceView';
 import {
   endingOf,
   timerOf,
@@ -101,6 +106,7 @@ export function SoloScreen() {
 
 function Running({ snap, timer }: { snap: SoloSnapshot; timer: SoloTimer }) {
   const { t } = useTranslation();
+  const navigation = useNavigation();
   const access = useNotificationAccess();
   // S-STUDY-EDGE notif-denied replaces exact-alarm-off: a late alarm means nothing with no notifications.
   const denied = access?.access === 'denied';
@@ -242,6 +248,17 @@ function Running({ snap, timer }: { snap: SoloSnapshot; timer: SoloTimer }) {
       <FriendsStudyingSheet
         visible={friendsOpen}
         onDismiss={() => setFriendsOpen(false)}
+        onOpenRoom={(room) => {
+          setFriendsOpen(false);
+          openVoice(room);
+          // Bubbles up to the tabs: the room is a Home root.
+          navigation.dispatch(
+            CommonActions.navigate({
+              name: 'Home',
+              params: { screen: 'HomeRoot' },
+            }),
+          );
+        }}
       />
       <CycleSheet
         key={String(editing)}

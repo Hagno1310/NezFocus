@@ -1,6 +1,7 @@
 import type { MessageResponse } from '@nezfocus/shared';
 import { describe, expect, it } from 'vitest';
 import {
+  bottomAnchor,
   chatRows,
   composerCount,
   itemKey,
@@ -170,6 +171,21 @@ describe('chatRows: vạch ngày và giờ đầu tin', () => {
     ).toEqual([{ kind: 'yesterday' }, { kind: 'yesterday', time: '20:02' }]);
   });
 
+  it('a pending message written yesterday, below today’s messages, opens no second divider', () => {
+    const r = rows([
+      sent('2', 17, '20:24'),
+      sent('2', 18, '01:12'),
+      queued(17, '20:30'),
+    ]);
+    const days = r.filter((x) => x.kind === 'day');
+    expect(days.map((x) => x.key)).toEqual(['d2026-10-17', 'd2026-10-18']);
+    expect(new Set(r.map((x) => x.key)).size).toBe(r.length);
+    expect(r.at(-1)).toMatchObject({
+      kind: 'message',
+      time: { kind: 'yesterday', time: '20:30' },
+    });
+  });
+
   it('an outbox entry is mine, dated when it was written', () => {
     const [, row] = rows([queued(18, '20:12')]);
     expect(row).toMatchObject({
@@ -213,6 +229,25 @@ describe('newBelow: "N tin mới ↓" (scrolled-up)', () => {
 
   it('an unknown anchor (pruned) counts nothing rather than everything', () => {
     expect(newBelow(list, 'gone', AN)).toBe(0);
+  });
+
+  it('my unsent message at the bottom does not hide what others send after it', () => {
+    const mine = queued(18, '20:04');
+    const before = [...list, mine];
+    const anchor = bottomAnchor(before);
+    const after = [
+      ...list,
+      sent('2', 18, '20:05'),
+      sent('3', 18, '20:06'),
+      mine,
+    ];
+    expect(newBelow(after, anchor, AN)).toBe(2);
+  });
+
+  it('an empty channel left scrolled up counts every message from others', () => {
+    const mine = queued(18, '20:04');
+    const anchor = bottomAnchor([mine]);
+    expect(newBelow([sent('2', 18, '20:05'), mine], anchor, AN)).toBe(1);
   });
 });
 

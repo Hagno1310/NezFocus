@@ -1,0 +1,17 @@
+# Dev LiveKit (REQ-VC-01, VC-08). Keys match apps/backend/.env.example; never used in production.
+port: 7880
+rtc:
+  tcp_port: 7881
+  # A narrow range keeps Docker Desktop's port mapping quick; enough for a few dev rooms.
+  port_range_start: 50000
+  port_range_end: 50100
+  use_external_ip: false
+turn:
+  enabled: true
+  udp_port: 3478
+keys:
+  devkey: dev-only-livekit-secret-0123456789abcdef
+webhook:
+  api_key: devkey
+  urls:
+    - http://host.docker.internal:3000/api/v1/voice/webhook

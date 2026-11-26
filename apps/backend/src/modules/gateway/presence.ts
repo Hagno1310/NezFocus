@@ -52,7 +52,7 @@ export function soloActivity(s: SoloSession | null): StudyActivity | null {
 }
 
 // AUTH-05 AC5: nobody sees it when the user is Invisible (seen as offline) or turned it off.
-// Blocks are filtered per receiver in PresenceService. ponytail: per-receiver VIEW_CHANNEL comes with P3-B3.3 (#147).
+// Blocks and a voice room's name (VIEW_CHANNEL) are filtered per receiver in PresenceService.
 export function visibleActivity(
   activity: StudyActivity | null,
   user: { status: VisibleStatus; showActivity: boolean },

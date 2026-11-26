@@ -329,6 +329,34 @@ describe('RemoteGatewayClient', () => {
     });
   });
 
+  describe('in a voice room (SRS 7.3.3, VC-01 AC4)', () => {
+    it('stays open in the background', async () => {
+      const client = await connected();
+      client.setKeepAlive(true);
+      client.setAppState('background');
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(last().closedWith).toBeNull();
+    });
+
+    it('leaving the room in the background closes 30 s later', async () => {
+      const client = await connected();
+      client.setKeepAlive(true);
+      client.setAppState('background');
+      client.setKeepAlive(false);
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(last().closedWith).toBe(1000);
+    });
+
+    it('joining while paused in the background reconnects', async () => {
+      const client = await connected();
+      client.setAppState('background');
+      await vi.advanceTimersByTimeAsync(30_000);
+      last().drop(1000);
+      client.setKeepAlive(true);
+      expect(sockets).toHaveLength(2);
+    });
+  });
+
   describe('network (S-MOD-04, parent #5 "Xong khi")', () => {
     it('drops the socket when the network goes, RESUMEs as soon as it is back', async () => {
       const client = await connected();
@@ -471,6 +499,38 @@ describe('RemoteGatewayClient', () => {
       client.stop();
       await connected(client);
       expect(last().ops()).not.toContain(8);
+    });
+  });
+
+  describe('VOICE_STATE_UPDATE (op 4, REQ-VC-01)', () => {
+    const inRoom = { channel_id: '700', self_mute: true, self_video: false };
+
+    it('sends op 4 at once when connected', async () => {
+      const client = await connected();
+      client.updateVoice(inRoom);
+      expect(last().sent.at(-1)).toEqual({ op: 4, d: inRoom });
+    });
+
+    it('made while the socket is down, only the latest goes out after RESUMED', async () => {
+      const client = await connected();
+      last().drop();
+      client.updateVoice(inRoom);
+      client.updateVoice({ ...inRoom, self_mute: false });
+      await vi.advanceTimersByTimeAsync(1000);
+      last().push({ op: 10, d: { heartbeat_interval: INTERVAL } });
+      await flush();
+      last().push({ op: 0, s: 2, t: 'RESUMED', d: {} });
+      expect(last().sent.filter((f) => f.op === 4)).toEqual([
+        { op: 4, d: { ...inRoom, self_mute: false } },
+      ]);
+    });
+
+    it('stop() forgets one not sent yet', async () => {
+      const client = createGatewayClient(deps);
+      client.updateVoice(inRoom);
+      client.stop();
+      await connected(client);
+      expect(last().ops()).not.toContain(4);
     });
   });
 });

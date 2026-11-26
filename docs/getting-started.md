@@ -152,17 +152,19 @@ Hai module mẫu để xem code chạy thế nào: `apps/backend/src/modules/_ex
 
 Cần chạy **cả ba**, mỗi lệnh một terminal, ở thư mục gốc repo:
 
-| Terminal | Lệnh               | Tác dụng                                                          |
-| -------- | ------------------ | ----------------------------------------------------------------- |
-| 1        | `pnpm dev:infra`   | Bật Postgres, Redis, S3 (chạy nền; chỉ cần 1 lần sau khi bật máy) |
-| 2        | `pnpm dev:backend` | API ở cổng 3000, tự reload khi sửa code                           |
-| 3        | `pnpm dev:mobile`  | Metro. Mở app dev client trên điện thoại để tải code              |
+| Terminal | Lệnh               | Tác dụng                                                           |
+| -------- | ------------------ | ------------------------------------------------------------------ |
+| 1        | `pnpm dev:infra`   | Bật Postgres, Redis, S3, LiveKit (chạy nền; 1 lần sau khi bật máy) |
+| 2        | `pnpm dev:backend` | API ở cổng 3000, tự reload khi sửa code                            |
+| 3        | `pnpm dev:mobile`  | Metro. Mở app dev client trên điện thoại để tải code               |
 
 - Sửa code TypeScript ở app hay backend: **tự cập nhật**, không cần build lại APK.
 - Sửa `packages/shared`: chạy thêm `pnpm --filter @nezfocus/shared dev` (tự build lại khi lưu).
 - Mỗi người có database riêng trên máy mình, dữ liệu thử không ảnh hưởng nhau.
 - Tắt hạ tầng: `docker compose -f infra/docker-compose.yml down` (dữ liệu vẫn giữ).
 - Ở Wi-Fi trường/quán không kết nối được: xem [mục 4.3](#43-mạng-chặn-kết-nối-giữa-các-thiết-bị).
+- Phòng voice trên điện thoại (P3-B1): tạo `infra/.env` có `LIVEKIT_NODE_IP=<IP Wi-Fi của máy tính>` và đặt `LIVEKIT_URL=ws://<IP đó>:7880` trong `apps/backend/.env`, rồi `pnpm dev:infra` lại. Thiếu bước này điện thoại vẫn lấy được token nhưng không nghe được ai (media đi tới `127.0.0.1`). Firewall Windows phải cho UDP 3478, 50000–50100 và TCP 7880, 7881.
+- Gửi ảnh / tệp từ điện thoại: đặt `S3_PUBLIC_ENDPOINT=http://<IP Wi-Fi của máy tính>:8333` trong `apps/backend/.env` (backend tự gọi S3 vẫn qua `S3_ENDPOINT`), firewall cho TCP 8333. Link tải lên / tải về là link ký sẵn trỏ thẳng tới S3; thiếu biến này thì link là `localhost`, điện thoại gọi vào chính nó và tin có tệp nằm mờ (`pending`) mãi.
 
 ---
 
@@ -269,7 +271,7 @@ Mọi điện thoại đã cài APK và cùng Wi-Fi đều mở được app t�
 
 Wi-Fi nhà thường chạy ngay. Wi-Fi trường, quán, ký túc xá hay bật _client isolation_: các thiết bị không gọi được nhau. Thử theo thứ tự:
 
-1. **Phát hotspot từ điện thoại**, laptop bắt vào hotspot đó. Cập nhật IP mới của laptop (`ipconfig`) vào `apps/mobile/.env`, khởi động lại Metro. Cả app lẫn backend đều chạy được.
+1. **Phát hotspot từ điện thoại**, laptop bắt vào hotspot đó. Cập nhật IP mới của laptop (`ipconfig`) vào mọi chỗ đang ghi IP cũ: `apps/mobile/.env` (`EXPO_PUBLIC_API_URL`), `apps/backend/.env` (`S3_PUBLIC_ENDPOINT`, `LIVEKIT_URL`), `infra/.env` (`LIVEKIT_NODE_IP`); rồi khởi động lại Metro, backend và `pnpm dev:infra`. Thiếu một chỗ thì chat vẫn chạy nhưng gửi tệp treo hoặc vào phòng không nghe được ai.
 2. **Chạy Metro qua tunnel:** `pnpm dev:mobile -- --tunnel`. Code app tải qua Internet, nhưng tunnel **không** mang theo backend, nên vẫn cần cách 1 hoặc cách 3 cho backend.
 3. **Dùng backend đã deploy** (`infra/docker-compose.prod.yml`): đặt `EXPO_PUBLIC_API_URL` trỏ tới server đó; máy tính chỉ cần chạy Metro.
 
@@ -299,15 +301,17 @@ pnpm db:studio       # (tùy chọn) giao diện xem dữ liệu
 
 ## 6. Biến môi trường
 
-| File                | Biến                                                              | Ý nghĩa                                                                 |
-| ------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `apps/backend/.env` | `DATABASE_URL`                                                    | Chuỗi kết nối Postgres (mặc định khớp `infra/docker-compose.yml`)       |
-|                     | `PORT`                                                            | Cổng API, mặc định 3000                                                 |
-|                     | `WORKER_ID`                                                       | 0–1023, phần worker của Snowflake ID (mỗi instance backend một giá trị) |
-|                     | `REDIS_URL`, `S3_*`                                               | Redis và object storage (SeaweedFS)                                     |
-|                     | `JWT_SECRET`                                                      | Khóa ký access token (≥ 32 ký tự); production không nhận giá trị mẫu    |
-| `apps/mobile/.env`  | `EXPO_PUBLIC_API_URL`                                             | Địa chỉ API điện thoại gọi tới; dùng IP Wi-Fi của máy tính              |
-| `infra/.env.prod`   | `API_DOMAIN`, `BACKEND_IMAGE`, `POSTGRES_*`, `S3_*`, `JWT_SECRET` | Chỉ dùng trên server deploy                                             |
+| File                | Biến                                                                                                           | Ý nghĩa                                                                                                                                             |
+| ------------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/backend/.env` | `DATABASE_URL`                                                                                                 | Chuỗi kết nối Postgres (mặc định khớp `infra/docker-compose.yml`)                                                                                   |
+|                     | `PORT`                                                                                                         | Cổng API, mặc định 3000                                                                                                                             |
+|                     | `WORKER_ID`                                                                                                    | 0–1023, phần worker của Snowflake ID (mỗi instance backend một giá trị)                                                                             |
+|                     | `REDIS_URL`, `S3_*`                                                                                            | Redis và object storage (SeaweedFS)                                                                                                                 |
+|                     | `JWT_SECRET`                                                                                                   | Khóa ký access token (≥ 32 ký tự); production không nhận giá trị mẫu                                                                                |
+|                     | `LIVEKIT_URL`, `LIVEKIT_API_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`                                      | LiveKit (REQ-VC-01): app gọi `LIVEKIT_URL` (dev: `ws://<IP Wi-Fi>:7880`), backend gọi `LIVEKIT_API_URL`; khóa khớp `infra/livekit/livekit.dev.yaml` |
+| `infra/.env`        | `LIVEKIT_NODE_IP`                                                                                              | IP Wi-Fi của máy tính, để LiveKit báo đúng địa chỉ media cho điện thoại                                                                             |
+| `apps/mobile/.env`  | `EXPO_PUBLIC_API_URL`                                                                                          | Địa chỉ API điện thoại gọi tới; dùng IP Wi-Fi của máy tính                                                                                          |
+| `infra/.env.prod`   | `API_DOMAIN`, `TURN_DOMAIN`, `S3_DOMAIN`, `BACKEND_IMAGE`, `POSTGRES_*`, `S3_*`, `JWT_SECRET`, `LIVEKIT_API_*` | Chỉ dùng trên server deploy                                                                                                                         |
 
 Biến có tiền tố `EXPO_PUBLIC_` được đóng vào app và **ai cũng đọc được**: không đặt secret vào đó.
 
@@ -317,19 +321,19 @@ Biến có tiền tố `EXPO_PUBLIC_` được đóng vào app và **ai cũng đ
 
 Chạy ở thư mục gốc repo, trừ khi ghi khác.
 
-| Lệnh                                         | Tác dụng                                |
-| -------------------------------------------- | --------------------------------------- |
-| `pnpm install`                               | Cài dependency, build `packages/shared` |
-| `pnpm dev:infra`                             | Bật Postgres, Redis, S3 (Docker)        |
-| `pnpm dev:backend`                           | Chạy API ở chế độ watch                 |
-| `pnpm dev:mobile`                            | Chạy Metro cho dev client               |
-| `pnpm --filter mobile start:go`              | Chạy Metro cho Expo Go                  |
-| `pnpm --filter mobile build:dev`             | Build APK dev client trên EAS           |
-| `pnpm --filter mobile doctor`                | Kiểm tra cấu hình Expo                  |
-| `pnpm lint` / `pnpm typecheck` / `pnpm test` | Kiểm tra toàn repo                      |
-| `pnpm format`                                | Định dạng code bằng Prettier            |
-| `pnpm --filter backend test:e2e`             | E2E test backend (cần `pnpm dev:infra`) |
-| `pnpm build`                                 | Build mọi package                       |
+| Lệnh                                         | Tác dụng                                  |
+| -------------------------------------------- | ----------------------------------------- |
+| `pnpm install`                               | Cài dependency, build `packages/shared`   |
+| `pnpm dev:infra`                             | Bật Postgres, Redis, S3, LiveKit (Docker) |
+| `pnpm dev:backend`                           | Chạy API ở chế độ watch                   |
+| `pnpm dev:mobile`                            | Chạy Metro cho dev client                 |
+| `pnpm --filter mobile start:go`              | Chạy Metro cho Expo Go                    |
+| `pnpm --filter mobile build:dev`             | Build APK dev client trên EAS             |
+| `pnpm --filter mobile doctor`                | Kiểm tra cấu hình Expo                    |
+| `pnpm lint` / `pnpm typecheck` / `pnpm test` | Kiểm tra toàn repo                        |
+| `pnpm format`                                | Định dạng code bằng Prettier              |
+| `pnpm --filter backend test:e2e`             | E2E test backend (cần `pnpm dev:infra`)   |
+| `pnpm build`                                 | Build mọi package                         |
 
 Thêm thư viện cho app: `cd apps/mobile` rồi `pnpm exec expo install <tên>` (không dùng `pnpm add`, để Expo chọn đúng phiên bản).
 
@@ -388,7 +392,16 @@ pnpm build:dev
 
 Build mất khoảng 10–20 phút, chưa tính hàng đợi của tài khoản miễn phí. EAS trả về link/QR tải APK; **gửi link cho cả nhóm**, mọi người dùng chung một APK. Muốn thành viên tự build được: expo.dev → project → **Members**.
 
-### 9.4. Cấp quyền cho thành viên mới
+### 9.4. Phòng voice khi deploy (REQ-VC-08, CR-28 #4)
+
+- DNS: ba bản ghi A về VM, `API_DOMAIN`, `TURN_DOMAIN` (`turn.nezfocus.app`) và `S3_DOMAIN` (`files.nezfocus.app`, nơi điện thoại tải tệp lên / về; backend bắt buộc `S3_PUBLIC_ENDPOINT` https khi production).
+- Cổng 443 do `router` (nginx `stream` + `ssl_preread`, `infra/nginx/nginx.conf.template`) giữ: TLS có SNI `TURN_DOMAIN` chuyển sang TURN/TLS của LiveKit, còn lại sang Caddy (API, web quản trị). Caddy chỉ còn nghe 80 ra ngoài; router gửi kèm địa chỉ client (PROXY protocol) để giới hạn theo IP vẫn đúng.
+- Caddy xin chứng chỉ cho `TURN_DOMAIN`; LiveKit đọc chứng chỉ đó từ volume của Caddy. Lần `up` đầu LiveKit có thể khởi động lại vài lần tới khi chứng chỉ có. Caddy gia hạn chứng chỉ (~60 ngày) thì `docker compose … restart livekit`.
+- Firewall VM: TCP 80, 443, 7881; UDP 3478, 50000–50200.
+- App gọi LiveKit qua `wss://API_DOMAIN/livekit` (Caddy chuyển tới `livekit:7880`).
+- Kiểm sau deploy (P4-B2.3 #193): API và web quản trị vẫn chạy qua 443; chặn UDP trên điện thoại (hoặc dùng Wi-Fi chặn UDP) vẫn vào phòng được qua `TURN_DOMAIN:443`.
+
+### 9.5. Cấp quyền cho thành viên mới
 
 | Nơi                         | Việc cần làm                                       |
 | --------------------------- | -------------------------------------------------- |

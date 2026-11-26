@@ -18,12 +18,14 @@ import {
 export type { Toast };
 
 // `anchors`: heights of the bars stacked at the screen bottom (TabBar, MiniPlayer, button group).
-const useToastStore = create<ToastState & { anchors: Record<string, number> }>(
-  () => ({
-    ...initialToastState,
-    anchors: {},
-  }),
-);
+// `top`: a screen that wants its toasts under its header (03 Study Room), from the window top.
+const useToastStore = create<
+  ToastState & { anchors: Record<string, number>; top: number | null }
+>(() => ({
+  ...initialToastState,
+  anchors: {},
+  top: null,
+}));
 
 const dispatch = (e: ToastEvent) =>
   useToastStore.setState((s) => toastReducer(s, e));
@@ -46,6 +48,15 @@ export function useToastAnchor(height: number) {
     set(height);
     return () => set(undefined);
   }, [id, height]);
+}
+
+// 03 › Quy ước chung › Toast: on the room screen toasts sit right under the header.
+export function useToastTop(top: number | null) {
+  useEffect(() => {
+    if (top === null) return;
+    useToastStore.setState({ top });
+    return () => useToastStore.setState({ top: null });
+  }, [top]);
 }
 
 function useKeyboardHeight() {
@@ -71,6 +82,7 @@ export function ToastHost() {
   const anchor = useToastStore((s) =>
     Object.values(s.anchors).reduce((a, b) => a + b, 0),
   );
+  const top = useToastStore((s) => s.top);
 
   useEffect(() => {
     if (!current) return;
@@ -83,7 +95,10 @@ export function ToastHost() {
 
   if (!current) return null;
   const { toast } = current;
-  const bottom = (keyboard || Math.max(anchor, insets.bottom)) + space[2];
+  const place =
+    top !== null && !keyboard
+      ? { top: top + space[2] }
+      : { bottom: (keyboard || Math.max(anchor, insets.bottom)) + space[2] };
   return (
     <Animated.View
       key={toast.message}
@@ -91,7 +106,7 @@ export function ToastHost() {
       exiting={fadeOut}
       accessibilityLiveRegion="polite"
       pointerEvents="box-none"
-      style={[styles.host, { bottom }]}
+      style={[styles.host, place]}
     >
       <ToastCard
         toast={toast}

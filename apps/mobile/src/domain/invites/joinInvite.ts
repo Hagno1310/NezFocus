@@ -7,12 +7,8 @@ import {
 import { asApiError } from '../auth/authFlow';
 import { firstTextChannel } from '../servers/createServer';
 import type { OpenChannel } from '../servers/drawer';
-import {
-  homeStore,
-  openChannel,
-  selectServer,
-  setServerDetail,
-} from '../servers/homeStore';
+import { homeStore, openChannel, setServerDetail } from '../servers/homeStore';
+import { openVoice } from '../voice/voiceView';
 import type { ServerRepository } from '../servers/ServerRepository';
 import type { InviteRepository } from './InviteRepository';
 
@@ -117,7 +113,7 @@ export { formatInviteCount as formatCount } from '@nezfocus/shared';
 // preview (S-ROOM-01/02 `not-joined`), never connecting voice (VC-01).
 export function arrive(serverId: string, to: Destination) {
   if (to.kind === 'channel') openChannel({ serverId, channelId: to.channelId });
-  else selectServer(serverId);
+  else openVoice({ serverId, channelId: to.channelId });
 }
 
 // already-member: the server as the app knows it, fetched if its channels were never loaded.

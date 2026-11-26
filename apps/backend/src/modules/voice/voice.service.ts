@@ -1,36 +1,32 @@
-import { Injectable, Logger } from '@nestjs/common';
-import type { VoiceLeaveReason } from '@nezfocus/shared';
+import type {
+  VoiceLeaveReason,
+  VoiceRoomMember,
+  VoiceStateUpdate,
+} from '@nezfocus/shared';
 
 // Which rooms count: kicked from server S → only S's rooms; 'any' for logout / another device.
 export type VoiceScope = { serverId: bigint } | { channelId: bigint } | 'any';
 export type VoiceSeat = { serverId: bigint; channelId: bigint };
+// Who is asking: a user on one login (an auth session = one device).
+export type VoiceCaller = { userId: bigint; authSessionId: bigint };
 
-// REQ-ROLE-05 AC4, REQ-SRV-05 AC5, REQ-VC-04. Owner: voice (B). Other modules inject this
-// (WORKFLOW 4.3): kick / ban / timeout (P3-A3.1 #126), leave server (P3-A4.1 #130).
+// REQ-ROLE-05 AC4, SRV-05 AC5, VC-04. Owner: voice (B); kick / ban / timeout #126, leave #130.
 export abstract class VoiceService {
-  // Takes the user out of their room now (no 3-minute grace); their own VOICE_STATE_UPDATE
-  // carries `reason`. false = they were not in a room of that scope.
+  // Out of the room now (no 3-minute grace), `reason` to that device; false = not in scope.
   abstract disconnect(
     userId: bigint,
     scope: VoiceScope,
     reason: VoiceLeaveReason,
   ): Promise<boolean>;
-  // The room the user is in (away included), for "Bạn cũng sẽ rời {phòng}" and the timeout sheet.
+  // CR-28 #32: everyone inside leaves with `channel_deleted`; viewers get CHANNEL_DELETE.
+  abstract roomDeleted(serverId: bigint, channelId: bigint): Promise<void>;
+  // The user's room (away included): "Bạn cũng sẽ rời {phòng}", the timeout sheet.
   abstract seatOf(userId: bigint): Promise<VoiceSeat | null>;
 }
 
-// ponytail: logs only, nobody is ever in a room; P3-B1.2 (#138) replaces it with LiveKit.
-@Injectable()
-export class LogVoiceService extends VoiceService {
-  private readonly logger = new Logger('VoiceService');
-
-  disconnect(userId: bigint, scope: VoiceScope, reason: VoiceLeaveReason) {
-    const where = typeof scope === 'string' ? scope : Object.values(scope)[0];
-    this.logger.log(`disconnect ${userId} from ${where} (${reason})`);
-    return Promise.resolve(false);
-  }
-
-  seatOf() {
-    return Promise.resolve(null);
-  }
+// What the Gateway needs from voice (WORKFLOW 4.3): op 4, READY, a login that ended.
+export abstract class VoiceSessions {
+  abstract update(who: VoiceCaller, d: VoiceStateUpdate): Promise<void>;
+  abstract ready(userId: bigint): Promise<VoiceRoomMember[]>;
+  abstract signedOut(authSessionId: bigint): Promise<void>;
 }

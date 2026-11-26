@@ -22,6 +22,7 @@ import {
   nameOf,
   pendingRows,
   requestTime,
+  withBusy,
 } from '../../../domain/friends/friends';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
 import { presenceStore } from '../../../domain/presence/presence';
@@ -84,7 +85,7 @@ export function FriendsScreen({
   const outgoing = countOf(state, 'outgoing');
   const [chip, setChip] = useState<Chip>(incoming ? 'incoming' : 'outgoing');
   const [query, setQuery] = useState('');
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busy, setBusy] = useState<ReadonlySet<string>>(() => new Set());
   const [menu, setMenu] = useState<Person | null>(null);
   const [unfriend, setUnfriend] = useState<Person | null>(null);
   const [block, setBlock] = useState<Person | null>(null);
@@ -109,7 +110,8 @@ export function FriendsScreen({
   };
 
   const run = async (userId: string, action: () => Promise<unknown>) => {
-    setBusy(userId);
+    if (busy.has(userId)) return false;
+    setBusy((b) => withBusy(b, userId, true));
     try {
       await action();
       return true;
@@ -120,7 +122,7 @@ export function FriendsScreen({
       else showToast({ message: t('friends.addSheet.errors.generic') });
       return false;
     } finally {
-      setBusy(null);
+      setBusy((b) => withBusy(b, userId, false));
     }
   };
 
@@ -271,7 +273,7 @@ export function FriendsScreen({
                 variant="secondary"
                 size="S"
                 disabled={offline}
-                loading={busy === r.user.id}
+                loading={busy.has(r.user.id)}
                 onPress={() => remove(r)}
               />
             </View>
@@ -301,15 +303,15 @@ export function FriendsScreen({
                 <Button
                   label={t('friends.accept')}
                   size="S"
-                  disabled={offline || (!!busy && busy !== r.user.id)}
-                  loading={busy === r.user.id}
+                  disabled={offline}
+                  loading={busy.has(r.user.id)}
                   onPress={() => accept(r)}
                 />
                 <Button
                   label={t('friends.decline')}
                   variant="secondary"
                   size="S"
-                  disabled={offline || busy === r.user.id}
+                  disabled={offline || busy.has(r.user.id)}
                   onPress={() => remove(r)}
                 />
               </>
@@ -319,7 +321,7 @@ export function FriendsScreen({
                 variant="secondary"
                 size="S"
                 disabled={offline}
-                loading={busy === r.user.id}
+                loading={busy.has(r.user.id)}
                 onPress={() => remove(r)}
               />
             )
@@ -470,7 +472,7 @@ export function FriendsScreen({
         confirm={{
           label: t('friends.unfriend.confirm'),
           variant: 'danger',
-          loading: !!unfriend && busy === unfriend.id,
+          loading: !!unfriend && busy.has(unfriend.id),
           onPress: async () => {
             if (!unfriend) return;
             await run(unfriend.id, () => friendActions.remove(unfriend.id));

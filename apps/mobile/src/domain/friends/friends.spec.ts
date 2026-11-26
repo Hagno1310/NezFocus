@@ -9,6 +9,7 @@ import {
   reduceRelationships,
   requestTime,
   studyingFriends,
+  withBusy,
   type FriendsState,
 } from './friends';
 
@@ -169,6 +170,7 @@ describe('friends (REQ-FRIEND-04)', () => {
       kind: 'group_study' as const,
       room: {
         channel_id: id,
+        server_id: '10',
         channel_name: id,
         phase: 'focus' as const,
         state: 'running' as const,
@@ -201,5 +203,17 @@ describe('friends (REQ-FRIEND-04)', () => {
       'Lan',
       'Minh',
     ]);
+  });
+});
+
+describe('per-row busy (S-DM-04: one request never blocks another row)', () => {
+  it('B finishing leaves A busy, and A is not re-added', () => {
+    let busy: ReadonlySet<string> = new Set();
+    busy = withBusy(busy, 'a', true);
+    busy = withBusy(busy, 'b', true);
+    busy = withBusy(busy, 'b', false);
+    expect([...busy]).toEqual(['a']);
+    expect(busy.has('b')).toBe(false);
+    expect(withBusy(busy, 'a', true)).toBe(busy);
   });
 });

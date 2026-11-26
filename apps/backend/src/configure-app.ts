@@ -1,4 +1,5 @@
 import { RequestMethod, type INestApplication } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { HttpExceptionFilter } from './common/http-exception.filter.js';
 
 // Shared by main.ts and e2e tests so both run the same pipeline.
@@ -11,6 +12,10 @@ export const configureApp = (app: INestApplication) => {
     ],
   });
   app.useGlobalFilters(new HttpExceptionFilter());
+  // SRS 5.5: LiveKit signs the raw bytes of its webhook (application/webhook+json), keep them.
+  (app as NestExpressApplication).useBodyParser('text', {
+    type: 'application/webhook+json',
+  });
   // One proxy hop (Caddy, SRS 7.1.1): req.ip is the client, so per-IP limits (REQ-AUTH-02) work.
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
 };

@@ -98,6 +98,7 @@ import { HomeDrawers } from './HomeDrawers';
 import { InviteRoute } from './InviteRoute';
 import { MessageLinkRoute } from './MessageLinkRoute';
 import { Placeholder } from './Placeholder';
+import { openVoice } from '../../domain/voice/voiceView';
 // Metro folds __DEV__ before collecting dependencies, so release bundles leave the gallery out.
 const UiGallery: ComponentType | null = __DEV__
   ? (require('../dev/UiGallery') as typeof import('../dev/UiGallery')).UiGallery
@@ -142,7 +143,7 @@ type HomeParamList = {
   JoinByCode: undefined; // S-HOME-06 join-by-code
   Friends: { tab?: FriendsTab } | undefined; // S-DM-04 (main entry: S-DM-01, P2-B3.3 #116)
   // ponytail: where S-HOME-02 / S-HOME-09 / S-SET-01 lead before those screens exist —
-  // voice room P3-B1 (#26), DMs P2-B3 (#20), and the rest per row.
+  // DMs P2-B3 (#20), and the rest per row.
   HomePlaceholder: { title: string; ticket?: string };
   ServerSettings: { serverId: string }; // S-SET-01
   ServerOverview: { serverId: string; cropped?: ImageFile }; // S-SET-01 overview
@@ -220,7 +221,10 @@ function HomeTab() {
                 actions={{
                   onAdd: () => navigation.navigate('CreateServer'),
                   onOpenVoice: (channel) =>
-                    placeholder(channel.name, 'P3-B1 (#26)')(),
+                    openVoice({
+                      serverId: channel.server_id,
+                      channelId: channel.id,
+                    }),
                   onDirectMessages: dm,
                   onFriends: friends,
                   onInvite: openInviteSheet,

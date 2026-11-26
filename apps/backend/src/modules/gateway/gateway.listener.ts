@@ -21,6 +21,7 @@ import { TokenService } from '../auth/token.service.js';
 import { ServersService } from '../servers/servers.service.js';
 import { SettingsService } from '../users/settings.service.js';
 import { UsersRepository } from '../users/users.repository.js';
+import { VoiceSessions } from '../voice/voice.service.js';
 import { GatewayConnection, type Authenticate } from './gateway-connection.js';
 import { GatewaySessions } from './gateway-sessions.js';
 import { PresenceService } from './presence.service.js';
@@ -44,6 +45,7 @@ export class GatewayListener
     private readonly friends: FriendsService,
     private readonly readStates: ReadStatesService,
     private readonly dms: DmService,
+    private readonly voice: VoiceSessions,
   ) {}
 
   onApplicationBootstrap() {
@@ -67,6 +69,7 @@ export class GatewayListener
         (userId) => this.friends.list(userId),
         (userId) => this.readStates.forReady(userId),
         (userId) => this.dms.openFor(userId),
+        this.voice,
       );
       ws.on('message', (data, isBinary) => {
         // A binary frame is not JSON text: receive('') closes with 4002.

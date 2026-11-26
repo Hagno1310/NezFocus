@@ -23,6 +23,12 @@ export abstract class EventPublisher {
     t: T,
     d: DispatchPayload<T>,
   ): Promise<void>;
+  // One login (device) of a user: why it left a voice room (VOICE_STATE_UPDATE `reason`).
+  abstract toLogin<T extends DispatchEventName>(
+    authSessionId: bigint,
+    t: T,
+    d: DispatchPayload<T>,
+  ): Promise<void>;
   // Channel content (MESSAGE_*, CHANNEL_CREATE): only who can VIEW_CHANNEL (ROLE-03); a DM: its two people.
   abstract toChannel<T extends DispatchEventName>(
     channelId: bigint,
@@ -95,6 +101,18 @@ export class GatewayEventPublisher
     d: DispatchPayload<T>,
   ) {
     return this.publish({ kind: 'user', userId: userId.toString() }, t, d);
+  }
+
+  toLogin<T extends DispatchEventName>(
+    authSessionId: bigint,
+    t: T,
+    d: DispatchPayload<T>,
+  ) {
+    return this.publish(
+      { kind: 'login', authSessionId: authSessionId.toString() },
+      t,
+      d,
+    );
   }
 
   toChannel<T extends DispatchEventName>(

@@ -30,6 +30,7 @@ export const StudyActivity = z.discriminatedUnion('kind', [
     room: z
       .object({
         channel_id: SnowflakeId,
+        server_id: SnowflakeId, // S-STUDY-02 `friends-sheet` "Vào" opens the room (P3-B1.3 #139)
         channel_name: z.string(),
         phase: FocusPhase,
         state: z.enum(['running', 'paused']),
@@ -42,6 +43,7 @@ export const StudyActivity = z.discriminatedUnion('kind', [
     room: z
       .object({
         channel_id: SnowflakeId,
+        server_id: SnowflakeId, // S-STUDY-02 `friends-sheet` "Vào" opens the room (P3-B1.3 #139)
         channel_name: z.string(),
         study_room: z.boolean(), // icon lamp-desk, else volume-2 (C-40)
       })

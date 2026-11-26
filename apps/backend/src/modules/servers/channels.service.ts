@@ -30,6 +30,7 @@ import { DmService } from '../channels/dm.service.js';
 import { toChannelResponse, toServerSummary } from './servers.dto.js';
 import { ServersRepository } from './servers.repository.js';
 import { ChannelTypeCode, type ChannelRow } from './servers.schema.js';
+import { VoiceService } from '../voice/voice.service.js';
 
 const invalid = (field: string, code: string, message: string) =>
   new AppError(ErrorCode.ValidationError, message, {
@@ -68,6 +69,7 @@ export class ChannelsService {
     private readonly permissionCache: PermissionCache,
     private readonly channelEvents: ChannelEvents,
     private readonly dms: DmService,
+    private readonly voice: VoiceService,
   ) {}
 
   async list(userId: bigint, serverId: bigint): Promise<ChannelResponse[]> {
@@ -286,6 +288,8 @@ export class ChannelsService {
       },
     );
     await this.permissionCache.invalidateServer(serverId); // its children left the category
+    if (row.type === ChannelTypeCode.voice)
+      await this.voice.roomDeleted(serverId, row.id);
     await this.events.toServer(serverId, 'CHANNEL_DELETE', {
       id: row.id.toString(),
       server_id: serverId.toString(),

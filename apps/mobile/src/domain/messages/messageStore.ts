@@ -99,8 +99,16 @@ export function createMessageStore(deps: MessageStoreDeps) {
     });
   };
 
+  // 7.3.2: the delta asks only after the newest cached message, so a message from now may join
+  // the cache only once the cache has caught up with the server in this run; else a hole.
+  const caughtUp = new Set<string>();
+  // Live messages that came while a channel was catching up: saved once it has.
+  const held = new Map<string, MessageResponse[]>();
+  const fetching = new Map<string, { again: boolean; done: Promise<void> }>();
+
   // Everything after the newest cached message (7.3.2 delta), or the newest page.
-  const fetchNewer = async (channelId: string) => {
+  const catchUpChannel = async (channelId: string) => {
+    held.set(channelId, held.get(channelId) ?? []);
     const cached = await local.messages(channelId);
     let after = cached.at(-1)?.id;
     try {
@@ -115,15 +123,52 @@ export function createMessageStore(deps: MessageStoreDeps) {
         if (!after || page.length < CATCH_UP_PAGE) break;
         after = page.at(-1)!.id;
       }
+      const live = held.get(channelId) ?? [];
+      held.delete(channelId);
+      caughtUp.add(channelId);
+      if (live.length) await local.saveMessages(live);
       patchView(channelId, { error: false });
     } catch {
+      held.delete(channelId);
+      caughtUp.delete(channelId);
       patchView(channelId, { error: cached.length === 0 });
     }
     await refresh(channelId);
   };
 
-  let flushing: Promise<void> | null = null;
-  let rerun: { now: boolean } | null = null; // asked again while running
+  // One run per channel; asked again while it runs (a reconnect meanwhile) → once more.
+  const fetchNewer = (channelId: string): Promise<void> => {
+    const run = fetching.get(channelId);
+    if (run) {
+      run.again = true;
+      return run.done;
+    }
+    const next = { again: true, done: Promise.resolve() };
+    next.done = (async () => {
+      try {
+        while (next.again) {
+          next.again = false;
+          await catchUpChannel(channelId);
+        }
+      } finally {
+        fetching.delete(channelId);
+      }
+    })();
+    fetching.set(channelId, next);
+    return next.done;
+  };
+
+  // A message that exists from now on (MESSAGE_CREATE, my 201): into the cache only when that
+  // leaves no hole; an open channel not caught up fetches the gap, which brings it too.
+  const keepNew = async (message: MessageResponse) => {
+    const channelId = message.channel_id;
+    const waiting = held.get(channelId);
+    if (waiting) waiting.push(message);
+    else if (caughtUp.has(channelId) && (await local.isCached(channelId)))
+      await local.saveMessages([message]);
+    else if (state.getState().views[channelId]) await fetchNewer(channelId);
+  };
+
   let cancelTimer: (() => void) | null = null;
 
   const scheduleNext = (outbox: OutboxEntry[]) => {
@@ -183,7 +228,7 @@ export function createMessageStore(deps: MessageStoreDeps) {
         ...(entry.replyToId ? { reply_to_id: entry.replyToId } : {}),
         ...(attachmentIds.length ? { attachment_ids: attachmentIds } : {}),
       });
-      await local.saveMessages([message]);
+      await keepNew(message);
       await local.removeOutbox(entry.nonce);
       deps.uploads?.forget(entry.attachments.map((a) => a.key));
       return true;
@@ -214,35 +259,56 @@ export function createMessageStore(deps: MessageStoreDeps) {
     }
   };
 
-  // In the order written, one at a time; a network failure stops the run (offline).
+  // 8.4.5: in the order written inside a channel, one at a time. Each channel runs on its
+  // own, so a photo still uploading (or failing) in one channel never holds another channel's
+  // or DM's messages. An entry not due yet, or one that just failed on the network, holds the
+  // rest of its own channel so the order there stays as written; failed for good holds nothing.
   // `now`: the network just came back, so retrying entries go without waiting their backoff.
-  const runFlush = async (now: boolean) => {
-    for (const entry of await local.outbox()) {
+  const runChannel = async (channelId: string, now: boolean) => {
+    const queue = (await local.outbox()).filter(
+      (e) => e.channelId === channelId,
+    );
+    for (const entry of queue) {
+      if (entry.status === 'failed' && entry.nextAttemptAt === null) continue;
       const due =
         isDue(entry, deps.now()) || (now && entry.status === 'retrying');
-      if (due && !(await sendOne(entry))) break;
+      if (!due || !(await sendOne(entry))) break;
     }
     scheduleNext(await local.outbox());
   };
 
-  function flush({ now = false } = {}): Promise<void> {
-    if (flushing) {
-      rerun = { now: (rerun?.now ?? false) || now };
-      return flushing;
+  // One run per channel; asked again while it runs → it goes round once more.
+  const running = new Map<
+    string,
+    { again: boolean; now: boolean; done: Promise<void> }
+  >();
+  const flushChannel = (channelId: string, now: boolean): Promise<void> => {
+    const run = running.get(channelId);
+    if (run) {
+      run.again = true;
+      run.now ||= now;
+      return run.done;
     }
-    flushing = (async () => {
+    const next = { again: true, now, done: Promise.resolve() };
+    next.done = (async () => {
       try {
-        let run: { now: boolean } | null = { now };
-        while (run) {
-          await runFlush(run.now);
-          run = rerun;
-          rerun = null;
+        while (next.again) {
+          next.again = false;
+          const nowThisRound = next.now;
+          next.now = false;
+          await runChannel(channelId, nowThisRound);
         }
       } finally {
-        flushing = null;
+        running.delete(channelId);
       }
     })();
-    return flushing;
+    running.set(channelId, next);
+    return next.done;
+  };
+
+  async function flush({ now = false } = {}): Promise<void> {
+    const channelIds = new Set((await local.outbox()).map((e) => e.channelId));
+    await Promise.all([...channelIds].map((id) => flushChannel(id, now)));
   }
 
   // Rewrites cached messages of a channel; untouched ones are not saved again.
@@ -396,10 +462,10 @@ export function createMessageStore(deps: MessageStoreDeps) {
     flush,
 
     // MESSAGE_CREATE: echo of mine (nonce) or someone else's, for a channel opened before.
-    async applyCreate(message: MessageCreateEvent) {
+    async applyCreate(event: MessageCreateEvent) {
+      const { server_id: _, ...message } = event;
+      await keepNew(message);
       if (message.nonce) await local.removeOutbox(message.nonce);
-      if (await local.isCached(message.channel_id))
-        await local.saveMessages([message]);
       await refresh(message.channel_id);
     },
 
@@ -525,11 +591,12 @@ export function createMessageStore(deps: MessageStoreDeps) {
       reacted(e.channel_id, e.message_id, e.emoji, op, e.user_id === myId),
 
     // RESUMED / READY after a drop (7.3.2): what each open channel missed, then the outbox.
+    // Both at once: a slow channel must not hold back the unsent messages (8.4.5).
     async catchUp() {
-      await Promise.all(
-        Object.keys(state.getState().views).map((id) => fetchNewer(id)),
-      );
-      await flush({ now: true });
+      await Promise.all([
+        ...Object.keys(state.getState().views).map((id) => fetchNewer(id)),
+        flush({ now: true }),
+      ]);
     },
 
     // S-ME-02 `logout-confirm`: unsent messages are lost with the local DB.
@@ -538,6 +605,8 @@ export function createMessageStore(deps: MessageStoreDeps) {
     // Kicked or banned (7.3.2), called by P3-A3 (#23).
     async dropServer(serverId: string) {
       await local.dropServer(serverId);
+      for (const [id, v] of Object.entries(state.getState().views))
+        if (v.serverId === serverId) caughtUp.delete(id);
       state.setState((s) => ({
         views: Object.fromEntries(
           Object.entries(s.views).filter(([, v]) => v.serverId !== serverId),
@@ -549,6 +618,8 @@ export function createMessageStore(deps: MessageStoreDeps) {
     reset() {
       cancelTimer?.();
       cancelTimer = null;
+      caughtUp.clear();
+      held.clear();
       state.setState({ views: {} });
     },
   };

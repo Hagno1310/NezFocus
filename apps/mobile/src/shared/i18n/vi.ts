@@ -1214,6 +1214,79 @@ export const vi = {
       join: 'Vào',
     },
   },
+  // Spec 03 S-ROOM-01, S-ROOM-EDGE; 10 S-MOD-05 (P3-B1 #26).
+  voice: {
+    join: 'Vào phòng',
+    switchHere: 'Chuyển sang phòng này',
+    mic: 'Mic',
+    camera: 'Camera',
+    leave: 'Rời phòng',
+    modMuted: 'Bị tắt tiếng',
+    you: 'Bạn',
+    noSession: 'Chưa có phiên học',
+    noSessionJoin: 'Chưa có phiên học · vào phòng để bắt đầu',
+    managersOnly: 'Chưa có phiên học · chỉ người quản lý bắt đầu được',
+    startSession: 'Bắt đầu phiên học',
+    offline: 'Cần kết nối mạng để vào phòng',
+    noConnect: 'Bạn không có quyền vào phòng này',
+    left: 'Đã rời {{name}}',
+    rejoin: 'Vào lại',
+    gone: '{{name}} không còn khả dụng',
+    rejoined: 'Đã vào lại {{name}} · mic đang tắt',
+    // S-ROOM-02 `mod-muted`, S-SET-EDGE `disconnected-by-mod` (REQ-VC-04).
+    modMutedToast: 'Bạn đã bị người quản lý tắt mic',
+    disconnectedByMod: 'Bạn đã bị ngắt khỏi phòng',
+    // 02 S-HOME-10 `moderator-voice`.
+    moderation: {
+      title: 'KIỂM DUYỆT',
+      mute: 'Tắt mic',
+      unmute: 'Bật lại mic',
+      disconnect: 'Ngắt khỏi phòng',
+    },
+    // SRS 7.3.5 channel, REQ-VC-01 AC4 notification.
+    service: {
+      channel: 'Phòng học đang chạy',
+      title: 'Đang trong phòng thoại',
+    },
+    otherDevice: {
+      title: 'Bạn đã vào phòng trên thiết bị khác',
+      rejoin: 'Vào lại ở đây',
+      close: 'Đóng',
+    },
+    // Spec 03 S-ROOM-01 (chốt 27/11/2026).
+    joinFailed: 'Chưa vào được phòng',
+    retry: 'Thử lại',
+    tile: {
+      micOn: 'đang bật mic',
+      speaking: 'đang nói',
+      away: 'tạm vắng',
+    },
+    micSheet: {
+      title: 'Cho phép NezFocus dùng mic',
+      body: 'Để nói chuyện với mọi người trong phòng. Bạn luôn có thể tắt mic bất cứ lúc nào.',
+      blockedTitle: 'Mic đang bị chặn',
+      blockedBody:
+        'Bật quyền Mic cho NezFocus trong Cài đặt của máy để nói trong phòng. Bạn vẫn nghe được mọi người.',
+    },
+    cameraSheet: {
+      title: 'Cho phép NezFocus dùng camera',
+      body: 'Để bạn bè thấy bạn khi học cùng. Bạn sẽ xem trước hình của mình trước khi bật.',
+      blockedTitle: 'Camera đang bị chặn',
+      blockedBody:
+        'Bật quyền Camera cho NezFocus trong Cài đặt của máy để bật camera.',
+    },
+    sheet: {
+      continue: 'Tiếp tục',
+      later: 'Để sau',
+      openSettings: 'Mở cài đặt',
+    },
+    cameraPreview: {
+      title: 'Xem trước camera',
+      body: 'Chỉ bạn thấy hình này. Mọi người chỉ thấy bạn sau khi bấm Bật camera.',
+      turnOn: 'Bật camera',
+      cancel: 'Hủy',
+    },
+  },
   placeholder: {
     note: 'Màn tạm — thay bằng màn thật ở ticket sau',
     noteTicket: 'Màn tạm — thay bằng màn thật ở {{ticket}}',

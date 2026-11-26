@@ -34,11 +34,19 @@ export function liveFocusSeconds(
   );
 }
 
+// `now`: backend time; `seconds`: the uncredited stretch, which always ends at `now`.
 export function withLiveFocus(
   s: StudyStatsResponse,
   seconds: number,
+  now: Date,
 ): StudyStatsResponse {
-  const m = Math.floor(seconds / 60);
+  // Stats not yet refetched past midnight: the live stretch is not this "today" to add to.
+  if (localTime(now.toISOString(), s.timezone).date !== s.today) return s;
+  // REQ-STUDY-03 AC3: focus before the user's 00:00 counts for the old day.
+  const sinceMidnight = Math.floor(
+    (86_400_000 - msUntilMidnight(now, s.timezone)) / 1000,
+  );
+  const m = Math.floor(Math.min(seconds, sinceMidnight) / 60);
   if (m <= 0) return s;
   const inPeriod = s.today >= s.from && s.today <= s.to;
   const today_minutes = s.today_minutes + m;

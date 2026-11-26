@@ -1,5 +1,37 @@
-# TLS is automatic once API_DOMAIN's DNS points at this VM.
+# TLS is automatic once API_DOMAIN's, S3_DOMAIN's and TURN_DOMAIN's DNS point at this VM. 443 reaches Caddy
+# through the router (nginx/nginx.conf.template), which prepends the client address (PROXY).
+{
+	servers :443 {
+		listener_wrappers {
+			proxy_protocol {
+				allow 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
+			}
+			tls
+		}
+	}
+}
+
 {$API_DOMAIN} {
 	encode gzip
+	# REQ-VC-01: the app dials wss://API_DOMAIN/livekit (LiveKit signalling).
+	handle_path /livekit/* {
+		reverse_proxy livekit:7880
+	}
 	reverse_proxy backend:3000
+}
+
+# SRS 5.3 Upload: the presigned URLs phones PUT / GET (S3_PUBLIC_ENDPOINT). Its own host, so
+# the app's `Authorization: Bearer` never follows a redirect onto a presigned URL. Caddy keeps the
+# Host header, which the signature covers.
+{$S3_DOMAIN} {
+	reverse_proxy s3:8333
+}
+
+# REQ-VC-08 (CR-28 #4): only so Caddy holds a certificate LiveKit's TURN/TLS can load.
+{$TURN_DOMAIN} {
+	# Let's Encrypt only: LiveKit loads the certificate from that issuer's folder.
+	tls {
+		issuer acme
+	}
+	respond 404
 }

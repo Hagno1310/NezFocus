@@ -211,26 +211,44 @@ export function FocusTimer({
   );
 }
 
+// C-17 states: `on` fills surface-3; `no-permission` dims the icon; `mod-muted` dims icon and
+// label on surface-3 and cannot be pressed.
+export type RoomControlState = 'off' | 'on' | 'no-permission' | 'mod-muted';
+
 // C-17: round control, never a phase or primary colour. `main` = the 64 one (Tạm dừng / Tiếp tục).
 export function RoomControl({
   icon,
   label,
   main = false,
+  state = 'off',
+  narrow = false,
   onPress,
 }: {
   icon: IconComponent;
   label: string;
   main?: boolean;
+  state?: RoomControlState;
+  // Room preview row (CR-22 #4, board C-17): Mic · Camera as wide as their discs, 8 apart.
+  narrow?: boolean;
   onPress: () => void;
 }) {
   const { colors } = useTheme();
   const diameter = main ? size.controlMain : size.control;
+  const filled = state === 'on' || state === 'mod-muted';
+  const dim = state === 'no-permission' || state === 'mod-muted';
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{
+        disabled: state === 'mod-muted',
+        ...(state === 'on' || state === 'off'
+          ? { selected: state === 'on' }
+          : {}),
+      }}
+      disabled={state === 'mod-muted'}
       onPress={onPress}
-      style={styles.control}
+      style={[styles.control, narrow && { width: size.control }]}
     >
       {({ pressed }) => (
         <>
@@ -242,17 +260,21 @@ export function RoomControl({
                 height: diameter,
                 backgroundColor: main
                   ? colors['text-primary']
-                  : colors['surface-2'],
+                  : colors[filled ? 'surface-3' : 'surface-2'],
                 borderColor: main ? colors['text-primary'] : colors.border,
               },
               pressed && styles.pressed,
             ]}
           >
-            <Icon as={icon} size="xl" color={main ? 'bg' : 'text-primary'} />
+            <Icon
+              as={icon}
+              size="xl"
+              color={main ? 'bg' : dim ? 'text-tertiary' : 'text-primary'}
+            />
           </View>
           <Text
             variant="label"
-            color="text-secondary"
+            color={state === 'mod-muted' ? 'text-tertiary' : 'text-secondary'}
             numberOfLines={2}
             maxFontSizeMultiplier={fontScale.narrowLabel}
             style={styles.line}

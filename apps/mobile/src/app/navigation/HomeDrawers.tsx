@@ -18,6 +18,8 @@ import { chatCover } from '../../features/chat/hooks/useReadTracking';
 import { ChannelScreen } from '../../features/chat/screens/ChannelScreen';
 import { dmView } from '../../domain/dm/dmStore';
 import { DmScreen } from '../../features/dm/screens/DmScreen';
+import { voiceView } from '../../domain/voice/voiceView';
+import { VoiceRoomScreen } from '../../features/voice/screens/VoiceRoomScreen';
 import {
   LeftDrawer,
   type LeftDrawerActions,
@@ -71,8 +73,11 @@ function ChannelHost() {
   );
   const open = useStore(homeStore, (s) => s.open);
   const dm = useStore(dmView, (s) => s.open);
+  const voice = useStore(voiceView, (s) => s.open);
   const openLeft = () => leftDrawer?.openDrawer();
   const openRight = () => navigation.openDrawer();
+  // S-ROOM-01 is a Home root too, over the channel it was opened from.
+  if (voice) return <VoiceRoomScreen {...voice} onOpenLeft={openLeft} />;
   // S-DM-02 is a Home root like a channel (CR-15): Back leaves the app, ≡ opens S-DM-01.
   if (dm) return <DmScreen channelId={dm} onOpenLeft={openLeft} />;
   if (open)
@@ -112,6 +117,13 @@ function LeftDrawerContent({
   useEffect(
     () =>
       dmView.subscribe((s, prev) => {
+        if (s.open && s.open !== prev.open) navigation.closeDrawer();
+      }),
+    [navigation],
+  );
+  useEffect(
+    () =>
+      voiceView.subscribe((s, prev) => {
         if (s.open && s.open !== prev.open) navigation.closeDrawer();
       }),
     [navigation],

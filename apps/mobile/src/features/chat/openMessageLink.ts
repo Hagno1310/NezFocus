@@ -1,10 +1,16 @@
-import { ErrorCode } from '@nezfocus/shared';
-import { Lock, MessageSquareX, WifiOff } from 'lucide-react-native';
+import {
+  CircleAlert,
+  Lock,
+  MessageSquareX,
+  WifiOff,
+} from 'lucide-react-native';
 import { messageStore } from '../../data/messages';
 import { showDm, dmStore } from '../../domain/dm/dmStore';
+import { actionFailure } from '../../domain/messages/actionFailure';
 import { requestJump } from '../../domain/messages/jumps';
 import type { NezfocusLink } from '../../domain/messages/links';
 import { homeStore, openChannel } from '../../domain/servers/homeStore';
+import { openVoice } from '../../domain/voice/voiceView';
 import { i18n } from '../../shared/i18n';
 import { showToast } from '../../shared/ui/Toast';
 
@@ -32,6 +38,14 @@ export async function openMessageLink(
       .getState()
       .servers?.some((s) => s.id === link.serverId);
     if (!member) return fromOutside ? 'not-member' : cannotView();
+    // A link to a voice channel itself opens the room preview (S-ROOM-01 `not-joined`).
+    const channel = homeStore
+      .getState()
+      .channels[link.serverId]?.find((c) => c.id === link.channelId);
+    if (channel?.type === 'voice' && !link.messageId) {
+      openVoice({ serverId: link.serverId, channelId: link.channelId });
+      return 'opened';
+    }
   } else if (!dmStore.getState().byId[link.channelId]) return cannotView();
 
   let exists = true;
@@ -39,9 +53,13 @@ export async function openMessageLink(
     exists = await messageStore.peek(link.channelId, link.messageId);
   } catch (err) {
     // 40401 for a channel I cannot view and for one that is gone: nothing says which (AC8).
-    if ((err as { code?: number }).code === ErrorCode.NotFound)
-      return cannotView();
-    showToast({ icon: WifiOff, message: t('chat.cannotConnect') });
+    const failure = actionFailure(err);
+    if (failure.kind === 'deleted') return cannotView();
+    showToast(
+      failure.kind === 'offline'
+        ? { icon: WifiOff, message: t('chat.cannotConnect') }
+        : { icon: CircleAlert, message: t('chat.somethingWrong') },
+    );
     return 'failed';
   }
   if (link.kind === 'channel')

@@ -17,6 +17,7 @@ import { Text } from '../../../shared/ui/Text';
 import { Pressable } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { Icon } from '../../../shared/ui/Icon';
+import { Button } from '../../../shared/ui/Button';
 
 const presenceOf = (id: string) =>
   presenceStore.getState().others[id] ?? {
@@ -75,9 +76,12 @@ export function FriendsStudyingLine({
 export function FriendsStudyingSheet({
   visible,
   onDismiss,
+  onOpenRoom,
 }: {
   visible: boolean;
   onDismiss: () => void;
+  // "Vào": the room's preview (S-ROOM-01 / S-ROOM-02 `not-joined`).
+  onOpenRoom?: (room: { serverId: string; channelId: string }) => void;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -117,7 +121,20 @@ export function FriendsStudyingSheet({
               </Text>
               <Where activity={activity} now={now} />
             </View>
-            {/* ponytail: "Vào" joins the room with voice, P3-B1.3 (#139); hidden until then. */}
+            {activity.kind === 'group_study' && activity.room && onOpenRoom && (
+              // ponytail: 04 says "Vào" goes through S-ROOM-06 while Solo runs; P3-B3.6 (#150).
+              <Button
+                label={t('friends.studying.join')}
+                variant="secondary"
+                size="S"
+                onPress={() =>
+                  onOpenRoom({
+                    serverId: activity.room!.server_id,
+                    channelId: activity.room!.channel_id,
+                  })
+                }
+              />
+            )}
           </View>
         );
       })}

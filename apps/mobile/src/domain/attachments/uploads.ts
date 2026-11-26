@@ -43,6 +43,18 @@ const REJECTED: number[] = [
   ErrorCode.FileTooLarge,
 ];
 
+// Worth trying again for up to 24 h (8.4.5): no answer (fetch's TypeError, a timeout) or a 5xx
+// from the API or storage. A 4xx (an expired or refused upload URL) or a fault on the phone
+// (photo file gone, an answer that does not parse) would fail the same way every time.
+const isTransient = (err: unknown) => {
+  const api = asApiError(err);
+  if (api) return api.code >= ErrorCode.InternalError;
+  return (
+    err instanceof TypeError ||
+    (err as { name?: string } | null)?.name === 'AbortError'
+  );
+};
+
 // REQ-MSG-04 / SRS 5.3 Upload, one image at a time each: POST /attachments → PUT → complete.
 // Tiles in the tray and images of pending messages read `state`; the outbox waits on `ensure`.
 export function createUploads(deps: UploadsDeps) {
@@ -88,10 +100,8 @@ export function createUploads(deps: UploadsDeps) {
         patch(key, { status: 'rejected' });
         return { ok: false, kind: 'rejected' };
       }
-      // No answer, or storage / server trouble (5xx): worth trying again.
-      const transient = !api || api.code >= ErrorCode.InternalError;
       patch(key, { status: !api && !deps.online() ? 'waiting' : 'failed' });
-      return { ok: false, kind: transient ? 'network' : 'refused' };
+      return { ok: false, kind: isTransient(err) ? 'network' : 'refused' };
     }
   };
 

@@ -96,7 +96,9 @@ export function chatRows(
   for (const item of items) {
     const at = timeOf(item);
     const date = localTime(new Date(at).toISOString(), timeZone).date;
-    if (date !== day) {
+    // Days only move forward: my outbox sits below the sent messages, so one written yesterday
+    // and sent today stays under today's divider (its own time still says "Hôm qua").
+    if (day === null || date > day) {
       day = date;
       group = null;
       rows.push({
@@ -161,14 +163,26 @@ export function chatRows(
   return rows;
 }
 
+const START = '';
+
+// What `newBelow` counts from when leaving the bottom: the newest server message, never my
+// outbox, which always sits last so new messages from others land above it.
+export const bottomAnchor = (items: readonly ChatItem[]) => {
+  const last = items.findLast((x) => x.kind === 'message');
+  return last ? itemKey(last) : START;
+};
+
 // `scrolled-up` "3 tin mới": what others sent below the last row seen at the bottom.
 export function newBelow(
   items: readonly ChatItem[],
   lastSeenKey: string,
   myId: string,
 ): number {
-  const i = items.findIndex((x) => itemKey(x) === lastSeenKey);
-  if (i < 0) return 0;
+  const i =
+    lastSeenKey === START
+      ? -1
+      : items.findIndex((x) => itemKey(x) === lastSeenKey);
+  if (i < 0 && lastSeenKey !== START) return 0;
   return items.slice(i + 1).filter((x) => authorOf(x, myId) !== myId).length;
 }
 

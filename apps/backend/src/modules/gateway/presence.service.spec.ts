@@ -1,3 +1,4 @@
+import type { PermissionService } from '../permissions/permission.service.js';
 import {
   GatewayOp,
   type PresenceEvent,
@@ -69,7 +70,9 @@ beforeEach(() => {
   shared['3'] = [];
   inbox.clear();
   sessions = new GatewaySessions({ next: () => nextId++ });
-  presence = new PresenceService(sessions, repo, blockQuery);
+  presence = new PresenceService(sessions, repo, blockQuery, {
+    can: async () => true,
+  } as unknown as PermissionService);
   presence.onModuleInit();
 });
 afterEach(() => {
@@ -181,6 +184,37 @@ describe('PresenceService (REQ-AUTH-05)', () => {
       phase_ends_at: solo.phase_ends_at,
     });
     presence.soloChanged(1n, { ...solo, status: 'ended' });
+    await flush();
+    expect(lastSeenBy(2n)?.activity).toBeNull();
+  });
+
+  it('voice (CR-24): "Đang ở {phòng}" when there is no Solo; Solo shows over it', async () => {
+    await connect(2n);
+    await connect(1n);
+    const room = {
+      channelId: 9n,
+      serverId: 10n,
+      name: 'Phòng học im lặng',
+      studyRoom: true,
+    };
+    await presence.voiceChanged(1n, room);
+    await flush();
+    expect(lastSeenBy(2n)?.activity).toEqual({
+      kind: 'voice',
+      room: {
+        channel_id: '9',
+        server_id: '10',
+        channel_name: 'Phòng học im lặng',
+        study_room: true,
+      },
+    });
+    presence.soloChanged(1n, solo);
+    await flush();
+    expect(lastSeenBy(2n)?.activity).toMatchObject({ kind: 'solo' });
+    presence.soloChanged(1n, { ...solo, status: 'ended' });
+    await flush();
+    expect(lastSeenBy(2n)?.activity).toMatchObject({ kind: 'voice' });
+    await presence.voiceChanged(1n, null);
     await flush();
     expect(lastSeenBy(2n)?.activity).toBeNull();
   });

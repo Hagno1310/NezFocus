@@ -144,6 +144,7 @@ const room = (
   kind: 'group_study',
   room: {
     channel_id: '9',
+    server_id: '10',
     channel_name: 'Phòng học im lặng',
     phase,
     state: 'running',
@@ -158,6 +159,7 @@ const ACTIVITIES: StudyActivity[] = [
     kind: 'group_study',
     room: {
       channel_id: '9',
+      server_id: '10',
       channel_name: 'Phòng học im lặng',
       phase: 'focus',
       state: 'paused',
@@ -168,6 +170,7 @@ const ACTIVITIES: StudyActivity[] = [
     kind: 'voice',
     room: {
       channel_id: '8',
+      server_id: '10',
       channel_name: 'Phòng thảo luận nhóm',
       study_room: true,
     },
@@ -182,6 +185,7 @@ const longRoom: StudyActivity = {
   kind: 'group_study',
   room: {
     channel_id: '9',
+    server_id: '10',
     channel_name: 'Phòng ôn thi cuối kỳ Giải tích 2 của lớp D22',
     phase: 'focus',
     state: 'running',
@@ -214,6 +218,7 @@ function Activities() {
             kind: 'voice',
             room: {
               channel_id: '9',
+              server_id: '10',
               channel_name: 'Phòng ôn thi cuối kỳ Giải tích 2 của lớp D22',
               study_room: true,
             },

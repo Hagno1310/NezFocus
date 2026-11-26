@@ -5,7 +5,11 @@ import {
   type ServerResponse,
 } from '@nezfocus/shared';
 import { describe, expect, it } from 'vitest';
+import { homeStore } from '../servers/homeStore';
+import { voiceStore } from '../voice/voiceSession';
+import { voiceView } from '../voice/voiceView';
 import {
+  arrive,
   formatCount,
   joinDestination,
   joinInvite,
@@ -191,5 +195,17 @@ describe('formatCount (S-MOD-01 › số lớn)', () => {
     expect(formatCount(1204)).toBe('1.204');
     expect(formatCount(18)).toBe('18');
     expect(formatCount(0)).toBe('0');
+  });
+});
+
+describe('arrive (VC-01: a room opens its preview, never voice)', () => {
+  it('a room invite opens S-ROOM-01 `not-joined` over the server', () => {
+    arrive('srv', { kind: 'room', channelId: 'phong-im-lang' });
+    expect(voiceView.getState().open).toEqual({
+      serverId: 'srv',
+      channelId: 'phong-im-lang',
+    });
+    expect(homeStore.getState().selectedServerId).toBe('srv');
+    expect(voiceStore.getState().call).toBeNull();
   });
 });

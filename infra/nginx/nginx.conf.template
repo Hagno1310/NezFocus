@@ -1,0 +1,33 @@
+# REQ-VC-08 (CR-28 #4): one IP, one 443. TLS with SNI ${TURN_DOMAIN} goes to LiveKit's TURN/TLS,
+# everything else to Caddy (API, admin web). The bytes pass through untouched (ssl_preread).
+worker_processes auto;
+events {}
+
+stream {
+  map $ssl_preread_server_name $upstream {
+    ${TURN_DOMAIN} 127.0.0.1:8444;
+    default        127.0.0.1:8443;
+  }
+
+  # Both inner hops get the PROXY header so the client address survives the split.
+  server {
+    listen 443;
+    ssl_preread on;
+    proxy_pass $upstream;
+    proxy_protocol on;
+  }
+
+  # Caddy: keeps the client address (PROXY header) so per-IP limits (REQ-AUTH-02) still work.
+  server {
+    listen 127.0.0.1:8443 proxy_protocol;
+    set_real_ip_from 127.0.0.1;
+    proxy_pass caddy:443;
+    proxy_protocol on;
+  }
+
+  # LiveKit TURN/TLS: does not speak PROXY, so the header stops here.
+  server {
+    listen 127.0.0.1:8444 proxy_protocol;
+    proxy_pass livekit:443;
+  }
+}

@@ -75,7 +75,7 @@ export class MessageActionsService {
   }
 
   // AC1, AC2 (only the author, MANAGE_MESSAGES or not), MSG-11 AC2 (not a system message).
-  // Timed out: no SEND_MESSAGES left, so 40302 (40307 comes with P3-A3.1 #126).
+  // Timed out: 40302 (40307 comes with P3-A3.1 #126); losing SEND_MESSAGES does not stop it.
   async edit(
     userId: bigint,
     channelId: bigint,
@@ -89,7 +89,7 @@ export class MessageActionsService {
     );
     if (message.type !== messageTypeCode.default || message.authorId !== userId)
       throw forbidden();
-    if (channel.serverId) await this.messages.requireSend(userId, channel);
+    await this.notTimedOut(userId, channel);
     // CR-28 #27: mentions are worked out again for display; nobody is notified.
     const { mentions } = await this.messages.mentionsOf(
       userId,
@@ -164,17 +164,13 @@ export class MessageActionsService {
     if (message.type !== messageTypeCode.default) throw forbidden();
     const present = await this.repo.emojiOn(messageId);
     const known = present.includes(emoji);
-    if (channel.serverId) {
-      const until = await this.repo.timeoutUntil(channel.serverId, userId);
-      if (until && until > this.clock.now()) throw forbidden();
-      if (!known)
-        await this.permissions.require(
-          userId,
-          { channelId },
-          Permission.ADD_REACTIONS,
-        );
-    } else if (!(await this.dmPolicy.canSend(userId, channelId)))
-      throw new AppError(ErrorCode.CannotMessageUser, CANNOT_MESSAGE_TEXT);
+    await this.mayReact(userId, channel);
+    if (channel.serverId && !known)
+      await this.permissions.require(
+        userId,
+        { channelId },
+        Permission.ADD_REACTIONS,
+      );
     if (!known && present.length >= MAX_REACTION_EMOJI)
       throw new AppError(
         ErrorCode.MaxReactionsReached,
@@ -196,6 +192,7 @@ export class MessageActionsService {
     emoji: string,
   ) {
     const { channel } = await this.target(userId, channelId, messageId);
+    await this.mayReact(userId, channel);
     await this.hitLimit(userId);
     if (await this.repo.removeReaction(messageId, emoji, userId))
       this.emit(
@@ -229,6 +226,21 @@ export class MessageActionsService {
       message_id: messageId.toString(),
       emoji,
     };
+  }
+
+  // ROLE-05: a timeout ends by the clock, and an emoji already on the message needs no
+  // permission, so PermissionService alone cannot say this.
+  private async notTimedOut(userId: bigint, channel: ChannelRow) {
+    if (!channel.serverId) return;
+    const until = await this.repo.timeoutUntil(channel.serverId, userId);
+    if (until && until > this.clock.now()) throw forbidden();
+  }
+
+  // Putting and removing alike (CR-28 #27): not timed out; in a DM, as sending (40303).
+  private async mayReact(userId: bigint, channel: ChannelRow) {
+    await this.notTimedOut(userId, channel);
+    if (!channel.serverId && !(await this.dmPolicy.canSend(userId, channel.id)))
+      throw new AppError(ErrorCode.CannotMessageUser, CANNOT_MESSAGE_TEXT);
   }
 
   private async hitLimit(userId: bigint) {

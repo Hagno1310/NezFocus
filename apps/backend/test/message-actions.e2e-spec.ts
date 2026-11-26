@@ -231,6 +231,32 @@ describe('Message actions (e2e)', () => {
       expectCode(res, ErrorCode.Forbidden);
     });
 
+    it('losing SEND_MESSAGES does not stop editing one’s own message', async () => {
+      const [an, binh] = [await signedIn(), await signedIn()];
+      const server = await serverOf(an, binh);
+      const sent = await send(binh, server.text, 'Tin cũ');
+      await an
+        .patch(ChannelRoutes.byId.replace(':id', server.text))
+        .send({ permissions_synced: false })
+        .expect(200);
+      await an
+        .put(
+          ChannelRoutes.permission
+            .replace(':id', server.text)
+            .replace(':targetId', server.id),
+        )
+        .send({
+          target_type: 'role',
+          allow: '0',
+          deny: P.SEND_MESSAGES.toString(),
+        })
+        .expect(200);
+      await binh
+        .patch(messagePath(server.text, sent.id))
+        .send({ content: 'Tin sửa' })
+        .expect(200);
+    });
+
     it('timed out → cannot edit (40302 until P3-A3.1 #126); blank content → 40001', async () => {
       const [an, binh] = [await signedIn(), await signedIn()];
       const server = await serverOf(an, binh);
@@ -457,9 +483,15 @@ describe('Message actions (e2e)', () => {
         await an.put(myReaction(server.text, system.id, '👋')),
         ErrorCode.Forbidden,
       );
+      await binh.put(myReaction(server.text, sent.id, '🎉')).expect(204);
       await timeOut(server.id, binh);
       expectCode(
         await binh.put(myReaction(server.text, sent.id, '👍')),
+        ErrorCode.Forbidden,
+      );
+      // Removing is reacting too (CR-28 #27).
+      expectCode(
+        await binh.del(myReaction(server.text, sent.id, '🎉')),
         ErrorCode.Forbidden,
       );
     });
@@ -503,6 +535,10 @@ describe('Message actions (e2e)', () => {
         .expect(200);
       expectCode(
         await binh.put(myReaction(dm, sent.id, '❤️')),
+        ErrorCode.CannotMessageUser,
+      );
+      expectCode(
+        await binh.del(myReaction(dm, sent.id, '👋')),
         ErrorCode.CannotMessageUser,
       );
     });

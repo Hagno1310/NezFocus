@@ -13,14 +13,9 @@ export const MessageRoutes = {
   list: '/channels/:id/messages',
   // REQ-NOTIF-01 · no body · 204 · 40401 (channel or message)
   ack: '/channels/:id/messages/:messageId/ack',
-  // REQ-MSG-05. PATCH: EditMessageRequest → 200 MessageResponse · 40001, 40302 (not the author,
-  // a system message, no SEND_MESSAGES / timed out), 40401 (channel, or message gone).
-  // DELETE: 204 · 40302 (server: not the author and no MANAGE_MESSAGES; DM: not the author; a
-  // system message: MANAGE_MESSAGES only, never in a DM), 40401
+  // REQ-MSG-05 · PATCH EditMessageRequest → MessageResponse · DELETE 204 · 40001, 40302, 40401
   message: '/channels/:id/messages/:messageId',
-  // REQ-MSG-05 · :emoji URL-encoded · PUT / DELETE 204, both idempotent · 40001 (not one emoji),
-  // 40029 (CR-28 #25), 40302 (new emoji without ADD_REACTIONS, timed out, system message),
-  // 40303 (DM one cannot message), 40401, 40905 (21st emoji)
+  // REQ-MSG-05 · PUT / DELETE 204 · 40001, 40029, 40302, 40303 (DM), 40401, 40905 (21st emoji)
   myReaction: '/channels/:id/messages/:messageId/reactions/:emoji/@me',
   // CR-28 #26 · GET → ReactionUsersResponse, oldest first, at most 100 · 40001, 40401
   reaction: '/channels/:id/messages/:messageId/reactions/:emoji',

@@ -295,7 +295,7 @@ export class MessagesService {
   }
 
   // REQ-DM-02 / FRIEND-03 AC1 in a DM: 40303 with one sentence; elsewhere SEND_MESSAGES.
-  async requireSend(userId: bigint, channel: ChannelRow) {
+  private async requireSend(userId: bigint, channel: ChannelRow) {
     if (channel.serverId)
       return this.permissions.require(
         userId,

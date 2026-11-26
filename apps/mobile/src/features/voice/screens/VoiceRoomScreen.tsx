@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useStore } from 'zustand';
 import { voiceSession } from '../../../data/voice';
 import { micPermission } from '../../../data/voice/micPermission';
 import {
@@ -15,12 +16,14 @@ import {
   ParticipantVideo,
 } from '../../../data/voice/VoiceVideo';
 import type { VoiceTarget } from '../../../domain/voice/voiceSession';
+import { voiceNotice } from '../../../domain/voice/voiceNotice';
 import { closeVoice, openVoice } from '../../../domain/voice/voiceView';
 import { radius, size, space, useTheme } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import { ChannelHeader } from '../../../shared/ui/Chat';
 import { SystemBanner } from '../../../shared/ui/Feedback';
 import { RoomControl, type RoomControlState } from '../../../shared/ui/Focus';
+import { Dialog } from '../../../shared/ui/Overlay';
 import {
   ParticipantTile,
   VideoGrid,
@@ -61,6 +64,10 @@ export function VoiceRoomScreen({
   const [selfPreview, setSelfPreview] = useState(false);
   const [joining, setJoining] = useState(false);
   useToastTop(top + size.header);
+  const otherDevice = useStore(
+    voiceNotice,
+    (s) => s.otherDevice?.channelId === channelId,
+  );
 
   const { channel, layout, here, joined } = room;
   if (!channel || !layout) return null;
@@ -187,6 +194,7 @@ export function VoiceRoomScreen({
                 mic={tile.mic}
                 speaking={tile.speaking}
                 away={tile.away}
+                poorNetwork={tile.poorNetwork}
                 width={tileWidth}
                 video={
                   tile.camera && (
@@ -270,6 +278,23 @@ export function VoiceRoomScreen({
         onContinue={() => void media.onContinue()}
         onSettings={media.onSettings}
         onLater={media.onLater}
+      />
+      <Dialog
+        visible={otherDevice}
+        title={t('voice.otherDevice.title')}
+        // S-ROOM-EDGE `other-device`: back in with the mic off; the other phone is put out.
+        confirm={{
+          label: t('voice.otherDevice.rejoin'),
+          onPress: () => {
+            voiceNotice.setState({ otherDevice: null });
+            void voiceSession.join(target);
+          },
+        }}
+        cancel={{
+          label: t('voice.otherDevice.close'),
+          onPress: () => voiceNotice.setState({ otherDevice: null }),
+        }}
+        onDismiss={() => voiceNotice.setState({ otherDevice: null })}
       />
       <CameraPreviewSheet
         visible={selfPreview}

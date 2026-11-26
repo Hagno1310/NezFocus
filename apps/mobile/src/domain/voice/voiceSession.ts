@@ -30,6 +30,7 @@ export type VoiceState = {
   seats: VoiceSeats;
   call: VoiceCall | null;
   speaking: readonly string[];
+  poor: readonly string[]; // C-07 `poor-network` (REQ-VC-05)
   // REQ-VC-01: the camera was seen once this login (preview Camera or `camera-self-preview`),
   // so turning it on in a room goes straight on (VC-01 AC7).
   cameraPreviewed: boolean;
@@ -39,6 +40,7 @@ export const emptyVoice: VoiceState = {
   seats: {},
   call: null,
   speaking: [],
+  poor: [],
   cameraPreviewed: false,
 };
 
@@ -100,7 +102,7 @@ export function createVoiceSession({
 
   const reset = (extra: Partial<VoiceState> = {}) => {
     gen++;
-    store.setState({ call: null, speaking: [], ...extra });
+    store.setState({ call: null, speaking: [], poor: [], ...extra });
   };
 
   const publish = (on: boolean, set: (on: boolean) => Promise<void>) =>
@@ -226,6 +228,7 @@ export function createVoiceSession({
     const c = call();
     if (!c) return;
     if (event.type === 'speakers') store.setState({ speaking: event.userIds });
+    else if (event.type === 'quality') store.setState({ poor: event.poor });
     else if (event.type === 'link') {
       if (c.phase === 'in') patch(gen, { link: event.state });
     } else if (event.removed) patch(gen, { link: 'reconnecting' });

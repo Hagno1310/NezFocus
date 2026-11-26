@@ -329,6 +329,34 @@ describe('RemoteGatewayClient', () => {
     });
   });
 
+  describe('in a voice room (SRS 7.3.3, VC-01 AC4)', () => {
+    it('stays open in the background', async () => {
+      const client = await connected();
+      client.setKeepAlive(true);
+      client.setAppState('background');
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(last().closedWith).toBeNull();
+    });
+
+    it('leaving the room in the background closes 30 s later', async () => {
+      const client = await connected();
+      client.setKeepAlive(true);
+      client.setAppState('background');
+      client.setKeepAlive(false);
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(last().closedWith).toBe(1000);
+    });
+
+    it('joining while paused in the background reconnects', async () => {
+      const client = await connected();
+      client.setAppState('background');
+      await vi.advanceTimersByTimeAsync(30_000);
+      last().drop(1000);
+      client.setKeepAlive(true);
+      expect(sockets).toHaveLength(2);
+    });
+  });
+
   describe('network (S-MOD-04, parent #5 "Xong khi")', () => {
     it('drops the socket when the network goes, RESUMEs as soon as it is back', async () => {
       const client = await connected();

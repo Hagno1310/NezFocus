@@ -67,6 +67,8 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
   };
   // Op 4 made while the socket was down; only the latest one counts (REQ-VC-01).
   let pendingVoice: VoiceStateUpdate | null = null;
+  // SRS 7.3.3: in a voice room the socket stays open in the background (P3-B1.5 #141).
+  let keepAlive = false;
   let paused = false; // closed on purpose in the background
   let identified = false;
   let awaitingAck = false;
@@ -287,19 +289,35 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
     if (identified) send({ op: GatewayOp.APP_STATE, d: { state: next } });
     if (!running) return;
     clearTimeout(backgroundClose);
-    if (next === 'background') {
-      // ponytail: always closes; voice / Room Session keep it open with P3-B1.5 (#141).
-      backgroundClose = setTimeout(() => {
-        clearTimeout(reconnect);
-        detach(NORMAL_CLOSURE);
-        paused = true;
-        setStatus('paused');
-      }, BACKGROUND_CLOSE_MS);
-    } else if (paused) {
-      paused = false;
-      attempt = 0;
-      connect();
-    }
+    if (next === 'background') closeLater();
+    else resume();
+  }
+
+  function closeLater() {
+    if (keepAlive) return;
+    backgroundClose = setTimeout(() => {
+      clearTimeout(reconnect);
+      detach(NORMAL_CLOSURE);
+      paused = true;
+      setStatus('paused');
+    }, BACKGROUND_CLOSE_MS);
+  }
+
+  function resume() {
+    if (!paused) return;
+    paused = false;
+    attempt = 0;
+    connect();
+  }
+
+  // ponytail: a Room Session keeps it open too, with P3-B3.3 (#147).
+  function setKeepAlive(on: boolean) {
+    if (on === keepAlive) return;
+    keepAlive = on;
+    if (!running) return;
+    clearTimeout(backgroundClose);
+    if (on) resume();
+    else if (appState === 'background') closeLater();
   }
 
   function setPresence(next: PresenceUpdate) {
@@ -326,5 +344,6 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
     setPresence,
     subscribe,
     updateVoice,
+    setKeepAlive,
   };
 }

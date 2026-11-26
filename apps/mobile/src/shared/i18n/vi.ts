@@ -1232,6 +1232,17 @@ export const vi = {
     left: 'Đã rời {{name}}',
     rejoin: 'Vào lại',
     gone: '{{name}} không còn khả dụng',
+    rejoined: 'Đã vào lại {{name}} · mic đang tắt',
+    // SRS 7.3.5 channel, REQ-VC-01 AC4 notification.
+    service: {
+      channel: 'Phòng học đang chạy',
+      title: 'Đang trong phòng thoại',
+    },
+    otherDevice: {
+      title: 'Bạn đã vào phòng trên thiết bị khác',
+      rejoin: 'Vào lại ở đây',
+      close: 'Đóng',
+    },
     // Not in the spec: agent's line, waiting for approval (P3-B1 #26 report).
     joinFailed: 'Chưa vào được phòng',
     retry: 'Thử lại',

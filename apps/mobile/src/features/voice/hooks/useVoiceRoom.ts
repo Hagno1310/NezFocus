@@ -27,6 +27,7 @@ export type RoomTile = {
   camera: boolean;
   speaking: boolean;
   away: boolean;
+  poorNetwork: boolean;
 };
 
 // S-ROOM-01: the channel, my call in it (or elsewhere), and the tiles in C-18 order.
@@ -85,6 +86,8 @@ export function useVoiceRoom(serverId: string, channelId: string) {
     [members],
   );
   const speakingSet = useMemo(() => new Set(speaking), [speaking]);
+  const poor = useStore(voiceStore, (s) => s.poor);
+  const poorSet = useMemo(() => new Set(poor), [poor]);
   const tiles: RoomTile[] = next.flatMap((id) => {
     const seat = room.find((m) => m.user_id === id);
     if (!seat) return [];
@@ -102,6 +105,7 @@ export function useVoiceRoom(serverId: string, channelId: string) {
         camera: self && here ? here.camera : seat.self_video,
         speaking: speakingSet.has(id),
         away: seat.away,
+        poorNetwork: poorSet.has(id),
       },
     ];
   });

@@ -1227,6 +1227,16 @@ export const en: Strings = {
     left: 'Left {{name}}',
     rejoin: 'Rejoin',
     gone: '{{name}} is no longer available',
+    rejoined: 'Rejoined {{name}} · mic is off',
+    service: {
+      channel: 'Study room running',
+      title: 'In a voice room',
+    },
+    otherDevice: {
+      title: 'You joined the room on another device',
+      rejoin: 'Rejoin here',
+      close: 'Close',
+    },
     joinFailed: "Couldn't join the room",
     retry: 'Try again',
     tile: {

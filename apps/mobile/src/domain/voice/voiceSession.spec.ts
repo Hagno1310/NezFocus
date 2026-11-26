@@ -251,6 +251,14 @@ describe('seats and my seat ending (CR-28 #30)', () => {
 });
 
 describe('LiveKit link', () => {
+  it('poor quality from LiveKit marks the tile (REQ-VC-05)', async () => {
+    await session.join(A);
+    client.emit({ type: 'quality', poor: ['2'] });
+    expect(store.getState().poor).toEqual(['2']);
+    await session.leave();
+    expect(store.getState().poor).toEqual([]);
+  });
+
   it('speakers come from LiveKit active speakers (REQ-VC-02)', async () => {
     await session.join(A);
     client.emit({ type: 'speakers', userIds: ['2'] });

@@ -8,7 +8,8 @@ export type VoiceClientEvent =
   // The room closed by itself. `removed`: the server took us out (kick, other device, channel
   // deleted…) and the Gateway brings the reason; otherwise the network gave up.
   | { type: 'ended'; removed: boolean }
-  | { type: 'speakers'; userIds: string[] }; // LiveKit active speakers (REQ-VC-02)
+  | { type: 'speakers'; userIds: string[] } // LiveKit active speakers (REQ-VC-02)
+  | { type: 'quality'; poor: string[] }; // LiveKit quality `poor` (REQ-VC-05, C-07)
 
 export interface VoiceClient {
   connect(url: string, token: string): Promise<void>;

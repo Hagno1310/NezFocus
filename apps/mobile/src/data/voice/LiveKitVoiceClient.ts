@@ -1,5 +1,10 @@
 import { AudioSession } from '@livekit/react-native';
-import { DisconnectReason, Room, RoomEvent } from 'livekit-client';
+import {
+  ConnectionQuality,
+  DisconnectReason,
+  Room,
+  RoomEvent,
+} from 'livekit-client';
 import type {
   VoiceClient,
   VoiceClientEvent,
@@ -27,7 +32,15 @@ export function createLiveKitVoiceClient() {
         dynacast: true,
         publishDefaults: { simulcast: true },
       });
+      const poor = new Set<string>();
       next
+        .on(RoomEvent.ConnectionQualityChanged, (quality, who) => {
+          const was = poor.has(who.identity);
+          if (quality === ConnectionQuality.Poor) poor.add(who.identity);
+          else poor.delete(who.identity);
+          if (was !== poor.has(who.identity))
+            emit({ type: 'quality', poor: [...poor] });
+        })
         .on(RoomEvent.ActiveSpeakersChanged, (speakers) =>
           emit({ type: 'speakers', userIds: speakers.map((p) => p.identity) }),
         )

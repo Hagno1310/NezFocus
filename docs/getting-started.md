@@ -394,7 +394,7 @@ Build mất khoảng 10–20 phút, chưa tính hàng đợi của tài khoản 
 ### 9.4. Phòng voice khi deploy (REQ-VC-08, CR-28 #4)
 
 - DNS: hai bản ghi A về VM, `API_DOMAIN` và `TURN_DOMAIN` (`turn.nezfocus.app`).
-- Cổng 443 do `router` (nginx `stream` + `ssl_preread`, `infra/nginx/nginx.conf.template`) giữ: TLS có SNI `TURN_DOMAIN` chuyển sang TURN/TLS của LiveKit, còn lại sang Caddy (API, web quản trị). Caddy chỉ còn nghe 80 ra ngoài.
+- Cổng 443 do `router` (nginx `stream` + `ssl_preread`, `infra/nginx/nginx.conf.template`) giữ: TLS có SNI `TURN_DOMAIN` chuyển sang TURN/TLS của LiveKit, còn lại sang Caddy (API, web quản trị). Caddy chỉ còn nghe 80 ra ngoài; router gửi kèm địa chỉ client (PROXY protocol) để giới hạn theo IP vẫn đúng.
 - Caddy xin chứng chỉ cho `TURN_DOMAIN`; LiveKit đọc chứng chỉ đó từ volume của Caddy. Lần `up` đầu LiveKit có thể khởi động lại vài lần tới khi chứng chỉ có. Caddy gia hạn chứng chỉ (~60 ngày) thì `docker compose … restart livekit`.
 - Firewall VM: TCP 80, 443, 7881; UDP 3478, 50000–50200.
 - App gọi LiveKit qua `wss://API_DOMAIN/livekit` (Caddy chuyển tới `livekit:7880`).

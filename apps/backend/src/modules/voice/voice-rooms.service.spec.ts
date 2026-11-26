@@ -43,16 +43,20 @@ describe('VoiceRoomsService away seats', () => {
       } as unknown as EventPublisher,
       { modMuted: async () => false } as unknown as VoiceRepository,
       clock as Clock,
-      { voiceChanged: () => {} } as unknown as PresenceSink,
+      { voiceChanged: async () => {} } as unknown as PresenceSink,
     );
     await voice.update(BINH, {
       channel_id: ROOM.toString(),
       self_mute: true,
       self_video: false,
     });
-    const left = (disconnectReason?: number) =>
+    // createdAt in seconds, as LiveKit sends it; default: now.
+    const left = (disconnectReason?: number, createdAt?: number) =>
       voice.webhook({
         event: 'participant_left',
+        createdAt: BigInt(
+          createdAt ?? Math.floor(clock.now().getTime() / 1000),
+        ),
         room: { name: `voice:${ROOM}` },
         participant: { identity: '2', disconnectReason },
       } as unknown as WebhookEvent);
@@ -61,7 +65,7 @@ describe('VoiceRoomsService away seats', () => {
 
   it('keeps the seat 3 minutes after the connection drops, then lets it go', async () => {
     const { voice, clock, sent, removed, left } = await setup();
-    await left(2); // DUPLICATE_IDENTITY-like: not the user leaving
+    await left(0); // the phone dropped off, nobody pressed Rời phòng
     expect(sent.at(-1)?.d).toMatchObject({ channel_id: '10', away: true });
 
     clock.advance(179);
@@ -92,9 +96,38 @@ describe('VoiceRoomsService away seats', () => {
     expect(await voice.seatOf(BINH.userId)).not.toBeNull();
   });
 
-  it('a client-initiated disconnect is leaving now', async () => {
-    const { voice, left } = await setup();
+  it('only op 4 leaves now: a client-initiated drop (switching rooms) is away', async () => {
+    const { voice, sent, left } = await setup();
     await left(1);
+    expect(sent.at(-1)?.d).toMatchObject({ channel_id: '10', away: true });
+    await voice.update(BINH, {
+      channel_id: null,
+      self_mute: true,
+      self_video: false,
+    });
     expect(await voice.seatOf(BINH.userId)).toBeNull();
+  });
+
+  it('ignores the old device dropped for a duplicate identity, and webhooks older than op 4', async () => {
+    const { voice, clock, sent, left } = await setup();
+    await left(2);
+    clock.advance(10);
+    await voice.update(BINH, {
+      channel_id: ROOM.toString(),
+      self_mute: false,
+      self_video: false,
+    });
+    await left(0, Math.floor(clock.now().getTime() / 1000) - 5);
+    expect(sent.every((x) => x.d.away === false)).toBe(true);
+  });
+
+  it('leaving twice (sweeper and op 4 together) sends one leave', async () => {
+    const { voice, sent } = await setup();
+    const leave = { channel_id: null, self_mute: true, self_video: false };
+    await Promise.all([
+      voice.update(BINH, leave),
+      voice.disconnect(BINH.userId, 'any', 'kicked'),
+    ]);
+    expect(sent.filter((x) => x.d.channel_id === null)).toHaveLength(2); // room + device
   });
 });

@@ -28,8 +28,7 @@ export const Env = z
     // REQ-SRV-07 App Links: SHA-256 fingerprints of the app signing certificates, comma separated
     // (`eas credentials` shows them). Empty: assetlinks.json lists none, links open the browser.
     ANDROID_CERT_SHA256: z.string().default(''),
-    // REQ-VC-01 LiveKit. LIVEKIT_URL is what the app dials (dev: ws://<LAN IP>:7880); the API URL is
-    // what the backend calls. Defaults match infra/docker-compose.yml.
+    // REQ-VC-01 LiveKit: the app dials LIVEKIT_URL, the backend calls LIVEKIT_API_URL (dev defaults).
     LIVEKIT_URL: z.string().url().default('ws://localhost:7880'),
     LIVEKIT_API_URL: z.string().url().default('http://localhost:7880'),
     LIVEKIT_API_KEY: z.string().min(1).default('devkey'),

@@ -188,6 +188,31 @@ describe('PresenceService (REQ-AUTH-05)', () => {
     expect(lastSeenBy(2n)?.activity).toBeNull();
   });
 
+  it('voice (CR-24): "Đang ở {phòng}" when there is no Solo; Solo shows over it', async () => {
+    await connect(2n);
+    await connect(1n);
+    const room = { channelId: 9n, name: 'Phòng học im lặng', studyRoom: true };
+    await presence.voiceChanged(1n, room);
+    await flush();
+    expect(lastSeenBy(2n)?.activity).toEqual({
+      kind: 'voice',
+      room: {
+        channel_id: '9',
+        channel_name: 'Phòng học im lặng',
+        study_room: true,
+      },
+    });
+    presence.soloChanged(1n, solo);
+    await flush();
+    expect(lastSeenBy(2n)?.activity).toMatchObject({ kind: 'solo' });
+    presence.soloChanged(1n, { ...solo, status: 'ended' });
+    await flush();
+    expect(lastSeenBy(2n)?.activity).toMatchObject({ kind: 'voice' });
+    await presence.voiceChanged(1n, null);
+    await flush();
+    expect(lastSeenBy(2n)?.activity).toBeNull();
+  });
+
   it('AC5 (here): show_study_activity off → no activity, status still sent', async () => {
     settings.set(1n, { preferred: 'online', showActivity: false });
     await connect(2n);

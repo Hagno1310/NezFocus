@@ -5,9 +5,9 @@ import { RedisVoiceSeats, VoiceSeats } from './voice-seats.js';
 import { VoiceController } from './voice.controller.js';
 import { VoiceRepository } from './voice.repository.js';
 import { VoiceRoomsService } from './voice-rooms.service.js';
-import { VoiceService } from './voice.service.js';
+import { VoiceService, VoiceSessions } from './voice.service.js';
 
-// WORKFLOW 4.3: other modules inject VoiceService; the Gateway uses VoiceRoomsService for op 4.
+// WORKFLOW 4.3: other modules inject VoiceService; the Gateway injects VoiceSessions.
 @Global()
 @Module({
   imports: [ServersModule],
@@ -19,7 +19,8 @@ import { VoiceService } from './voice.service.js';
     VoiceRepository,
     VoiceRoomsService,
     { provide: VoiceService, useExisting: VoiceRoomsService },
+    { provide: VoiceSessions, useExisting: VoiceRoomsService },
   ],
-  exports: [VoiceService, VoiceRoomsService],
+  exports: [VoiceService, VoiceSessions],
 })
 export class VoiceModule {}

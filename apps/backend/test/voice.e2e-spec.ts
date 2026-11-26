@@ -147,7 +147,8 @@ describe('Voice (e2e)', () => {
     });
 
   const signedWebhook = async (event: object) => {
-    const body = JSON.stringify(event);
+    const createdAt = String(Math.floor(Date.now() / 1000));
+    const body = JSON.stringify({ createdAt, ...event });
     const at = new AccessToken(KEY, SECRET);
     at.sha256 = createHash('sha256').update(body).digest('base64');
     return http(app)

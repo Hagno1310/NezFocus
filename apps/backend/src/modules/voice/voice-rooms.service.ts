@@ -27,31 +27,34 @@ import {
   LiveKitKeys,
   LiveKitRooms,
   roomOf,
-  type Publish,
+  type Publishable,
 } from './livekit.js';
 import { VoiceSeats, type Seat } from './voice-seats.js';
 import { VoiceRepository } from './voice.repository.js';
-import { VoiceService, type VoiceScope } from './voice.service.js';
+import {
+  VoiceService,
+  type VoiceCaller,
+  type VoiceScope,
+  type VoiceSessions,
+} from './voice.service.js';
 
 export const AWAY_MS = 3 * 60_000; // REQ-VC-01: losing the connection is not leaving, for 3 minutes
 const SWEEP_MS = 5_000;
-// CLIENT_INITIATED of @livekit/protocol (not a direct dependency).
-const CLIENT_INITIATED = 1;
+// DisconnectReason.DUPLICATE_IDENTITY (@livekit/protocol): the account joined again elsewhere.
+const DUPLICATE_IDENTITY = 2;
 
 const notFound = () => new AppError(ErrorCode.NotFound, 'Unknown voice room');
 
-// Who is asking: a user on one login (device).
-export type VoiceCaller = { userId: bigint; authSessionId: bigint };
-
-// REQ-VC-01 / VC-04 / STUDY-02 (backend). The app dials LiveKit with a token from here, then
-// tells the Gateway (op 4) where it sits; LiveKit webhooks catch connections that just vanish.
+// REQ-VC-01 / STUDY-02: token here, seat by op 4, webhooks catch connections that vanish.
 @Injectable()
 export class VoiceRoomsService
   extends VoiceService
-  implements OnModuleInit, OnModuleDestroy
+  implements VoiceSessions, OnModuleInit, OnModuleDestroy
 {
   private readonly logger = new Logger('VoiceRooms');
   private sweeper?: ReturnType<typeof setInterval>;
+  // ponytail: khi chạy từ 2 process: khóa theo user trong Redis (WATCH / Lua) thay hàng đợi này.
+  private readonly queues = new Map<bigint, Promise<unknown>>();
 
   constructor(
     private readonly seats: VoiceSeats,
@@ -67,6 +70,18 @@ export class VoiceRoomsService
     super();
   }
 
+  // One change at a time per user: op 4, webhooks and the sweeper read then write the seat.
+  private serial<T>(userId: bigint, work: () => Promise<T>): Promise<T> {
+    const run = (this.queues.get(userId) ?? Promise.resolve()).then(work, work);
+    const settled = run.catch(() => {});
+    this.queues.set(userId, settled);
+    void settled.then(() => {
+      if (this.queues.get(userId) === settled) this.queues.delete(userId);
+    });
+    return run;
+  }
+
+  // ponytail: khi chạy từ 2 process: một process quét (khóa Redis), không gửi rời phòng hai lần.
   onModuleInit() {
     this.sweeper = setInterval(
       () =>
@@ -103,7 +118,11 @@ export class VoiceRoomsService
   }
 
   // Op 4. A frame the user may not act on is dropped: the Gateway has no error reply.
-  async update(who: VoiceCaller, d: VoiceStateUpdate) {
+  update(who: VoiceCaller, d: VoiceStateUpdate) {
+    return this.serial(who.userId, () => this.sit(who, d));
+  }
+
+  private async sit(who: VoiceCaller, d: VoiceStateUpdate) {
     const seat = await this.seats.get(who.userId);
     if (d.channel_id === null) {
       // A late leave from a device that lost the seat must not unseat the new one.
@@ -133,9 +152,7 @@ export class VoiceRoomsService
     else if (seat && seat.authSessionId !== who.authSessionId)
       // Same room, new device: LiveKit already dropped the old one (duplicate identity).
       await this.events.toLogin(seat.authSessionId, 'VOICE_STATE_UPDATE', {
-        ...(await this.stateOf(seat)),
-        channel_id: null,
-        joined_at: null,
+        ...(await this.leaving(seat)),
         reason: 'other_device',
       });
     const next: Seat = {
@@ -146,53 +163,74 @@ export class VoiceRoomsService
       selfMute: d.self_mute,
       selfVideo: d.self_video,
       joinedAt: sameRoom ? seat.joinedAt : this.clock.now().getTime(),
+      saidAt: this.clock.now().getTime(),
       awayUntil: null,
     };
     await this.seats.put(next);
     await this.publish(next);
     if (!sameRoom)
-      this.presence.voiceChanged(who.userId, {
+      await this.presence.voiceChanged(who.userId, {
         channelId,
         name: channel.name ?? '',
         studyRoom: channel.focusControl !== 'off',
       });
   }
 
-  // SRS 5.5: participant_joined / left reconcile what op 4 said; room_finished changes nothing
-  // (an away seat outlives an empty room).
+  // SRS 5.5: reconcile op 4. A left is never a leave (op 4 says that): away for 3 minutes.
   async webhook(event: WebhookEvent) {
     const channelId = event.room ? channelOfRoom(event.room.name) : null;
+    if (channelId === null) return;
+    if (event.event === 'room_finished') {
+      for (const seat of await this.seats.inChannel(channelId))
+        await this.serial(seat.userId, () =>
+          this.away(seat.userId, channelId, event),
+        );
+      return;
+    }
     const identity = event.participant?.identity;
-    if (channelId === null || !identity || !/^\d+$/.test(identity)) return;
-    const seat = await this.seats.get(BigInt(identity));
-    if (seat?.channelId !== channelId) return;
+    if (!identity || !/^\d+$/.test(identity)) return;
+    const userId = BigInt(identity);
+    if (event.event === 'participant_joined')
+      return this.serial(userId, () => this.back(userId, channelId));
+    // DUPLICATE_IDENTITY: the old device of an account that joined again, not this seat.
+    if (
+      event.event === 'participant_left' &&
+      event.participant?.disconnectReason !== DUPLICATE_IDENTITY
+    )
+      return this.serial(userId, () => this.away(userId, channelId, event));
+  }
 
-    if (event.event === 'participant_joined' && seat.awayUntil !== null) {
-      const back = { ...seat, awayUntil: null };
-      await this.seats.put(back);
-      return this.publish(back);
-    }
-    if (event.event === 'participant_left' && seat.awayUntil === null) {
-      if (event.participant?.disconnectReason === CLIENT_INITIATED)
-        return this.vacate(seat, 'left');
-      const away = { ...seat, awayUntil: this.clock.now().getTime() + AWAY_MS };
-      await this.seats.put(away);
-      return this.publish(away);
-    }
+  private async back(userId: bigint, channelId: bigint) {
+    const seat = await this.seats.get(userId);
+    if (seat?.channelId !== channelId || seat.awayUntil === null) return;
+    const back = { ...seat, awayUntil: null };
+    await this.seats.put(back);
+    await this.publish(back);
+  }
+
+  private async away(
+    userId: bigint,
+    channelId: bigint,
+    event: { createdAt?: bigint },
+  ) {
+    const seat = await this.seats.get(userId);
+    if (seat?.channelId !== channelId || seat.awayUntil !== null) return;
+    // Sent before the app last said where it sits (a reconnect): stale.
+    if (Number(event.createdAt ?? 0n) * 1000 < seat.saidAt - 1000) return;
+    const away = { ...seat, awayUntil: this.clock.now().getTime() + AWAY_MS };
+    await this.seats.put(away);
+    await this.publish(away);
   }
 
   // Away for more than 3 minutes = left (VC-01 AC6, STUDY-15).
   async expireAway() {
     const now = this.clock.now().getTime();
-    for (const userId of await this.seats.expired(now)) {
-      const seat = await this.seats.get(userId);
-      if (
-        seat?.awayUntil !== null &&
-        seat?.awayUntil !== undefined &&
-        seat.awayUntil <= now
-      )
-        await this.vacate(seat, 'left');
-    }
+    for (const userId of await this.seats.expired(now))
+      await this.serial(userId, async () => {
+        const seat = await this.seats.get(userId);
+        if (seat?.awayUntil != null && seat.awayUntil <= now)
+          await this.vacate(seat, 'left');
+      });
   }
 
   // READY.voice_states: rooms of my servers that I can view.
@@ -226,23 +264,30 @@ export class VoiceRoomsService
     scope: VoiceScope,
     reason: VoiceLeaveReason,
   ) {
-    const seat = await this.seats.get(userId);
-    if (!seat || !inScope(seat, scope)) return false;
-    await this.vacate(seat, reason);
-    return true;
+    return this.serial(userId, async () => {
+      const seat = await this.seats.get(userId);
+      if (!seat || !inScope(seat, scope)) return false;
+      await this.vacate(seat, reason);
+      return true;
+    });
   }
 
   async roomDeleted(serverId: bigint, channelId: bigint) {
-    const seats = await this.seats.inServers([serverId]);
-    for (const seat of seats.filter((s) => s.channelId === channelId))
-      await this.vacate(seat, 'channel_deleted');
+    for (const seat of await this.seats.inChannel(channelId))
+      if (seat.serverId === serverId)
+        await this.disconnect(seat.userId, { channelId }, 'channel_deleted');
     await this.rooms.close(roomOf(channelId));
   }
 
   // REQ-VC-01: signing out (or being signed out) = leaving now, on that device only.
   async signedOut(authSessionId: bigint) {
     const seat = await this.seats.ofLogin(authSessionId);
-    if (seat) await this.vacate(seat, 'logout');
+    if (seat)
+      await this.serial(seat.userId, async () => {
+        const now = await this.seats.get(seat.userId);
+        if (now?.authSessionId === authSessionId)
+          await this.vacate(now, 'logout');
+      });
   }
 
   async seatOf(userId: bigint) {
@@ -269,7 +314,7 @@ export class VoiceRoomsService
   private async publishable(
     userId: bigint,
     channel: { id: bigint; serverId: bigint | null },
-  ): Promise<Publish> {
+  ): Promise<Publishable> {
     const scope = { channelId: channel.id };
     const [speak, video, muted] = await Promise.all([
       this.permissions.can(userId, scope, Permission.SPEAK),
@@ -279,22 +324,26 @@ export class VoiceRoomsService
     return { mic: speak && !muted, camera: video };
   }
 
-  // Leave now: out of LiveKit, a leave to the room's viewers, the reason to that device only.
+  // Out of LiveKit, a leave to the room's viewers, the reason to that device only.
   private async vacate(seat: Seat, reason: VoiceLeaveReason) {
-    await this.seats.remove(seat.userId);
-    this.presence.voiceChanged(seat.userId, null);
+    if (!(await this.seats.remove(seat.userId))) return; // left already
+    await this.presence.voiceChanged(seat.userId, null);
     await this.rooms.remove(roomOf(seat.channelId), seat.userId.toString());
-    const left: VoiceState = {
-      ...(await this.stateOf(seat)),
-      channel_id: null,
-      joined_at: null,
-      away: false,
-    };
+    const left = await this.leaving(seat);
     await this.events.toChannel(seat.channelId, 'VOICE_STATE_UPDATE', left);
     await this.events.toLogin(seat.authSessionId, 'VOICE_STATE_UPDATE', {
       ...left,
       reason,
     });
+  }
+
+  private async leaving(seat: Seat): Promise<VoiceState> {
+    return {
+      ...(await this.stateOf(seat)),
+      channel_id: null,
+      joined_at: null,
+      away: false,
+    };
   }
 
   private async publish(seat: Seat) {

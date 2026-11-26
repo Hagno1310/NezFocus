@@ -11,6 +11,7 @@ export type Seat = {
   selfMute: boolean;
   selfVideo: boolean;
   joinedAt: number; // ms
+  saidAt: number; // ms, last op 4: a webhook sent before it is stale
   awayUntil: number | null; // ms; lost connection, seat kept until then (VC-01, 3 minutes)
 };
 
@@ -22,6 +23,7 @@ export abstract class VoiceSeats {
   // The removed seat, or null when there was none.
   abstract remove(userId: bigint): Promise<Seat | null>;
   abstract inServers(serverIds: readonly bigint[]): Promise<Seat[]>;
+  abstract inChannel(channelId: bigint): Promise<Seat[]>;
   // Users whose away time has run out.
   abstract expired(now: number): Promise<bigint[]>;
 }
@@ -59,7 +61,10 @@ const load = (text: string): Seat => {
 const seatKey = (userId: bigint) => `voice:seat:${userId}`;
 const serverKey = (serverId: bigint) => `voice:server:${serverId}`;
 const loginKey = (authSessionId: bigint) => `voice:login:${authSessionId}`;
+const channelKey = (channelId: bigint) => `voice:channel:${channelId}`;
 const AWAY = 'voice:away';
+// SRS 8.1 "có TTL": a seat untouched for 12 hours is dropped (lost webhook, LiveKit restart).
+const SEAT_TTL_S = 12 * 3600;
 
 @Injectable()
 export class RedisVoiceSeats extends VoiceSeats {
@@ -85,8 +90,16 @@ export class RedisVoiceSeats extends VoiceSeats {
       tx.srem(serverKey(old.serverId), seat.userId.toString());
     if (old && old.authSessionId !== seat.authSessionId)
       tx.del(loginKey(old.authSessionId));
-    tx.set(loginKey(seat.authSessionId), seat.userId.toString());
-    tx.set(seatKey(seat.userId), store(seat));
+    if (old && old.channelId !== seat.channelId)
+      tx.srem(channelKey(old.channelId), seat.userId.toString());
+    tx.sadd(channelKey(seat.channelId), seat.userId.toString());
+    tx.set(
+      loginKey(seat.authSessionId),
+      seat.userId.toString(),
+      'EX',
+      SEAT_TTL_S,
+    );
+    tx.set(seatKey(seat.userId), store(seat), 'EX', SEAT_TTL_S);
     tx.sadd(serverKey(seat.serverId), seat.userId.toString());
     if (seat.awayUntil === null) tx.zrem(AWAY, seat.userId.toString());
     else tx.zadd(AWAY, seat.awayUntil, seat.userId.toString());
@@ -100,6 +113,7 @@ export class RedisVoiceSeats extends VoiceSeats {
       .multi()
       .del(seatKey(userId), loginKey(seat.authSessionId))
       .srem(serverKey(seat.serverId), userId.toString())
+      .srem(channelKey(seat.channelId), userId.toString())
       .zrem(AWAY, userId.toString())
       .exec();
     return seat;
@@ -113,6 +127,18 @@ export class RedisVoiceSeats extends VoiceSeats {
       ...users.map((u) => seatKey(BigInt(u))),
     );
     return texts.filter((t): t is string => t !== null).map(load);
+  }
+
+  async inChannel(channelId: bigint) {
+    const users = await this.redis.smembers(channelKey(channelId));
+    if (!users.length) return [];
+    const texts = await this.redis.mget(
+      ...users.map((u) => seatKey(BigInt(u))),
+    );
+    return texts
+      .filter((t): t is string => t !== null)
+      .map(load)
+      .filter((s) => s.channelId === channelId);
   }
 
   async expired(now: number) {
@@ -150,6 +176,12 @@ export class MemoryVoiceSeats extends VoiceSeats {
   inServers(serverIds: readonly bigint[]) {
     return Promise.resolve(
       [...this.seats.values()].filter((s) => serverIds.includes(s.serverId)),
+    );
+  }
+
+  inChannel(channelId: bigint) {
+    return Promise.resolve(
+      [...this.seats.values()].filter((s) => s.channelId === channelId),
     );
   }
 

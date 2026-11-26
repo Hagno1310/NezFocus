@@ -21,7 +21,7 @@ import { TokenService } from '../auth/token.service.js';
 import { ServersService } from '../servers/servers.service.js';
 import { SettingsService } from '../users/settings.service.js';
 import { UsersRepository } from '../users/users.repository.js';
-import { VoiceRoomsService } from '../voice/voice-rooms.service.js';
+import { VoiceSessions } from '../voice/voice.service.js';
 import { GatewayConnection, type Authenticate } from './gateway-connection.js';
 import { GatewaySessions } from './gateway-sessions.js';
 import { PresenceService } from './presence.service.js';
@@ -45,7 +45,7 @@ export class GatewayListener
     private readonly friends: FriendsService,
     private readonly readStates: ReadStatesService,
     private readonly dms: DmService,
-    private readonly voice: VoiceRoomsService,
+    private readonly voice: VoiceSessions,
   ) {}
 
   onApplicationBootstrap() {

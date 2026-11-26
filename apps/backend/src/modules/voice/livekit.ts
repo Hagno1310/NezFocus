@@ -16,18 +16,25 @@ export const roomOf = (channelId: bigint) => `voice:${channelId}`;
 export const channelOfRoom = (room: string) =>
   room.startsWith('voice:') ? BigInt(room.slice('voice:'.length)) : null;
 
-export type Publish = { mic: boolean; camera: boolean };
+export type Publishable = { mic: boolean; camera: boolean };
 
-const sources = (p: Publish) => [
-  ...(p.mic ? [TrackSource.MICROPHONE] : []),
-  ...(p.camera ? [TrackSource.CAMERA] : []),
-];
+// SRS 5.5 grant: publish by SPEAK / VIDEO, always subscribe, never data.
+const publishGrant = (p: Publishable) => {
+  const canPublishSources = [
+    ...(p.mic ? [TrackSource.MICROPHONE] : []),
+    ...(p.camera ? [TrackSource.CAMERA] : []),
+  ];
+  return {
+    canPublish: canPublishSources.length > 0,
+    canPublishSources,
+    canSubscribe: true,
+    canPublishData: false,
+  };
+};
 
 // The LiveKit Server API the voice module needs; tests swap in a recorder.
 export abstract class LiveKitRooms {
   abstract remove(room: string, identity: string): Promise<void>;
-  // REQ-VC-04: what this participant may publish from now on; a dropped source stops at the SFU.
-  abstract allow(room: string, identity: string, p: Publish): Promise<void>;
   abstract close(room: string): Promise<void>;
 }
 
@@ -51,20 +58,6 @@ export class ServerApiRooms extends LiveKitRooms {
       .removeParticipant(room, identity)
       .catch((err: unknown) =>
         this.logger.warn(`remove ${identity}: ${String(err)}`),
-      );
-  }
-
-  async allow(room: string, identity: string, p: Publish) {
-    const canPublishSources = sources(p);
-    await this.client
-      .updateParticipant(room, identity, undefined, {
-        canPublish: canPublishSources.length > 0,
-        canPublishSources,
-        canSubscribe: true,
-        canPublishData: false,
-      })
-      .catch((err: unknown) =>
-        this.logger.warn(`allow ${identity}: ${String(err)}`),
       );
   }
 
@@ -92,21 +85,13 @@ export class LiveKitKeys {
     this.receiver = new WebhookReceiver(this.key, this.secret);
   }
 
-  // SRS 5.5 grant: one room, identity = user id, publish by SPEAK / VIDEO, never data.
-  token(userId: bigint, room: string, p: Publish) {
+  // SRS 5.5: one room, identity = user id.
+  token(userId: bigint, room: string, p: Publishable) {
     const at = new AccessToken(this.key, this.secret, {
       identity: userId.toString(),
       ttl: TOKEN_TTL,
     });
-    const canPublishSources = sources(p);
-    at.addGrant({
-      roomJoin: true,
-      room,
-      canPublish: canPublishSources.length > 0,
-      canPublishSources,
-      canSubscribe: true,
-      canPublishData: false,
-    });
+    at.addGrant({ roomJoin: true, room, ...publishGrant(p) });
     return at.toJwt();
   }
 

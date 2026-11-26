@@ -34,7 +34,7 @@ export abstract class PresenceSink {
   // P2-B2.2 (#111): friend added / removed, block added / removed between a and b.
   abstract relationshipChanged(a: bigint, b: bigint): Promise<void>;
   // P3-B1.2 (#138), AUTH-05 CR-24: the voice room the user sits in; null = none.
-  abstract voiceChanged(userId: bigint, room: VoiceRoom | null): void;
+  abstract voiceChanged(userId: bigint, room: VoiceRoom | null): Promise<void>;
 }
 
 export type VoiceRoom = { channelId: bigint; name: string; studyRoom: boolean };
@@ -122,8 +122,10 @@ export class PresenceService
       );
   }
 
+  // Awaited by voice so a switch (null, then the new room) lands in order. ponytail: khi backend
+  // khởi động lại: người còn ngồi trong phòng hiện lại hoạt động voice ở lần đổi ghế kế tiếp.
   voiceChanged(userId: bigint, room: VoiceRoom | null) {
-    this.load(userId)
+    return this.load(userId)
       .then((me) => {
         me.voice = room && {
           kind: 'voice',

@@ -46,7 +46,7 @@ export const VoiceLeaveReason = z.enum([
   'timed_out',
   'left_server', // REQ-SRV-05 AC5 (P3-A4.1 #130)
   'channel_deleted',
-  'other_device', // one voice per account (VC-01), compared by device_id
+  'other_device', // one voice per account (VC-01): another login (auth session) took the seat
   'call', // CR-06 #2: calling from a room leaves it (P3-B6 #30)
   'logout',
 ]);

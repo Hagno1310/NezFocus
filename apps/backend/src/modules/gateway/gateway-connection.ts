@@ -22,6 +22,7 @@ import {
   type GatewaySessions,
   type SessionSocket,
 } from './gateway-sessions.js';
+import type { VoiceSessions } from '../voice/voice.service.js';
 
 type Authenticated = {
   ok: true;
@@ -54,14 +55,8 @@ export interface PresenceHooks {
   changed(userId: bigint): Promise<void>;
 }
 
-// REQ-VC-01, implemented by VoiceRoomsService (op 4 and READY.voice_states).
-export interface VoiceHooks {
-  ready(userId: bigint): Promise<VoiceRoomMember[]>;
-  update(
-    who: { userId: bigint; authSessionId: bigint },
-    d: VoiceStateUpdate,
-  ): Promise<void>;
-}
+// REQ-VC-01: op 4 and READY.voice_states (VoiceSessions, owned by voice).
+export type VoiceHooks = Pick<VoiceSessions, 'ready' | 'update'>;
 
 const noVoice: VoiceHooks = {
   ready: async () => [],

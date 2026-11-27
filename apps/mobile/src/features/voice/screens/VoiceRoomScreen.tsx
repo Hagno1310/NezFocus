@@ -428,7 +428,8 @@ export function VoiceRoomScreen({
   const tileWidth = gridTileWidth(width - BODY_X * 2, room.tiles.length);
   const banner = !joined ? (
     layout.access === 'offline' && <SystemBanner kind="offline" />
-  ) : !room.online || here?.link === 'reconnecting' ? (
+  ) : // S-ROOM-02 `syncing`: the Gateway gone counts too, not only the network or LiveKit.
+  !room.online || here?.link === 'reconnecting' || (session && syncing) ? (
     <SystemBanner kind="reconnecting" />
   ) : (
     room.denied.mic && (

@@ -102,11 +102,11 @@ Lưu tên thành công → về S-SET-06 · `voice` + `Toast` "Đã đổi tên 
 |---|---|---|
 | `loading` | Skeleton 3 nhóm (dải nhãn + hàng 56) | — |
 | `full-access` | Như bố cục: Mọi người · 25/5; có dòng phiên đang chạy | — |
-| `managers` | Chọn "Chỉ người quản lý" khi đang có phiên: dòng trung tính dưới nhóm 1 | "Bạn vẫn điều khiển phiên học đang chạy. Luật mới áp dụng từ lần bắt đầu sau." (STUDY-11: Host giữ quyền tới khi rời phòng) |
+| `managers` | Chọn "Chỉ người quản lý" khi đang có phiên: dòng trung tính dưới nhóm 1 | "Bạn vẫn điều khiển phiên học đang chạy. Luật mới áp dụng từ lần bắt đầu sau." (STUDY-11: Host giữ quyền tới khi rời phòng). Người xem không phải Host (27/11/2026, CR-28 #37): "Người đang điều khiển phiên học vẫn giữ quyền. Luật mới áp dụng từ lần bắt đầu sau." |
 | `off` | "Tắt" được chọn (không có phiên): nhóm "CHU KỲ MẶC ĐỊNH" ẩn; không còn dòng phiên đang chạy | Dòng dưới nhóm 1: "Kênh là phòng voice thường. Chọn Mọi người hoặc Chỉ người quản lý để bật lại Phòng học." |
 | `switch-off-confirm` | Chạm "Tắt" khi đang có phiên → 03 S-ROOM-05 `focus-off` trên màn này; radio chưa đổi tới khi xác nhận | "Tắt Phòng học và dừng phiên học (9 người)?" · "Hủy" / "Tắt Phòng học" (`danger`). Hủy → giữ "Mọi người" |
 | `cycle-sheet` | Chạm "Chu kỳ" → `BottomSheet` "Chu kỳ mặc định", lựa chọn hiện tại chọn sẵn (25/5), nút "Lưu" | Ghi chú: "Áp dụng cho lần bắt đầu sau" |
-| `cycle-custom` | Chọn "Tùy chỉnh": như S-ROOM-03 `custom` (2 ô số + công tắc Nghỉ dài), bàn phím số mở, nút "Lưu" ngay trên bàn phím | Ô "Tập trung (5–120)", "Nghỉ ngắn (1–30)" |
+| `cycle-custom` | Chọn "Tùy chỉnh": như S-ROOM-03 `custom` (2 ô số cạnh nhau + công tắc Nghỉ dài; dòng tóm tắt chỉ khi bật Nghỉ dài, như `custom-long-break`), bàn phím số mở, nút "Lưu" ngay trên bàn phím | Ô "Tập trung (5–120)", "Nghỉ ngắn (1–30)" |
 | `cycle-invalid` | Ô ngoài khoảng: `TextField · error` | "Tập trung phải từ 5 đến 120 phút" (`40001`) |
 | `save-error` | Lưu thất bại (vd chọn "Chỉ người quản lý"): radio về giá trị cũ + `Toast` trên TabBar | "Chưa lưu được thay đổi · Thử lại" |
 | `offline` | `Banner · offline` dưới header; mọi điều khiển `disabled`; giá trị là cache | "Bạn đang offline" |

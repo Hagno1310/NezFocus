@@ -15,6 +15,7 @@ export * from './study/solo.contract.js';
 export * from './study/solo-rules.js';
 export * from './study/local-date.js';
 export * from './study/stats.contract.js';
+export * from './study/study-room.js';
 export * from './permissions/permissions.js';
 export * from './permissions/compute-permissions.js';
 export * from './permissions/permission-groups.js';

@@ -26,6 +26,7 @@ import {
 import {
   ChannelDeleted,
   ChannelResponse,
+  ChannelUpdateEvent,
 } from '../servers/channel.contract.js';
 import {
   ServerRoleDeleted,
@@ -78,7 +79,7 @@ export const DispatchEvents = {
   // REQ-SRV-02: only to members who can view it. A DM (DM-03): to both when created, and to
   // whoever had it closed when a new message reopens it.
   CHANNEL_CREATE: z.union([ChannelResponse, DmChannel]),
-  CHANNEL_UPDATE: ChannelResponse, // also when its overwrites or sync change (REQ-ROLE-03)
+  CHANNEL_UPDATE: ChannelUpdateEvent, // also when its overwrites or sync change (REQ-ROLE-03); updated_by: CR-28 #37
   CHANNEL_DELETE: ChannelDeleted,
   CHANNEL_PINS_UPDATE: ChannelPinsUpdateEvent, // REQ-MSG-10 AC1: to who can view the channel
   MESSAGE_CREATE: MessageCreateEvent, // REQ-MSG-01: to who can view the channel, nonce echoed (MSG-09)

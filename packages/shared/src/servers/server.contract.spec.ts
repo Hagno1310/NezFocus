@@ -27,6 +27,7 @@ const channels = [
     parent_id: null,
     position: 0,
     focus_control: 'off',
+    default_cycle_config: null,
     permissions_synced: true,
     permission_overwrites: [],
     last_message_id: null,
@@ -39,6 +40,7 @@ const channels = [
     parent_id: '200',
     position: 0,
     focus_control: 'off',
+    default_cycle_config: null,
     permissions_synced: true,
     permission_overwrites: [],
     last_message_id: null,
@@ -51,6 +53,7 @@ const channels = [
     parent_id: '200',
     position: 1,
     focus_control: 'off',
+    default_cycle_config: { focus_min: 25, short_break_min: 5 },
     permissions_synced: true,
     permission_overwrites: [],
     last_message_id: null,
@@ -231,7 +234,7 @@ describe('server and channel events (SRS 5.4)', () => {
       ['SERVER_CREATE', full],
       ['SERVER_UPDATE', server],
       ['CHANNEL_CREATE', channels[1]],
-      ['CHANNEL_UPDATE', channels[1]],
+      ['CHANNEL_UPDATE', { ...channels[1], updated_by: '1' }],
       ['CHANNEL_DELETE', { id: '201', server_id: '100' }],
     ] as const)
       expect(parseDispatch({ op: 0, s: 1, t, d })).toEqual({ t, s: 1, d });

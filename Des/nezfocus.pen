@@ -279118,6 +279118,41 @@
                   "justifyContent": "end"
                 }
               }
+            },
+            {
+              "id": "RuayF",
+              "type": "ref",
+              "ref": "z5Bu8",
+              "name": "SR Phòng học đang chạy",
+              "width": "fill_container",
+              "height": "fit_content",
+              "padding": [
+                12,
+                16
+              ],
+              "descendants": {
+                "VlQBL": {
+                  "width": "fill_container"
+                },
+                "byjht": {
+                  "content": "Phòng học đang chạy"
+                },
+                "K6eJZ2": {
+                  "enabled": true,
+                  "content": "Im lặng"
+                },
+                "Mk28S": {
+                  "enabled": false
+                },
+                "r1lw7E": {
+                  "enabled": false
+                },
+                "V1S1u": {
+                  "enabled": true,
+                  "fill": "$primary",
+                  "justifyContent": "end"
+                }
+              }
             }
           ]
         },

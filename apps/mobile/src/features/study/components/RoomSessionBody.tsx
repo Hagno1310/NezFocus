@@ -329,6 +329,8 @@ export function RoomSessionBody({
               variant={alone ? 'secondary' : 'text'}
               size="S"
               icon={UserPlus}
+              // Edge `alone`: the bordered button sits 8 under the line, not 4 like the text one.
+              style={alone && styles.aloneInvite}
               label={t('room.invite')}
               // ponytail: the Android share sheet (S-HOME-07 `room`) is P3-B6.5 (#159).
               onPress={() => {}}
@@ -530,4 +532,5 @@ const styles = StyleSheet.create({
   ringBody: { alignItems: 'center', gap: space[1], paddingBottom: space[2] },
   gridBody: { gap: space[3], paddingBottom: space[3] },
   center: { textAlign: 'center' },
+  aloneInvite: { marginTop: space[1] },
 });

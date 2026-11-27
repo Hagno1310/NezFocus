@@ -122,7 +122,6 @@ export function FriendsStudyingSheet({
               <Where activity={activity} now={now} />
             </View>
             {activity.kind === 'group_study' && activity.room && onOpenRoom && (
-              // ponytail: 04 says "Vào" goes through S-ROOM-06 while Solo runs; P3-B3.6 (#150).
               <Button
                 label={t('friends.studying.join')}
                 variant="secondary"

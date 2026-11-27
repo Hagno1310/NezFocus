@@ -1343,6 +1343,31 @@ export const vi = {
       'Phiên học ở {{name}} đã kết thúc · {{minutes}} phút đã được tính',
     leftMinutes: 'Đã rời {{name}} · {{minutes}} phút đã được tính',
     leftNone: 'Đã rời {{name}} · chưa có phút nào được tính',
+    soloJoin: {
+      title: 'Vào phòng sẽ kết thúc phiên học một mình của bạn',
+      body: 'Bạn đã học {{minutes}} phút — số phút này vẫn được tính. Phòng đang {{phase}}, còn {{left}} phút.',
+      bodyUnder:
+        'Bạn đã học {{minutes}} phút — số phút này vẫn được tính. Phòng đang {{phase}}, còn dưới 1 phút.',
+      cancel: 'Hủy',
+      confirm: 'Vào phòng',
+    },
+    soloStart: {
+      title: 'Bắt đầu phiên học chung sẽ kết thúc phiên học một mình của bạn',
+      body: 'Bạn đã học {{minutes}} phút — số phút này vẫn được tính.',
+      cancel: 'Hủy',
+      confirm: 'Bắt đầu',
+    },
+    soloStopped:
+      'Phiên học chung đã bắt đầu · học một mình đã dừng · {{minutes}} phút đã được tính',
+    minutesLeft: 'còn {{n}} phút',
+    minutesLeftUnder: 'còn dưới 1 phút',
+    mini: {
+      voice: 'Đang trong phòng · {{n}} người',
+      solo: '· Học một mình',
+      reconnecting: 'Đang kết nối lại…',
+      cameraOff: 'Tắt camera',
+    },
+    inRoomSolo: 'Bạn đang trong phiên học ở {{name}}',
     start: {
       title: 'Bắt đầu phiên học',
       note: 'Cả {{n}} người trong phòng sẽ cùng nhịp. Bạn sẽ là người điều khiển.',

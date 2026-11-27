@@ -31,6 +31,8 @@ import { Icon } from '../../../shared/ui/Icon';
 import { StatText } from '../../../shared/ui/Stats';
 import { Text } from '../../../shared/ui/Text';
 import { CycleSheet } from '../components/CycleSheet';
+import { roomSessionsStore } from '../../../domain/study/roomSessions';
+import { voiceStore } from '../../../domain/voice/voiceSession';
 import { Today } from '../components/Today';
 import { WeekChart } from '../components/WeekChart';
 import { cycleText, minutesText } from '../format';
@@ -170,6 +172,7 @@ function SoloBlock({
   const snap = useSolo();
   const now = useNow(1000);
   const [choosing, setChoosing] = useState(false);
+  const inRoom = useRoomWithSession();
   const timer = snap && !endingOf(snap) ? timerOf(snap, now) : null;
   // 04 › Khối Solo: at 200% "Bắt đầu" goes under the text, full width.
   const stacked = fontScale >= 1.5;
@@ -180,6 +183,8 @@ function SoloBlock({
       })
     : t('study.cycle', { cycle: cycleText(cycle) });
 
+  // `in-room-solo-blocked` (40903): one Focus Session at a time; the button goes under the cycle.
+  const blocked = !timer && inRoom !== null;
   const button = timer ? (
     <Button
       variant="secondary"
@@ -193,6 +198,7 @@ function SoloBlock({
       label={t('study.start')}
       loading={starting}
       fullWidth={stacked}
+      disabled={blocked}
       onPress={() => onStart()}
     />
   );
@@ -238,7 +244,16 @@ function SoloBlock({
           </View>
         </Pressable>
       )}
-      {button}
+      {blocked ? (
+        <View style={styles.blocked}>
+          {button}
+          <Text variant="label" color="text-secondary">
+            {t('room.inRoomSolo', { name: inRoom })}
+          </Text>
+        </View>
+      ) : (
+        button
+      )}
       <CycleSheet
         key={String(choosing)}
         visible={choosing}
@@ -322,7 +337,27 @@ function WeekBlock({
 // Frame S-STUDY-01 › Solo › Info at 100%.
 const INFO_HEIGHT = 42;
 
+// The room I sit in when it has a Room Session (S-STUDY-01 `in-room-solo-blocked`).
+function useRoomWithSession() {
+  const call = useStore(voiceStore, (v) =>
+    v.call?.phase === 'in' ? v.call : null,
+  );
+  const running = useStore(
+    roomSessionsStore,
+    (s) => !!call && !!s.byChannel[call.channelId],
+  );
+  const name = useStore(homeStore, (s) =>
+    call
+      ? (s.channels[call.serverId]?.find((c) => c.id === call.channelId)
+          ?.name ?? '')
+      : '',
+  );
+  return running ? name : null;
+}
+
 const styles = StyleSheet.create({
+  // Frame `in-room-solo-blocked`: the off button on its own row, the reason under it.
+  blocked: { width: '100%', gap: space[2], alignItems: 'flex-start' },
   screen: { flex: 1 },
   title: { paddingHorizontal: space[3], paddingVertical: space[2] },
   content: { padding: space[3], gap: space[3] },

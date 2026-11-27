@@ -1341,6 +1341,31 @@ export const en: Strings = {
       'The session in {{name}} has ended · {{minutes}} min counted',
     leftMinutes: 'Left {{name}} · {{minutes}} min counted',
     leftNone: 'Left {{name}} · no minutes counted yet',
+    soloJoin: {
+      title: 'Joining the room will end your solo session',
+      body: 'You studied {{minutes}} min — those minutes still count. The room is in {{phase}}, {{left}} min left.',
+      bodyUnder:
+        'You studied {{minutes}} min — those minutes still count. The room is in {{phase}}, under 1 min left.',
+      cancel: 'Cancel',
+      confirm: 'Join room',
+    },
+    soloStart: {
+      title: 'Starting a group session will end your solo session',
+      body: 'You studied {{minutes}} min — those minutes still count.',
+      cancel: 'Cancel',
+      confirm: 'Start',
+    },
+    soloStopped:
+      'A group session started · your solo session stopped · {{minutes}} min counted',
+    minutesLeft: '{{n}} min left',
+    minutesLeftUnder: 'under 1 min left',
+    mini: {
+      voice: 'In the room · {{n}} people',
+      solo: '· Solo',
+      reconnecting: 'Reconnecting…',
+      cameraOff: 'Turn camera off',
+    },
+    inRoomSolo: 'You are in a study session in {{name}}',
     start: {
       title: 'Start a study session',
       note: 'All {{n}} people in the room will keep the same rhythm. You will be in control.',

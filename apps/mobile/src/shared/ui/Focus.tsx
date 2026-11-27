@@ -166,6 +166,7 @@ export function FocusTimer({
   accessibilityLabel,
   mascot,
   muted = false,
+  minutesText,
 }: {
   phase: FocusPhase;
   state: PhaseState;
@@ -177,6 +178,8 @@ export function FocusTimer({
   accessibilityLabel: string;
   mascot?: ReactNode;
   muted?: boolean; // C-06 `syncing`: the number in text-tertiary
+  // C-06 `other-session`: "còn 18 phút" in title-1 instead of a clock.
+  minutesText?: string;
 }) {
   const share = totalMs > 0 ? Math.min(1, leftMs / totalMs) : 0;
   // C-06: a break fills up and ends full, so the Solo wait after it shows a full ring.
@@ -196,12 +199,16 @@ export function FocusTimer({
       <Ring phase={phase} from={from} to={to} />
       {mascot}
       <PhaseBadge phase={phase} state={state} size="M" label={label} />
-      <Text
-        variant={long ? 'timer-long' : 'timer'}
-        color={muted ? 'text-tertiary' : 'text-primary'}
-      >
-        {clockText(leftMs)}
-      </Text>
+      {minutesText ? (
+        <Text variant="title-1">{minutesText}</Text>
+      ) : (
+        <Text
+          variant={long ? 'timer-long' : 'timer'}
+          color={muted ? 'text-tertiary' : 'text-primary'}
+        >
+          {clockText(leftMs)}
+        </Text>
+      )}
       {lines.map((line) => (
         <Text
           key={line}

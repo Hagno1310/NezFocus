@@ -85,6 +85,7 @@ export function RoomSessionBody({
   nameOf,
   onToastTop,
   onMore,
+  otherSession = false,
 }: {
   session: FocusSessionState;
   offsetMs: number;
@@ -97,6 +98,7 @@ export function RoomSessionBody({
   nameOf: (userId: string) => string;
   onToastTop: (y: number) => void; // Toasts sit under the chip (spec 03 › Toast)
   onMore: () => void;
+  otherSession?: boolean;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -252,6 +254,15 @@ export function RoomSessionBody({
                 lines={lines}
                 long={timer.long}
                 muted={syncing}
+                minutesText={
+                  otherSession
+                    ? Math.floor(timer.remainingMs / 60_000)
+                      ? t('room.minutesLeft', {
+                          n: Math.floor(timer.remainingMs / 60_000),
+                        })
+                      : t('room.minutesLeftUnder')
+                    : undefined
+                }
                 mascot={mascot}
                 accessibilityLabel={a11y}
               />

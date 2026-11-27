@@ -95,6 +95,16 @@ export function acceptRoomSession(
   }));
 }
 
+// S-ROOM-06 / S-ROOM-03 `solo-confirm`: I end my Solo myself, so no `solo-stopped-by-room-start`
+// Toast when its `joined_room` end comes.
+const SOLO_END_WINDOW_MS = 15_000;
+let soloEndAt = 0;
+export const expectSoloEnd = () => {
+  soloEndAt = Date.now();
+};
+export const soloEndExpected = () =>
+  Date.now() - soloEndAt < SOLO_END_WINDOW_MS;
+
 // S-ROOM-EDGE › sheet tổng kết: "Ở lại phòng" or leaving the room closes it.
 export const dropSummary = (channelId: string) =>
   roomSessionsStore.setState((s) => ({

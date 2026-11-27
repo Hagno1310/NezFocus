@@ -128,6 +128,16 @@ export type SoloEnding = {
   hitCap: boolean; // S-STUDY-EDGE long-session
 };
 
+// What the Solo has given so far: credited seconds plus the focus still running (STUDY-10).
+export function soloSecondsNow(snap: SoloSnapshot, localNow: Date): number {
+  const timer = timerOf(snap, localNow);
+  const running =
+    timer?.status === 'running' && timer.phase === 'focus'
+      ? timer.totalMs - timer.remainingMs
+      : 0;
+  return snap.session.focused_seconds + Math.floor(running / 1000);
+}
+
 export function endingOf(snap: SoloSnapshot): SoloEnding | null {
   const s = snap.session;
   if (s.status !== 'ended') return null;

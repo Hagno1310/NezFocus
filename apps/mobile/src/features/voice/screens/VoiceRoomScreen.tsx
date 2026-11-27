@@ -41,7 +41,12 @@ import type {
   VoiceTarget,
 } from '../../../domain/voice/voiceSession';
 import { voiceNotice } from '../../../domain/voice/voiceNotice';
-import { closeVoice, openVoice } from '../../../domain/voice/voiceView';
+import {
+  clearVoiceIntent,
+  closeVoice,
+  openVoice,
+  voiceView,
+} from '../../../domain/voice/voiceView';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
 import { sessionStore } from '../../../domain/session/sessionStore';
 import { motion, radius, size, space, useTheme } from '../../../shared/theme';
@@ -72,39 +77,25 @@ import {
 } from '../../study/hooks/useRoomSession';
 import { RoomControlSheet } from '../../study/components/RoomControlSheet';
 import { RoomSummarySheet } from '../../study/components/RoomSummarySheet';
-import {
-  leftToast,
-  roomControls,
-  successorOf,
-} from '../../../domain/study/roomView';
+import { roomControls, successorOf } from '../../../domain/study/roomView';
 import {
   dropSummary,
+  expectSoloEnd,
   roomSessionsStore,
 } from '../../../domain/study/roomSessions';
+import { soloSecondsNow } from '../../../domain/study/solo';
+import { useSolo } from '../../study/hooks/useSolo';
+import { leaveRoom } from '../leaveRoom';
 import { homeStore } from '../../../domain/servers/homeStore';
 import { seatsIn } from '../../../domain/voice/voiceRooms';
 import { voiceStore } from '../../../domain/voice/voiceSession';
-import {
-  myFocusedSeconds,
-  roomTimer,
-  type FocusPhase,
-  type RoomTimer,
-} from '@nezfocus/shared';
+import { roomTimer, type FocusPhase, type RoomTimer } from '@nezfocus/shared';
 import { CameraPreviewSheet } from '../components/CameraPreviewSheet';
 import { MediaSheet } from '../components/MediaSheet';
 import { useMediaFlow } from '../hooks/useMediaFlow';
 import { useVoiceRoom } from '../hooks/useVoiceRoom';
 
 const BODY_X = space[3];
-const TOAST_NAME_MAX = 24; // S-ROOM-05 › Rời phòng: the room name in a Toast
-
-// By code point, so an emoji is never cut in half.
-const shortName = (name: string) => {
-  const chars = Array.from(name);
-  return chars.length > TOAST_NAME_MAX
-    ? `${chars.slice(0, TOAST_NAME_MAX).join('')}…`
-    : name;
-};
 
 // S-ROOM-01: the preview (`not-joined`, `offline`, `no-connect`) and the room before a session
 // (`study-room-idle`, `not-study-room`, `managers-only`, `voice-video-grid`); S-ROOM-02 once the
@@ -125,18 +116,35 @@ export function VoiceRoomScreen({
     session ? session.host_id : undefined,
   );
   const meId = useStore(sessionStore, (s) => s.user?.id ?? '');
+  const myCallChannel = useStore(voiceStore, (s) => s.call?.channelId ?? null);
   const syncing = useStore(gatewayStore, (s) => s.banner !== null);
   const now = useNow().getTime();
   const [starting, setStarting] = useState(false);
   const [controlling, setControlling] = useState(false);
   const [editing, setEditing] = useState(false);
-  // S-ROOM-05: `stop`, or leaving / switching as the Host of the running session.
+  // S-ROOM-05: `stop`, or leaving / switching as the Host of the running session; S-ROOM-06 and
+  // S-ROOM-03 `solo-confirm` while a Solo runs (CR-22).
   const [confirm, setConfirm] = useState<
     | null
     | { kind: 'stop' }
     | { kind: 'leave' | 'switch'; successor: string | null }
+    | { kind: 'solo-join' }
+    | { kind: 'solo-start'; cycle: CycleConfig }
   >(null);
+  const solo = useSolo();
+  const soloRunning = !!solo && solo.session.status !== 'ended';
+  const intent = useStore(voiceView, (s) =>
+    s.open?.channelId === channelId ? s.intent : null,
+  );
+
   const act = useRoomAction();
+  const hasSessionElsewhere = useStore(
+    roomSessionsStore,
+    (s) =>
+      !!myCallChannel &&
+      myCallChannel !== channelId &&
+      !!s.byChannel[myCallChannel],
+  );
   // My own Host seat elsewhere: switching rooms asks first (VC-01 AC3, `host-switch`).
   const myCall = useStore(voiceStore, (s) => s.call);
   const hostedElsewhere = useStore(roomSessionsStore, (s) => {
@@ -191,6 +199,12 @@ export function VoiceRoomScreen({
       });
   };
   const join = async (asked = false) => {
+    if (joined) return;
+    // S-ROOM-06: only for a room with a session; else the Solo runs on (`voice-solo`).
+    if (!asked && session && soloRunning) {
+      setConfirm({ kind: 'solo-join' });
+      return;
+    }
     if (!asked && hostedElsewhere && myCall) {
       // ponytail: the other room's seats are known, its members only when its server is open;
       // khi switching across servers matters: load that server's members for the managers rule.
@@ -226,30 +240,7 @@ export function VoiceRoomScreen({
     tell(await voiceSession.join(target), () => void rejoin());
   };
 
-  // S-ROOM-05 › Rời phòng: back to the channel before, with my minutes if I took part
-  // ("Đã rời {phòng} · {31} phút đã được tính · Vào lại").
-  const leaveNow = () => {
-    const seconds = session?.me
-      ? myFocusedSeconds(session, offsetMs, Date.now())
-      : (summary?.focused_seconds ?? null);
-    const left = leftToast(seconds);
-    const name = shortName(channel.name);
-    void voiceSession.leave();
-    closeVoice();
-    dropSummary(channelId);
-    showToast({
-      message:
-        left.key === 'leftMinutes'
-          ? t('room.leftMinutes', { name, minutes: left.minutes })
-          : left.key === 'leftNone'
-            ? t('room.leftNone', { name })
-            : t('voice.left', { name }),
-      action: {
-        label: t('voice.rejoin'),
-        onPress: () => void rejoin(),
-      },
-    });
-  };
+  const leaveNow = () => leaveRoom(target, channel.name);
   const successorHere = () =>
     successorOf(room.seats, meId, channel.focus_control, (id) =>
       hasPermission(room.permsOf(id), Permission.MANAGE_STUDY_ROOMS),
@@ -257,9 +248,35 @@ export function VoiceRoomScreen({
   // A Participant leaves without a question; the Host of the running session confirms who takes
   // over (`host-leave` / `no-successor`).
   const leave = () => {
+    if (!joined) return;
     if (session && session.host_id === meId)
       setConfirm({ kind: 'leave', successor: successorHere() });
     else leaveNow();
+  };
+  const soloMinutes = () =>
+    solo ? Math.floor(soloSecondsNow(solo, new Date(now)) / 60) : 0;
+  const begin = (cycle_config: CycleConfig, end_solo?: boolean) => {
+    if (end_solo) expectSoloEnd();
+    start.mutate(
+      { cycle_config, ...(end_solo && { end_solo }) },
+      { onSuccess: () => setStarting(false) },
+    );
+  };
+
+  // S-ROOM-06: "Bạn đã học {17} phút — … Phòng đang Tập trung, còn {18} phút."
+  const soloJoinBody = () => {
+    const timer = session && roomTimer(session, offsetMs, now);
+    const left = timer ? Math.floor(timer.remainingMs / 60_000) : 0;
+    const phase = timer
+      ? timer.status === 'paused'
+        ? t('study.phase.pausedShort')
+        : t(`study.phase.${timer.phase}`)
+      : '';
+    return t(left ? 'room.soloJoin.body' : 'room.soloJoin.bodyUnder', {
+      minutes: soloMinutes(),
+      phase,
+      left,
+    });
   };
 
   const micOn = joined ? !!here?.mic : previewMic;
@@ -379,6 +396,11 @@ export function VoiceRoomScreen({
         session ? background : { backgroundColor: colors.bg },
       ]}
     >
+      <IntentRunner
+        intent={intent}
+        onJoin={() => void join()}
+        onLeave={leave}
+      />
       <ChannelHeader
         icon={channelIcon(channel)}
         title={channel.name}
@@ -395,6 +417,10 @@ export function VoiceRoomScreen({
             joined={joined}
             canManage={canManage}
             syncing={syncing}
+            // `not-joined-other-session`: my own Solo / Room Session counts seconds in the MiniPlayer.
+            otherSession={
+              !joined && (soloRunning || (!!myCall && hasSessionElsewhere))
+            }
             tiles={room.tiles}
             nameOf={room.nameOf}
             onToastTop={(y) => setToastTop(space[2] + y)}
@@ -509,11 +535,9 @@ export function VoiceRoomScreen({
         initial={defaultCycle}
         people={room.tiles.length}
         loading={start.isPending}
-        onSubmit={(cycle_config) =>
-          start.mutate(
-            { cycle_config },
-            { onSuccess: () => setStarting(false) },
-          )
+        // S-ROOM-03 `solo-confirm`: a Dialog over the sheet first while a Solo runs.
+        onSubmit={(cycle) =>
+          soloRunning ? setConfirm({ kind: 'solo-start', cycle }) : begin(cycle)
         }
         onDismiss={() => setStarting(false)}
       />
@@ -561,55 +585,77 @@ export function VoiceRoomScreen({
       <Dialog
         visible={confirm !== null}
         title={
-          confirm?.kind === 'stop'
-            ? room.tiles.length > 1
-              ? t('room.confirm.stopTitle', { n: room.tiles.length })
-              : t('room.confirm.stopTitleAlone')
-            : t('room.confirm.leaveTitle')
+          confirm?.kind === 'solo-join'
+            ? t('room.soloJoin.title')
+            : confirm?.kind === 'solo-start'
+              ? t('room.soloStart.title')
+              : confirm?.kind === 'stop'
+                ? room.tiles.length > 1
+                  ? t('room.confirm.stopTitle', { n: room.tiles.length })
+                  : t('room.confirm.stopTitleAlone')
+                : t('room.confirm.leaveTitle')
         }
         body={
-          confirm?.kind === 'stop'
-            ? t('room.confirm.stopBody')
-            : confirm?.successor
-              ? t('room.confirm.successor', {
-                  name: room.nameOf(confirm.successor),
-                })
-              : t('room.confirm.noSuccessor')
+          confirm?.kind === 'solo-join'
+            ? soloJoinBody()
+            : confirm?.kind === 'solo-start'
+              ? t('room.soloStart.body', { minutes: soloMinutes() })
+              : confirm?.kind === 'stop'
+                ? t('room.confirm.stopBody')
+                : confirm?.successor
+                  ? t('room.confirm.successor', {
+                      name: room.nameOf(confirm.successor),
+                    })
+                  : t('room.confirm.noSuccessor')
         }
-        row={confirm?.kind !== 'stop'}
+        row={confirm?.kind === 'leave' || confirm?.kind === 'switch'}
         error={act.isError ? t('room.confirm.failed') : null}
         confirm={
-          confirm?.kind === 'stop'
+          confirm?.kind === 'solo-join' || confirm?.kind === 'solo-start'
             ? {
-                label: t('room.confirm.stop'),
-                variant: 'danger',
-                loading: act.isPending,
-                onPress: () =>
-                  session &&
-                  act.mutate(
-                    { id: session.id, action: { action: 'stop' } },
-                    { onSuccess: () => setConfirm(null) },
-                  ),
-              }
-            : {
                 label: t(
-                  confirm?.kind === 'switch'
-                    ? 'room.confirm.switch'
-                    : 'room.confirm.leave',
+                  confirm.kind === 'solo-join'
+                    ? 'room.soloJoin.confirm'
+                    : 'room.soloStart.confirm',
                 ),
                 onPress: () => {
-                  const kind = confirm?.kind;
                   setConfirm(null);
-                  if (kind === 'switch') void join(true);
-                  else leaveNow();
+                  expectSoloEnd();
+                  if (confirm.kind === 'solo-start') begin(confirm.cycle, true);
+                  else void join(true);
                 },
               }
+            : confirm?.kind === 'stop'
+              ? {
+                  label: t('room.confirm.stop'),
+                  variant: 'danger',
+                  loading: act.isPending,
+                  onPress: () =>
+                    session &&
+                    act.mutate(
+                      { id: session.id, action: { action: 'stop' } },
+                      { onSuccess: () => setConfirm(null) },
+                    ),
+                }
+              : {
+                  label: t(
+                    confirm?.kind === 'switch'
+                      ? 'room.confirm.switch'
+                      : 'room.confirm.leave',
+                  ),
+                  onPress: () => {
+                    const kind = confirm?.kind;
+                    setConfirm(null);
+                    if (kind === 'switch') void join(true);
+                    else leaveNow();
+                  },
+                }
         }
         cancel={{
           label: t(
-            confirm?.kind === 'stop'
-              ? 'room.confirm.cancel'
-              : 'room.confirm.stay',
+            confirm?.kind === 'leave' || confirm?.kind === 'switch'
+              ? 'room.confirm.stay'
+              : 'room.confirm.cancel',
           ),
           onPress: () => {
             act.reset();
@@ -662,6 +708,28 @@ export function VoiceRoomScreen({
       />
     </Animated.View>
   );
+}
+
+// A "Vào" / "Rời phòng" pressed on another screen (tab Học, MiniPlayer), run here with this
+// screen's questions (S-ROOM-06, S-ROOM-05 `host-leave`).
+function IntentRunner({
+  intent,
+  onJoin,
+  onLeave,
+}: {
+  intent: 'join' | 'leave' | null;
+  onJoin: () => void;
+  onLeave: () => void;
+}) {
+  useEffect(() => {
+    if (!intent) return;
+    clearVoiceIntent();
+    if (intent === 'join') onJoin();
+    else onLeave();
+    // Once per intent; the handlers are this render's.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intent]);
+  return null;
 }
 
 // S-ROOM-04 "Bỏ qua pha": where a skip lands (focus → its break, a break → focus).

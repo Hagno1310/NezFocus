@@ -36,6 +36,10 @@ import {
   SoloMiniPlayer,
   SoloNotificationOpener,
 } from '../../features/study/components/SoloMiniPlayer';
+import { RoomMiniPlayer } from '../../features/voice/components/RoomMiniPlayer';
+import { roomSessionsStore } from '../../domain/study/roomSessions';
+import { voiceStore } from '../../domain/voice/voiceSession';
+import { voiceView } from '../../domain/voice/voiceView';
 import { useSolo, useSoloSync } from '../../features/study/hooks/useSolo';
 import { useUnreadTotals } from '../../features/chat/hooks/useUnread';
 import { AskNotifications } from '../../features/study/screens/AskNotifications';
@@ -528,13 +532,30 @@ function MainTabBar({
   // (MiniPlayer on another tab, a notification on cold start), so closing goes back to it.
   const openSolo = () =>
     props.navigation.navigate('Study', { screen: 'Solo', initial: false });
+  // C-08 › Hiện ở đâu: the room's own MiniPlayer hides on its screen (a Home root, CR-15).
+  const call = useStore(voiceStore, (s) =>
+    s.call?.phase === 'in' ? s.call : null,
+  );
+  const openRoom = useStore(voiceView, (s) => s.open?.channelId ?? null);
+  const roomHasSession = useStore(
+    roomSessionsStore,
+    (s) => !!call && !!s.byChannel[call.channelId],
+  );
+  const onOwnRoom =
+    !!call &&
+    route?.name === 'Home' &&
+    (!focused || focused === 'HomeRoot') &&
+    openRoom === call.channelId;
+  // In a room the Solo shows as `voice-solo`, except on that room's screen without a session.
+  const soloMini = !onSolo && (!call || (onOwnRoom && !roomHasSession));
   return (
     <>
       <SoloNotificationOpener onOpen={openSolo} />
       {!keyboard && !fullScreen && (
         <>
           {/* Hidden on the Solo screen itself (C-08). */}
-          {!onSolo && <SoloMiniPlayer onOpen={openSolo} />}
+          {soloMini && <SoloMiniPlayer onOpen={openSolo} />}
+          <RoomMiniPlayer hidden={onOwnRoom} onOpenSolo={openSolo} />
           <TabBar {...props} tabs={tabs} />
         </>
       )}

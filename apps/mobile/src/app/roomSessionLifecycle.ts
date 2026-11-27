@@ -1,5 +1,5 @@
 import { roomTimer } from '@nezfocus/shared';
-import { WifiOff } from 'lucide-react-native';
+import { LampDesk, WifiOff } from 'lucide-react-native';
 import { AppState } from 'react-native';
 import { gatewayClient } from '../data/gateway';
 import { playPhaseAlert } from '../data/phaseAlert';
@@ -7,6 +7,7 @@ import { gatewayStore, onGatewayEvent } from '../domain/gateway/gatewayStore';
 import {
   dropSummary,
   reduceRoomSessions,
+  soloEndExpected,
   roomSessionsStore,
 } from '../domain/study/roomSessions';
 import { homeStore } from '../domain/servers/homeStore';
@@ -31,6 +32,20 @@ function mine() {
 export function startRoomSessionLifecycle() {
   const stopEvents = onGatewayEvent((event) => {
     roomSessionsStore.setState((s) => reduceRoomSessions(s, event, Date.now()));
+    // S-ROOM-EDGE `solo-stopped-by-room-start` (STUDY-10 AC9): someone else started where I sit.
+    if (
+      event.t === 'SOLO_SESSION_UPDATE' &&
+      event.d.solo_session.end_reason === 'joined_room' &&
+      !soloEndExpected()
+    ) {
+      showToast({
+        icon: LampDesk,
+        message: i18n.t('room.soloStopped', {
+          minutes: Math.floor(event.d.solo_session.focused_seconds / 60),
+        }),
+      });
+      return;
+    }
     // S-ROOM-EDGE `ended-elsewhere`: not on the room's screen → a Toast; the summary waits there.
     if (event.t !== 'FOCUS_SESSION_END' || event.d.focused_seconds === null)
       return;

@@ -19,7 +19,7 @@ import { useStudyStats } from '../hooks/useStudyStats';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { useStore } from 'zustand';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
-import { openVoice } from '../../../domain/voice/voiceView';
+import { enterRoom } from '../../../domain/voice/voiceView';
 import {
   endingOf,
   timerOf,
@@ -250,7 +250,8 @@ function Running({ snap, timer }: { snap: SoloSnapshot; timer: SoloTimer }) {
         onDismiss={() => setFriendsOpen(false)}
         onOpenRoom={(room) => {
           setFriendsOpen(false);
-          openVoice(room);
+          // "Vào": straight in, through S-ROOM-06 while this Solo runs (spec 04).
+          enterRoom(room);
           // Bubbles up to the tabs: the room is a Home root.
           navigation.dispatch(
             CommonActions.navigate({

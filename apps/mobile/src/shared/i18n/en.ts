@@ -1278,6 +1278,10 @@ export const en: Strings = {
       cancel: 'Cancel',
     },
   },
+  push: {
+    // SRS 7.3.5 Android channels (REQ-NOTIF-02); names shown in the system settings.
+    channels: { messages: 'Messages', calls: 'Calls' },
+  },
   placeholder: {
     note: 'Placeholder — replaced by the real screen in a later ticket',
     noteTicket: 'Placeholder — replaced by the real screen in {{ticket}}',

@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import type { ExpoConfig } from 'expo/config';
 
 // DEC-02 / ADR-02: dev build + CNG. android/ is generated — configure native here or via plugins/.
@@ -47,6 +48,13 @@ const config: ExpoConfig = {
   userInterfaceStyle: 'automatic',
   android: {
     package: 'app.nezfocus',
+    // REQ-NOTIF-02 (CR-28 #35): Firebase config for FCM, gitignored. EAS builds get it from the
+    // file variable GOOGLE_SERVICES_JSON; without it the build has no push (token calls fail).
+    googleServicesFile:
+      process.env.GOOGLE_SERVICES_JSON ??
+      (existsSync('./google-services.json')
+        ? './google-services.json'
+        : undefined),
     adaptiveIcon: {
       backgroundColor: '#547FE4',
       foregroundImage: './assets/android-icon-foreground.png',

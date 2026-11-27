@@ -75,6 +75,7 @@ export type AppState = z.infer<typeof AppState>;
 // Payloads SRS 5.4 does not spell out; their owner tickets refine them.
 // REQ-STUDY-15 (2): every 60 s while a Participant; > 3 minutes without one closes the Participation at the last.
 export const FocusHeartbeat = z.object({ focus_session_id: SnowflakeId });
+export type FocusHeartbeat = z.infer<typeof FocusHeartbeat>;
 // REQ-MSG-07: the open server, one per session (null stops); gates only TYPING_START / member-list presence.
 export const Subscribe = z.object({ server_id: SnowflakeId.nullable() });
 

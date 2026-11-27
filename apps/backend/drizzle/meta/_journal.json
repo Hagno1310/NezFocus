@@ -155,6 +155,13 @@
       "when": 1795774958612,
       "tag": "0021_nappy_smiling_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795783279746,
+      "tag": "0022_sad_wild_child",
+      "breakpoints": true
     }
   ]
 }

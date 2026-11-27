@@ -165,6 +165,8 @@ export function FocusTimer({
   long,
   accessibilityLabel,
   mascot,
+  muted = false,
+  minutesText,
 }: {
   phase: FocusPhase;
   state: PhaseState;
@@ -175,6 +177,9 @@ export function FocusTimer({
   long: boolean;
   accessibilityLabel: string;
   mascot?: ReactNode;
+  muted?: boolean; // C-06 `syncing`: the number in text-tertiary
+  // C-06 `other-session`: "còn 18 phút" in title-1 instead of a clock.
+  minutesText?: string;
 }) {
   const share = totalMs > 0 ? Math.min(1, leftMs / totalMs) : 0;
   // C-06: a break fills up and ends full, so the Solo wait after it shows a full ring.
@@ -194,7 +199,16 @@ export function FocusTimer({
       <Ring phase={phase} from={from} to={to} />
       {mascot}
       <PhaseBadge phase={phase} state={state} size="M" label={label} />
-      <Text variant={long ? 'timer-long' : 'timer'}>{clockText(leftMs)}</Text>
+      {minutesText ? (
+        <Text variant="title-1">{minutesText}</Text>
+      ) : (
+        <Text
+          variant={long ? 'timer-long' : 'timer'}
+          color={muted ? 'text-tertiary' : 'text-primary'}
+        >
+          {clockText(leftMs)}
+        </Text>
+      )}
       {lines.map((line) => (
         <Text
           key={line}
@@ -211,6 +225,49 @@ export function FocusTimer({
   );
 }
 
+// C-06 `compact` (Lưới): no ring, PhaseBadge · M and the number in `stat`, a line under them.
+export function FocusTimerCompact({
+  phase,
+  state,
+  leftMs,
+  label,
+  line,
+  muted = false,
+  accessibilityLabel,
+}: {
+  phase: FocusPhase;
+  state: PhaseState;
+  leftMs: number;
+  label: string;
+  line: string;
+  muted?: boolean;
+  accessibilityLabel: string;
+}) {
+  return (
+    <View
+      accessible
+      accessibilityRole="timer"
+      accessibilityLabel={accessibilityLabel}
+      style={styles.compact}
+    >
+      <View style={styles.compactRow}>
+        <PhaseBadge phase={phase} state={state} size="M" label={label} />
+        <Text variant="stat" color={muted ? 'text-tertiary' : 'text-primary'}>
+          {clockText(leftMs)}
+        </Text>
+      </View>
+      <Text
+        variant="label"
+        color="text-secondary"
+        numberOfLines={2}
+        maxFontSizeMultiplier={fontScale.narrowLabel}
+      >
+        {line}
+      </Text>
+    </View>
+  );
+}
+
 // C-17 states: `on` fills surface-3; `no-permission` dims the icon; `mod-muted` dims icon and
 // label on surface-3 and cannot be pressed.
 export type RoomControlState = 'off' | 'on' | 'no-permission' | 'mod-muted';
@@ -222,6 +279,7 @@ export function RoomControl({
   main = false,
   state = 'off',
   narrow = false,
+  slim = false,
   onPress,
 }: {
   icon: IconComponent;
@@ -230,6 +288,8 @@ export function RoomControl({
   state?: RoomControlState;
   // Room preview row (CR-22 #4, board C-17): Mic · Camera as wide as their discs, 8 apart.
   narrow?: boolean;
+  // S-ROOM-02 `focus-host · 360`: the 5 Host buttons are 64 wide, labels up to 2 lines.
+  slim?: boolean;
   onPress: () => void;
 }) {
   const { colors } = useTheme();
@@ -248,7 +308,11 @@ export function RoomControl({
       }}
       disabled={state === 'mod-muted'}
       onPress={onPress}
-      style={[styles.control, narrow && { width: size.control }]}
+      style={[
+        styles.control,
+        narrow && { width: size.control },
+        slim && { width: size.controlMain },
+      ]}
     >
       {({ pressed }) => (
         <>
@@ -340,6 +404,8 @@ const styles = StyleSheet.create({
     gap: space[1],
   },
   line: { textAlign: 'center', maxWidth: 236 }, // board: FT cycle width
+  compact: { gap: space[1] },
+  compactRow: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
   control: {
     alignItems: 'center',
     gap: space[1],

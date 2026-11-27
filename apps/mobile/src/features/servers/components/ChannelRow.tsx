@@ -1,7 +1,8 @@
-import type { ChannelResponse } from '@nezfocus/shared';
+import type { ChannelResponse, FocusPhase } from '@nezfocus/shared';
 import { Hash, LampDesk, Lock, Volume2 } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { radius, size, space, useTheme } from '../../../shared/theme';
+import { PhaseBadge } from '../../../shared/ui/Focus';
 import { Icon } from '../../../shared/ui/Icon';
 import { AvatarStack, Badge } from '../../../shared/ui/People';
 import { Text } from '../../../shared/ui/Text';
@@ -16,7 +17,7 @@ const ROW = 40; // C-05: 40 high, 4 apart; slop grows the target to 48
 const UNREAD_DOT = { width: 4, height: 8 };
 
 // C-05 ChannelRow: default / selected / pressed / unread / mention / voice-occupied /
-// connected / no-connect; the Room Session line comes with P3-B3 (#28).
+// connected / no-connect / focus-running.
 const noop = () => {};
 
 export function ChannelRow({
@@ -27,6 +28,7 @@ export function ChannelRow({
   locked = false,
   connected = false,
   people = [],
+  focus,
   onPress,
   onLongPress,
 }: {
@@ -37,6 +39,12 @@ export function ChannelRow({
   locked?: boolean; // C-05 `no-connect`: a voice channel without CONNECT (P3-B1.3 #139)
   connected?: boolean; // C-05 `connected`: I am in this voice room
   people?: { name: string; uri: string | null }[]; // C-05 `voice-occupied`
+  // C-05 `focus-running`: at 390 the phase label only, no avatars (22/10/2026).
+  focus?: {
+    phase: FocusPhase;
+    state: 'running' | 'paused';
+    label: string;
+  } | null;
   onPress: () => void;
   onLongPress?: () => void;
 }) {
@@ -88,11 +96,22 @@ export function ChannelRow({
       </Text>
       {locked && <Icon as={Lock} size="xs" color="text-tertiary" />}
       {mentions > 0 && <Badge count={mentions} />}
-      {people.length > 0 && (
-        // Wraps under the name (board C-05 `CR sub`: 36 from the row's left edge).
+      {focus ? (
         <View style={styles.people}>
-          <AvatarStack people={people} size={20} ring="surface-1" />
+          <PhaseBadge
+            phase={focus.phase}
+            state={focus.state}
+            size="S"
+            label={focus.label}
+          />
         </View>
+      ) : (
+        people.length > 0 && (
+          // Wraps under the name (board C-05 `CR sub`: 36 from the row's left edge).
+          <View style={styles.people}>
+            <AvatarStack people={people} size={20} ring="surface-1" />
+          </View>
+        )
       )}
     </Pressable>
   );

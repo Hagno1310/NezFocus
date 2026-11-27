@@ -25,6 +25,7 @@ import { VoiceSessions } from '../voice/voice.service.js';
 import { GatewayConnection, type Authenticate } from './gateway-connection.js';
 import { GatewaySessions } from './gateway-sessions.js';
 import { PresenceService } from './presence.service.js';
+import { RoomSessionService } from '../study/room-session.service.js';
 
 // SRS 7.1.1: the Gateway shares the HTTP server of the single backend process.
 @Injectable()
@@ -46,6 +47,7 @@ export class GatewayListener
     private readonly readStates: ReadStatesService,
     private readonly dms: DmService,
     private readonly voice: VoiceSessions,
+    private readonly rooms: RoomSessionService,
   ) {}
 
   onApplicationBootstrap() {
@@ -70,7 +72,8 @@ export class GatewayListener
         (userId) => this.readStates.forReady(userId),
         (userId) => this.dms.openFor(userId),
         this.voice,
-        // ponytail: READY.focus_sessions stays [] until P3-B3.2 (#146) passes the Room Sessions here.
+        (userId) => this.rooms.ready(userId),
+        (userId, d) => this.rooms.heartbeat(userId, BigInt(d.focus_session_id)),
       );
       ws.on('message', (data, isBinary) => {
         // A binary frame is not JSON text: receive('') closes with 4002.

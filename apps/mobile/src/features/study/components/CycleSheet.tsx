@@ -29,6 +29,11 @@ const TEXT = {
     note: 'study.sheet.defaultNote',
     action: 'study.sheet.save',
   },
+  room: {
+    title: 'room.start.title',
+    note: 'room.start.note',
+    action: 'room.start.action',
+  },
 } as const;
 
 const choiceOf = (c: CycleConfig): Choice =>
@@ -41,8 +46,8 @@ const choiceOf = (c: CycleConfig): Choice =>
     ? (`${c.focus_min}/${c.short_break_min}` as Choice)
     : 'custom';
 
-// S-STUDY-01 cycle-sheet, S-STUDY-02 edit-cycle-sheet and S-SET-07 cycle-sheet (`default`):
-// same choices (S-ROOM-03), different title, note and button.
+// S-STUDY-01 cycle-sheet, S-STUDY-02 edit-cycle-sheet, S-SET-07 cycle-sheet (`default`) and
+// S-ROOM-03 (`room`): same choices, different title, note and button.
 export function CycleSheet({
   visible,
   mode,
@@ -51,15 +56,17 @@ export function CycleSheet({
   onSubmit,
   onDismiss,
   onKeep,
+  people,
 }: {
   visible: boolean;
-  mode: 'start' | 'edit' | 'default';
+  mode: 'start' | 'edit' | 'default' | 'room';
   initial: CycleConfig;
   loading?: boolean;
   onSubmit: (cycle: CycleConfig) => void;
   onDismiss: () => void;
   // S-STUDY-01 cycle-sheet: closing without "Bắt đầu" still keeps a valid new choice.
   onKeep?: (cycle: CycleConfig) => void;
+  people?: number; // S-ROOM-03 "Cả {N} người trong phòng…"
 }) {
   const { t } = useTranslation();
   const [choice, setChoice] = useState<Choice>(() => choiceOf(initial));
@@ -124,11 +131,17 @@ export function CycleSheet({
       visible={visible}
       title={t(TEXT[mode].title)}
       onDismiss={dismiss}
-      action={{ label: t(TEXT[mode].action), onPress: submit, loading }}
+      action={{
+        label: t(TEXT[mode].action),
+        onPress: submit,
+        loading,
+        // S-ROOM-03 `invalid` (chốt 27/11/2026): off until the field is fixed.
+        disabled: mode === 'room' && Object.values(errors).some(Boolean),
+      }}
     >
       <View style={styles.body}>
         <Text variant="body" color="text-secondary">
-          {t(TEXT[mode].note)}
+          {t(TEXT[mode].note, { n: people })}
         </Text>
         <SegmentedControl
           segments={[
@@ -137,7 +150,11 @@ export function CycleSheet({
             { key: 'custom', label: t('study.sheet.custom') },
           ]}
           value={choice}
-          onChange={setChoice}
+          // A preset has no field to fix: its errors go with it.
+          onChange={(c) => {
+            setChoice(c);
+            setErrors({});
+          }}
         />
         {choice === 'custom' ? (
           <>
@@ -176,7 +193,11 @@ export function CycleSheet({
           // S-SET-07 `cycle-sheet` has no such line.
           mode !== 'default' && (
             <Text variant="label" color="text-secondary">
-              {t('study.sheet.longOff')}
+              {t(
+                mode === 'room' && choice === choiceOf(initial)
+                  ? 'room.start.roomDefault'
+                  : 'study.sheet.longOff',
+              )}
             </Text>
           )
         )}

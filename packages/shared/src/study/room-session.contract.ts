@@ -64,7 +64,7 @@ export const FocusSessionState = z.object({
       action: z.enum(['start', 'pause', 'resume', 'skip', 'config']),
     })
     .nullable(),
-  me: FocusSessionMe.nullable(), // null when I am not a Participant
+  me: FocusSessionMe.nullable(), // null when I never took part; after leaving it keeps my seconds
 });
 export type FocusSessionState = z.infer<typeof FocusSessionState>;
 

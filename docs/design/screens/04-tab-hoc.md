@@ -108,7 +108,7 @@ Mọi Study Room đang có phiên học trong các server của user mà user c�
 | `never-studied` | Chưa từng học: mục "Tuần này" thành `EmptyState` có Runtime neutral 96. Màn chỉ có **một** nút primary là "Bắt đầu" của khối Solo; nút của EmptyState là `Button · secondary` (chốt 22/10/2026) | "Chưa có phút học nào" · "Học 15 phút để bắt đầu chuỗi ngày đầu tiên." · "Bắt đầu Tập trung 25 phút" (SRS 3.5) → mở Solo với 25/5 |
 | `streak-zero` | Hôm qua không đủ 15 phút: số streak "0"; dòng phụ trung tính, **không mascot**; thanh "Hôm nay 0 / 15 phút" rỗng; biểu đồ (T7 10, CN 0) có vạch 15 phút nằm trên cột T7 | "Học 15 phút hôm nay để bắt đầu chuỗi mới" |
 | `solo-running` | User đang Solo (50/10, còn 32:10 lúc 21:47): khối Solo thành `PhaseBadge · S · list` "Tập trung · còn 32 phút" + nút `secondary` "Mở" (v1.9, CR-23: ghi phút, không đếm giây); `MiniPlayer · solo` "Tập trung 32:10"; khối "Tuần này" theo nhánh Solo: CN 31 phút (14 + 17), tuần 4 giờ 21 phút, "Hôm nay 31 phút · đã đủ 15 phút" | Tạm dừng: "Tạm dừng"; đang chờ: "Hết giờ nghỉ · còn 8 phút để học tiếp" + "Mở" (03 › S-ROOM-08 `solo-waiting`) |
-| `in-room-solo-blocked` | User đang là Participant của phiên học ở phòng: nút "Bắt đầu" `disabled` + dòng giải thích. Đây là cách khối Solo hiện ở **mọi** frame có An trong phòng **có phiên** (kể cả `default`); frame riêng giữ làm mẫu chuẩn của luật. Ở phòng voice / Phòng học **chưa có phiên**: khối Solo bình thường, "Bắt đầu" bật; bắt đầu thì `MiniPlayer · voice-solo` (03 › S-ROOM-08) (v1.9, CR-22) | "Bạn đang trong phiên học ở Phòng học im lặng" (`40903`) |
+| `in-room-solo-blocked` | User đang là Participant của phiên học ở phòng: nút "Bắt đầu" `disabled` xuống hàng riêng dưới dòng chu kỳ (chốt 27/11/2026, theo frame) + dòng giải thích. Đây là cách khối Solo hiện ở **mọi** frame có An trong phòng **có phiên** (kể cả `default`); frame riêng giữ làm mẫu chuẩn của luật. Ở phòng voice / Phòng học **chưa có phiên**: khối Solo bình thường, "Bắt đầu" bật; bắt đầu thì `MiniPlayer · voice-solo` (03 › S-ROOM-08) (v1.9, CR-22) | "Bạn đang trong phiên học ở Phòng học im lặng" (`40903`) |
 | `loading` | `Skeleton` cho 3 hàng phòng và khối thống kê | |
 | `offline` | `Banner · offline` nằm **ngay dưới tiêu đề tab "Học"** (luật chung cho màn gốc của tab, cùng 07 › S-ME-02 `offline`, chốt 22/10/2026); mục phòng: "Cần kết nối mạng để xem phòng đang học"; thống kê hiện bản cache (cả thanh tiến độ và vạch 15 phút); Học một mình vẫn bắt đầu được | SRS 3.5, 7.3.2 |
 | `large-text` | 200%: hàng phòng xuống dòng, nút "Vào" xuống dưới chữ (canh trái, cùng cột với chữ); biểu đồ giữ nguyên, nhãn ngày `tab`; chữ tiến độ xuống dòng, thanh rộng hết khối dưới chữ; nhãn "15 phút" giữ một dòng ở đầu phải vạch | |
@@ -311,7 +311,7 @@ Hành vi (kỳ nào áp cho phần nào, so sánh với khoảng nào, cách tí
 ### Bố cục
 ```
 ┌ Status bar ──────────────────────────────┐
-│ ‹ Học        Đang học lúc này            │  header 56: IconButton back + headline
+│ ‹  Đang học lúc này                      │  ScreenHeader (chốt 27/11/2026, theo frame)
 │ 5 phòng                                  │  label, text-secondary
 │ [lamp] Tập trung · còn 18 phút           │  cùng kiểu hàng phòng với S-STUDY-01
 │ Phòng học im lặng            [Bạn ở đây] │
@@ -328,7 +328,7 @@ Hành vi (kỳ nào áp cho phần nào, so sánh với khoảng nào, cách tí
 | State | Khác gì | Chữ |
 |---|---|---|
 | `default` | Như bố cục, 5 phòng theo thứ tự ví dụ ở S-STUDY-01 › Sắp xếp; pha, số phút còn lại và người của từng phòng giống hệt S-STUDY-01 (`default` / `many-rooms`) cùng lúc 21:47 | |
-| `all-ended` | Mọi phòng hết phiên khi đang xem: `EmptyState · inline` (không mascot) | "Không còn phòng nào đang học" · nút `secondary` "Về tab Học" |
+| `all-ended` | Mọi phòng hết phiên khi đang xem: `EmptyState · inline` (không mascot) | "Không còn phòng nào đang học" · "Các phiên học vừa kết thúc. Bạn có thể học một mình hoặc bắt đầu phiên học trong một Phòng học." (chốt 27/11/2026, theo frame) · nút `secondary` "Về tab Học" |
 
 ### Checklist duyệt
 - [ ] 2 state; `default` ở cả hai theme; thứ tự khớp ví dụ ở S-STUDY-01 › Sắp xếp.

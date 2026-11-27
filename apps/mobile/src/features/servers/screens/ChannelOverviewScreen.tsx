@@ -21,6 +21,7 @@ import { Text } from '../../../shared/ui/Text';
 import { TextField } from '../../../shared/ui/TextField';
 import { showToast } from '../../../shared/ui/Toast';
 import { TypeNameSheet } from '../../../shared/ui/TypeNameSheet';
+import { useRoomSession } from '../hooks/useRoomSession';
 import { useChannelAccess } from '../hooks/useChannelAccess';
 import { useChannelActions } from '../hooks/useChannelActions';
 import { useChannelText } from '../hooks/useChannelText';
@@ -28,7 +29,6 @@ import { useChannelText } from '../hooks/useChannelText';
 // S-SET-06 `overview`, `editing`, `name-error`, `discard-confirm`, `delete-confirm`,
 // `deleted`, `offline`; text channel `text-overview`, `name-taken`,
 // `welcome-delete-confirm`; Edge case `long-name-overview` (the field wraps to show it all).
-// The delete-confirm sentence about a running Room Session lands with P3-B3.4 (#148).
 export function ChannelOverviewScreen({
   serverId,
   channelId,
@@ -61,6 +61,7 @@ export function ChannelOverviewScreen({
   const [deleting, setDeleting] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
   const [leaving, setLeaving] = useState<null | (() => void)>(null);
+  const session = useRoomSession(access?.channel, null);
   if (name === null && access) setName(access.channel.name);
   const dirty = !!access && name !== null && name !== access.channel.name;
 
@@ -175,7 +176,16 @@ export function ChannelOverviewScreen({
         title={t('servers.channels.deleteTitle', { name: label })}
         body={
           channel.type === 'voice'
-            ? t('servers.channels.deleteBodyVoice')
+            ? [
+                t('servers.channels.deleteBodyVoice'),
+                // Spec 08 S-SET-06: only while a Room Session runs.
+                session &&
+                  t('servers.channels.deleteBodySession', {
+                    n: session.participants,
+                  }),
+              ]
+                .filter(Boolean)
+                .join(' ')
             : isWelcome
               ? t('servers.channels.deleteBodyWelcome')
               : t('servers.channels.deleteBodyText')

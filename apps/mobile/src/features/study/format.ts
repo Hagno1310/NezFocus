@@ -1,4 +1,4 @@
-import type { CycleConfig } from '@nezfocus/shared';
+import type { CycleConfig, RoomTimer } from '@nezfocus/shared';
 import type { TFunction } from 'i18next';
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -33,3 +33,13 @@ export const sessionSecondsText = (t: TFunction, seconds: number) =>
 export const weekdays = (t: TFunction) => t('study.weekdays').split(' ');
 export const weekdaysLong = (t: TFunction) =>
   t('study.weekdaysLong').split('|');
+
+// C-16 `list` for a room (C-05 `focus-running`, S-STUDY-01): minutes only, no seconds.
+export function roomListLabel(t: TFunction, timer: RoomTimer) {
+  if (timer.status === 'paused') return t('study.phase.pausedShort');
+  const minutes = Math.floor(timer.remainingMs / 60_000);
+  const phase = t(`study.phase.${timer.phase}`);
+  return minutes
+    ? t('study.home.left', { phase, minutes })
+    : t('study.home.leftUnder', { phase });
+}

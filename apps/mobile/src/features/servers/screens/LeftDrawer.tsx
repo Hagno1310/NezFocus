@@ -60,6 +60,7 @@ import { useChannelActions } from '../hooks/useChannelActions';
 import { useChannelText } from '../hooks/useChannelText';
 import { useServerAccess } from '../hooks/useServerAccess';
 import { useDrawerVoice } from '../../voice/hooks/useDrawerVoice';
+import { useRoomLines } from '../../study/hooks/useRoomSession';
 import { ChannelRow } from '../components/ChannelRow';
 import { ServerMenu, type ServerMenuActions } from '../components/ServerMenu';
 import { ServerRail } from '../components/ServerRail';
@@ -214,6 +215,7 @@ function ChannelPanel({
   const channelActions = useChannelActions(server.id);
   const access = useServerAccess(server.id);
   const voice = useDrawerVoice(server.id);
+  const roomLine = useRoomLines();
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollOffset(scrollRef);
   const viewport = useSharedValue(0);
@@ -358,6 +360,7 @@ function ChannelPanel({
                     people={
                       channel.type === 'voice' ? voice.peopleOf(channel.id) : []
                     }
+                    focus={roomLine(channel.id)}
                     onPress={() =>
                       channel.type === 'text'
                         ? actions.onOpenChannel(channel)

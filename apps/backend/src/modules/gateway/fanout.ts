@@ -12,7 +12,7 @@ import type { GatewaySessions } from './gateway-sessions.js';
 export type FanoutTarget =
   | { kind: 'user'; userId: string }
   | { kind: 'login'; authSessionId: string }
-  | { kind: 'channel'; channelId: string }
+  | { kind: 'channel'; channelId: string; except?: string[] }
   | { kind: 'server'; serverId: string }
   | {
       kind: 'subscribers';
@@ -62,8 +62,9 @@ export class Fanout {
           await this.sessions.dispatchToUser(userId, t, d);
         return;
       }
+      const except = new Set(target.except?.map(BigInt));
       for (const userId of await this.online(serverId))
-        if (await this.sees(userId, channelId))
+        if (!except.has(userId) && (await this.sees(userId, channelId)))
           await this.sessions.dispatchToUser(userId, t, d);
       return;
     }

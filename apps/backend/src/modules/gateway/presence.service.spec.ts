@@ -38,6 +38,8 @@ const blockQuery = {
     blocks.filter(([, b]) => b === u).map(([a]) => a),
 } as unknown as BlockQuery;
 
+// Whether a receiver may VIEW_CHANNEL the room (AUTH-05 CR-24 name filter).
+let sees = true;
 let nextId = 1n;
 let sessions: GatewaySessions;
 let presence: PresenceService;
@@ -66,12 +68,13 @@ beforeEach(() => {
   settings = new Map();
   saved = [];
   blocks = [];
+  sees = true;
   shared['1'] = [2n];
   shared['3'] = [];
   inbox.clear();
   sessions = new GatewaySessions({ next: () => nextId++ });
   presence = new PresenceService(sessions, repo, blockQuery, {
-    can: async () => true,
+    can: async () => sees,
   } as unknown as PermissionService);
   presence.onModuleInit();
 });
@@ -217,6 +220,54 @@ describe('PresenceService (REQ-AUTH-05)', () => {
     await presence.voiceChanged(1n, null);
     await flush();
     expect(lastSeenBy(2n)?.activity).toBeNull();
+  });
+
+  it('group_study (#147, CR-24): a Room Session shows over the voice room; who cannot view it gets no room', async () => {
+    await connect(2n);
+    await connect(1n);
+    await presence.voiceChanged(1n, {
+      channelId: 9n,
+      serverId: 10n,
+      name: 'Phòng học im lặng',
+      studyRoom: true,
+    });
+    const group = {
+      channelId: 9n,
+      serverId: 10n,
+      name: 'Phòng học im lặng',
+      phase: 'focus' as const,
+      state: 'running' as const,
+      phaseEndsAt: new Date('2026-10-18T15:06:00Z'),
+    };
+    await presence.roomSessionChanged(1n, group);
+    await flush();
+    expect(lastSeenBy(2n)?.activity).toEqual({
+      kind: 'group_study',
+      room: {
+        channel_id: '9',
+        server_id: '10',
+        channel_name: 'Phòng học im lặng',
+        phase: 'focus',
+        state: 'running',
+        phase_ends_at: '2026-10-18T15:06:00.000Z',
+      },
+    });
+    // AC4: a private room → "Đang học cùng nhóm" only.
+    sees = false;
+    await presence.roomSessionChanged(1n, {
+      ...group,
+      state: 'paused',
+      phaseEndsAt: null,
+    });
+    await flush();
+    expect(lastSeenBy(2n)?.activity).toEqual({
+      kind: 'group_study',
+      room: null,
+    });
+    sees = true;
+    await presence.roomSessionChanged(1n, null);
+    await flush();
+    expect(lastSeenBy(2n)?.activity).toMatchObject({ kind: 'voice' });
   });
 
   it('AC5 (here): show_study_activity off → no activity, status still sent', async () => {

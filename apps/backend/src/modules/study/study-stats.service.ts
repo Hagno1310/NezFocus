@@ -120,14 +120,14 @@ export class StudyStatsService {
         join_count: r.joinCount,
         focused_seconds: r.focusedSeconds,
         days:
-          r.kind === 'solo'
+          r.kind === 'solo' || Object.keys(r.creditedDays).length
             ? Object.entries(r.creditedDays)
                 .sort(([a], [b]) => a.localeCompare(b))
                 .map(([local_date, focused_seconds]) => ({
                   local_date,
                   focused_seconds,
                 }))
-            : // ponytail: Participations keep no per-day split yet; P3-B3.3 (#147) credits them per local day like Solo.
+            : // A room row written before Participations kept days (#147): all on its start day.
               [
                 {
                   local_date: localDate(r.startedAt.getTime(), timezone),

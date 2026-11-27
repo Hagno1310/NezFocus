@@ -103,8 +103,8 @@ export class SoloSessionRepository {
     return row && toRecord(row);
   }
 
-  async findActiveId(userId: bigint) {
-    const [row] = await this.db
+  async findActiveId(userId: bigint, executor: Db | Tx = this.db) {
+    const [row] = await executor
       .select({ id: soloSessions.id })
       .from(soloSessions)
       .where(

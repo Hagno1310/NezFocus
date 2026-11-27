@@ -31,6 +31,10 @@ import { Icon } from '../../../shared/ui/Icon';
 import { StatText } from '../../../shared/ui/Stats';
 import { Text } from '../../../shared/ui/Text';
 import { CycleSheet } from '../components/CycleSheet';
+import { RoomRows } from '../components/RoomRows';
+import { useActiveRooms, type RoomRowData } from '../hooks/useActiveRooms';
+import { roomSessionsStore } from '../../../domain/study/roomSessions';
+import { voiceStore } from '../../../domain/voice/voiceSession';
 import { Today } from '../components/Today';
 import { WeekChart } from '../components/WeekChart';
 import { cycleText, minutesText } from '../format';
@@ -38,18 +42,21 @@ import { FIRST_FOCUS, useBeginSolo } from '../hooks/useBeginSolo';
 import { useNow, useSolo } from '../hooks/useSolo';
 import { useRefreshStudy, useStudyStats } from '../hooks/useStudyStats';
 
-// S-STUDY-01. "Đang học lúc này" has rooms only from P3-B3.7 (#212); until then it is
-// `no-active-rooms` or `no-server`.
+// S-STUDY-01.
 export function StudyHome({
   onOpenSolo,
   onAskNotifications,
   onOpenStats,
   onCreateServer,
+  onShowRoom,
+  onSeeAllRooms,
 }: {
   onOpenSolo: () => void;
   onAskNotifications: () => void;
   onOpenStats: (date: string) => void;
   onCreateServer: () => void;
+  onShowRoom: () => void;
+  onSeeAllRooms: () => void;
 }) {
   const { t } = useTranslation();
   const { top } = useSafeAreaInsets();
@@ -62,8 +69,10 @@ export function StudyHome({
     onAskNotifications,
   });
 
+  const active = useActiveRooms();
   const pull = async () => {
     setRefreshing(true);
+    active.resort();
     await refresh().finally(() => setRefreshing(false));
   };
 
@@ -80,7 +89,13 @@ export function StudyHome({
           <RefreshControl refreshing={refreshing} onRefresh={pull} />
         }
       >
-        <Rooms online={online} onCreateServer={onCreateServer} />
+        <Rooms
+          online={online}
+          rows={active.rows}
+          onCreateServer={onCreateServer}
+          onShowRoom={onShowRoom}
+          onSeeAll={onSeeAllRooms}
+        />
         <SoloBlock
           cycle={cycle}
           onChangeCycle={setCycle}
@@ -99,20 +114,50 @@ export function StudyHome({
   );
 }
 
+const ROWS_MAX = 3; // spec 04 › Sắp xếp: then "Xem tất cả ({N})"
+
 function Rooms({
   online,
+  rows,
   onCreateServer,
+  onShowRoom,
+  onSeeAll,
 }: {
   online: boolean;
+  rows: RoomRowData[];
   onCreateServer: () => void;
+  onShowRoom: () => void;
+  onSeeAll: () => void;
 }) {
   const { t } = useTranslation();
   // null until READY lists the servers (S-HOME-02: an empty list means no server).
   const servers = useStore(homeStore, (s) => s.servers);
+  const shown = online && rows.length > 0;
   return (
     <View style={styles.section}>
-      <Text variant="headline">{t('study.home.rooms')}</Text>
-      {!online ? (
+      <View style={styles.roomsHead}>
+        <Text variant="headline" style={styles.flex}>
+          {t('study.home.rooms')}
+        </Text>
+        {shown && (
+          <Text variant="label" color="text-secondary">
+            {t('study.home.roomsCount', { n: rows.length })}
+          </Text>
+        )}
+      </View>
+      {shown ? (
+        <>
+          <RoomRows rows={rows.slice(0, ROWS_MAX)} onShowRoom={onShowRoom} />
+          {rows.length > ROWS_MAX && (
+            <Button
+              variant="text"
+              size="S"
+              label={t('study.home.seeAll', { n: rows.length })}
+              onPress={onSeeAll}
+            />
+          )}
+        </>
+      ) : !online ? (
         <Text color="text-secondary">{t('study.home.roomsOffline')}</Text>
       ) : servers === null ? (
         <View style={styles.skeletons}>
@@ -170,6 +215,7 @@ function SoloBlock({
   const snap = useSolo();
   const now = useNow(1000);
   const [choosing, setChoosing] = useState(false);
+  const inRoom = useRoomWithSession();
   const timer = snap && !endingOf(snap) ? timerOf(snap, now) : null;
   // 04 › Khối Solo: at 200% "Bắt đầu" goes under the text, full width.
   const stacked = fontScale >= 1.5;
@@ -180,6 +226,8 @@ function SoloBlock({
       })
     : t('study.cycle', { cycle: cycleText(cycle) });
 
+  // `in-room-solo-blocked` (40903): one Focus Session at a time; the button goes under the cycle.
+  const blocked = !timer && inRoom !== null;
   const button = timer ? (
     <Button
       variant="secondary"
@@ -193,6 +241,7 @@ function SoloBlock({
       label={t('study.start')}
       loading={starting}
       fullWidth={stacked}
+      disabled={blocked}
       onPress={() => onStart()}
     />
   );
@@ -202,12 +251,13 @@ function SoloBlock({
     <View
       style={[
         styles.solo,
-        stacked && styles.stacked,
+        // `in-room-solo-blocked` (frame): the off button goes under the cycle line.
+        (stacked || blocked) && styles.stacked,
         { borderColor: colors.border, backgroundColor: colors['surface-1'] },
       ]}
     >
       {timer ? (
-        <View style={[styles.soloInfo, !stacked && styles.flex]}>
+        <View style={[styles.soloInfo, !stacked && !blocked && styles.flex]}>
           <Text weight="600">{t('study.solo')}</Text>
           <PhaseBadge
             phase={timer.phase}
@@ -223,7 +273,7 @@ function SoloBlock({
           accessibilityLabel={cycleLabel}
           onPress={() => setChoosing(true)}
           hitSlop={touchSlop(INFO_HEIGHT)}
-          style={[styles.soloInfo, !stacked && styles.flex]}
+          style={[styles.soloInfo, !stacked && !blocked && styles.flex]}
         >
           <Text weight="600">{t('study.solo')}</Text>
           <View style={styles.cycleRow}>
@@ -238,7 +288,16 @@ function SoloBlock({
           </View>
         </Pressable>
       )}
-      {button}
+      {blocked ? (
+        <View style={styles.blocked}>
+          {button}
+          <Text variant="label" color="text-secondary">
+            {t('room.inRoomSolo', { name: inRoom })}
+          </Text>
+        </View>
+      ) : (
+        button
+      )}
       <CycleSheet
         key={String(choosing)}
         visible={choosing}
@@ -322,7 +381,28 @@ function WeekBlock({
 // Frame S-STUDY-01 › Solo › Info at 100%.
 const INFO_HEIGHT = 42;
 
+// The room I sit in when it has a Room Session (S-STUDY-01 `in-room-solo-blocked`).
+function useRoomWithSession() {
+  const call = useStore(voiceStore, (v) =>
+    v.call?.phase === 'in' ? v.call : null,
+  );
+  const running = useStore(
+    roomSessionsStore,
+    (s) => !!call && !!s.byChannel[call.channelId],
+  );
+  const name = useStore(homeStore, (s) =>
+    call
+      ? (s.channels[call.serverId]?.find((c) => c.id === call.channelId)
+          ?.name ?? '')
+      : '',
+  );
+  return running ? name : null;
+}
+
 const styles = StyleSheet.create({
+  roomsHead: { flexDirection: 'row', alignItems: 'baseline' },
+  // Frame `in-room-solo-blocked`: the off button on its own row, the reason under it.
+  blocked: { width: '100%', gap: space[2], alignItems: 'flex-start' },
   screen: { flex: 1 },
   title: { paddingHorizontal: space[3], paddingVertical: space[2] },
   content: { padding: space[3], gap: space[3] },

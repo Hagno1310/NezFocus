@@ -16,6 +16,7 @@ import {
   type VoiceStateUpdate,
   type VoiceTokenResponse,
 } from '@nezfocus/shared';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { WebhookEvent } from 'livekit-server-sdk';
 import { AppError } from '../../common/app-error.js';
 import { Clock } from '../../common/clock.js';
@@ -31,6 +32,12 @@ import {
   roomOf,
   type Publishable,
 } from './livekit.js';
+import {
+  VOICE_JOINED,
+  VOICE_LEFT,
+  type VoiceLeft,
+  type VoiceRoomMove,
+} from './voice-events.js';
 import { VoiceSeats, type Seat } from './voice-seats.js';
 import { VoiceRepository } from './voice.repository.js';
 import {
@@ -68,6 +75,7 @@ export class VoiceRoomsService
     private readonly repo: VoiceRepository,
     private readonly clock: Clock,
     private readonly presence: PresenceSink,
+    private readonly emitter: EventEmitter2,
   ) {
     super();
   }
@@ -170,13 +178,19 @@ export class VoiceRoomsService
     };
     await this.seats.put(next);
     await this.publish(next);
-    if (!sameRoom)
-      await this.presence.voiceChanged(who.userId, {
-        channelId,
-        serverId: next.serverId,
-        name: channel.name ?? '',
-        studyRoom: channel.focusControl !== 'off',
-      });
+    if (sameRoom) return;
+    await this.presence.voiceChanged(who.userId, {
+      channelId,
+      serverId: next.serverId,
+      name: channel.name ?? '',
+      studyRoom: channel.focusControl !== 'off',
+    });
+    await this.tell<VoiceRoomMove>(VOICE_JOINED, {
+      userId: who.userId,
+      serverId: next.serverId,
+      channelId,
+      at: new Date(next.joinedAt),
+    });
   }
 
   // SRS 5.5: reconcile op 4. A left is never a leave (op 4 says that): away for 3 minutes.
@@ -238,7 +252,7 @@ export class VoiceRoomsService
         await this.serial(userId, async () => {
           const seat = await this.seats.get(userId);
           if (seat?.awayUntil != null && seat.awayUntil <= now)
-            await this.vacate(seat, 'left');
+            await this.vacate(seat, 'left', true);
         }).catch((err: unknown) => this.logger.error(`away ${userId}`, err));
     } finally {
       this.sweeping = false;
@@ -353,6 +367,15 @@ export class VoiceRoomsService
       });
   }
 
+  // Seats of a room, away ones included (they still sit there, VC-01).
+  async occupants(channelId: bigint) {
+    return (await this.seats.inChannel(channelId)).map((s) => ({
+      userId: s.userId,
+      joinedAt: new Date(s.joinedAt),
+      away: s.awayUntil !== null,
+    }));
+  }
+
   async seatOf(userId: bigint) {
     const seat = await this.seats.get(userId);
     return seat ? { serverId: seat.serverId, channelId: seat.channelId } : null;
@@ -388,7 +411,11 @@ export class VoiceRoomsService
   }
 
   // Out of LiveKit, a leave to the room's viewers, the reason to that device only.
-  private async vacate(seat: Seat, reason: VoiceLeaveReason) {
+  private async vacate(
+    seat: Seat,
+    reason: VoiceLeaveReason,
+    expired = false, // the 3 minutes away ran out: not a leave the user asked for
+  ) {
     if (!(await this.seats.remove(seat.userId))) return; // left already
     await this.presence.voiceChanged(seat.userId, null);
     await this.rooms.remove(roomOf(seat.channelId), seat.userId.toString());
@@ -398,6 +425,21 @@ export class VoiceRoomsService
       ...left,
       reason,
     });
+    await this.tell<VoiceLeft>(VOICE_LEFT, {
+      userId: seat.userId,
+      serverId: seat.serverId,
+      channelId: seat.channelId,
+      reason,
+      away: expired,
+      at: this.clock.now(),
+    });
+  }
+
+  // A listener failing (a Room Session) never undoes or blocks the seat change.
+  private async tell<T>(event: string, payload: T) {
+    await this.emitter
+      .emitAsync(event, payload)
+      .catch((err: unknown) => this.logger.error(event, err));
   }
 
   private async leaving(seat: Seat): Promise<VoiceState> {

@@ -36,6 +36,11 @@ import {
   SoloMiniPlayer,
   SoloNotificationOpener,
 } from '../../features/study/components/SoloMiniPlayer';
+import { RoomMiniPlayer } from '../../features/voice/components/RoomMiniPlayer';
+import { ActiveRoomsScreen } from '../../features/study/screens/ActiveRoomsScreen';
+import { roomSessionsStore } from '../../domain/study/roomSessions';
+import { voiceStore } from '../../domain/voice/voiceSession';
+import { voiceView } from '../../domain/voice/voiceView';
 import { useSolo, useSoloSync } from '../../features/study/hooks/useSolo';
 import { useUnreadTotals } from '../../features/chat/hooks/useUnread';
 import { AskNotifications } from '../../features/study/screens/AskNotifications';
@@ -129,6 +134,7 @@ type StudyParamList = {
   Solo: undefined; // S-STUDY-02
   AskNotifications: undefined; // S-ROOM-09 first-focus
   Stats: { date?: string } | undefined; // S-STUDY-03
+  ActiveRooms: undefined; // S-STUDY-06
 };
 
 type HomeParamList = {
@@ -528,19 +534,48 @@ function MainTabBar({
   // (MiniPlayer on another tab, a notification on cold start), so closing goes back to it.
   const openSolo = () =>
     props.navigation.navigate('Study', { screen: 'Solo', initial: false });
+  // C-08 › Hiện ở đâu: the room's own MiniPlayer hides on its screen (a Home root, CR-15).
+  const call = useStore(voiceStore, (s) =>
+    s.call?.phase === 'in' ? s.call : null,
+  );
+  const openRoom = useStore(voiceView, (s) => s.open?.channelId ?? null);
+  const roomHasSession = useStore(
+    roomSessionsStore,
+    (s) => !!call && !!s.byChannel[call.channelId],
+  );
+  const onOwnRoom =
+    !!call &&
+    route?.name === 'Home' &&
+    (!focused || focused === 'HomeRoot') &&
+    openRoom === call.channelId;
+  // In a room the Solo shows as `voice-solo`, except on that room's screen without a session.
+  const soloMini = !onSolo && (!call || (onOwnRoom && !roomHasSession));
   return (
     <>
       <SoloNotificationOpener onOpen={openSolo} />
       {!keyboard && !fullScreen && (
         <>
           {/* Hidden on the Solo screen itself (C-08). */}
-          {!onSolo && <SoloMiniPlayer onOpen={openSolo} />}
+          {soloMini && <SoloMiniPlayer onOpen={openSolo} />}
+          <RoomMiniPlayer
+            hidden={onOwnRoom}
+            onOpenSolo={openSolo}
+            onShowRoom={() =>
+              props.navigation.navigate('Home', { screen: 'HomeRoot' })
+            }
+          />
           <TabBar {...props} tabs={tabs} />
         </>
       )}
     </>
   );
 }
+
+// The room on screen is a Home root (CR-15): bring the Home tab up on it.
+const showRoom = (navigation: { getParent: () => unknown }) =>
+  (
+    navigation.getParent() as BottomTabNavigationProp<TabParamList> | undefined
+  )?.navigate('Home', { screen: 'HomeRoot' });
 
 function StudyTab() {
   return (
@@ -557,6 +592,16 @@ function StudyTab() {
                   BottomTabNavigationProp<TabParamList> | undefined
               )?.navigate('Home', { screen: 'CreateServer' })
             }
+            onShowRoom={() => showRoom(navigation)}
+            onSeeAllRooms={() => navigation.navigate('ActiveRooms')}
+          />
+        )}
+      </StudyStack.Screen>
+      <StudyStack.Screen name="ActiveRooms">
+        {({ navigation }) => (
+          <ActiveRoomsScreen
+            onBack={navigation.goBack}
+            onShowRoom={() => showRoom(navigation)}
           />
         )}
       </StudyStack.Screen>

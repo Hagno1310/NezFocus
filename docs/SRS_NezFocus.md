@@ -868,6 +868,8 @@ Ví dụ cấu hình 25/5, long break 15 phút sau mỗi 4 pha focus:
 | Tính vào leaderboard server | Có                                                                                                            | Không                                                                       |
 | Chống gian lận              | Heartbeat 60s                                                                                                 | Phải bấm cho mỗi pha focus                                                  |
 
+**(CR-28 #39) Heartbeat của Room Session:** Participant đang mất kết nối (chưa quá 3 phút) khi một pha focus kết thúc chỉ được tính tới heartbeat cuối của pha đó; quay lại kịp thì tính tiếp từ lúc đó, phần thiếu (tối đa 3 phút) không bù lại.
+
 #### <a id="s-4-9-2"></a>4.9.2. Luồng ví dụ (v1.2)
 
 **Room Session bật thủ công** (Study Room "Phòng học im lặng", 25/5): 19:55 An vào phòng (mic tự tắt, chưa tính phút) → 20:00 An bấm Start, thành Host, Participation bắt đầu từ 20:00 → 20:12 Bình vào, tự động là Participant, thấy "Tập trung — còn 13:00" → 20:25 cả phòng sang nghỉ → 20:30 tự sang focus → 20:40 An rời (được 35 phút), Host chuyển cho Bình → 21:10 Bình rời (được 48 phút = 13 + 25 + 10), phòng trống → 21:15 session tự kết thúc. **(v1.9)** An và Bình đều là Host lúc rời nên phải xác nhận Dialog "Rời phòng?" (An: "Bình sẽ điều khiển phiên học."; Bình: "Phiên học vẫn chạy nhưng chưa có người điều khiển."); rời xong mỗi người thấy Toast "Đã rời Phòng học im lặng · {35 / 48} phút đã được tính · Vào lại".
@@ -1058,7 +1060,7 @@ Xem Mục 3 (điều hướng, sitemap, trạng thái màn hình), `DESIGN.md`, 
 | Message         | `MESSAGE_CREATE` (echo `nonce`), `MESSAGE_UPDATE` (**(v1.9)** cũng phát kèm `embeds` khi thẻ xem trước link tới sau 1–3 giây hoặc bị gỡ), `MESSAGE_DELETE`, `MESSAGE_DELETE_BULK`, `MESSAGE_REACTION_ADD/REMOVE`, `MESSAGE_ACK`, `TYPING_START`                                                             |
 | Presence/Social | `PRESENCE_UPDATE` (**(v1.9)** kèm `activity` — hoạt động học, REQ-AUTH-05: gửi tới đúng tập nhận presence, lọc theo từng người nhận; chỉ người có `VIEW_CHANNEL` kênh đó nhận tên phòng, pha, thời điểm hết pha, người khác chỉ nhận `kind = group_study \| voice`; payload `{user_id, status: online \| idle \| dnd \| offline, activity}`, `activity.room = null` khi không xem được kênh (P1-B4.1); không có `activity` khi người đó đặt Ẩn, tắt "Hiện hoạt động học", hoặc giữa hai người có chặn theo bất kỳ chiều nào), `RELATIONSHIP_ADD`, `RELATIONSHIP_REMOVE`                                                                                                                                                         |
 | Voice/Call      | `VOICE_STATE_UPDATE` (**(chốt 26/11/2026, P3-B1)** `{user_id, channel_id` (null = rời)`, server_id, self_mute, self_video, mod_muted, joined_at, away}`, `away` = mất kết nối chưa quá 3 phút; bản gửi tới chính người rời phòng có thêm `reason`: `left`, `switched`, `disconnected_by_mod`, `kicked`, `banned`, `timed_out`, `left_server`, `channel_deleted`, `other_device`, `call`, `logout`; "máy khác" là một phiên đăng nhập khác (`auth_sessions`, mỗi phiên gắn một `device_id`; mở lại app trên cùng máy vẫn là phiên cũ)), `CALL_CREATE`, `CALL_UPDATE`, `CALL_DELETE`                                                                                                                                                    |
-| Study           | `FOCUS_SESSION_START`, `FOCUS_SESSION_UPDATE`, `FOCUS_SESSION_END` (Room Session; **(v1.9)** kèm `ended_by` — user id, `null` khi tự kết thúc — và `focused_seconds` của **chính người nhận** trong phiên, không phát giây của người khác; **(CR-28 #38)** gửi tới mọi người có `VIEW_CHANNEL` kênh, mỗi người một bản: START / UPDATE kèm `me` — giây đã chốt của mình và mốc đang được tính tiếp, `null` khi không phải Participant; số người và Host vắng mặt suy từ `voice_states`; `STREAK_UPDATE` đi trước `END`), `SOLO_SESSION_UPDATE` 🔁, `STREAK_UPDATE`, `TASK_CREATE`, `TASK_UPDATE`, `TASK_DELETE`, `STUDY_EVENT_CREATE/UPDATE/DELETE` (v1.x) |
+| Study           | `FOCUS_SESSION_START`, `FOCUS_SESSION_UPDATE`, `FOCUS_SESSION_END` (Room Session; **(v1.9)** kèm `ended_by` — user id, `null` khi tự kết thúc — và `focused_seconds` của **chính người nhận** trong phiên, không phát giây của người khác; **(CR-28 #38)** gửi tới mọi người có `VIEW_CHANNEL` kênh, mỗi người một bản: START / UPDATE kèm `me` — giây đã chốt của mình và mốc đang được tính tiếp, `null` khi chưa từng là Participant của phiên; số người và Host vắng mặt suy từ `voice_states`; `STREAK_UPDATE` đi trước `END`), `SOLO_SESSION_UPDATE` 🔁, `STREAK_UPDATE`, `TASK_CREATE`, `TASK_UPDATE`, `TASK_DELETE`, `STUDY_EVENT_CREATE/UPDATE/DELETE` (v1.x) |
 | Thông báo       | `NOTIFICATION_CREATE` (inbox tab Thông báo) · `NOTIFICATION_READ` (`{ids}` hoặc `{all: true, before_id}`; đồng bộ trạng thái đọc giữa thiết bị — v1.6) · **(v1.9)** `NOTIFICATION_DELETE` (`{ids}`; mục bị gỡ khi nguồn biến mất — tin, việc bị xóa…; dùng chung cho mọi trường hợp)                                                                                                                                                                          |
 
 **Close codes:** Phụ lục 11.2. **(v1.9)** Close code `4004` (và lỗi REST `40103`) kèm lý do phiên kết thúc để app báo đúng: mật khẩu được đổi / đặt lại ở thiết bị khác, bị thu hồi từ thiết bị khác, phiên bị đóng vì refresh token bị dùng lại; còn lại (hết hạn) câu chung (REQ-AUTH-04/07).
@@ -2008,7 +2010,10 @@ CREATE TABLE focus_sessions (                                 -- Room Session (D
     study_event_id      BIGINT,                               -- nếu tự bắt đầu từ Study Event (REQ-STUDY-12)
     started_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     ended_at            TIMESTAMPTZ,
-    end_reason          VARCHAR(16)                           -- stopped | empty_channel | focus_disabled | channel_deleted
+    end_reason          VARCHAR(16),                          -- stopped | empty_channel | focus_disabled | channel_deleted
+    ended_by            BIGINT REFERENCES users(id) ON DELETE SET NULL, -- CR-28 #38: FOCUS_SESSION_END `ended_by`
+    last_action         JSONB,                                -- CR-28 #38: {by, action} của thao tác điều khiển gần nhất
+    empty_since         TIMESTAMPTZ                           -- CR-28 #38: phòng không còn ghế từ lúc này (5 phút → empty_channel)
 );
 CREATE UNIQUE INDEX uq_focus_active_per_channel ON focus_sessions(channel_id) WHERE ended_at IS NULL;
 
@@ -2019,7 +2024,8 @@ CREATE TABLE focus_session_participations (                   -- Participation (
     joined_at           TIMESTAMPTZ NOT NULL DEFAULT now(),   -- = max(lúc vào phòng, lúc session bắt đầu)
     last_heartbeat_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     left_at             TIMESTAMPTZ,
-    focused_seconds     INT NOT NULL DEFAULT 0                -- cộng ở cuối mỗi pha focus và khi đóng (DEC-24)
+    focused_seconds     INT NOT NULL DEFAULT 0,               -- cộng ở cuối mỗi pha focus và khi đóng (DEC-24)
+    credited_days       JSONB NOT NULL DEFAULT '{}'           -- CR-28 #38: {local_date: giây} như solo_sessions
 );
 CREATE INDEX idx_focus_participations_user ON focus_session_participations(user_id, joined_at);
 CREATE UNIQUE INDEX uq_participation_open_per_user ON focus_session_participations(user_id) WHERE left_at IS NULL; -- v1.3

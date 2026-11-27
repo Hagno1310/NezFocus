@@ -8,16 +8,19 @@ import {
 } from '@nezfocus/shared';
 import { AppError } from '../../common/app-error.js';
 import { Clock } from '../../common/clock.js';
+import type { Tx } from '../../db/db.module.js';
 import { SnowflakeGenerator } from '../../common/snowflake.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
 import { PresenceSink } from '../gateway/presence.service.js';
 import {
   advance,
   applyAction,
+  joinRoom,
   startSolo,
   type SoloState,
   type SoloStep,
 } from './solo-machine.js';
+import { RoomSessionRepository } from './room-session.repository.js';
 import { toSoloResponse } from './solo-session.dto.js';
 import {
   SoloSessionRepository,
@@ -38,6 +41,8 @@ const deadline = (s: SoloState) =>
       ? new Date(s.waitingSince!.getTime() + SOLO_WAIT_LIMIT_MS)
       : null;
 
+type Applied = { record: SoloRecord; changed: boolean; credited: boolean };
+
 // A session as of `now`; the controller turns it into JSON.
 export type SoloView = { record: SoloRecord; now: Date };
 
@@ -55,10 +60,16 @@ export class SoloSessionService {
     private readonly scheduler: SoloScheduler,
     private readonly streaks: StreakService,
     private readonly presence: PresenceSink,
+    private readonly rooms: RoomSessionRepository,
   ) {}
 
   async start(userId: bigint, config: CycleConfig): Promise<SoloView> {
-    // ponytail: AC2 (already a Room Session Participant → 40903) needs Participations, P3-B3 (#28).
+    // AC2: already counted in a Room Session (4.9.1: one Focus Session per user).
+    if (await this.rooms.openOf(userId))
+      throw new AppError(
+        ErrorCode.FocusSessionAlreadyActive,
+        'Already a Room Session Participant',
+      );
     // A session whose wait ran out but whose job was lost must not block the start: advance it first.
     const active = await this.sessions.findActiveId(userId);
     if (active !== undefined) await this.change(active, userId, advance);
@@ -106,48 +117,80 @@ export class SoloSessionService {
     await this.change(id, null, advance);
   }
 
+  // STUDY-10 AC8 / AC9: their Solo ends (joined_room) in the caller's transaction; call the result after it commits.
+  async joinRoom(tx: Tx, userIds: bigint[], now: Date) {
+    const applied: Applied[] = [];
+    for (const userId of userIds) {
+      const id = await this.sessions.findActiveId(userId, tx);
+      if (id !== undefined)
+        applied.push(
+          await this.applyIn(tx, id, null, (s) => joinRoom(s, now), now),
+        );
+    }
+    return async () => {
+      for (const a of applied) await this.after(a, now);
+    };
+  }
+
+  hasActive(userId: bigint, tx: Tx) {
+    return this.sessions
+      .findActiveId(userId, tx)
+      .then((id) => id !== undefined);
+  }
+
   private async change(
     id: bigint,
     userId: bigint | null,
     step: (s: SoloState, now: Date) => SoloStep,
   ): Promise<SoloView> {
     const now = this.clock.now();
-    const { record, changed, credited } = await this.sessions.transaction(
-      async (tx) => {
-        const before = await this.sessions.lock(tx, id);
-        if (!before || (userId !== null && before.userId !== userId))
-          throw new AppError(ErrorCode.NotFound, 'Solo Session not found');
-        const { state, focus } = step(before.state, now);
-        if (focus.length === 0 && isDeepStrictEqual(state, before.state))
-          return { record: before, changed: false, credited: false };
-
-        // DEC-24: focus is credited at each phase end and on pause / skip / stop, in the same transaction.
-        const credits = focus.length
-          ? await this.stats.credit(
-              { userId: before.userId, source: 'solo', intervals: focus },
-              tx,
-            )
-          : [];
-        const creditedDays = { ...before.creditedDays };
-        for (const c of credits)
-          creditedDays[c.localDate] =
-            (creditedDays[c.localDate] ?? 0) + c.seconds;
-        const record: SoloRecord = {
-          ...before,
-          state,
-          focusedSeconds:
-            before.focusedSeconds + credits.reduce((n, c) => n + c.seconds, 0),
-          creditedDays,
-          hitDailyCap: before.hitDailyCap || credits.some((c) => c.capped),
-        };
-        await this.sessions.save(tx, record);
-        return { record, changed: true, credited: credits.length > 0 };
-      },
+    const applied = await this.sessions.transaction((tx) =>
+      this.applyIn(tx, id, userId, step, now),
     );
+    await this.after(applied, now);
+    return { record: applied.record, now };
+  }
+
+  private async applyIn(
+    tx: Tx,
+    id: bigint,
+    userId: bigint | null,
+    step: (s: SoloState, now: Date) => SoloStep,
+    now: Date,
+  ): Promise<Applied> {
+    const before = await this.sessions.lock(tx, id);
+    if (!before || (userId !== null && before.userId !== userId))
+      throw new AppError(ErrorCode.NotFound, 'Solo Session not found');
+    const { state, focus } = step(before.state, now);
+    if (focus.length === 0 && isDeepStrictEqual(state, before.state))
+      return { record: before, changed: false, credited: false };
+
+    // DEC-24: focus is credited at each phase end and on pause / skip / stop, in the same transaction.
+    const credits = focus.length
+      ? await this.stats.credit(
+          { userId: before.userId, source: 'solo', intervals: focus },
+          tx,
+        )
+      : [];
+    const creditedDays = { ...before.creditedDays };
+    for (const c of credits)
+      creditedDays[c.localDate] = (creditedDays[c.localDate] ?? 0) + c.seconds;
+    const record: SoloRecord = {
+      ...before,
+      state,
+      focusedSeconds:
+        before.focusedSeconds + credits.reduce((n, c) => n + c.seconds, 0),
+      creditedDays,
+      hitDailyCap: before.hitDailyCap || credits.some((c) => c.capped),
+    };
+    await this.sessions.save(tx, record);
+    return { record, changed: true, credited: credits.length > 0 };
+  }
+
+  private async after({ record, changed, credited }: Applied, now: Date) {
     if (changed) await this.announce(record, now);
     // STUDY-03 AC5: the streak rises at the phase end, without stopping the session.
     if (credited) await this.streaks.announce(record.userId);
-    return { record, now };
   }
 
   // SRS 7.3.6 step 3: every device of the user reschedules its notifications from this.

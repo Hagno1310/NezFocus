@@ -7,6 +7,7 @@ import {
   receiveSoloEvent,
   restoreSolo,
   snapshotOf,
+  soloSecondsNow,
   timerOf,
   type SoloMemory,
   type SoloRepository,
@@ -420,5 +421,23 @@ describe('acceptSnapshot (stale answers never undo an ending)', () => {
   it('a different session (started on another device) is taken', () => {
     const other = snap({ id: '43' });
     expect(acceptSnapshot(stopped, other, '42')).toBe(other);
+  });
+});
+
+describe('Solo minutes so far (S-ROOM-06, S-ROOM-03 solo-confirm)', () => {
+  it('adds the focus still running to what was credited', () => {
+    expect(soloSecondsNow(snap({ focused_seconds: 0 }), at(21, 47))).toBe(
+      18 * 60,
+    );
+    expect(
+      soloSecondsNow(
+        snap({
+          phase: 'short_break',
+          focused_seconds: 50 * 60,
+          phase_ends_at: iso(at(22, 29)),
+        }),
+        at(22, 20),
+      ),
+    ).toBe(50 * 60);
   });
 });

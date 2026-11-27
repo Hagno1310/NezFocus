@@ -25,7 +25,7 @@ export abstract class VoiceService {
   // Who sits in a room, away seats included (REQ-STUDY-01: everyone in it is a Participant).
   abstract occupants(
     channelId: bigint,
-  ): Promise<{ userId: bigint; joinedAt: Date }[]>;
+  ): Promise<{ userId: bigint; joinedAt: Date; away: boolean }[]>;
 }
 
 // What the Gateway needs from voice (WORKFLOW 4.3): op 4, READY, a login that ended.

@@ -34,7 +34,9 @@ import {
 import { soloSessions } from '../src/modules/study/solo.schema.js';
 import { LiveKitRooms } from '../src/modules/voice/livekit.js';
 import { VOICE_JOINED } from '../src/modules/voice/voice-events.js';
+import { VoiceRoomsService } from '../src/modules/voice/voice-rooms.service.js';
 import { VoiceSeats } from '../src/modules/voice/voice-seats.js';
+import { StudyRoomQuery } from '../src/modules/study/study-room.query.js';
 import { VoiceService } from '../src/modules/voice/voice.service.js';
 import {
   CapturingMailer,
@@ -67,7 +69,8 @@ describe('Room Session (e2e)', () => {
   let mailer: CapturingMailer;
   let db: Db;
   let rooms: RoomSessionService;
-  const clock = fixedClock(new Date());
+  // Whole seconds: a stretch split at local midnight keeps every second (each day rounds down).
+  const clock = fixedClock(new Date(Math.floor(Date.now() / 1000) * 1000));
   const sent: Sent[] = [];
   const jobs: string[] = [];
 
@@ -184,8 +187,30 @@ describe('Room Session (e2e)', () => {
       .get(EventEmitter2)
       .emitAsync(VOICE_JOINED, { ...seat, at: clock.now() });
   };
-  const leave = (me: Me) =>
-    app.get(VoiceService).disconnect(me.userId, 'any', 'left');
+  const leave = (me: Me, reason: 'left' | 'kicked' = 'left') =>
+    app.get(VoiceService).disconnect(me.userId, 'any', reason);
+  // LiveKit lost them (VC-01): the seat stays 3 minutes, away; back = away cleared, no new join.
+  const goAway = async (me: Me) => {
+    const seat = (await app.get(VoiceSeats).get(me.userId))!;
+    await app
+      .get(VoiceSeats)
+      .put({ ...seat, awayUntil: clock.now().getTime() + 3 * MIN * 1000 });
+  };
+  const comeBack = async (me: Me) => {
+    const seat = (await app.get(VoiceSeats).get(me.userId))!;
+    await app.get(VoiceSeats).put({ ...seat, awayUntil: null });
+  };
+  const seconds = async (sessionId: bigint, me: Me) =>
+    (await partsOf(sessionId))
+      .filter((p) => p.userId === me.userId)
+      .reduce((n, p) => n + p.focusedSeconds, 0);
+  const hostOf = async (sessionId: bigint) =>
+    (
+      await db
+        .select({ hostId: focusSessions.hostId })
+        .from(focusSessions)
+        .where(eq(focusSessions.id, sessionId))
+    )[0]!.hostId;
 
   const giveRole = async (serverId: string, bits: bigint, holder: Me) => {
     const id = app.get(SnowflakeGenerator).next();
@@ -551,10 +576,11 @@ describe('Room Session (e2e)', () => {
       const room = await running(2);
       const [an, binh] = room.people;
       await leave(an!);
-      expect(jobs).toEqual([]); // Bình still there
+      const empties = () => jobs.filter((j) => j.startsWith('empty'));
+      expect(empties()).toEqual([]); // Bình still there
       await leave(binh!);
       const since = clock.now();
-      expect(jobs).toEqual([`empty ${room.id} ${since.toISOString()}`]);
+      expect(empties()).toEqual([`empty ${room.id} ${since.toISOString()}`]);
 
       clock.advance(2 * MIN);
       await sit(binh!, room);
@@ -580,6 +606,243 @@ describe('Room Session (e2e)', () => {
           ),
         );
       expect(ended!.endedBy).toBeNull();
+    });
+  });
+
+  describe('Participation (REQ-STUDY-15, P3-B3.3)', () => {
+    it('4.9.2: An 35 minutes, Bình 48; An leaves → Bình Host; empty 5 minutes → ended', async () => {
+      const room = await studyRoom(2);
+      const [an, binh] = room.people;
+      await sit(an!, room); // 19:55
+      clock.advance(5 * MIN); // 20:00 An starts
+      const res = await an!.post(start(room.voice.id)).send(P25).expect(201);
+      const id = BigInt((res.body as FocusSessionResponse).focus_session.id);
+      clock.advance(12 * MIN); // 20:12 Bình
+      await sit(binh!, room);
+      clock.advance(13 * MIN); // 20:25 break
+      await rooms.tick(id);
+      clock.advance(5 * MIN); // 20:30 focus
+      await rooms.tick(id);
+      clock.advance(10 * MIN); // 20:40 An leaves
+      sent.length = 0;
+      await leave(an!);
+      expect(await seconds(id, an!)).toBe(35 * MIN);
+      expect(await hostOf(id)).toBe(binh!.userId);
+      const update = userCopies<FocusSessionResponse>('FOCUS_SESSION_UPDATE');
+      expect(update.get(binh!.userId)!.focus_session.host_id).toBe(binh!.id);
+      // the leaver keeps their seconds in `me`, counting stopped
+      expect(update.get(an!.userId)!.focus_session.me).toEqual({
+        focused_seconds: 35 * MIN,
+        counting_since: null,
+      });
+      clock.advance(15 * MIN); // 20:55 break
+      await rooms.tick(id);
+      clock.advance(5 * MIN); // 21:00 focus
+      await rooms.tick(id);
+      clock.advance(10 * MIN); // 21:10 Bình leaves, the room empties
+      await leave(binh!);
+      expect(await seconds(id, binh!)).toBe(48 * MIN);
+      const emptied = clock.now();
+      clock.advance(5 * MIN); // 21:15
+      await rooms.emptyCheck(id, emptied);
+      const [row] = await db
+        .select()
+        .from(focusSessions)
+        .where(eq(focusSessions.id, id));
+      expect(row).toMatchObject({ endReason: 'empty_channel' });
+      // History by local day (STUDY-17): Bình's three stretches on one day.
+      const [binhPart] = (await partsOf(id)).filter(
+        (p) => p.userId === binh!.userId,
+      );
+      expect(Object.values(binhPart!.creditedDays)).toEqual([48 * MIN]);
+    });
+
+    it('AC7: in the room before the start → counted from the start', async () => {
+      const room = await studyRoom(1);
+      const [an] = room.people;
+      await sit(an!, room);
+      clock.advance(5 * MIN);
+      const startedAt = clock.now();
+      await an!.post(start(room.voice.id)).send(P25).expect(201);
+      const [part] = await db
+        .select()
+        .from(focusSessionParticipations)
+        .where(eq(focusSessionParticipations.userId, an!.userId));
+      expect(part!.joinedAt).toEqual(startedAt);
+    });
+
+    it('AC5: leaving at 12:40 of focus → 760 s; AC6: five stays of 2:59 → 895 s', async () => {
+      const room = await running(2);
+      const [, binh] = room.people;
+      clock.advance(12 * MIN + 40);
+      await leave(binh!);
+      expect(await seconds(room.sessionId, binh!)).toBe(760);
+
+      const other = await running(2);
+      const [, chi] = other.people;
+      await leave(chi!);
+      for (let i = 0; i < 5; i++) {
+        await sit(chi!, other);
+        clock.advance(2 * MIN + 59);
+        await leave(chi!);
+      }
+      expect(await seconds(other.sessionId, chi!)).toBe(5 * 179);
+    });
+
+    it('AC2: network off 10 minutes in focus → counted to the last heartbeat only', async () => {
+      const room = await running(2);
+      const [, binh] = room.people;
+      clock.advance(5 * MIN);
+      await rooms.heartbeat(binh!.userId, room.sessionId); // the last one
+      await goAway(binh!);
+      clock.advance(3 * MIN + 1);
+      await app.get(VoiceRoomsService).expireAway();
+      expect(await seconds(room.sessionId, binh!)).toBe(5 * MIN);
+    });
+
+    it('AC8: closed 2 minutes then back → one Participation, the whole focus counted', async () => {
+      const room = await running(2);
+      const [, binh] = room.people;
+      clock.advance(10 * MIN);
+      await rooms.heartbeat(binh!.userId, room.sessionId);
+      await goAway(binh!);
+      clock.advance(2 * MIN);
+      await comeBack(binh!);
+      await rooms.heartbeat(binh!.userId, room.sessionId);
+      clock.advance(13 * MIN);
+      await rooms.tick(room.sessionId);
+      const mine = (await partsOf(room.sessionId)).filter(
+        (p) => p.userId === binh!.userId,
+      );
+      expect(mine).toHaveLength(1);
+      expect(mine[0]!.focusedSeconds).toBe(25 * MIN);
+    });
+
+    it('AC1: two 25/5 cycles with heartbeats → 50 minutes', async () => {
+      const room = await running(2);
+      const [, binh] = room.people;
+      for (const m of [25, 5, 25, 5]) {
+        for (let i = 0; i < m; i++) {
+          clock.advance(MIN);
+          await rooms.heartbeat(binh!.userId, room.sessionId);
+        }
+        await rooms.tick(room.sessionId);
+      }
+      expect(await seconds(room.sessionId, binh!)).toBe(50 * MIN);
+    });
+
+    it('STUDY-01 AC10: Bình (Host) stops; An gets her own 31 minutes, re-joins added up', async () => {
+      const room = await studyRoom(2);
+      const [binh, an] = room.people;
+      await sit(binh!, room);
+      await sit(an!, room);
+      const res = await binh!.post(start(room.voice.id)).send(P25).expect(201);
+      const id = BigInt((res.body as FocusSessionResponse).focus_session.id);
+      clock.advance(20 * MIN);
+      await leave(an!);
+      await sit(an!, room);
+      clock.advance(5 * MIN); // round 1 done: 25
+      await rooms.tick(id);
+      clock.advance(5 * MIN);
+      await rooms.tick(id);
+      clock.advance(6 * MIN);
+      sent.length = 0;
+      await rooms.act(binh!.userId, id, { action: 'stop' });
+      const ends = userCopies<FocusSessionEnd>('FOCUS_SESSION_END');
+      expect(ends.get(an!.userId)!.focused_seconds).toBe(31 * MIN);
+      expect(ends.get(binh!.userId)).toMatchObject({
+        ended_by: binh!.id,
+        focused_seconds: 31 * MIN,
+      });
+    });
+
+    it('a Room Session Participant cannot start Solo (STUDY-10 AC2 → 40903)', async () => {
+      const room = await running(2);
+      const res = await room.people[1]!.post(SoloRoutes.start).send(P25);
+      expect(res.body.code).toBe(ErrorCode.FocusSessionAlreadyActive);
+    });
+
+    it('STUDY-10 AC7: joining a running session ends my Solo (joined_room)', async () => {
+      const room = await running(1);
+      const late = await signedIn('Bình');
+      await db
+        .insert(serverMembers)
+        .values({ serverId: BigInt(room.server.id), userId: late.userId });
+      await late.post(SoloRoutes.start).send(P25).expect(201);
+      clock.advance(7 * MIN);
+      await sit(late, room);
+      const [solo] = await db
+        .select()
+        .from(soloSessions)
+        .where(eq(soloSessions.userId, late.userId));
+      expect(solo).toMatchObject({
+        endReason: 'joined_room',
+        focusedSeconds: 7 * MIN,
+      });
+      expect((await partsOf(room.sessionId)).map((p) => p.userId)).toContain(
+        late.userId,
+      );
+    });
+  });
+
+  describe('Host (REQ-STUDY-11)', () => {
+    it('AC2: the Host leaves → the longest Participant takes over; kicked → at once', async () => {
+      const room = await running(3);
+      const [an, binh, chi] = room.people;
+      await leave(an!, 'kicked');
+      expect(await hostOf(room.sessionId)).toBe(binh!.userId);
+      await leave(binh!);
+      expect(await hostOf(room.sessionId)).toBe(chi!.userId);
+    });
+
+    it('AC5: managers, the moderator Host leaves → no Host; a moderator joins → Host', async () => {
+      const room = await studyRoom(3, 'managers');
+      const [an, binh, chi] = room.people;
+      await giveRole(room.server.id, P.MANAGE_STUDY_ROOMS, binh!);
+      await sit(binh!, room);
+      await sit(chi!, room);
+      const res = await binh!.post(start(room.voice.id)).send(P25).expect(201);
+      const id = BigInt((res.body as FocusSessionResponse).focus_session.id);
+      await leave(binh!);
+      expect(await hostOf(id)).toBeNull();
+      await sit(an!, room); // the Owner holds every permission
+      expect(await hostOf(id)).toBe(an!.userId);
+    });
+
+    it('AC10: the Host away 2 minutes stays Host; past 3 minutes the next one takes over', async () => {
+      const room = await running(2);
+      const [an, binh] = room.people;
+      await goAway(an!);
+      clock.advance(2 * MIN);
+      await app.get(VoiceRoomsService).expireAway();
+      expect(await hostOf(room.sessionId)).toBe(an!.userId);
+      clock.advance(MIN + 1);
+      await app.get(VoiceRoomsService).expireAway();
+      expect(await hostOf(room.sessionId)).toBe(binh!.userId);
+    });
+  });
+
+  describe('StudyRoomQuery (for Hiếu)', () => {
+    it('room, Host, seconds in the session and who comes next', async () => {
+      const room = await running(2);
+      const [an, binh] = room.people;
+      clock.advance(7 * MIN);
+      const q = app.get(StudyRoomQuery);
+      expect(await q.getRoomOf(an!.userId)).toEqual({
+        channelId: room.channelId,
+        serverId: BigInt(room.server.id),
+        sessionId: room.sessionId,
+        isHost: true,
+        focusedSecondsInSession: 7 * MIN,
+        successorName: 'Bình',
+      });
+      expect(await q.getRoomOf(binh!.userId)).toMatchObject({
+        isHost: false,
+        successorName: null,
+      });
+      await leave(binh!);
+      expect(await q.getRoomOf(binh!.userId)).toBeNull();
+      expect((await q.getRoomOf(an!.userId))!.successorName).toBeNull();
     });
   });
 

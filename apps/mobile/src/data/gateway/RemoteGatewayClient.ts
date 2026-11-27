@@ -310,7 +310,7 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
     connect();
   }
 
-  // ponytail: a Room Session keeps it open too, with P3-B3.3 (#147).
+  // A Room Session Participant always sits in the voice room, so its keep-alive covers op 5 too (#147).
   function setKeepAlive(on: boolean) {
     if (on === keepAlive) return;
     keepAlive = on;

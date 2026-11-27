@@ -8,6 +8,7 @@ import {
   type PresenceStatus,
   type PresenceUpdate,
   type DmChannel,
+  type FocusHeartbeat,
   type FocusSessionState,
   type ReadState,
   type Relationship,
@@ -48,6 +49,11 @@ export type LoadDms = (userId: bigint) => Promise<DmChannel[]>;
 export type LoadFocusSessions = (
   userId: bigint,
 ) => Promise<FocusSessionState[]>;
+// Op 5 (REQ-STUDY-15 (2)), every 60 s from a Participant; owner: study.
+export type FocusHeartbeatHook = (
+  userId: bigint,
+  d: FocusHeartbeat,
+) => Promise<void>;
 
 // REQ-AUTH-05, implemented by PresenceService; the default keeps a connection test free of it.
 export interface PresenceHooks {
@@ -108,6 +114,7 @@ export class GatewayConnection implements SessionSocket {
     private readonly loadDms: LoadDms = async () => [],
     private readonly voice: VoiceHooks = noVoice,
     private readonly loadFocusSessions: LoadFocusSessions = async () => [],
+    private readonly focusHeartbeat: FocusHeartbeatHook = async () => {},
   ) {}
 
   open() {
@@ -200,7 +207,8 @@ export class GatewayConnection implements SessionSocket {
     }
     if (frame.op === GatewayOp.VOICE_STATE_UPDATE)
       return this.voice.update(this.session, frame.d);
-    // FOCUS_HEARTBEAT: P3-B3.3 (#147).
+    if (frame.op === GatewayOp.FOCUS_HEARTBEAT)
+      return this.focusHeartbeat(this.session.userId, frame.d);
   }
 
   private async identify(auth: Authenticated, status?: PresenceStatus) {

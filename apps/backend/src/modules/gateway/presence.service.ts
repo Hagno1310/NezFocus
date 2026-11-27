@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   Permission,
+  type FocusPhase,
   type PresenceEvent,
   type PresenceUpdate,
   type SoloSession,
@@ -35,7 +36,21 @@ export abstract class PresenceSink {
   abstract relationshipChanged(a: bigint, b: bigint): Promise<void>;
   // P3-B1.2 (#138), AUTH-05 CR-24: the voice room the user sits in; null = none.
   abstract voiceChanged(userId: bigint, room: VoiceRoom | null): Promise<void>;
+  // P3-B3.3 (#147), AUTH-05 CR-24: the Room Session the user is a Participant of; null = none.
+  abstract roomSessionChanged(
+    userId: bigint,
+    room: StudyGroupRoom | null,
+  ): Promise<void>;
 }
+
+export type StudyGroupRoom = {
+  channelId: bigint;
+  serverId: bigint;
+  name: string;
+  phase: FocusPhase;
+  state: 'running' | 'paused';
+  phaseEndsAt: Date | null;
+};
 
 export type VoiceRoom = {
   channelId: bigint;
@@ -54,6 +69,7 @@ type UserPresence = {
   settings: PresenceSettings;
   activity: StudyActivity | null; // Solo
   voice: StudyActivity | null; // shown when there is no Solo
+  group: StudyActivity | null; // a Room Session: shown over the voice room it runs in
   sent: string; // JSON of the last PRESENCE_UPDATE, to send only real changes
 };
 
@@ -148,6 +164,27 @@ export class PresenceService
       );
   }
 
+  roomSessionChanged(userId: bigint, room: StudyGroupRoom | null) {
+    return this.load(userId)
+      .then((me) => {
+        me.group = room && {
+          kind: 'group_study',
+          room: {
+            channel_id: room.channelId.toString(),
+            server_id: room.serverId.toString(),
+            channel_name: room.name,
+            phase: room.phase,
+            state: room.state,
+            phase_ends_at: room.phaseEndsAt?.toISOString() ?? null,
+          },
+        };
+        return this.changed(userId);
+      })
+      .catch((err: unknown) =>
+        this.logger.error(`room session ${userId}: ${String(err)}`),
+      );
+  }
+
   async settingsChanged(userId: bigint) {
     const me = await this.load(userId);
     me.settings = await this.repo.settings(userId);
@@ -206,6 +243,7 @@ export class PresenceService
       me &&
       !me.activity &&
       !me.voice &&
+      !me.group &&
       me.sent === JSON.stringify(OFFLINE(userId)) &&
       !this.sessions.devicesOf(userId).length
     )
@@ -221,19 +259,19 @@ export class PresenceService
     return new Set([...blocked, ...blockers]);
   }
 
-  // AUTH-05 (CR-24): the room's name only to who can view it, else "Đang ở một phòng voice".
+  // AUTH-05 (CR-24): the room's name only to who can view it, else "Đang ở một phòng voice" / "Đang học cùng nhóm".
   private async roomFor(
     e: PresenceEvent,
     receiver: bigint,
   ): Promise<PresenceEvent> {
     const a = e.activity;
-    if (a?.kind !== 'voice' || !a.room) return e;
+    if (a?.kind === 'solo' || !a?.room) return e;
     const sees = await this.permissions.can(
       receiver,
       { channelId: BigInt(a.room.channel_id) },
       Permission.VIEW_CHANNEL,
     );
-    return sees ? e : { ...e, activity: { kind: 'voice', room: null } };
+    return sees ? e : { ...e, activity: { kind: a.kind, room: null } };
   }
 
   private eventFor(userId: bigint, hideActivity: boolean): PresenceEvent {
@@ -252,7 +290,7 @@ export class PresenceService
     return {
       user_id: userId.toString(),
       status,
-      activity: visibleActivity(me.activity ?? me.voice, {
+      activity: visibleActivity(me.activity ?? me.group ?? me.voice, {
         status,
         showActivity: me.settings.showActivity,
       }),
@@ -270,6 +308,7 @@ export class PresenceService
         settings,
         activity: null,
         voice: null,
+        group: null,
         sent: JSON.stringify(OFFLINE(userId)),
       };
       this.users.set(userId, me);

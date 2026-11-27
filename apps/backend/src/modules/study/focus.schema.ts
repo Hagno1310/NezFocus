@@ -85,6 +85,8 @@ export const focusSessionParticipations = pgTable(
     lastHeartbeatAt: tz().notNull().defaultNow(),
     leftAt: tz(),
     focusedSeconds: integer().notNull().default(0),
+    // {local_date: seconds} credited, like solo_sessions (STUDY-17 history across midnight).
+    creditedDays: jsonb().$type<Record<string, number>>().notNull().default({}),
   },
   (t) => [
     index('idx_focus_participations_user').on(t.userId, t.joinedAt),

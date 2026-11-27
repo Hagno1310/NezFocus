@@ -1,0 +1,1 @@
+ALTER TABLE "focus_session_participations" ADD COLUMN "credited_days" jsonb DEFAULT '{}'::jsonb NOT NULL;

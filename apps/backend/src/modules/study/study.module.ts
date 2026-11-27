@@ -13,7 +13,7 @@ import { StreakService } from './streak.service.js';
 import { StudyStatsController } from './study-stats.controller.js';
 import { StudyStatsRepository } from './study-stats.repository.js';
 import { StudyStatsService } from './study-stats.service.js';
-import { NoStudyRoomQuery, StudyRoomQuery } from './study-room.query.js';
+import { LiveStudyRoomQuery, StudyRoomQuery } from './study-room.query.js';
 
 // Global: the Gateway reads Room Sessions for READY (CR-28 #38), Hiếu's dialogs read StudyRoomQuery.
 @Global()
@@ -32,7 +32,7 @@ import { NoStudyRoomQuery, StudyRoomQuery } from './study-room.query.js';
     SoloSessionService,
     { provide: SoloScheduler, useClass: BullSoloScheduler },
     SoloPhaseWorker,
-    { provide: StudyRoomQuery, useClass: NoStudyRoomQuery },
+    { provide: StudyRoomQuery, useClass: LiveStudyRoomQuery },
     RoomSessionRepository,
     RoomSessionService,
     { provide: RoomScheduler, useClass: BullRoomScheduler },

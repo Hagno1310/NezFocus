@@ -33,11 +33,11 @@ export class RoomSessionListener {
 
   @OnEvent(VOICE_JOINED, { promisify: true })
   joined(e: VoiceRoomMove) {
-    return this.rooms.roomJoined(e.channelId);
+    return this.rooms.roomJoined(e);
   }
 
   @OnEvent(VOICE_LEFT, { promisify: true })
   left(e: VoiceLeft) {
-    return this.rooms.roomLeft(e.channelId, e.at);
+    return this.rooms.roomLeft(e);
   }
 }

@@ -11,4 +11,8 @@ export type VoiceRoomMove = {
   at: Date;
 };
 
-export type VoiceLeft = VoiceRoomMove & { reason: VoiceLeaveReason };
+// away: the 3 minutes away ran out (STUDY-15 AC2 counts to the last heartbeat, not to now).
+export type VoiceLeft = VoiceRoomMove & {
+  reason: VoiceLeaveReason;
+  away: boolean;
+};

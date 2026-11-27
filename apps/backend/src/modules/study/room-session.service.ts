@@ -13,9 +13,11 @@ import { Clock } from '../../common/clock.js';
 import { SnowflakeGenerator } from '../../common/snowflake.js';
 import type { Tx } from '../../db/db.module.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
+import { PresenceSink } from '../gateway/presence.service.js';
 import { PermissionService } from '../permissions/permission.service.js';
 import { ServersRepository } from '../servers/servers.repository.js';
 import { ChannelTypeCode } from '../servers/servers.schema.js';
+import type { VoiceLeft, VoiceRoomMove } from '../voice/voice-events.js';
 import { VoiceService } from '../voice/voice.service.js';
 import type { FocusInterval } from './focused-time.js';
 import {
@@ -57,7 +59,7 @@ export type RoomView = {
   now: Date;
 };
 
-type Changed = { view: RoomView; credited: Set<bigint>; changed: boolean };
+type Occupant = { userId: bigint; joinedAt: Date; away: boolean };
 
 const notFound = () =>
   new AppError(ErrorCode.NotFound, 'Unknown Room Session or room');
@@ -67,8 +69,12 @@ const users = (parts: Participation[], open = false) => [
     parts.filter((p) => !open || p.leftAt === null).map((p) => p.userId),
   ),
 ];
+const runningFocus = (s: RoomState, until: Date): FocusInterval[] =>
+  s.status === 'running' && s.phase === 'focus' && until > s.phaseStartedAt
+    ? [{ start: s.phaseStartedAt, end: until, phaseEndsAt: s.phaseEndsAt }]
+    : [];
 
-// REQ-STUDY-01 / 11: the backend owns the Room Session clock; apps only display it.
+// REQ-STUDY-01 / 11 / 15: the backend owns the Room Session clock and who is counted; apps only display it.
 @Injectable()
 export class RoomSessionService {
   private readonly logger = new Logger('RoomSession');
@@ -85,6 +91,7 @@ export class RoomSessionService {
     private readonly servers: ServersRepository,
     private readonly voice: VoiceService,
     private readonly solo: SoloSessionService,
+    private readonly presence: PresenceSink,
   ) {}
 
   // POST /channels/{id}/focus-session.
@@ -103,10 +110,7 @@ export class RoomSessionService {
     // STUDY-01 AC8, STUDY-11 AC3.
     if (channel.focusControl === 'off')
       throw forbidden('This voice channel is not a Phòng học');
-    if (
-      channel.focusControl === 'managers' &&
-      !(await this.can(userId, channelId, Permission.MANAGE_STUDY_ROOMS))
-    )
+    if (!(await this.mayHost(userId, channelId)))
       throw forbidden('Only MANAGE_STUDY_ROOMS starts here');
     // STUDY-11: the starter is in the room (CR-28 #38: else 40302).
     if ((await this.voice.seatOf(userId))?.channelId !== channelId)
@@ -225,34 +229,115 @@ export class RoomSessionService {
     if (id !== undefined) await this.end(id, reason, by);
   }
 
-  // VOICE_LEFT: the last seat gone starts the 5 minutes (STUDY-01 AC7).
-  async roomLeft(channelId: bigint, at: Date) {
+  // VOICE_JOINED (REQ-STUDY-15 (2)): who sits down in a running session counts from now; their Solo
+  // ends (STUDY-10 AC7); a session without Host takes the first who may start (STUDY-11 AC5).
+  async roomJoined({ userId, channelId, at }: VoiceRoomMove) {
     const id = await this.sessions.activeIdOf(channelId);
-    if (id === undefined || (await this.voice.occupants(channelId)).length)
-      return;
-    const marked = await this.sessions.transaction(async (tx) => {
-      const r = await this.sessions.lock(tx, id);
-      if (!r || r.state.status === 'ended' || r.emptySince) return false;
-      await this.sessions.save(tx, { ...r, emptySince: at });
-      return true;
+    if (id === undefined) return;
+    const mayHost = await this.mayHost(userId, channelId);
+    const done = await this.sessions.transaction(async (tx) => {
+      const before = await this.sessions.lock(tx, id);
+      if (!before || before.state.status === 'ended') return null;
+      const tookHost = before.hostId === null && mayHost;
+      const record = {
+        ...before,
+        emptySince: null, // someone back within 5 minutes (STUDY-01 AC7)
+        hostId: tookHost ? userId : before.hostId,
+      };
+      if (!isDeepStrictEqual(record, before))
+        await this.sessions.save(tx, record);
+      const open = await this.sessions.openOf(userId, tx);
+      let announceSolo = async () => {};
+      if (open?.sessionId !== id) {
+        if (open) await this.sessions.leave(tx, open.id, at); // a stale one elsewhere
+        announceSolo = await this.solo.joinRoom(tx, [userId], at);
+        await this.sessions.join(tx, id, [
+          { id: this.ids.next(), userId, joinedAt: at },
+        ]);
+      }
+      return {
+        record,
+        tookHost,
+        announceSolo,
+        parts: await this.sessions.participations(id, tx),
+      };
     });
-    if (marked)
+    if (!done) return;
+    await done.announceSolo();
+    const view = { record: done.record, parts: done.parts, now: at };
+    // STUDY-11 AC5: the room sees its new Host; otherwise only the newcomer needs `me`.
+    if (done.tookHost) await this.announce(view, 'FOCUS_SESSION_UPDATE');
+    else await this.tell(view, userId, 'FOCUS_SESSION_UPDATE');
+  }
+
+  // VOICE_LEFT: the stay is credited and closed now (STUDY-15 AC5), or at the last heartbeat when the
+  // 3 minutes away ran out (AC2); a Host leaving hands over (STUDY-11 AC2 / AC5); an empty room
+  // starts its 5 minutes (STUDY-01 AC7).
+  async roomLeft({ userId, channelId, at, away }: VoiceLeft) {
+    const id = await this.sessions.activeIdOf(channelId);
+    if (id === undefined) return;
+    const occupants = await this.voice.occupants(channelId);
+    const successor = await this.successor(channelId, occupants);
+    const done = await this.sessions.transaction(async (tx) => {
+      const before = await this.sessions.lock(tx, id);
+      if (!before || before.state.status === 'ended') return null;
+      // A phase that ended before the job ran is credited to everyone first.
+      const { state, focus } = advanceRoom(before.state, at);
+      const parts = await this.sessions.participations(id, tx);
+      // Their seat is gone already; away until now, they count to their last heartbeat too.
+      const seen = away
+        ? [...occupants, { userId, joinedAt: at, away: true }]
+        : occupants;
+      const credited = await this.credit(tx, parts, focus, seen);
+      const mine = parts.find((p) => p.userId === userId && !p.leftAt);
+      if (mine) {
+        const until =
+          away && mine.lastHeartbeatAt < at ? mine.lastHeartbeatAt : at;
+        const fresh = (await this.sessions.participations(id, tx)).find(
+          (p) => p.id === mine.id,
+        )!;
+        for (const u of await this.credit(
+          tx,
+          [fresh],
+          runningFocus(state, until),
+          [],
+        ))
+          credited.add(u);
+        await this.sessions.leave(tx, mine.id, until);
+      }
+      const hostLeft = before.hostId === userId;
+      const emptied = !occupants.length && !before.emptySince;
+      const record: RoomRecord = {
+        ...before,
+        state,
+        hostId: hostLeft ? successor : before.hostId,
+        emptySince: emptied ? at : before.emptySince,
+      };
+      await this.sessions.save(tx, record);
+      return {
+        record,
+        credited,
+        hostLeft,
+        emptied,
+        tookPart: !!mine,
+        moved: focus.length > 0,
+        parts: await this.sessions.participations(id, tx),
+      };
+    });
+    if (!done) return;
+    for (const u of done.credited) await this.streaks.announce(u);
+    await this.presence.roomSessionChanged(userId, null);
+    const view = { record: done.record, parts: done.parts, now: at };
+    if (done.hostLeft || done.moved)
+      await this.announce(view, 'FOCUS_SESSION_UPDATE');
+    else if (done.tookPart)
+      await this.tell(view, userId, 'FOCUS_SESSION_UPDATE');
+    if (done.emptied)
       await this.scheduler
         .emptyCheck(id, at)
         .catch((err: unknown) =>
           this.logger.error(`empty check ${id}: ${String(err)}`),
         );
-  }
-
-  // VOICE_JOINED: someone back within 5 minutes cancels the count.
-  async roomJoined(channelId: bigint) {
-    const id = await this.sessions.activeIdOf(channelId);
-    if (id === undefined) return;
-    await this.sessions.transaction(async (tx) => {
-      const r = await this.sessions.lock(tx, id);
-      if (r?.emptySince)
-        await this.sessions.save(tx, { ...r, emptySince: null });
-    });
   }
 
   // The empty-room job: still the same empty stretch, and still nobody in.
@@ -266,6 +351,21 @@ export class RoomSessionService {
     )
       return;
     await this.end(id, 'empty_channel', null);
+  }
+
+  // Op 5 FOCUS_HEARTBEAT (REQ-STUDY-15 (2)); one for a session I am not counted in is dropped.
+  async heartbeat(userId: bigint, sessionId: bigint) {
+    await this.sessions.heartbeat(userId, sessionId, this.clock.now());
+  }
+
+  // STUDY-11 "Chuyển Host": who has sat in the room longest and may start under focus_control.
+  async successor(channelId: bigint, occupants: Occupant[]) {
+    const byStay = [...occupants].sort(
+      (a, b) => a.joinedAt.getTime() - b.joinedAt.getTime(),
+    );
+    for (const o of byStay)
+      if (await this.mayHost(o.userId, channelId)) return o.userId;
+    return null;
   }
 
   // READY.focus_sessions (CR-28 #38): running sessions of the rooms I can view, `me` mine.
@@ -293,33 +393,38 @@ export class RoomSessionService {
     return this.permissions.can(userId, { channelId }, permission);
   }
 
+  // STUDY-11: everyone may start in `everyone`, only MANAGE_STUDY_ROOMS in `managers`.
+  private async mayHost(userId: bigint, channelId: bigint) {
+    const channel = await this.servers.findChannel(channelId);
+    if (channel?.focusControl === 'everyone') return true;
+    return (
+      channel?.focusControl === 'managers' &&
+      this.can(userId, channelId, Permission.MANAGE_STUDY_ROOMS)
+    );
+  }
+
   private async apply(
     id: bigint,
     step: (s: RoomState, now: Date) => RoomStep,
   ): Promise<RoomView> {
     const now = this.clock.now();
+    const channelId = (await this.sessions.find(id))?.channelId;
+    const occupants = channelId ? await this.voice.occupants(channelId) : [];
     const { view, credited, changed } = await this.sessions.transaction(
-      async (tx): Promise<Changed> => {
+      async (tx) => {
         const before = await this.sessions.lock(tx, id);
         if (!before) throw notFound();
+        const parts = await this.sessions.participations(id, tx);
         const { state, focus } = step(before.state, now);
         if (focus.length === 0 && isDeepStrictEqual(state, before.state))
           return {
-            view: {
-              record: before,
-              parts: await this.sessions.participations(id, tx),
-              now,
-            },
-            credited: new Set(),
+            view: { record: before, parts, now },
+            credited: new Set<bigint>(),
             changed: false,
           };
         const record = { ...before, state };
         // DEC-24: everyone's focus is credited at each phase end and on pause / skip / stop.
-        const credited = await this.credit(
-          tx,
-          await this.sessions.participations(id, tx),
-          focus,
-        );
+        const credited = await this.credit(tx, parts, focus, occupants);
         await this.sessions.save(tx, record);
         if (state.status === 'ended')
           await this.sessions.leaveAll(tx, id, state.endedAt!);
@@ -342,14 +447,23 @@ export class RoomSessionService {
     return view;
   }
 
-  // Each Participation gets the part of the focus stretches it was there for (REQ-STUDY-15).
-  private async credit(tx: Tx, parts: Participation[], focus: FocusInterval[]) {
+  // Each open Participation gets the part of the focus it was there for (REQ-STUDY-15). Someone away
+  // counts only to their last heartbeat: back within 3 minutes they go on, else AC2 holds.
+  private async credit(
+    tx: Tx,
+    parts: Participation[],
+    focus: FocusInterval[],
+    occupants: Occupant[],
+  ) {
     const credited = new Set<bigint>();
     if (!focus.length) return credited;
+    const away = new Set(occupants.filter((o) => o.away).map((o) => o.userId));
     for (const p of parts) {
+      if (p.leftAt) continue;
+      const cut = away.has(p.userId) ? p.lastHeartbeatAt : null;
       const intervals = focus.flatMap((iv) => {
         const start = p.joinedAt > iv.start ? p.joinedAt : iv.start;
-        const end = p.leftAt && p.leftAt < iv.end ? p.leftAt : iv.end;
+        const end = cut && cut < iv.end ? cut : iv.end;
         return end > start ? [{ ...iv, start, end }] : [];
       });
       if (!intervals.length) continue;
@@ -357,40 +471,38 @@ export class RoomSessionService {
         { userId: p.userId, source: 'room', intervals },
         tx,
       );
-      const seconds = days.reduce((n, d) => n + d.seconds, 0);
-      if (seconds > 0) {
-        await this.sessions.addSeconds(tx, p.id, seconds);
-        credited.add(p.userId);
-      }
+      if (!days.some((d) => d.seconds > 0)) continue;
+      await this.sessions.credited(tx, p, days);
+      credited.add(p.userId);
     }
     return credited;
   }
 
-  // To who can view the room (CR-28 #38); every Participant gets their own copy with `me`.
+  // To who can view the room (CR-28 #38); whoever took part gets their own copy with `me`.
   private async announce(
-    { record, parts, now }: RoomView,
+    view: RoomView,
     t: 'FOCUS_SESSION_START' | 'FOCUS_SESSION_UPDATE',
   ) {
-    const inRoom = users(parts, true);
+    const { record, parts, now } = view;
+    const tookPart = users(parts);
     await this.events.toChannel(
       record.channelId,
       t,
       toFocusSessionResponse(record, null, now),
-      inRoom,
+      tookPart,
     );
-    for (const userId of inRoom)
-      await this.events.toUser(
-        userId,
-        t,
-        toFocusSessionResponse(
-          record,
-          meOf(
-            record,
-            parts.filter((p) => p.userId === userId),
-          ),
-          now,
-        ),
-      );
+    for (const userId of tookPart) await this.tell(view, userId, t);
+    // AUTH-05 (CR-24): Participants show "Đang học cùng nhóm" with the room's phase.
+    const name = (await this.servers.findChannel(record.channelId))?.name ?? '';
+    for (const userId of users(parts, true))
+      await this.presence.roomSessionChanged(userId, {
+        channelId: record.channelId,
+        serverId: record.serverId,
+        name,
+        phase: record.state.phase,
+        state: record.state.status === 'paused' ? 'paused' : 'running',
+        phaseEndsAt: record.state.phaseEndsAt,
+      });
     if (record.state.status === 'running')
       await this.scheduler
         .tick(record.id, record.state.phaseEndsAt!)
@@ -398,6 +510,19 @@ export class RoomSessionService {
         .catch((err: unknown) =>
           this.logger.error(`could not schedule ${record.id}: ${String(err)}`),
         );
+  }
+
+  private tell(
+    { record, parts, now }: RoomView,
+    userId: bigint,
+    t: 'FOCUS_SESSION_START' | 'FOCUS_SESSION_UPDATE',
+  ) {
+    const mine = parts.filter((p) => p.userId === userId);
+    return this.events.toUser(
+      userId,
+      t,
+      toFocusSessionResponse(record, meOf(record, mine), now),
+    );
   }
 
   // STUDY-01: `focused_seconds` of the receiver only, never someone else's.
@@ -409,7 +534,7 @@ export class RoomSessionService {
       toFocusSessionEnd(record, null),
       tookPart,
     );
-    for (const userId of tookPart)
+    for (const userId of tookPart) {
       await this.events.toUser(
         userId,
         'FOCUS_SESSION_END',
@@ -420,5 +545,7 @@ export class RoomSessionService {
             .reduce((n, p) => n + p.focusedSeconds, 0),
         ),
       );
+      await this.presence.roomSessionChanged(userId, null);
+    }
   }
 }

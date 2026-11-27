@@ -235,9 +235,16 @@ export class StudyStatsRepository {
           sql<number>`sum(${focusSessionParticipations.focusedSeconds})::int`.as(
             'focused_seconds',
           ),
-        creditedDays: sql<Record<string, number>>`'{}'::jsonb`.as(
-          'credited_days',
-        ),
+        // Re-joins merged: each stay's {local_date: seconds} added up per day.
+        creditedDays: sql<Record<string, number>>`(
+          select coalesce(jsonb_object_agg(d.key, d.seconds), '{}'::jsonb)
+          from (
+            select e.key, sum(e.value::int) as seconds
+            from focus_session_participations p, jsonb_each_text(p.credited_days) e
+            where p.focus_session_id = ${focusSessions.id} and p.user_id = ${q.userId}
+            group by e.key
+          ) d
+        )`.as('credited_days'),
       })
       .from(focusSessionParticipations)
       .innerJoin(

@@ -73,6 +73,7 @@ export class GatewayListener
         (userId) => this.dms.openFor(userId),
         this.voice,
         (userId) => this.rooms.ready(userId),
+        (userId, d) => this.rooms.heartbeat(userId, BigInt(d.focus_session_id)),
       );
       ws.on('message', (data, isBinary) => {
         // A binary frame is not JSON text: receive('') closes with 4002.

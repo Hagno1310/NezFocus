@@ -20,6 +20,7 @@ import {
   type SoloState,
   type SoloStep,
 } from './solo-machine.js';
+import { RoomSessionRepository } from './room-session.repository.js';
 import { toSoloResponse } from './solo-session.dto.js';
 import {
   SoloSessionRepository,
@@ -59,10 +60,16 @@ export class SoloSessionService {
     private readonly scheduler: SoloScheduler,
     private readonly streaks: StreakService,
     private readonly presence: PresenceSink,
+    private readonly rooms: RoomSessionRepository,
   ) {}
 
   async start(userId: bigint, config: CycleConfig): Promise<SoloView> {
-    // ponytail: AC2 (already a Room Session Participant → 40903) needs Participations, P3-B3 (#28).
+    // AC2: already counted in a Room Session (4.9.1: one Focus Session per user).
+    if (await this.rooms.openOf(userId))
+      throw new AppError(
+        ErrorCode.FocusSessionAlreadyActive,
+        'Already a Room Session Participant',
+      );
     // A session whose wait ran out but whose job was lost must not block the start: advance it first.
     const active = await this.sessions.findActiveId(userId);
     if (active !== undefined) await this.change(active, userId, advance);

@@ -7,6 +7,8 @@ import type {
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { DB, type Db, type Tx } from '../../db/db.module.js';
 import { serverMembers } from '../servers/servers.schema.js';
+import { users } from '../users/users.schema.js';
+import type { DayCredit } from './focused-time.js';
 import {
   focusSessionParticipations,
   focusSessions,
@@ -28,7 +30,13 @@ export type RoomRecord = {
 
 export type Participation = Pick<
   ParticipationRow,
-  'id' | 'userId' | 'joinedAt' | 'leftAt' | 'focusedSeconds'
+  | 'id'
+  | 'userId'
+  | 'joinedAt'
+  | 'leftAt'
+  | 'lastHeartbeatAt'
+  | 'focusedSeconds'
+  | 'creditedDays'
 >;
 
 const toRecord = (r: FocusSessionRow): RoomRecord => ({
@@ -87,7 +95,9 @@ const participation = {
   userId: focusSessionParticipations.userId,
   joinedAt: focusSessionParticipations.joinedAt,
   leftAt: focusSessionParticipations.leftAt,
+  lastHeartbeatAt: focusSessionParticipations.lastHeartbeatAt,
   focusedSeconds: focusSessionParticipations.focusedSeconds,
+  creditedDays: focusSessionParticipations.creditedDays,
 };
 
 @Injectable()
@@ -222,13 +232,67 @@ export class RoomSessionRepository {
       );
   }
 
-  async addSeconds(tx: Tx, participationId: bigint, seconds: number) {
+  // Seconds the stats core accepted, per local day (16 h cap and midnight split applied there).
+  async credited(tx: Tx, p: Participation, days: DayCredit[]) {
+    const creditedDays = { ...p.creditedDays };
+    for (const d of days)
+      creditedDays[d.localDate] = (creditedDays[d.localDate] ?? 0) + d.seconds;
     await tx
       .update(focusSessionParticipations)
       .set({
-        focusedSeconds: sql`${focusSessionParticipations.focusedSeconds} + ${seconds}`,
+        focusedSeconds: sql`${focusSessionParticipations.focusedSeconds} + ${days.reduce((n, d) => n + d.seconds, 0)}`,
+        creditedDays,
       })
+      .where(eq(focusSessionParticipations.id, p.id));
+  }
+
+  // The user's open Participation, in whatever session (uq_participation_open_per_user).
+  async openOf(userId: bigint, executor: Db | Tx = this.db) {
+    const [row] = await executor
+      .select({
+        ...participation,
+        sessionId: focusSessionParticipations.focusSessionId,
+      })
+      .from(focusSessionParticipations)
+      .where(
+        and(
+          eq(focusSessionParticipations.userId, userId),
+          isNull(focusSessionParticipations.leftAt),
+        ),
+      );
+    return row;
+  }
+
+  async leave(tx: Tx, participationId: bigint, at: Date) {
+    await tx
+      .update(focusSessionParticipations)
+      .set({ leftAt: at })
       .where(eq(focusSessionParticipations.id, participationId));
+  }
+
+  // REQ-STUDY-15 (2): op 5, every 60 s.
+  async heartbeat(userId: bigint, sessionId: bigint, at: Date) {
+    const rows = await this.db
+      .update(focusSessionParticipations)
+      .set({ lastHeartbeatAt: at })
+      .where(
+        and(
+          eq(focusSessionParticipations.userId, userId),
+          eq(focusSessionParticipations.focusSessionId, sessionId),
+          isNull(focusSessionParticipations.leftAt),
+        ),
+      )
+      .returning({ id: focusSessionParticipations.id });
+    return rows.length > 0;
+  }
+
+  // STUDY-11 "{người kế tiếp} sẽ điều khiển phiên học": no server nicknames, so display name, else username.
+  async nameOf(userId: bigint) {
+    const [row] = await this.db
+      .select({ displayName: users.displayName, username: users.username })
+      .from(users)
+      .where(eq(users.id, userId));
+    return row ? (row.displayName ?? row.username ?? '') : null;
   }
 
   async leaveAll(tx: Tx, sessionId: bigint, at: Date) {

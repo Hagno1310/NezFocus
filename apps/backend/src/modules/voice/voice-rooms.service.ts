@@ -252,7 +252,7 @@ export class VoiceRoomsService
         await this.serial(userId, async () => {
           const seat = await this.seats.get(userId);
           if (seat?.awayUntil != null && seat.awayUntil <= now)
-            await this.vacate(seat, 'left');
+            await this.vacate(seat, 'left', true);
         }).catch((err: unknown) => this.logger.error(`away ${userId}`, err));
     } finally {
       this.sweeping = false;
@@ -372,6 +372,7 @@ export class VoiceRoomsService
     return (await this.seats.inChannel(channelId)).map((s) => ({
       userId: s.userId,
       joinedAt: new Date(s.joinedAt),
+      away: s.awayUntil !== null,
     }));
   }
 
@@ -410,7 +411,8 @@ export class VoiceRoomsService
   }
 
   // Out of LiveKit, a leave to the room's viewers, the reason to that device only.
-  private async vacate(seat: Seat, reason: VoiceLeaveReason) {
+  // `expired`: the 3 minutes away ran out, not a leave the user asked for.
+  private async vacate(seat: Seat, reason: VoiceLeaveReason, expired = false) {
     if (!(await this.seats.remove(seat.userId))) return; // left already
     await this.presence.voiceChanged(seat.userId, null);
     await this.rooms.remove(roomOf(seat.channelId), seat.userId.toString());
@@ -425,6 +427,7 @@ export class VoiceRoomsService
       serverId: seat.serverId,
       channelId: seat.channelId,
       reason,
+      away: expired,
       at: this.clock.now(),
     });
   }

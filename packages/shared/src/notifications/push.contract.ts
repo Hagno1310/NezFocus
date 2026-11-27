@@ -8,8 +8,7 @@ export const PushTokenRoutes = {
   // Registering the same token again (FCM refresh, another account on the phone) moves it.
   register: '/users/@me/push-tokens',
   // DELETE → 204, also when the token is unknown (nothing left to remove).
-  remove: (token: string) =>
-    `/users/@me/push-tokens/${encodeURIComponent(token)}`,
+  remove: '/users/@me/push-tokens/:token',
 } as const;
 
 // SRS 8.2 push_tokens.kind; apns / apns_voip wait for iOS (DEC-30).
@@ -109,11 +108,9 @@ export function concealPush(payload: PushPayload, locale: Locale): PushPayload {
   return payload;
 }
 
-// How another module asks for a push that has no inbox item (CR-28 #36): the backend
-// PushService builds title / body in the recipient's language. Push of an inbox item
-// (mention, reply, friend_request, task_*) goes out from NotificationService.create.
+// CR-28 #36: a push without an inbox item; the backend writes title / body in the recipient's
+// language. Inbox items push from NotificationService.create.
 export type PushRequest =
   | { type: 'dm'; message_id: string; channel_id: string }
-  // ponytail: P3-B6.1 (#155) fills the call fields ({ call_id, caller_name, has_video,
-  // leave_room_name? }); until then calls are not sent.
+  // ponytail: P3-B6.1 (#155) adds caller_name, has_video, leave_room_name?; no call push yet.
   | { type: 'call' | 'call_cancel'; call_id: string };

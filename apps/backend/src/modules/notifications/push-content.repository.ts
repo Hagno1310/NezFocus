@@ -92,6 +92,14 @@ export class PushContentRepository {
     };
   }
 
+  async roleName(id: string) {
+    const [row] = await this.db
+      .select({ name: roles.name })
+      .from(roles)
+      .where(eq(roles.id, BigInt(id)));
+    return row?.name;
+  }
+
   // REQ-FRIEND-01 (CR-25): the note sent with the request; null when there is none.
   async requestNote(from: bigint, to: bigint) {
     const [low, high] = from < to ? [from, to] : [to, from];

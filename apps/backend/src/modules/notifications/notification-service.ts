@@ -22,8 +22,7 @@ export type CreateNotificationOptions = {
 };
 
 // REQ-NOTIF-05. Owner: notifications (B). Other modules inject this (WORKFLOW 4.3).
-// REQ-NOTIF-02, CR-28 #36: create also sends the push of a type that has one (mention, reply,
-// friend_request; task_* and owner_transferred when their owners add them).
+// REQ-NOTIF-02, CR-28 #36: create also pushes, for the types in PushDispatcher's ITEM_PUSH.
 export abstract class NotificationService {
   // null = skipped: data.actor_id is the recipient, or a mention / reply for this message exists.
   // Types without actor_id (task_assigned self-claim, AC9) are filtered by the caller.
@@ -74,12 +73,8 @@ export class DbNotificationService extends NotificationService {
       'NOTIFICATION_CREATE',
       toNotification(row),
     );
-    await this.push.forItem(
-      userId,
-      row.id,
-      type,
-      parsed as NotificationData<T>,
-    );
+    // Not awaited: a friend request's 201 does not wait for FCM; forItem never throws.
+    void this.push.forItem(userId, row.id, type, parsed as NotificationData<T>);
     return row.id;
   }
 

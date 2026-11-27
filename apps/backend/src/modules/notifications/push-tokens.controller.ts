@@ -2,12 +2,11 @@ import { Body, Controller, Delete, HttpCode, Param, Put } from '@nestjs/common';
 import { PushTokenRoutes, RegisterPushTokenRequest } from '@nezfocus/shared';
 import { ZodValidationPipe } from '../../common/zod-validation.pipe.js';
 import { CurrentUser, type AuthUser } from '../auth/auth.decorators.js';
-import { PushTokensRepository } from './push-tokens.repository.js';
+import { PushTokensService } from './push-tokens.js';
 
-// SRS 5.3 Devices (REQ-NOTIF-02/04).
 @Controller()
 export class PushTokensController {
-  constructor(private readonly tokens: PushTokensRepository) {}
+  constructor(private readonly tokens: PushTokensService) {}
 
   @Put(PushTokenRoutes.register)
   @HttpCode(204)
@@ -24,7 +23,7 @@ export class PushTokensController {
     );
   }
 
-  @Delete(PushTokenRoutes.register + '/:token')
+  @Delete(PushTokenRoutes.remove)
   @HttpCode(204)
   async remove(@Param('token') token: string, @CurrentUser() user: AuthUser) {
     await this.tokens.remove(user.userId, token);

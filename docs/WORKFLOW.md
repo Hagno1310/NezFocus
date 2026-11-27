@@ -117,6 +117,9 @@ export const healthRepository = pickRepository('health', {
 | `PermissionService`   | `permissions`   | A   | P0-6                                |
 | `NotificationService` | `notifications` | B   | P2-B4                               |
 | `VoiceService`        | `voice`         | B   | P3-B1.1 (bản thật P3-B1.2)          |
+| `PushService`         | `notifications` | B   | P3-B5.1 (bản thật P3-B5.2)          |
+| `PushTokens`          | `notifications` | B   | P3-B5.2 (bản tạm ghi log: P1-A4.2)  |
+| `ForegroundReader`    | `gateway`       | B   | P3-B5.2                             |
 
 ### 4.4 Dữ liệu mẫu
 

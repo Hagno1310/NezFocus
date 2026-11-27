@@ -11,7 +11,7 @@ import { FcmPushSender, LogPushSender, PushSender } from './push-sender.js';
 import { PushDispatcher, PushService } from './push-service.js';
 import { PushTokensController } from './push-tokens.controller.js';
 import { PushTokensRepository } from './push-tokens.repository.js';
-import { DbPushTokens, PushTokens } from './push-tokens.js';
+import { PushTokens, PushTokensService } from './push-tokens.js';
 import { BullPushQueue, PushQueue, PushWorker } from './push.queue.js';
 import { PushListener } from './push.listener.js';
 
@@ -24,7 +24,8 @@ import { PushListener } from './push.listener.js';
     NotificationsRepository,
     { provide: NotificationService, useClass: DbNotificationService },
     PushTokensRepository,
-    { provide: PushTokens, useClass: DbPushTokens },
+    PushTokensService,
+    { provide: PushTokens, useExisting: PushTokensService },
     PushContentRepository,
     PushDispatcher,
     { provide: PushService, useExisting: PushDispatcher },

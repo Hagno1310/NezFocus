@@ -18,10 +18,8 @@ import { messageBody, pushText, type PushSubject } from './push-text.js';
 import { PushTokensRepository } from './push-tokens.repository.js';
 import { PushQueue } from './push.queue.js';
 
-// REQ-NOTIF-02, CR-28 #36: push that has no inbox item (DM, calls). Owner: notifications (B);
-// other modules inject this (WORKFLOW 4.3). Push of an inbox item goes out from
-// NotificationService.create. Skipped when a device is in the foreground (DEC-34, calls
-// excepted), when either side blocked the other, or when the user has no token.
+// REQ-NOTIF-02, CR-28 #36: push without an inbox item (DM, calls); items push from
+// NotificationService.create. Owner: notifications (B), injected by others (WORKFLOW 4.3).
 export abstract class PushService {
   abstract send(userId: bigint, request: PushRequest): Promise<void>;
 }
@@ -75,7 +73,6 @@ export class PushDispatcher extends PushService {
     });
   }
 
-  // Called by NotificationService.create once the item is stored.
   async forItem<T extends NotificationType>(
     userId: bigint,
     itemId: bigint,
@@ -125,9 +122,7 @@ export class PushDispatcher extends PushService {
         };
       const role =
         source.via === 'role'
-          ? (await this.content.names([], [source.role_id], [])).roles.get(
-              source.role_id,
-            )
+          ? await this.content.roleName(source.role_id)
           : undefined;
       return {
         ...ids,

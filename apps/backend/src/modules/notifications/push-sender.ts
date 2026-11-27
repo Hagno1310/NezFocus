@@ -11,9 +11,8 @@ export abstract class PushSender {
   abstract send(job: PushJob): Promise<SendResult>;
 }
 
-// SRS 5.6: messages are notification messages Android shows itself (app swiped away
-// included) on their channel; calls are data messages the app rings. High priority so Doze
-// does not hold a mention past 5 seconds (REQ-NOTIF-02 AC1).
+// SRS 5.6: Android shows a notification message itself, even swiped away; a call is data the
+// app rings. High priority, or Doze holds a mention past 5 s (REQ-NOTIF-02 AC1).
 export function toFcmMessage(token: string, payload: PushPayload): Message {
   const { title, body, ...ids } = payload;
   const data = Object.fromEntries(
@@ -36,13 +35,10 @@ export function toFcmMessage(token: string, payload: PushPayload): Message {
   };
 }
 
-// FCM error codes meaning the token is dead for good (REQ-NOTIF-04 AC3). invalid-argument is
-// also a malformed token (FCM v1); the payload itself was checked by PushPayload, and a token
-// dropped by mistake comes back when the app next registers it.
+// REQ-NOTIF-04 AC3. Not invalid-argument: FCM also says it of a bad payload, for every token.
 const UNREGISTERED = new Set([
   'messaging/registration-token-not-registered',
   'messaging/invalid-registration-token',
-  'messaging/invalid-argument',
 ]);
 
 export class FcmPushSender extends PushSender {

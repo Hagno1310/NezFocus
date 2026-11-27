@@ -46,9 +46,8 @@ export const Env = z
       .string()
       .min(32)
       .default('dev-only-livekit-secret-0123456789abcdef'),
-    // REQ-NOTIF-02: Firebase service account for FCM HTTP v1 (Project settings › Service
-    // accounts). The key keeps its line breaks written as \n. Unset outside production: pushes
-    // are only logged.
+    // REQ-NOTIF-02: the Firebase service account (FCM HTTP v1); the key keeps \n written out.
+    // Unset outside production: pushes are only logged.
     FCM_PROJECT_ID: z.string().min(1).optional(),
     FCM_CLIENT_EMAIL: z.string().email().optional(),
     FCM_PRIVATE_KEY: z.string().min(1).optional(),

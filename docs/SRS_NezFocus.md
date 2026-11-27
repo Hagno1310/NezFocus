@@ -1715,9 +1715,9 @@ CREATE TABLE push_tokens (                                    -- REQ-NOTIF-02/04
     token               TEXT PRIMARY KEY,
     user_id             BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     session_id          BIGINT REFERENCES auth_sessions(id) ON DELETE CASCADE,
-    kind                VARCHAR(12) NOT NULL,                 -- fcm | apns_voip
+    kind                VARCHAR(12) NOT NULL,                 -- fcm | apns | apns_voip
     platform            VARCHAR(10) NOT NULL,                 -- ios | android
-    locale              VARCHAR(8),
+                                                              -- (CR-28 #36) bỏ cột locale: chữ push theo user_settings.locale (5.6)
     created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_seen_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );

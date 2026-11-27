@@ -189,7 +189,9 @@ describe('Push (e2e)', () => {
     it('DELETE removes it', async () => {
       const an = await signedIn();
       const token = await register(an);
-      await an.delete(PushTokenRoutes.remove(token)).expect(204);
+      await an
+        .delete(PushTokenRoutes.remove.replace(':token', token))
+        .expect(204);
       expect(await tokensOf(an)).toEqual([]);
     });
 

@@ -75,6 +75,7 @@ function setup(
         roles: new Map([['5', 'Nhóm trưởng']]),
         channels: new Map(),
       }),
+      roleName: async (id: string) => (id === '5' ? 'Nhóm trưởng' : undefined),
       requestNote: async () => 'Mình là Bình',
       dmRecipients: async () => [AN, BINH],
     } as unknown as PushContentRepository,

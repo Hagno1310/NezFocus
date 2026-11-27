@@ -11,7 +11,8 @@ import {
 } from './roomSessions';
 import { session } from './roomSessions.fixture';
 
-const at = (hhmmss: string) => Date.parse(`2026-10-18T${hhmmss}.000Z`);
+const at = (hhmmss: string) =>
+  Date.parse(`2026-10-18T${hhmmss.includes('.') ? hhmmss : `${hhmmss}.000`}Z`);
 
 const ready = (focus_sessions: FocusSessionState[], backend_time: string) =>
   ({
@@ -51,29 +52,40 @@ describe('Room Sessions from the Gateway (CR-28 #38)', () => {
     expect(s.offsetMs).toBe(2 * 60_000);
   });
 
-  it('START and UPDATE replace the channel’s session; a small offset wobble keeps the old offset', () => {
+  it('START and UPDATE replace the channel’s session; the offset keeps the least-delayed reading', () => {
+    // READY read late (the JS thread busy at start): 2 s of delay in it.
     let s = reduceRoomSessions(
       emptyRoomSessions,
       ready([], '2026-10-18T14:47:00.000Z'),
-      at('14:47:00'),
+      at('14:47:02'),
     );
+    expect(s.offsetMs).toBe(-2000);
+    // A delay only ever makes the reading smaller: a bigger one is closer to the truth…
     s = reduceRoomSessions(
       s,
       update(
         'FOCUS_SESSION_UPDATE',
         session({ status: 'paused' }),
-        '2026-10-18T14:48:00.400Z',
+        '2026-10-18T14:48:00.000Z',
       ),
-      at('14:48:00'),
+      at('14:48:00.100'),
     );
     expect(s.byChannel['700']?.status).toBe('paused');
-    expect(s.offsetMs).toBe(0);
+    expect(s.offsetMs).toBe(-100);
+    // …a smaller one is just a slower delivery.
+    s = reduceRoomSessions(
+      s,
+      update('FOCUS_SESSION_UPDATE', session(), '2026-10-18T14:49:00.000Z'),
+      at('14:49:01.500'),
+    );
+    expect(s.offsetMs).toBe(-100);
+    // The phone's clock was set 3 minutes back: far off either way, taken at once.
     s = reduceRoomSessions(
       s,
       update('FOCUS_SESSION_START', session(), '2026-10-18T14:52:00.000Z'),
-      at('14:49:00'),
+      at('14:55:00'),
     );
-    expect(s.offsetMs).toBe(3 * 60_000);
+    expect(s.offsetMs).toBe(-3 * 60_000);
   });
 
   it('END removes the session and keeps my summary only when I took part', () => {

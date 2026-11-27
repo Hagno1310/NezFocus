@@ -27,11 +27,12 @@ export const emptyRoomSessions: RoomSessions = {
   offsetMs: 0,
 };
 
-// Network delay wobbles each measured offset; only a change this big replaces it (as Solo).
-const OFFSET_JITTER_MS = 1000;
+// Any delay (network, a busy JS thread) only makes a reading smaller than the truth, so the
+// biggest reading is the best; one far below it means the phone's clock was changed.
+const CLOCK_CHANGED_MS = 60_000;
 
 const steady = (prev: number, measured: number) =>
-  Math.abs(measured - prev) < OFFSET_JITTER_MS ? prev : measured;
+  measured > prev || prev - measured > CLOCK_CHANGED_MS ? measured : prev;
 
 const without = <T>(map: Readonly<Record<string, T>>, key: string) => {
   const { [key]: _, ...rest } = map;

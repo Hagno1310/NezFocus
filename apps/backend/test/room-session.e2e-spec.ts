@@ -659,7 +659,10 @@ describe('Room Session (e2e)', () => {
       const [binhPart] = (await partsOf(id)).filter(
         (p) => p.userId === binh!.userId,
       );
-      expect(Object.values(binhPart!.creditedDays)).toEqual([48 * MIN]);
+      // Summed: run late in the day, the fake clock may cross local midnight (split tested below).
+      expect(
+        Object.values(binhPart!.creditedDays).reduce((a, b) => a + b, 0),
+      ).toBe(48 * MIN);
     });
 
     it('AC7: in the room before the start → counted from the start', async () => {

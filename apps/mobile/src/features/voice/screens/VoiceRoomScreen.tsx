@@ -103,6 +103,8 @@ import { useMediaFlow } from '../hooks/useMediaFlow';
 import { useVoiceRoom } from '../hooks/useVoiceRoom';
 
 const BODY_X = space[3];
+// useVoiceRoom's stand-in for my seat before the backend's VOICE_STATE_UPDATE.
+const MY_SEAT_PENDING = new Date(0).toISOString();
 
 // S-ROOM-01: the preview (`not-joined`, `offline`, `no-connect`) and the room before a session
 // (`study-room-idle`, `not-study-room`, `managers-only`, `voice-video-grid`); S-ROOM-02 once the
@@ -211,7 +213,22 @@ export function VoiceRoomScreen({
     (s) => s.otherDevice?.channelId === channelId,
   );
 
-  if (session && starting) setStarting(false);
+  // S-ROOM-03 `conflict`: someone else's session arrived while my sheet was open.
+  const [startedFirst, setStartedFirst] = useState<string | null>(null);
+  if (session && starting) {
+    setStarting(false);
+    if (session.host_id && session.host_id !== meId && !soloRunning)
+      setStartedFirst(session.host_id);
+  }
+  useEffect(() => {
+    if (!startedFirst) return;
+    showToast({
+      message: t('room.conflict', { name: room.nameOf(startedFirst) }),
+    });
+    setStartedFirst(null);
+    // Once per conflict; nameOf is this render's.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startedFirst, t]);
 
   const { channel, layout, here, joined } = room;
   if (!channel || !layout) return null;
@@ -450,6 +467,11 @@ export function VoiceRoomScreen({
             joined={joined}
             canManage={canManage}
             syncing={syncing}
+            seatSince={
+              room.seats.find(
+                (m) => m.user_id === meId && m.joined_at !== MY_SEAT_PENDING,
+              )?.joined_at ?? null
+            }
             // `not-joined-other-session`: my own Solo / Room Session counts seconds in the MiniPlayer.
             otherSession={
               !joined && (soloRunning || (!!myCall && hasSessionElsewhere))

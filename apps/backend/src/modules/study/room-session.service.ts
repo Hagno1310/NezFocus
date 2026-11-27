@@ -497,12 +497,13 @@ export class RoomSessionService {
     view: RoomView,
     event: 'FOCUS_SESSION_START' | 'FOCUS_SESSION_UPDATE',
   ) {
-    const { record, parts, now } = view;
+    const { record, parts } = view;
     const tookPart = everyone(parts);
     await this.events.toChannel(
       record.channelId,
       event,
-      toFocusSessionResponse(record, null, now),
+      // SRS 7.3.6 step 1: the time it is sent, not the event's (a seat change may be older).
+      toFocusSessionResponse(record, null, this.clock.now()),
       tookPart,
     );
     for (const userId of tookPart) await this.sendOwnCopy(view, userId, event);
@@ -532,7 +533,7 @@ export class RoomSessionService {
   }
 
   private sendOwnCopy(
-    { record, parts, now }: RoomView,
+    { record, parts }: RoomView,
     userId: bigint,
     event: 'FOCUS_SESSION_START' | 'FOCUS_SESSION_UPDATE',
   ) {
@@ -540,7 +541,7 @@ export class RoomSessionService {
     return this.events.toUser(
       userId,
       event,
-      toFocusSessionResponse(record, meOf(record, mine), now),
+      toFocusSessionResponse(record, meOf(record, mine), this.clock.now()),
     );
   }
 

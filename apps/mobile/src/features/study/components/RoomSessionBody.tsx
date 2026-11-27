@@ -93,6 +93,7 @@ export function RoomSessionBody({
   onToastTop,
   onMore,
   otherSession = false,
+  seatSince,
 }: {
   session: FocusSessionState;
   offsetMs: number;
@@ -106,6 +107,7 @@ export function RoomSessionBody({
   onToastTop: (y: number) => void; // Toasts sit under the chip (spec 03 › Toast)
   onMore: () => void;
   otherSession?: boolean;
+  seatSince: string | null; // when my seat was taken (voice_states.joined_at)
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -118,7 +120,7 @@ export function RoomSessionBody({
   );
   const timer = roomTimer(session, offsetMs, now);
   const seconds = myFocusedSeconds(session, offsetMs, now);
-  const joinedAt = useJoinedAt(joined, session, offsetMs, now);
+  const joinedAt = useJoinedAt(joined, session, seatSince, offsetMs, now);
   const todayMinutes = todayMinutesNow(
     stats?.today_minutes ?? 0,
     session,
@@ -405,9 +407,8 @@ function subText(t: TFunction, s: SubLine, nameOf: (id: string) => string) {
 }
 
 // `just-joined`: sitting down in a running session → "Bạn đang được tính giờ từ 21:47" under
-// the chip, once per stay; the time is kept for the `late-join` line after it.
-// Told once per stay (session + when it started counting): a remount (MiniPlayer, 💬, back)
-// does not tell again, sitting down again does.
+// the chip, once per stay; the time is kept for the `late-join` line after it. A stay is my
+// seat's `joined_at` (voice_states): a remount, a resume or a new phase is not a new one.
 const toldJoined = new Set<string>();
 // A stay older than this is not a fresh sit-down (app reopened, `app-restart-rejoin`).
 const FRESH_JOIN_MS = 10_000;
@@ -415,23 +416,23 @@ const FRESH_JOIN_MS = 10_000;
 function useJoinedAt(
   joined: boolean,
   session: FocusSessionState,
+  seatSince: string | null,
   offsetMs: number,
   now: number,
 ) {
   const { t } = useTranslation();
   const [join, setJoin] = useState<{ at: number; since: string } | null>(null);
-  const counting = session.me?.counting_since ?? null;
   if (!joined && join) setJoin(null);
-  const stay = `${session.id}:${counting}`;
-  if (joined && counting && !toldJoined.has(stay)) {
+  const stay = `${session.id}:${seatSince}`;
+  if (joined && seatSince && session.me && !toldJoined.has(stay)) {
     toldJoined.add(stay);
-    // My own Start is not "just joined": only a stay that began after the session did, just now.
-    const since = Date.parse(counting);
+    // My own Start is not "just joined": only a seat taken after the session began, just now.
+    const since = Date.parse(seatSince);
     if (
       since > Date.parse(session.started_at) &&
       now + offsetMs - since < FRESH_JOIN_MS
     )
-      setJoin({ at: now, since: counting });
+      setJoin({ at: now, since: seatSince });
   }
   useEffect(() => {
     if (join)
@@ -443,6 +444,7 @@ function useJoinedAt(
   return join?.at ?? null;
 }
 
+// S-ROOM-02 `host-transferred`, `no-host-paused`; edge `host-left-paused`.
 function useNoticeToast(
   session: FocusSessionState | null,
   meId: string,

@@ -7,7 +7,11 @@ import { homeStore } from '../../../domain/servers/homeStore';
 import { sessionStore } from '../../../domain/session/sessionStore';
 import { mediaDenied } from '../../../domain/voice/mediaDenied';
 import { roomLayout } from '../../../domain/voice/roomLayout';
-import { keepOrder, seatsIn } from '../../../domain/voice/voiceRooms';
+import {
+  keepOrder,
+  ringOrder,
+  seatsIn,
+} from '../../../domain/voice/voiceRooms';
 import { voiceStore } from '../../../domain/voice/voiceSession';
 import { useMembers } from '../../servers/hooks/useMembers';
 import { useServerAccess } from '../../servers/hooks/useServerAccess';
@@ -30,8 +34,13 @@ export type RoomTile = {
   poorNetwork: boolean;
 };
 
-// S-ROOM-01: the channel, my call in it (or elsewhere), and the tiles in C-18 order.
-export function useVoiceRoom(serverId: string, channelId: string) {
+// S-ROOM-01: the channel, my call in it (or elsewhere), and the tiles in C-18 order. In a Room
+// Session (`host` given, null = no Host) the C-06 seat order: Host second, "+N" by priority.
+export function useVoiceRoom(
+  serverId: string,
+  channelId: string,
+  host?: string | null,
+) {
   const access = useServerAccess(serverId);
   const channel = useStore(homeStore, (s) =>
     s.channels[serverId]?.find((c) => c.id === channelId),
@@ -78,7 +87,10 @@ export function useVoiceRoom(serverId: string, channelId: string) {
   );
   // Kept from render to render (C-18: nobody moves once placed).
   const [ids, setIds] = useState<string[] | null>(null);
-  const next = keepOrder(ids, room, meId, friends);
+  const next =
+    host === undefined
+      ? keepOrder(ids, room, meId, friends)
+      : ringOrder(ids, room, meId, friends, host);
   if (!sameIds(ids, next)) setIds(next);
 
   const people = useMemo(
@@ -110,11 +122,17 @@ export function useVoiceRoom(serverId: string, channelId: string) {
     ];
   });
 
+  const perms = channel && access ? access.channelPerms(channel) : 0n;
+  const nameOf = (id: string) => {
+    const user = people.get(id);
+    return user?.display_name ?? user?.username ?? '';
+  };
+
   const layout =
     channel && access
       ? roomLayout({
           focusControl: channel.focus_control,
-          perms: access.channelPerms(channel),
+          perms,
           joined,
           online,
         })
@@ -131,5 +149,7 @@ export function useVoiceRoom(serverId: string, channelId: string) {
     online,
     denied,
     cameraPreviewed,
+    perms,
+    nameOf,
   };
 }

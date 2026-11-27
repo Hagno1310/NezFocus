@@ -675,6 +675,8 @@ export const vi = {
       deleteTitle: 'Xóa {{name}}?',
       deleteBodyVoice:
         'Tin nhắn trong chat của phòng sẽ bị xóa và không khôi phục được.',
+      deleteBodySession:
+        'Phiên học đang chạy ({{n}} người) kết thúc, mọi người rời phòng.',
       deleteBodyText: 'Tin nhắn trong kênh sẽ bị xóa và không khôi phục được.',
       deleteBodyWelcome:
         'Tin nhắn trong kênh sẽ bị xóa và không khôi phục được. Server sẽ không gửi tin chào mừng tới khi bạn chọn kênh khác.',
@@ -1248,6 +1250,56 @@ export const vi = {
     },
   },
   // Spec 03 S-ROOM-01, S-ROOM-EDGE; 10 S-MOD-05 (P3-B1 #26).
+  // Spec 03 S-ROOM-02 / S-ROOM-03 and Edge case (Room Session).
+  room: {
+    chip: {
+      me: 'Bạn đang điều khiển',
+      other: '{{name}} đang điều khiển',
+      none: 'Chưa có người điều khiển',
+    },
+    viewRing: 'Vòng',
+    viewGrid: 'Lưới',
+    count: {
+      focusWith: '{{n}} người đang Tập trung cùng bạn',
+      waitingWith: '{{n}} người đang chờ cùng bạn',
+      focusing: '{{n}} người đang Tập trung',
+      shortBreak: 'Cả phòng đang nghỉ ngắn',
+      longBreak: 'Cả phòng đang nghỉ dài',
+      alone: 'Bạn đang học một mình trong phòng này',
+    },
+    sub: {
+      today: 'Bạn đã tập trung {{minutes}} phút hôm nay',
+      startedAt: 'Phiên học bắt đầu lúc {{time}}',
+      joinedAt: 'Bạn vừa vào · được tính từ {{time}}',
+      noHost: 'Người quản lý phòng học vào sẽ điều khiển phiên',
+      stretch: 'Đứng dậy, uống nước · tập trung lại sau {{minutes}} phút',
+      stretchUnder: 'Đứng dậy, uống nước · tập trung lại sau chưa tới 1 phút',
+      roundDone: 'Vòng {{round}} xong · tập trung lại lúc {{time}}',
+    },
+    line: {
+      breakEnds: 'Tập trung lại lúc {{time}}',
+      pausedByMe: 'Bạn đã tạm dừng',
+      pausedBy: '{{name}} đã tạm dừng',
+      pressResume: 'Bấm Tiếp tục để chạy lại',
+      syncing: 'Đang đồng bộ lại…',
+    },
+    pausedLabel: 'Tạm dừng · {{phase}}',
+    grid: 'Vòng {{round}} · {{n}} người',
+    gridCameras: 'Vòng {{round}} · {{n}} người · {{cameras}} bật camera',
+    invite: 'Mời vào phòng',
+    more: '{{count}} người khác',
+    control: 'Điều khiển',
+    justJoined: 'Bạn đang được tính giờ từ {{time}}',
+    conflict: '{{name}} vừa bắt đầu phiên học',
+    streakReached: 'Đủ 15 phút hôm nay · chuỗi {{days}} ngày liên tiếp',
+    reconnectedGap: 'Mất kết nối {{minutes}} phút · khoảng này không được tính',
+    start: {
+      title: 'Bắt đầu phiên học',
+      note: 'Cả {{n}} người trong phòng sẽ cùng nhịp. Bạn sẽ là người điều khiển.',
+      roomDefault: 'Nghỉ dài: tắt · Cấu hình mặc định của phòng',
+      action: 'Bắt đầu cho cả phòng',
+    },
+  },
   voice: {
     join: 'Vào phòng',
     switchHere: 'Chuyển sang phòng này',
@@ -1292,6 +1344,7 @@ export const vi = {
     tile: {
       micOn: 'đang bật mic',
       speaking: 'đang nói',
+      cameraOn: 'đang bật camera',
       away: 'tạm vắng',
     },
     micSheet: {

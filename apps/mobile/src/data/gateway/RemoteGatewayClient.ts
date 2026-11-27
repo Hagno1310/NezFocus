@@ -331,6 +331,12 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
     if (identified) sendSubscribe();
   }
 
+  // Offline it is simply lost: the backend only needs the latest one (REQ-STUDY-15 AC2).
+  function focusHeartbeat(focus_session_id: string) {
+    if (identified)
+      send({ op: GatewayOp.FOCUS_HEARTBEAT, d: { focus_session_id } });
+  }
+
   function updateVoice(d: VoiceStateUpdate) {
     if (identified) send({ op: GatewayOp.VOICE_STATE_UPDATE, d });
     else pendingVoice = d;
@@ -345,5 +351,6 @@ export function createGatewayClient(deps: GatewayClientDeps): GatewayClient {
     subscribe,
     updateVoice,
     setKeepAlive,
+    focusHeartbeat,
   };
 }

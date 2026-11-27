@@ -682,6 +682,8 @@ export const en: Strings = {
       deleteTitle: 'Delete {{name}}?',
       deleteBodyVoice:
         'Messages in the room’s chat will be deleted and can’t be restored.',
+      deleteBodySession:
+        'The study session running ({{n}} people) ends and everyone leaves the room.',
       deleteBodyText:
         'Messages in the channel will be deleted and can’t be restored.',
       deleteBodyWelcome:
@@ -1246,6 +1248,56 @@ export const en: Strings = {
       join: 'Join',
     },
   },
+  // Spec 03 S-ROOM-02 / S-ROOM-03 and Edge case (Room Session).
+  room: {
+    chip: {
+      me: 'You are in control',
+      other: '{{name}} is in control',
+      none: 'Nobody is in control',
+    },
+    viewRing: 'Ring',
+    viewGrid: 'Grid',
+    count: {
+      focusWith: '{{n}} people focusing with you',
+      waitingWith: '{{n}} people waiting with you',
+      focusing: '{{n}} people focusing',
+      shortBreak: 'The room is on a short break',
+      longBreak: 'The room is on a long break',
+      alone: 'You are studying alone in this room',
+    },
+    sub: {
+      today: 'You focused {{minutes}} min today',
+      startedAt: 'Session started at {{time}}',
+      joinedAt: 'You just joined · counted from {{time}}',
+      noHost: 'A study room manager who joins will take control',
+      stretch: 'Stand up, drink some water · focus again in {{minutes}} min',
+      stretchUnder: 'Stand up, drink some water · focus again in under 1 min',
+      roundDone: 'Round {{round}} done · focus again at {{time}}',
+    },
+    line: {
+      breakEnds: 'Focus again at {{time}}',
+      pausedByMe: 'You paused',
+      pausedBy: '{{name}} paused',
+      pressResume: 'Tap Resume to start again',
+      syncing: 'Syncing…',
+    },
+    pausedLabel: 'Paused · {{phase}}',
+    grid: 'Round {{round}} · {{n}} people',
+    gridCameras: 'Round {{round}} · {{n}} people · {{cameras}} on camera',
+    invite: 'Invite to room',
+    more: '{{count}} more people',
+    control: 'Controls',
+    justJoined: 'You are counted from {{time}}',
+    conflict: '{{name}} just started a session',
+    streakReached: '15 minutes today · {{days}}-day streak',
+    reconnectedGap: 'Offline for {{minutes}} min · that time is not counted',
+    start: {
+      title: 'Start a study session',
+      note: 'All {{n}} people in the room will keep the same rhythm. You will be in control.',
+      roomDefault: 'Long break: off · Room default',
+      action: 'Start for the room',
+    },
+  },
   voice: {
     join: 'Join room',
     switchHere: 'Switch to this room',
@@ -1286,6 +1338,7 @@ export const en: Strings = {
     tile: {
       micOn: 'mic on',
       speaking: 'speaking',
+      cameraOn: 'camera on',
       away: 'away',
     },
     micSheet: {

@@ -1,4 +1,8 @@
 import {
+  FocusSessionRoutes,
+  type FocusSessionAction,
+  type FocusSessionResponse,
+  type StartFocusSessionRequest,
   SoloRoutes,
   StudySessionsResponse,
   StudyStatsResponse,
@@ -19,6 +23,20 @@ export const soloRepository: SoloRepository = {
   get: (id) => api.request(SoloRoutes.byId(id)),
   act: (id, action) =>
     api.request(SoloRoutes.byId(id), { method: 'PATCH', body: action }),
+};
+
+// REQ-STUDY-01 / STUDY-11 over REST; the Gateway brings everyone else's copy.
+export const roomSessionRepository = {
+  start: (channelId: string, body: StartFocusSessionRequest) =>
+    api.request<FocusSessionResponse>(
+      FocusSessionRoutes.start.replace(':id', channelId),
+      { method: 'POST', body },
+    ),
+  act: (id: string, body: FocusSessionAction) =>
+    api.request<FocusSessionResponse | undefined>(
+      FocusSessionRoutes.byId.replace(':id', id),
+      { method: 'PATCH', body },
+    ),
 };
 
 // ponytail: khi op-sqlite lands (P2-A3.3 #101): move these keys there. SecureStore is the only

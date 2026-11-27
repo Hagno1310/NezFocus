@@ -80,5 +80,6 @@ export function createFakeGatewayClient(
     subscribe() {},
     updateVoice() {},
     setKeepAlive() {},
+    focusHeartbeat() {},
   };
 }

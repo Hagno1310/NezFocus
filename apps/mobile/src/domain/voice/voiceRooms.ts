@@ -23,24 +23,65 @@ export function reduceSeats(
 export const seatsIn = (seats: VoiceSeats, channelId: string) =>
   Object.values(seats).filter((m) => m.channel_id === channelId);
 
-// C-18 `voice` / C-06 without the Host step: me → friends → camera or mic on → joined earlier.
+// C-18 `voice` / C-06: me → Host (Room Session only) → friends → camera or mic on → joined earlier.
 export function orderSeats(
   seats: readonly VoiceRoomMember[],
   me: string | null,
   friends: ReadonlySet<string>,
+  host: string | null = null,
 ): VoiceRoomMember[] {
   const rank = (m: VoiceRoomMember) =>
     m.user_id === me
       ? 0
-      : friends.has(m.user_id)
+      : m.user_id === host
         ? 1
-        : m.self_video || !m.self_mute
+        : friends.has(m.user_id)
           ? 2
-          : 3;
+          : m.self_video || !m.self_mute
+            ? 3
+            : 4;
   return [...seats].sort(
     (a, b) => rank(a) - rank(b) || a.joined_at.localeCompare(b.joined_at),
   );
 }
+
+// C-06 › Xếp ghế: 12 seats; from 13 people 11 seats and "+N".
+const RING_MAX = 12;
+const RING_SEATED = 11;
+
+// keepOrder for the ring, with "+N" kept in priority order so a freed seat goes to its first.
+export function ringOrder(
+  prev: readonly string[] | null,
+  seats: readonly VoiceRoomMember[],
+  me: string | null,
+  friends: ReadonlySet<string>,
+  host: string | null,
+): string[] {
+  const ids = prev
+    ? keepOrder(prev, seats, me, friends)
+    : orderSeats(seats, me, friends, host).map((m) => m.user_id);
+  if (ids.length <= RING_MAX) return ids;
+  // Whoever sat keeps the seat; only freed seats are filled, by priority.
+  const sat = new Set(
+    (prev ?? ids).slice(0, ringSeats(prev ?? ids).seated.length),
+  );
+  const head = ids
+    .filter((id) => id === me || sat.has(id))
+    .slice(0, RING_SEATED);
+  const seated = new Set(head);
+  const rest = orderSeats(
+    seats.filter((m) => !seated.has(m.user_id)),
+    me,
+    friends,
+    host,
+  ).map((m) => m.user_id);
+  return [...head, ...rest];
+}
+
+export const ringSeats = (ids: readonly string[]) =>
+  ids.length <= RING_MAX
+    ? { seated: [...ids], more: 0 }
+    : { seated: ids.slice(0, RING_SEATED), more: ids.length - RING_SEATED };
 
 // C-18 (chốt 17/10/2026): the first look is sorted, then newcomers join the end and nobody
 // moves when they turn a mic on, so starting a session never reshuffles the grid. "Bạn" is

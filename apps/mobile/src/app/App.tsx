@@ -39,6 +39,7 @@ import { startFriendsLifecycle } from './friendsLifecycle';
 import { startDmLifecycle } from './dmLifecycle';
 import { startSettingsLifecycle } from './settingsLifecycle';
 import { startVoiceLifecycle } from './voiceLifecycle';
+import { startRoomSessionLifecycle } from './roomSessionLifecycle';
 import { startPushLifecycle } from './pushLifecycle';
 import { interacted } from '../shared/interaction';
 import { linking } from './navigation/linking';
@@ -146,6 +147,7 @@ export default function App() {
   useEffect(startMessagesLifecycle, []);
   // Before the Gateway: READY.voice_states must find its listener.
   useEffect(startVoiceLifecycle, []);
+  useEffect(startRoomSessionLifecycle, []);
   useEffect(startGatewayLifecycle, []);
   useEffect(startTypingLifecycle, []);
   useEffect(startUnreadLifecycle, []);

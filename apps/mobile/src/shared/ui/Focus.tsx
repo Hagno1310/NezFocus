@@ -165,6 +165,7 @@ export function FocusTimer({
   long,
   accessibilityLabel,
   mascot,
+  muted = false,
 }: {
   phase: FocusPhase;
   state: PhaseState;
@@ -175,6 +176,7 @@ export function FocusTimer({
   long: boolean;
   accessibilityLabel: string;
   mascot?: ReactNode;
+  muted?: boolean; // C-06 `syncing`: the number in text-tertiary
 }) {
   const share = totalMs > 0 ? Math.min(1, leftMs / totalMs) : 0;
   // C-06: a break fills up and ends full, so the Solo wait after it shows a full ring.
@@ -194,7 +196,12 @@ export function FocusTimer({
       <Ring phase={phase} from={from} to={to} />
       {mascot}
       <PhaseBadge phase={phase} state={state} size="M" label={label} />
-      <Text variant={long ? 'timer-long' : 'timer'}>{clockText(leftMs)}</Text>
+      <Text
+        variant={long ? 'timer-long' : 'timer'}
+        color={muted ? 'text-tertiary' : 'text-primary'}
+      >
+        {clockText(leftMs)}
+      </Text>
       {lines.map((line) => (
         <Text
           key={line}
@@ -207,6 +214,49 @@ export function FocusTimer({
           {line}
         </Text>
       ))}
+    </View>
+  );
+}
+
+// C-06 `compact` (Lưới): no ring, PhaseBadge · M and the number in `stat`, a line under them.
+export function FocusTimerCompact({
+  phase,
+  state,
+  leftMs,
+  label,
+  line,
+  muted = false,
+  accessibilityLabel,
+}: {
+  phase: FocusPhase;
+  state: PhaseState;
+  leftMs: number;
+  label: string;
+  line: string;
+  muted?: boolean;
+  accessibilityLabel: string;
+}) {
+  return (
+    <View
+      accessible
+      accessibilityRole="timer"
+      accessibilityLabel={accessibilityLabel}
+      style={styles.compact}
+    >
+      <View style={styles.compactRow}>
+        <PhaseBadge phase={phase} state={state} size="M" label={label} />
+        <Text variant="stat" color={muted ? 'text-tertiary' : 'text-primary'}>
+          {clockText(leftMs)}
+        </Text>
+      </View>
+      <Text
+        variant="label"
+        color="text-secondary"
+        numberOfLines={2}
+        maxFontSizeMultiplier={fontScale.narrowLabel}
+      >
+        {line}
+      </Text>
     </View>
   );
 }
@@ -340,6 +390,8 @@ const styles = StyleSheet.create({
     gap: space[1],
   },
   line: { textAlign: 'center', maxWidth: 236 }, // board: FT cycle width
+  compact: { gap: space[1] },
+  compactRow: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
   control: {
     alignItems: 'center',
     gap: space[1],

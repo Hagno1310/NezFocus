@@ -868,6 +868,8 @@ Ví dụ cấu hình 25/5, long break 15 phút sau mỗi 4 pha focus:
 | Tính vào leaderboard server | Có                                                                                                            | Không                                                                       |
 | Chống gian lận              | Heartbeat 60s                                                                                                 | Phải bấm cho mỗi pha focus                                                  |
 
+**(CR-28 #39) Heartbeat của Room Session:** Participant đang mất kết nối (chưa quá 3 phút) khi một pha focus kết thúc chỉ được tính tới heartbeat cuối của pha đó; quay lại kịp thì tính tiếp từ lúc đó, phần thiếu (tối đa 3 phút) không bù lại.
+
 #### <a id="s-4-9-2"></a>4.9.2. Luồng ví dụ (v1.2)
 
 **Room Session bật thủ công** (Study Room "Phòng học im lặng", 25/5): 19:55 An vào phòng (mic tự tắt, chưa tính phút) → 20:00 An bấm Start, thành Host, Participation bắt đầu từ 20:00 → 20:12 Bình vào, tự động là Participant, thấy "Tập trung — còn 13:00" → 20:25 cả phòng sang nghỉ → 20:30 tự sang focus → 20:40 An rời (được 35 phút), Host chuyển cho Bình → 21:10 Bình rời (được 48 phút = 13 + 25 + 10), phòng trống → 21:15 session tự kết thúc. **(v1.9)** An và Bình đều là Host lúc rời nên phải xác nhận Dialog "Rời phòng?" (An: "Bình sẽ điều khiển phiên học."; Bình: "Phiên học vẫn chạy nhưng chưa có người điều khiển."); rời xong mỗi người thấy Toast "Đã rời Phòng học im lặng · {35 / 48} phút đã được tính · Vào lại".

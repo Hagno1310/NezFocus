@@ -188,11 +188,11 @@ export class ChannelsService {
       isStudyRoomSettingsOnly(body),
     );
     const serverId = row.serverId!;
-    const studyRoom =
+    const touchesStudyRoom =
       body.focus_control !== undefined ||
       body.default_cycle_config !== undefined;
     // CR-28 #37: only a voice channel is a Phòng học.
-    if (studyRoom && row.type !== ChannelTypeCode.voice)
+    if (touchesStudyRoom && row.type !== ChannelTypeCode.voice)
       throw invalid(
         body.focus_control !== undefined
           ? 'focus_control'
@@ -212,7 +212,7 @@ export class ChannelsService {
         const current = locked.rows.map(toChannelResponse);
         const self = current.find((c) => c.id === row.id.toString());
         if (!self) throw notFound('Unknown channel'); // deleted meanwhile
-        if (studyRoom)
+        if (touchesStudyRoom)
           await locked.update(row.id, {
             focusControl: body.focus_control,
             defaultCycleConfig: body.default_cycle_config,
@@ -351,12 +351,11 @@ export class ChannelsService {
 
   // A live server channel the caller sees (else 40401) with MANAGE_CHANNELS there
   // (overwrites apply, else 40302). Also the gate of the overwrite writes.
-  // `studyRoom`: only Phòng học fields change, so MANAGE_STUDY_ROOMS on a voice channel
-  // is enough too (REQ-STUDY-11 AC8).
+  // REQ-STUDY-11 AC8: for Phòng học fields alone, MANAGE_STUDY_ROOMS on a voice channel will do.
   async manageable(
     userId: bigint,
     channelId: bigint,
-    studyRoom = false,
+    studyRoomOnly = false,
   ): Promise<ChannelRow> {
     const row = await this.servers.findChannel(channelId);
     if (
@@ -370,7 +369,7 @@ export class ChannelsService {
     )
       throw notFound('Unknown channel');
     if (
-      studyRoom &&
+      studyRoomOnly &&
       row.type === ChannelTypeCode.voice &&
       (await this.permissions.can(
         userId,

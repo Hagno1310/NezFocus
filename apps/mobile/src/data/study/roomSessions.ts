@@ -7,10 +7,8 @@ type RoomSessionOf = (
   myId: string | null,
 ) => ActiveRoomSession | null;
 
-// ponytail: no Room Session reaches the app yet; P3-B3.4 (#148) reads the real one
-// (FOCUS_SESSION_*) for S-SET-07's session line and `switch-off-confirm`.
-// EXPO_PUBLIC_FAKE=study-room: every Phòng học runs one, 9 people, I am the Host
-// (spec 08 › Dữ liệu nhất quán), and turning it off ends it.
+// ponytail: no Room Session reaches the app yet (none); P3-B3.4 (#148) reads the real one.
+// EXPO_PUBLIC_FAKE=study-room: spec 08 › Dữ liệu nhất quán — each Phòng học has 9 people, I host.
 export const roomSessionOf = pickRepository<RoomSessionOf>('study-room', {
   remote: () => null,
   fake: (channel, myId) =>

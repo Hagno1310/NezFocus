@@ -608,6 +608,7 @@ export const en: Strings = {
       saveFailed: 'Could not save the change',
       retry: 'Retry',
       changedBy: '{{name}} just changed the study room settings',
+      changedBySomeone: 'The study room settings just changed',
     },
     channels: {
       createTitle: 'Create channel',

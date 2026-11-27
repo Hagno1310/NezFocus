@@ -19,6 +19,7 @@ import {
   unmarkOwnDelete,
   upsertChannel,
 } from '../../../domain/servers/homeStore';
+import { saveStudyRoom } from '../../../domain/servers/studyRoomSettings';
 
 const channelsOf = (serverId: string) =>
   homeStore.getState().channels[serverId] ?? [];
@@ -41,6 +42,16 @@ export function useChannelActions(serverId: string) {
       );
       if (result.ok)
         applyGatewayEvent({ t: 'CHANNEL_CREATE', d: result.channel, s: 0 });
+      return result;
+    },
+
+    // S-SET-07: a radio or the default cycle.
+    async saveStudyRoom(
+      channelId: string,
+      body: Parameters<typeof saveStudyRoom>[2],
+    ) {
+      const result = await saveStudyRoom(serverRepository, channelId, body);
+      if (result.ok) upsertChannel(result.channel);
       return result;
     },
 

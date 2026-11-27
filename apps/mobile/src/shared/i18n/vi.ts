@@ -600,6 +600,7 @@ export const vi = {
       saveFailed: 'Chưa lưu được thay đổi',
       retry: 'Thử lại',
       changedBy: '{{name}} vừa đổi cài đặt phòng học',
+      changedBySomeone: 'Cài đặt phòng học vừa được đổi', // the member list is not loaded yet
     },
     channels: {
       createTitle: 'Tạo kênh',

@@ -4,7 +4,6 @@ import {
   memberName,
   type CycleConfig,
   type FocusControl,
-  type Locale,
 } from '@nezfocus/shared';
 import { Info } from 'lucide-react-native';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
@@ -12,21 +11,19 @@ import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from 'zustand';
-import { serverRepository } from '../../../data/servers';
-import { roomSessionOf } from '../../../data/study/roomSessions';
 import {
   gatewayStore,
   onGatewayEvent,
 } from '../../../domain/gateway/gatewayStore';
-import { upsertChannel } from '../../../domain/servers/homeStore';
 import {
   changedByOther,
   needsOffConfirm,
-  saveStudyRoom,
   studyRoomView,
+  type StudyRoomNote,
 } from '../../../domain/servers/studyRoomSettings';
 import { sessionStore } from '../../../domain/session/sessionStore';
-import { space, useTheme } from '../../../shared/theme';
+import { currentLanguage } from '../../../shared/i18n';
+import { size, space, useTheme } from '../../../shared/theme';
 import { Skeleton, SystemBanner } from '../../../shared/ui/Feedback';
 import { NoteLine } from '../../../shared/ui/NoteLine';
 import { Dialog } from '../../../shared/ui/Overlay';
@@ -38,13 +35,18 @@ import { Text } from '../../../shared/ui/Text';
 import { showToast } from '../../../shared/ui/Toast';
 import { CycleSheet } from '../../study/components/CycleSheet';
 import { useChannelAccess } from '../hooks/useChannelAccess';
+import { useChannelActions } from '../hooks/useChannelActions';
 import { useMembers } from '../hooks/useMembers';
+import { useRoomSession } from '../hooks/useRoomSession';
 
 const CHOICES: FocusControl[] = ['everyone', 'managers', 'off'];
+const NOTES = {
+  hostKeeps: 'servers.studyRoom.hostKeeps',
+  controllerKeeps: 'servers.studyRoom.controllerKeeps',
+  off: 'servers.studyRoom.offNote',
+} as const satisfies Record<StudyRoomNote, string>;
 
-// S-SET-07 `loading`, `full-access`, `managers`, `off`, `switch-off-confirm`, `cycle-sheet`,
-// `cycle-custom`, `cycle-invalid`, `save-error`, `offline`; Edge case `changed-by-other`,
-// `large-text`, `long-cycle-360`. A radio saves at once; the cycle only with "Lưu".
+// S-SET-07 (every state of spec 08) and Edge case `changed-by-other`, `large-text`, `long-cycle-360`.
 export function StudyRoomSettingsScreen({
   serverId,
   channelId,
@@ -56,12 +58,13 @@ export function StudyRoomSettingsScreen({
   onBack: () => void;
   onClose: () => void; // back to the drawer
 }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { bottom } = useSafeAreaInsets();
   const offline = useStore(gatewayStore, (s) => s.banner === 'offline');
   const myId = useStore(sessionStore, (s) => s.user?.id ?? null);
   const members = useMembers(serverId).data;
+  const actions = useChannelActions(serverId);
   const access = useChannelAccess(serverId, channelId, 'studyRoom', onClose);
   const channel = access?.channel;
   // The radio shows a choice while it saves; the old value comes back if it fails.
@@ -74,19 +77,16 @@ export function StudyRoomSettingsScreen({
   if (!known.current && channel) known.current = channel;
 
   const focus = pending ?? channel?.focus_control ?? 'off';
-  const session = channel
-    ? roomSessionOf({ focus_control: channel.focus_control }, myId)
-    : null;
+  const session = useRoomSession(channel, myId);
 
-  const nameOf = (userId: string) => {
-    const m = members?.find((x) => x.user.id === userId);
-    return m ? memberName(m) : '';
-  };
-  const onEvent = useEffectEvent((by: string) =>
+  const onEvent = useEffectEvent((by: string) => {
+    const m = members?.find((x) => x.user.id === by);
     showToast({
-      message: t('servers.studyRoom.changedBy', { name: nameOf(by) }),
-    }),
-  );
+      message: m
+        ? t('servers.studyRoom.changedBy', { name: memberName(m) })
+        : t('servers.studyRoom.changedBySomeone'),
+    });
+  });
   useEffect(
     () =>
       onGatewayEvent((e) => {
@@ -116,10 +116,10 @@ export function StudyRoomSettingsScreen({
         <View style={styles.body}>
           <Skeleton width={120} height={12} />
           {[0, 1, 2].map((i) => (
-            <Skeleton key={i} width="100%" height={48} />
+            <Skeleton key={i} width="100%" height={size.settingsRow} />
           ))}
           <Skeleton width={120} height={12} />
-          <Skeleton width="100%" height={48} />
+          <Skeleton width="100%" height={size.settingsRow} />
         </View>
       </View>
     );
@@ -130,11 +130,10 @@ export function StudyRoomSettingsScreen({
     optimistic = true,
   ): Promise<boolean> {
     if (optimistic && body.focus_control) setPending(body.focus_control);
-    const result = await saveStudyRoom(serverRepository, channelId, body);
+    const result = await actions.saveStudyRoom(channelId, body);
     setPending(null);
     if (result.ok) {
       known.current = result.channel;
-      upsertChannel(result.channel);
       return true;
     }
     if (result.error === 'lost') access?.lostAccess();
@@ -164,8 +163,8 @@ export function StudyRoomSettingsScreen({
 
   const view = studyRoomView({ focus_control: focus }, session, myId);
   const cycle = channel.default_cycle_config ?? DEFAULT_CYCLE_CONFIG;
-  const people = session?.participants ?? 0;
-  const note = view.note && t(`servers.studyRoom.${view.note}`);
+  const people = view.sessionPeople ?? 0;
+  const note = view.note && t(NOTES[view.note]);
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.bg }]}>
@@ -203,7 +202,7 @@ export function StudyRoomSettingsScreen({
             </SectionLabel>
             <SettingsRow
               label={t('servers.studyRoom.cycle')}
-              value={formatCycle(cycle, i18n.language as Locale)}
+              value={formatCycle(cycle, currentLanguage())}
               wrapValue
               disabled={offline}
               onPress={() => setCycleOpen(true)}

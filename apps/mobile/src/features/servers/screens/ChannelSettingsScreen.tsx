@@ -82,6 +82,12 @@ export function ChannelSettingsScreen({
           }[channel.focus_control]
         : undefined;
   const studyRoomsOnly = rows.length === 1 && rows[0] === 'studyRoom';
+  const open: Record<ChannelSettingsRow, () => void> = {
+    overview: onOverview,
+    permissions: onPermissions,
+    studyRoom: onStudyRoom,
+    taskBoard: () => onRow(label('taskBoard'), TICKETS.taskBoard),
+  };
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.bg }]}>
@@ -122,15 +128,7 @@ export function ChannelSettingsScreen({
                 ? t('servers.channels.taskBoardHint')
                 : undefined
             }
-            onPress={() =>
-              row === 'overview'
-                ? onOverview()
-                : row === 'permissions'
-                  ? onPermissions()
-                  : row === 'studyRoom'
-                    ? onStudyRoom()
-                    : onRow(label(row), TICKETS[row])
-            }
+            onPress={open[row]}
           />
         ))}
       </ScrollView>

@@ -527,6 +527,12 @@ export function createMessageStore(deps: MessageStoreDeps) {
         };
       };
       let { found, oldest } = await has();
+      // Newer than the cache (a push tapped before the catch-up): fetch the gap, it is not gone.
+      const newest = (await local.messages(channelId)).at(-1);
+      if (!found && (!newest || BigInt(newest.id) < target)) {
+        await fetchNewer(channelId);
+        ({ found, oldest } = await has());
+      }
       let past = !oldest || BigInt(oldest.id) <= target;
       if (!found && !past) patchView(channelId, { revealing: true });
       for (let i = 0; !found && !past && i < REVEAL_PAGES; i++) {

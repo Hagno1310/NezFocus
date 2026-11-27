@@ -612,6 +612,14 @@ describe('opening a message (REQ-MSG-05 CR-19)', () => {
     );
   });
 
+  it('reveal of a message newer than the cache (a push tapped before catch-up) catches up, not "deleted"', async () => {
+    const t = setup(fakeRemote(many(10)));
+    await t.store.open('7', '9');
+    t.server.messages.push(msg('11')); // arrived while the app was in the background
+    expect(await t.store.reveal('7', '11')).toBe('found');
+    expect(t.shown().at(-1)).toBe('11');
+  });
+
   it('reveal of a message not there (deleted) stops once past it', async () => {
     const t = setup(fakeRemote(many(130).filter((m) => m.id !== '20')));
     await t.store.open('7', '9');

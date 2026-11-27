@@ -215,6 +215,7 @@ export function StudyRoomSettingsScreen({
       </ScrollView>
       <Dialog
         visible={confirming}
+        row // S-ROOM-05 `focus-off`: Hủy and Tắt Phòng học side by side
         title={
           people > 1
             ? t('servers.studyRoom.offTitle', { count: people })

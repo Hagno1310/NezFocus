@@ -123,7 +123,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space[3],
-    paddingVertical: space[3],
+    // Frame S-STUDY-01 / S-STUDY-06 · 360: a row is about 88 high.
+    paddingVertical: space[2],
   },
   text: { flex: 1, gap: space[1] },
   people: { flexDirection: 'row', alignItems: 'center', gap: space[2] },

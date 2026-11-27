@@ -26,6 +26,8 @@ const ch = (
   parent_id,
   position,
   focus_control: type === 'voice' ? 'everyone' : 'off',
+  default_cycle_config:
+    type === 'voice' ? { focus_min: 25, short_break_min: 5 } : null,
   permissions_synced: parent_id !== null,
   permission_overwrites: [],
   last_message_id: null,

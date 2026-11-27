@@ -6,6 +6,7 @@ import {
   type PermissionOverwriteInput,
 } from '../permissions/permissions.js';
 import { SnowflakeId } from '../snowflake.js';
+import { CycleConfig } from '../study/solo.contract.js';
 import { CHANNEL_NAME_MAX, normalizeTextChannelName } from './channel-names.js';
 import { MAX_ROLES_PER_SERVER } from './role.contract.js';
 
@@ -77,6 +78,8 @@ export const ChannelResponse = z.object({
   parent_id: SnowflakeId.nullable(), // null = top of the list, no category (v1.8)
   position: z.number().int(),
   focus_control: FocusControl,
+  // REQ-STUDY-11 (CR-28 #37): a voice channel always has one (DB NULL = 25/5); others null.
+  default_cycle_config: CycleConfig.nullable(),
   permissions_synced: z.boolean(), // REQ-ROLE-03: follows the category's overwrites
   // The channel's own; while synced the category's apply (computeChannelPermissions).
   permission_overwrites: z.array(PermissionOverwrite),
@@ -84,6 +87,13 @@ export const ChannelResponse = z.object({
   last_message_id: SnowflakeId.nullable(),
 });
 export type ChannelResponse = z.infer<typeof ChannelResponse>;
+
+// CR-28 #37: who changed it, so the app tells others ("Bình vừa đổi cài đặt phòng học")
+// and not the one who saved; null when a reorder moved it.
+export const ChannelUpdateEvent = ChannelResponse.extend({
+  updated_by: SnowflakeId.nullable(),
+});
+export type ChannelUpdateEvent = z.infer<typeof ChannelUpdateEvent>;
 
 export const ChannelListResponse = z.array(ChannelResponse);
 export type ChannelListResponse = z.infer<typeof ChannelListResponse>;
@@ -139,16 +149,19 @@ export const CreateChannelRequest = z.discriminatedUnion('type', [
 ]);
 export type CreateChannelRequest = z.infer<typeof CreateChannelRequest>;
 
-// The backend normalizes the name when the channel is a text channel. The Phòng học settings
-// (focus_control, default_cycle_config) join this body with REQ-STUDY-11's ticket.
+// The backend normalizes the name when the channel is a text channel.
 // permissions_synced (REQ-ROLE-03 v1.7): off copies the category's overwrites as the channel's
 // own, on drops them; a category or a channel outside every category → 40001.
+// REQ-STUDY-11: focus_control and default_cycle_config, voice only (else 40001, CR-28 #37);
+// MANAGE_STUDY_ROOMS alone may send only these two (isStudyRoomSettingsOnly), else 40302.
 export const UpdateChannelRequest = z
   .object({
     name: FreeChannelName.optional(),
     permissions_synced: z.boolean().optional(),
+    focus_control: FocusControl.optional(),
+    default_cycle_config: CycleConfig.optional(),
   })
-  .refine((b) => b.name !== undefined || b.permissions_synced !== undefined, {
+  .refine((b) => Object.values(b).some((v) => v !== undefined), {
     message: 'Nothing to change',
   });
 export type UpdateChannelRequest = z.infer<typeof UpdateChannelRequest>;

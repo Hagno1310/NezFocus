@@ -176,9 +176,9 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
   - Cần trước: P2-B4
   - [x] mốc **P3-B5.1** [#152](https://github.com/Hagno1310/NezFocus/issues/152) Hợp đồng push trong shared · hợp đồng · người kia chờ: P4-A1 (Hiếu)
   - [x] mốc **P3-B5.2** [#153](https://github.com/Hagno1310/NezFocus/issues/153) Backend push: token, gửi FCM theo APP_STATE (NOTIF-02) · người kia chờ: P4-A1 (Hiếu)
-- [ ] **P3-B2** [#27](https://github.com/Hagno1310/NezFocus/issues/27) Cài đặt Phòng học (STUDY-11, S-SET-07) · **Thùy chạy phiên**
+- [x] **P3-B2** [#27](https://github.com/Hagno1310/NezFocus/issues/27) Cài đặt Phòng học (STUDY-11, S-SET-07) · **Thùy chạy phiên**
   - Cần trước: P1-A2 (Hiếu), P3-B3
-  - [ ] mốc **P3-B2.1** [#143](https://github.com/Hagno1310/NezFocus/issues/143) Hợp đồng Phòng học trong shared (focus_control, chu kỳ) · hợp đồng · người kia chờ: P4-A2 (Hiếu)
+  - [x] mốc **P3-B2.1** [#143](https://github.com/Hagno1310/NezFocus/issues/143) Hợp đồng Phòng học trong shared (focus_control, chu kỳ) · hợp đồng · người kia chờ: P4-A2 (Hiếu)
 - [ ] **P3-B3** [#28](https://github.com/Hagno1310/NezFocus/issues/28) Room Session: phiên học chung trong Phòng học (STUDY-01, S-ROOM-02…06, S-ROOM-08)
   - Cần trước: P1-B1, P1-B2, P3-B1, P3-B2
   - [ ] mốc **P3-B3.1** [#145](https://github.com/Hagno1310/NezFocus/issues/145) Hợp đồng Room Session trong shared · hợp đồng · người kia chờ: P3-A3 (Hiếu), P3-A4 (Hiếu)

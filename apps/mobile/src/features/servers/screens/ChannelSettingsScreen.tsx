@@ -21,10 +21,9 @@ import { channelIcon } from '../components/ChannelRow';
 import { useChannelAccess } from '../hooks/useChannelAccess';
 
 const TICKETS: Record<
-  Exclude<ChannelSettingsRow, 'overview' | 'permissions'>,
+  Exclude<ChannelSettingsRow, 'overview' | 'permissions' | 'studyRoom'>,
   string
 > = {
-  studyRoom: 'P3-B2 (#27)',
   taskBoard: 'P4-A1 (#32)',
 };
 
@@ -37,14 +36,15 @@ const ICONS = {
 
 // S-SET-06 `text`, `welcome-text`, `voice`, `voice · study-rooms-only`; Edge case
 // `long-name-hub` (the name line cuts at one line).
-// ponytail: rows still on a placeholder until their ticket — Phòng học (S-SET-07) P3-B2
-// #27, Task Board switch (`taskboard-off`) P4-A1 #32.
+// ponytail: the Task Board row is on a placeholder until its ticket — switch
+// (`taskboard-off`) P4-A1 #32.
 export function ChannelSettingsScreen({
   serverId,
   channelId,
   onBack,
   onOverview,
   onPermissions,
+  onStudyRoom,
   onRow,
   onClose,
 }: {
@@ -53,6 +53,7 @@ export function ChannelSettingsScreen({
   onBack: () => void;
   onOverview: () => void;
   onPermissions: () => void;
+  onStudyRoom: () => void; // S-SET-07
   onRow: (title: string, ticket: string) => void;
   onClose: () => void; // back to the drawer
 }) {
@@ -81,6 +82,12 @@ export function ChannelSettingsScreen({
           }[channel.focus_control]
         : undefined;
   const studyRoomsOnly = rows.length === 1 && rows[0] === 'studyRoom';
+  const open: Record<ChannelSettingsRow, () => void> = {
+    overview: onOverview,
+    permissions: onPermissions,
+    studyRoom: onStudyRoom,
+    taskBoard: () => onRow(label('taskBoard'), TICKETS.taskBoard),
+  };
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.bg }]}>
@@ -121,13 +128,7 @@ export function ChannelSettingsScreen({
                 ? t('servers.channels.taskBoardHint')
                 : undefined
             }
-            onPress={() =>
-              row === 'overview'
-                ? onOverview()
-                : row === 'permissions'
-                  ? onPermissions()
-                  : onRow(label(row), TICKETS[row])
-            }
+            onPress={open[row]}
           />
         ))}
       </ScrollView>

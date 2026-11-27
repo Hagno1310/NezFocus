@@ -21,6 +21,7 @@ export function SettingsRow({
   disabled = false,
   danger = false,
   chevron = true,
+  wrapValue = false,
 }: {
   label: string;
   // Board SettingsRow has an optional leading 22 icon.
@@ -39,11 +40,14 @@ export function SettingsRow({
   danger?: boolean;
   // false: a value shown for reading only (S-ME-03 Email).
   chevron?: boolean;
+  // The value wraps beside the label instead of truncating, at 200% too (S-SET-EDGE
+  // `long-cycle-360`, `large-text`: "120/30 · nghỉ dài 60 sau mỗi 8 vòng").
+  wrapValue?: boolean;
 }) {
   const { colors } = useTheme();
   const { fontScale } = useWindowDimensions();
   // C-15: at 200% the value moves under the label.
-  const stacked = fontScale >= textScale.large;
+  const stacked = fontScale >= textScale.large && !wrapValue;
   const valueText = people ? people.map((p) => p.name).join(', ') : value;
   const fg = disabled ? 'text-tertiary' : danger ? 'danger' : 'text-primary';
   const secondaryFg = disabled
@@ -59,7 +63,7 @@ export function SettingsRow({
         <Text
           variant="body"
           color={secondaryFg}
-          numberOfLines={1}
+          numberOfLines={wrapValue ? undefined : 1}
           style={styles.shrink}
         >
           {valueText}

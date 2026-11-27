@@ -130,7 +130,9 @@ export class ChannelOverwritesService {
     });
     if (result.changed) {
       await this.cache.invalidateServer(serverId);
-      await this.channelEvents.updated(serverId, result.channels);
+      await this.channelEvents.updated(serverId, result.channels, {
+        by: userId,
+      });
     }
     return result.channels[0]!;
   }

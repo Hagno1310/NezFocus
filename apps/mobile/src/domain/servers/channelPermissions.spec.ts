@@ -73,6 +73,7 @@ const ch = (
   parent_id,
   position: 0,
   focus_control: 'off',
+  default_cycle_config: null,
   permissions_synced: synced,
   permission_overwrites: overwrites,
   last_message_id: null,

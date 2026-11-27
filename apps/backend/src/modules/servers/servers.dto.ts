@@ -1,4 +1,5 @@
 import {
+  DEFAULT_CYCLE_CONFIG,
   parsePermissionBitmap,
   toPermissionBitmap,
   type ChannelResponse,
@@ -15,6 +16,7 @@ import { serverIconUrl } from '../attachments/media.js';
 import type { ChannelWithOverwrites } from './channels.repository.js';
 import type { FullServer, ServerWithCount } from './servers.repository.js';
 import {
+  ChannelTypeCode,
   OverwriteTargetCode,
   type OverwriteRow,
   type RoleRow,
@@ -74,6 +76,10 @@ export const toChannelResponse = (
   parent_id: c.parentId?.toString() ?? null,
   position: c.position,
   focus_control: c.focusControl as FocusControl,
+  default_cycle_config:
+    c.type === ChannelTypeCode.voice
+      ? (c.defaultCycleConfig ?? DEFAULT_CYCLE_CONFIG)
+      : null,
   permissions_synced: c.permissionsSynced,
   permission_overwrites: [...c.overwrites]
     .sort(byTarget)

@@ -1,4 +1,4 @@
-import { CycleConfig } from '@nezfocus/shared';
+import { CYCLE_PRESETS as PRESETS, CycleConfig } from '@nezfocus/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
@@ -13,10 +13,23 @@ type Choice = '25/5' | '50/10' | 'custom';
 type Field =
   'focus_min' | 'short_break_min' | 'long_break_min' | 'long_break_every';
 
-const PRESETS = {
-  '25/5': { focus_min: 25, short_break_min: 5 },
-  '50/10': { focus_min: 50, short_break_min: 10 },
-} satisfies Record<string, CycleConfig>;
+const TEXT = {
+  start: {
+    title: 'study.sheet.chooseTitle',
+    note: 'study.sheet.chooseNote',
+    action: 'study.start',
+  },
+  edit: {
+    title: 'study.sheet.editTitle',
+    note: 'study.sheet.editNote',
+    action: 'study.sheet.apply',
+  },
+  default: {
+    title: 'study.sheet.defaultTitle',
+    note: 'study.sheet.defaultNote',
+    action: 'study.sheet.save',
+  },
+} as const;
 
 const choiceOf = (c: CycleConfig): Choice =>
   c.long_break_min === undefined &&
@@ -28,7 +41,8 @@ const choiceOf = (c: CycleConfig): Choice =>
     ? (`${c.focus_min}/${c.short_break_min}` as Choice)
     : 'custom';
 
-// S-STUDY-01 cycle-sheet and S-STUDY-02 edit-cycle-sheet: same choices (S-ROOM-03), different title and button.
+// S-STUDY-01 cycle-sheet, S-STUDY-02 edit-cycle-sheet and S-SET-07 cycle-sheet (`default`):
+// same choices (S-ROOM-03), different title, note and button.
 export function CycleSheet({
   visible,
   mode,
@@ -39,7 +53,7 @@ export function CycleSheet({
   onKeep,
 }: {
   visible: boolean;
-  mode: 'start' | 'edit';
+  mode: 'start' | 'edit' | 'default';
   initial: CycleConfig;
   loading?: boolean;
   onSubmit: (cycle: CycleConfig) => void;
@@ -91,38 +105,30 @@ export function CycleSheet({
   };
 
   const field = (key: Field, label: string) => (
-    <TextField
-      label={label}
-      value={fields[key]}
-      keyboardType="number-pad"
-      error={errors[key]}
-      onChangeText={(v) => {
-        setFields((f) => ({ ...f, [key]: v.replace(/\D/g, '') }));
-        setErrors((e) => ({ ...e, [key]: undefined }));
-      }}
-    />
+    <View style={styles.flex}>
+      <TextField
+        label={label}
+        value={fields[key]}
+        keyboardType="number-pad"
+        error={errors[key]}
+        onChangeText={(v) => {
+          setFields((f) => ({ ...f, [key]: v.replace(/\D/g, '') }));
+          setErrors((e) => ({ ...e, [key]: undefined }));
+        }}
+      />
+    </View>
   );
 
   return (
     <BottomSheet
       visible={visible}
-      title={t(
-        mode === 'start' ? 'study.sheet.chooseTitle' : 'study.sheet.editTitle',
-      )}
+      title={t(TEXT[mode].title)}
       onDismiss={dismiss}
-      action={{
-        label: t(mode === 'start' ? 'study.start' : 'study.sheet.apply'),
-        onPress: submit,
-        loading,
-      }}
+      action={{ label: t(TEXT[mode].action), onPress: submit, loading }}
     >
       <View style={styles.body}>
         <Text variant="body" color="text-secondary">
-          {t(
-            mode === 'start'
-              ? 'study.sheet.chooseNote'
-              : 'study.sheet.editNote',
-          )}
+          {t(TEXT[mode].note)}
         </Text>
         <SegmentedControl
           segments={[
@@ -135,8 +141,10 @@ export function CycleSheet({
         />
         {choice === 'custom' ? (
           <>
-            {field('focus_min', t('study.sheet.focus'))}
-            {field('short_break_min', t('study.sheet.short'))}
+            <View style={styles.pair}>
+              {field('focus_min', t('study.sheet.focus'))}
+              {field('short_break_min', t('study.sheet.short'))}
+            </View>
             <View style={styles.switchRow}>
               <Text variant="body" style={styles.flex}>
                 {t('study.sheet.longSwitch')}
@@ -147,26 +155,30 @@ export function CycleSheet({
                 label={t('study.sheet.longSwitch')}
               />
             </View>
-            {longOn && field('long_break_min', t('study.sheet.long'))}
-            {longOn && field('long_break_every', t('study.sheet.every'))}
-            <Text variant="label" color="text-secondary">
-              {longOn
-                ? t('study.sheet.summaryLong', {
+            {longOn && (
+              <>
+                <View style={styles.pair}>
+                  {field('long_break_min', t('study.sheet.long'))}
+                  {field('long_break_every', t('study.sheet.every'))}
+                </View>
+                <Text variant="label" color="text-secondary">
+                  {t('study.sheet.summaryLong', {
                     focus: fields.focus_min,
                     brk: fields.short_break_min,
                     long: fields.long_break_min,
                     every: fields.long_break_every,
-                  })
-                : t('study.sheet.summary', {
-                    focus: fields.focus_min,
-                    brk: fields.short_break_min,
                   })}
-            </Text>
+                </Text>
+              </>
+            )}
           </>
         ) : (
-          <Text variant="label" color="text-secondary">
-            {t('study.sheet.longOff')}
-          </Text>
+          // S-SET-07 `cycle-sheet` has no such line.
+          mode !== 'default' && (
+            <Text variant="label" color="text-secondary">
+              {t('study.sheet.longOff')}
+            </Text>
+          )
         )}
       </View>
     </BottomSheet>
@@ -176,5 +188,7 @@ export function CycleSheet({
 const styles = StyleSheet.create({
   body: { gap: space[3], paddingVertical: space[2] },
   switchRow: { flexDirection: 'row', alignItems: 'center' },
+  // S-ROOM-03 `custom`: the two fields of a pair side by side.
+  pair: { flexDirection: 'row', gap: space[3], alignItems: 'flex-start' },
   flex: { flex: 1 },
 });

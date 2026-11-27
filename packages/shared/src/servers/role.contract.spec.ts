@@ -48,6 +48,7 @@ const thongBao = {
   parent_id: null,
   position: 0,
   focus_control: 'off',
+  default_cycle_config: null,
   permissions_synced: false,
   permission_overwrites: [
     {

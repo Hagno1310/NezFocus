@@ -200,6 +200,9 @@ export const vi = {
       editTitle: 'Sửa chu kỳ',
       editNote: 'Vòng đang chạy giữ nguyên, chu kỳ mới áp dụng từ vòng sau.',
       apply: 'Áp dụng từ vòng sau',
+      defaultTitle: 'Chu kỳ mặc định',
+      defaultNote: 'Áp dụng cho lần bắt đầu sau',
+      save: 'Lưu',
       custom: 'Tùy chỉnh',
       longOff: 'Nghỉ dài: tắt · chọn Tùy chỉnh để bật',
       focus: 'Tập trung (5–120)',
@@ -568,6 +571,36 @@ export const vi = {
         'Bạn đã ở 100 server, mức tối đa. Rời bớt một server để tạo server mới.',
       network: 'Không tạo được server. Kiểm tra kết nối rồi thử lại.',
       offline: 'Cần kết nối mạng để tạo hoặc tham gia server',
+    },
+    // S-SET-07 (spec 08 › Nội dung chữ).
+    studyRoom: {
+      title: 'Phòng học',
+      session: 'Đang có phiên học · {{count}} người',
+      whoSection: 'AI ĐƯỢC BẮT ĐẦU PHIÊN HỌC',
+      everyone: 'Mọi người',
+      everyoneHint: 'Ai trong phòng cũng bắt đầu được',
+      managers: 'Chỉ người quản lý',
+      managersHint: 'Người có quyền Quản lý phòng học',
+      off: 'Tắt',
+      offHint: 'Phòng voice thường, không có phiên học',
+      hostKeeps:
+        'Bạn vẫn điều khiển phiên học đang chạy. Luật mới áp dụng từ lần bắt đầu sau.',
+      controllerKeeps:
+        'Người đang điều khiển phiên học vẫn giữ quyền. Luật mới áp dụng từ lần bắt đầu sau.',
+      offNote:
+        'Kênh là phòng voice thường. Chọn Mọi người hoặc Chỉ người quản lý để bật lại Phòng học.',
+      cycleSection: 'CHU KỲ MẶC ĐỊNH',
+      cycle: 'Chu kỳ',
+      cycleHint: 'Điền sẵn khi bắt đầu phiên học. Phiên đang chạy không đổi.',
+      offTitle: 'Tắt Phòng học và dừng phiên học ({{count}} người)?',
+      offTitleAlone: 'Tắt Phòng học và dừng phiên học?',
+      offBody: 'Kênh sẽ thành phòng voice thường. Phút đã học được giữ nguyên.',
+      cancel: 'Hủy',
+      offConfirm: 'Tắt Phòng học',
+      saveFailed: 'Chưa lưu được thay đổi',
+      retry: 'Thử lại',
+      changedBy: '{{name}} vừa đổi cài đặt phòng học',
+      changedBySomeone: 'Cài đặt phòng học vừa được đổi', // the member list is not loaded yet
     },
     channels: {
       createTitle: 'Tạo kênh',

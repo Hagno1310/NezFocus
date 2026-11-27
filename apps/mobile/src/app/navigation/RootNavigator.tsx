@@ -78,6 +78,7 @@ import { NoServerHome } from '../../features/servers/screens/LeftDrawer';
 import { ChannelOverviewScreen } from '../../features/servers/screens/ChannelOverviewScreen';
 import { ChannelPermissionsScreen } from '../../features/servers/screens/ChannelPermissionsScreen';
 import { ChannelSettingsScreen } from '../../features/servers/screens/ChannelSettingsScreen';
+import { StudyRoomSettingsScreen } from '../../features/servers/screens/StudyRoomSettingsScreen';
 import { OverwriteEditScreen } from '../../features/servers/screens/OverwriteEditScreen';
 import { MemberDetailScreen } from '../../features/servers/screens/MemberDetailScreen';
 import { MembersScreen } from '../../features/servers/screens/MembersScreen';
@@ -162,6 +163,7 @@ type HomeParamList = {
     targetType: 'role' | 'member';
   }; // S-SET-06 `overwrite-edit`
   ChannelOverview: { serverId: string; channelId: string }; // S-SET-06 overview
+  StudyRoomSettings: { serverId: string; channelId: string }; // S-SET-07
 };
 
 type TabParamList = {
@@ -409,6 +411,9 @@ function HomeTab() {
               onPermissions={() =>
                 navigation.navigate('ChannelPermissions', route.params)
               }
+              onStudyRoom={() =>
+                navigation.navigate('StudyRoomSettings', route.params)
+              }
               onRow={(title, ticket) =>
                 navigation.navigate('HomePlaceholder', { title, ticket })
               }
@@ -452,6 +457,15 @@ function HomeTab() {
             <ChannelOverviewScreen
               {...route.params}
               onSaved={navigation.goBack}
+              onClose={() => navigation.popTo('HomeRoot')}
+            />
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen name="StudyRoomSettings">
+          {({ navigation, route }) => (
+            <StudyRoomSettingsScreen
+              {...route.params}
+              onBack={navigation.goBack}
               onClose={() => navigation.popTo('HomeRoot')}
             />
           )}

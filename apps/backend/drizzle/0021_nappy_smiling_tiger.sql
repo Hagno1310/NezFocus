@@ -1,0 +1,1 @@
+ALTER TABLE "channels" ADD COLUMN "default_cycle_config" jsonb;

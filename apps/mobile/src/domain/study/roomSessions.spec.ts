@@ -124,3 +124,38 @@ describe('"Bạn đã tập trung {N} phút hôm nay"', () => {
     expect(todayMinutesNow(45, null, 0, at('14:47:00'))).toBe(45);
   });
 });
+
+describe('who paused (C-06 `paused`), kept past a cycle edit', () => {
+  it('remembers the pause until the session runs again', () => {
+    const paused = {
+      status: 'paused' as const,
+      phase_ends_at: null,
+      paused_remaining_ms: 600_000,
+    };
+    let s = reduceRoomSessions(
+      emptyRoomSessions,
+      update(
+        'FOCUS_SESSION_UPDATE',
+        session({ ...paused, last_action: { by: '1', action: 'pause' } }),
+        '2026-10-18T14:47:00.000Z',
+      ),
+      at('14:47:00'),
+    );
+    s = reduceRoomSessions(
+      s,
+      update(
+        'FOCUS_SESSION_UPDATE',
+        session({ ...paused, last_action: { by: '3', action: 'config' } }),
+        '2026-10-18T14:48:00.000Z',
+      ),
+      at('14:48:00'),
+    );
+    expect(s.pausedBy['900']).toBe('1');
+    s = reduceRoomSessions(
+      s,
+      update('FOCUS_SESSION_UPDATE', session(), '2026-10-18T14:49:00.000Z'),
+      at('14:49:00'),
+    );
+    expect(s.pausedBy['900']).toBeUndefined();
+  });
+});

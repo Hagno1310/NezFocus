@@ -22,9 +22,12 @@ import {
   useWindowDimensions,
   type LayoutChangeEvent,
 } from 'react-native';
-import { create } from 'zustand';
+import { create, useStore } from 'zustand';
 import { ParticipantVideo } from '../../../data/voice/VoiceVideo';
-import { todayMinutesNow } from '../../../domain/study/roomSessions';
+import {
+  roomSessionsStore,
+  todayMinutesNow,
+} from '../../../domain/study/roomSessions';
 import {
   countLine,
   cycleLines,
@@ -109,6 +112,10 @@ export function RoomSessionBody({
   const { width } = useWindowDimensions();
   const { mode, set: setMode } = useRoomViewMode();
   const stats = useStudyStats('week').data;
+  const pausedBy = useStore(
+    roomSessionsStore,
+    (st) => st.pausedBy[session.id] ?? null,
+  );
   const timer = roomTimer(session, offsetMs, now);
   const seconds = myFocusedSeconds(session, offsetMs, now);
   const joinedAt = useJoinedAt(joined, session, offsetMs, now);
@@ -146,6 +153,7 @@ export function RoomSessionBody({
     todayMinutes,
     seated: new Set(tiles.map((x) => x.userId)),
     hostLeft: hostLeft?.key === phaseKey ? hostLeft.id : null,
+    pausedBy,
   };
   const chip = roleChip(v);
   const lines = cycleLines(v).map((l) => cycleLineText(t, l, nameOf));
@@ -398,7 +406,8 @@ function subText(t: TFunction, s: SubLine, nameOf: (id: string) => string) {
 
 // `just-joined`: sitting down in a running session → "Bạn đang được tính giờ từ 21:47" under
 // the chip, once per stay; the time is kept for the `late-join` line after it.
-// Told once per session for the app run: a remount (MiniPlayer, 💬, back) does not tell again.
+// Told once per stay (session + when it started counting): a remount (MiniPlayer, 💬, back)
+// does not tell again, sitting down again does.
 const toldJoined = new Set<string>();
 // A stay older than this is not a fresh sit-down (app reopened, `app-restart-rejoin`).
 const FRESH_JOIN_MS = 10_000;
@@ -413,8 +422,9 @@ function useJoinedAt(
   const [join, setJoin] = useState<{ at: number; since: string } | null>(null);
   const counting = session.me?.counting_since ?? null;
   if (!joined && join) setJoin(null);
-  if (joined && counting && !toldJoined.has(session.id)) {
-    toldJoined.add(session.id);
+  const stay = `${session.id}:${counting}`;
+  if (joined && counting && !toldJoined.has(stay)) {
+    toldJoined.add(stay);
     // My own Start is not "just joined": only a stay that began after the session did, just now.
     const since = Date.parse(counting);
     if (
@@ -512,10 +522,10 @@ function useBreath(sessionId: string, timer: RoomTimer) {
 }
 
 const styles = StyleSheet.create({
-  body: { flex: 1, gap: space[3] },
+  body: { flex: 1, gap: space[2] },
   top: { gap: space[2] },
   chip: { flexDirection: 'row' },
-  ringBody: { alignItems: 'center', gap: space[2], paddingBottom: space[3] },
+  ringBody: { alignItems: 'center', gap: space[1], paddingBottom: space[2] },
   gridBody: { gap: space[3], paddingBottom: space[3] },
   center: { textAlign: 'center' },
 });

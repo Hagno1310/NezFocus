@@ -150,7 +150,11 @@ export function CycleSheet({
             { key: 'custom', label: t('study.sheet.custom') },
           ]}
           value={choice}
-          onChange={setChoice}
+          // A preset has no field to fix: its errors go with it.
+          onChange={(c) => {
+            setChoice(c);
+            setErrors({});
+          }}
         />
         {choice === 'custom' ? (
           <>

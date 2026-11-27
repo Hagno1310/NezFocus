@@ -557,7 +557,13 @@ function MainTabBar({
         <>
           {/* Hidden on the Solo screen itself (C-08). */}
           {soloMini && <SoloMiniPlayer onOpen={openSolo} />}
-          <RoomMiniPlayer hidden={onOwnRoom} onOpenSolo={openSolo} />
+          <RoomMiniPlayer
+            hidden={onOwnRoom}
+            onOpenSolo={openSolo}
+            onShowRoom={() =>
+              props.navigation.navigate('Home', { screen: 'HomeRoot' })
+            }
+          />
           <TabBar {...props} tabs={tabs} />
         </>
       )}

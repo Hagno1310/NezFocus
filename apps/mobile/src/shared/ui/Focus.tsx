@@ -279,6 +279,7 @@ export function RoomControl({
   main = false,
   state = 'off',
   narrow = false,
+  slim = false,
   onPress,
 }: {
   icon: IconComponent;
@@ -287,6 +288,8 @@ export function RoomControl({
   state?: RoomControlState;
   // Room preview row (CR-22 #4, board C-17): Mic · Camera as wide as their discs, 8 apart.
   narrow?: boolean;
+  // S-ROOM-02 `focus-host · 360`: the 5 Host buttons are 64 wide, labels up to 2 lines.
+  slim?: boolean;
   onPress: () => void;
 }) {
   const { colors } = useTheme();
@@ -305,7 +308,11 @@ export function RoomControl({
       }}
       disabled={state === 'mod-muted'}
       onPress={onPress}
-      style={[styles.control, narrow && { width: size.control }]}
+      style={[
+        styles.control,
+        narrow && { width: size.control },
+        slim && { width: size.controlMain },
+      ]}
     >
       {({ pressed }) => (
         <>

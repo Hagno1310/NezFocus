@@ -14,6 +14,8 @@ export type RoomSessions = {
   ended: Readonly<Record<string, FocusSessionEnd>>;
   // When each room's last session ended, for everyone (S-STUDY-EDGE `room-ended-on-join`).
   endedAt: Readonly<Record<string, string>>;
+  // Who paused each paused session: `last_action` only keeps the latest (a cycle edit after it).
+  pausedBy: Readonly<Record<string, string>>;
   offsetMs: number;
 };
 
@@ -21,6 +23,7 @@ export const emptyRoomSessions: RoomSessions = {
   byChannel: {},
   ended: {},
   endedAt: {},
+  pausedBy: {},
   offsetMs: 0,
 };
 
@@ -34,6 +37,16 @@ const without = <T>(map: Readonly<Record<string, T>>, key: string) => {
   const { [key]: _, ...rest } = map;
   return rest;
 };
+
+const pauserOf = (
+  map: Readonly<Record<string, string>>,
+  f: FocusSessionState,
+): Readonly<Record<string, string>> =>
+  f.status !== 'paused'
+    ? without(map, f.id)
+    : f.last_action?.action === 'pause'
+      ? { ...map, [f.id]: f.last_action.by }
+      : map;
 
 // `receivedAt`: the phone clock when the event arrived (SRS 7.3.6 step 1).
 export function reduceRoomSessions(
@@ -49,6 +62,11 @@ export function reduceRoomSessions(
         ),
         ended: {},
         endedAt: {},
+        pausedBy: Object.fromEntries(
+          event.d.focus_sessions
+            .filter((f) => f.last_action?.action === 'pause')
+            .map((f) => [f.id, f.last_action!.by]),
+        ),
         offsetMs: clockOffsetMs(event.d.backend_time, { received: receivedAt }),
       };
     case 'FOCUS_SESSION_START':
@@ -57,6 +75,7 @@ export function reduceRoomSessions(
       return {
         ...s,
         byChannel: { ...s.byChannel, [f.channel_id]: f },
+        pausedBy: pauserOf(s.pausedBy, f),
         ended:
           event.t === 'FOCUS_SESSION_START'
             ? without(s.ended, f.channel_id)
@@ -97,6 +116,7 @@ export function acceptRoomSession(
   roomSessionsStore.setState((s) => ({
     ...s,
     byChannel: { ...s.byChannel, [f.channel_id]: f },
+    pausedBy: pauserOf(s.pausedBy, f),
     ended: without(s.ended, f.channel_id),
     offsetMs: steady(s.offsetMs, clockOffsetMs(backendTime, timing)),
   }));

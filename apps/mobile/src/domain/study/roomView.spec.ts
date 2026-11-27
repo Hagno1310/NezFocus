@@ -39,6 +39,7 @@ const input = (
     todayMinutes: 45,
     seated: new Set(['1', '2', '3']),
     hostLeft: null,
+    pausedBy: null,
     ...extra,
   };
 };
@@ -353,5 +354,21 @@ describe('Review fixes (#149)', () => {
       phase_ends_at: '2026-10-18T15:11:00.000Z',
     });
     expect(nextPhaseOf(brk.timer)).toBe('focus');
+  });
+});
+
+describe('pause line after a cycle edit', () => {
+  it('names who paused from memory when the last action was the edit', () => {
+    const v = input(
+      {
+        status: 'paused',
+        phase_ends_at: null,
+        paused_remaining_ms: 600_000,
+        host_id: '2',
+        last_action: { by: '1', action: 'config' },
+      },
+      { pausedBy: '1' },
+    );
+    expect(cycleLines(v)[0]).toEqual({ key: 'pausedByMe' });
   });
 });

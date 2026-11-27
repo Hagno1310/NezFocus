@@ -19,6 +19,7 @@ export type RoomViewInput = {
   todayMinutes: number;
   seated: ReadonlySet<string>; // who sits in the room now
   hostLeft: string | null; // the Host who just left (`host-transferred`)
+  pausedBy: string | null; // who paused, remembered past later actions (roomSessions)
 };
 
 export type RoleChip =
@@ -60,7 +61,9 @@ export function cycleLines(v: RoomViewInput): CycleLine[] {
   if (v.syncing) return [{ key: 'syncing' }];
   // Who paused: only a `pause` says so; gone from the room (`host-left-paused`) → press Tiếp tục.
   const pauser =
-    session.last_action?.action === 'pause' ? session.last_action.by : null;
+    session.last_action?.action === 'pause'
+      ? session.last_action.by
+      : v.pausedBy;
   const first: CycleLine =
     timer.status === 'paused'
       ? session.host_id === null || (pauser && !v.seated.has(pauser))

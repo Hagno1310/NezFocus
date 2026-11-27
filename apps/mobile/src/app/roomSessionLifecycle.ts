@@ -1,5 +1,5 @@
 import { roomTimer } from '@nezfocus/shared';
-import { LampDesk, WifiOff } from 'lucide-react-native';
+import { LampDesk, TimerOff, WifiOff } from 'lucide-react-native';
 import { AccessibilityInfo, AppState } from 'react-native';
 import { gatewayClient } from '../data/gateway';
 import { playPhaseAlert } from '../data/phaseAlert';
@@ -75,6 +75,7 @@ export function startRoomSessionLifecycle() {
       .channels[e.server_id]?.find((c) => c.id === e.channel_id)?.name;
     if (name)
       showToast({
+        icon: TimerOff,
         message: i18n.t('room.endedElsewhere', {
           name,
           minutes: Math.floor((e.focused_seconds ?? 0) / 60),

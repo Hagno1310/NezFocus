@@ -188,8 +188,6 @@ export function VoiceRoomScreen({
   // `camera-self-preview`: the first Camera in a room this login, unless seen in the preview.
   const [selfPreview, setSelfPreview] = useState(false);
   const [joining, setJoining] = useState(false);
-  // Spec 03 › Toast: under the header, and under the role chip in a session.
-  useToastTop(top + size.header + (toastTop ?? 0));
   const clock = session ? roomTimer(session, offsetMs, now) : null;
   const background = useRoomBackground(
     clock?.phase ?? null,
@@ -200,6 +198,9 @@ export function VoiceRoomScreen({
   );
   // Which room screen is on show, for the `ended-elsewhere` Toast.
   const focused = useIsFocused();
+  // Spec 03 › Toast: under the header (and the role chip) while this screen shows; elsewhere
+  // the screen's own place for Toasts (above the MiniPlayer / TabBar).
+  useToastTop(focused ? top + size.header + (toastTop ?? 0) : null);
   useEffect(() => {
     if (!focused) return;
     voiceView.setState({ visible: channelId });
@@ -354,6 +355,7 @@ export function VoiceRoomScreen({
           label={t(here?.modMuted ? 'voice.modMuted' : 'voice.mic')}
           state={here?.modMuted ? 'mod-muted' : state(room.denied.mic, micOn)}
           narrow={!joined}
+          slim={joined && !!session}
           onPress={() => void pressMic()}
         />
       )}
@@ -363,6 +365,7 @@ export function VoiceRoomScreen({
           label={t('voice.camera')}
           state={state(room.denied.camera, cameraOn)}
           narrow={!joined}
+          slim={joined && !!session}
           onPress={() => void pressCamera()}
         />
       )}
@@ -379,6 +382,7 @@ export function VoiceRoomScreen({
     const main = (
       <RoomControl
         main
+        slim
         icon={paused ? Play : Pause}
         label={t(paused ? 'study.resume' : 'study.pause')}
         onPress={() =>
@@ -395,6 +399,7 @@ export function VoiceRoomScreen({
       <>
         {main}
         <RoomControl
+          slim
           icon={SlidersHorizontal}
           label={t('room.control')}
           onPress={() => setControlling(true)}
@@ -507,6 +512,7 @@ export function VoiceRoomScreen({
             {toggles}
             {session && sessionButtons()}
             <RoomControl
+              slim={!!session}
               icon={LogOut}
               label={t('voice.leave')}
               onPress={leave}
@@ -636,7 +642,8 @@ export function VoiceRoomScreen({
                     })
                   : t('room.confirm.noSuccessor')
         }
-        row={confirm?.kind === 'leave' || confirm?.kind === 'switch'}
+        // Frames S-ROOM-05 / S-ROOM-06: the two buttons side by side.
+        row
         error={act.isError ? t('room.confirm.failed') : null}
         confirm={
           confirm?.kind === 'solo-join' || confirm?.kind === 'solo-start'
@@ -697,7 +704,8 @@ export function VoiceRoomScreen({
         }}
       />
       <RoomSummarySheet
-        end={joined && !session ? summary : null}
+        // Spec 03 › sheet tổng kết: only on the room's own screen; elsewhere a Toast.
+        end={joined && !session && focused ? summary : null}
         meId={meId}
         nameOf={room.nameOf}
         onStay={() => dropSummary(channelId)}

@@ -39,9 +39,11 @@ import { leaveRoom } from '../leaveRoom';
 export function RoomMiniPlayer({
   hidden,
   onOpenSolo,
+  onShowRoom,
 }: {
   hidden: boolean;
   onOpenSolo: () => void;
+  onShowRoom: () => void; // the room is a Home root: bring the Home tab up
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -146,7 +148,14 @@ export function RoomMiniPlayer({
       title={name ?? ''}
       line={line}
       // `voice-solo` opens the Solo screen, not the room (C-08).
-      onOpen={soloTimer ? onOpenSolo : () => openVoice(target)}
+      onOpen={
+        soloTimer
+          ? onOpenSolo
+          : () => {
+              openVoice(target);
+              onShowRoom();
+            }
+      }
       actions={
         <>
           {call.camera && (

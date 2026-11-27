@@ -251,12 +251,13 @@ function SoloBlock({
     <View
       style={[
         styles.solo,
-        stacked && styles.stacked,
+        // `in-room-solo-blocked` (frame): the off button goes under the cycle line.
+        (stacked || blocked) && styles.stacked,
         { borderColor: colors.border, backgroundColor: colors['surface-1'] },
       ]}
     >
       {timer ? (
-        <View style={[styles.soloInfo, !stacked && styles.flex]}>
+        <View style={[styles.soloInfo, !stacked && !blocked && styles.flex]}>
           <Text weight="600">{t('study.solo')}</Text>
           <PhaseBadge
             phase={timer.phase}
@@ -272,7 +273,7 @@ function SoloBlock({
           accessibilityLabel={cycleLabel}
           onPress={() => setChoosing(true)}
           hitSlop={touchSlop(INFO_HEIGHT)}
-          style={[styles.soloInfo, !stacked && styles.flex]}
+          style={[styles.soloInfo, !stacked && !blocked && styles.flex]}
         >
           <Text weight="600">{t('study.solo')}</Text>
           <View style={styles.cycleRow}>

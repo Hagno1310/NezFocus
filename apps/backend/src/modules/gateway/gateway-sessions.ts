@@ -12,6 +12,7 @@ export const HEARTBEAT_INTERVAL_MS = 41_250; // SRS 5.4 HELLO
 // SRS 5.4 resume buffer: 1000 events or 60 s per session.
 const BUFFER_EVENTS = 1000;
 const BUFFER_MS = 60_000;
+const FOREGROUND_ACTIVE_MS = 2 * 60_000; // REQ-NOTIF-04
 
 export interface SessionSocket {
   sendText(text: string): void;
@@ -194,13 +195,16 @@ export class GatewaySessions {
     return devices;
   }
 
-  // DEC-34: for push decisions (REQ-NOTIF-02/04) and Idle presence.
+  // DEC-34 for push (REQ-NOTIF-02/04): foreground by APP_STATE, and heard from in the last
+  // 2 minutes (NOTIF-04), so a phone that died without closing its socket does not mute push.
   hasForegroundSession(userId: bigint) {
+    const since = Date.now() - FOREGROUND_ACTIVE_MS;
     for (const session of this.sessions.values())
       if (
         session.userId === userId &&
         session.socket &&
-        session.appState === 'foreground'
+        session.appState === 'foreground' &&
+        session.lastSeenAt >= since
       )
         return true;
     return false;

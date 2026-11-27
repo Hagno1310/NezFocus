@@ -3,6 +3,7 @@ import type { NotificationsRepository } from './notifications.repository.js';
 import type { EventPublisher } from '../gateway/event-publisher.js';
 import type { SnowflakeGenerator } from '../../common/snowflake.js';
 import { DbNotificationService } from './notification-service.js';
+import type { PushDispatcher } from './push-service.js';
 
 const NOW = new Date('2026-11-13T10:00:00.000Z');
 const AN = 1n;
@@ -16,6 +17,7 @@ const reply = {
 function setup(existing: NotificationRow[] = []) {
   const rows = [...existing];
   const sent: { userId: bigint; t: string; d: unknown }[] = [];
+  const pushed: { userId: bigint; itemId: bigint; type: string }[] = [];
   const repo = {
     insert: async (row: Omit<NotificationRow, 'createdAt'>) => {
       const dup = rows.some(
@@ -46,8 +48,12 @@ function setup(existing: NotificationRow[] = []) {
     events,
     { next: () => id++ } as SnowflakeGenerator,
     { now: () => NOW },
+    {
+      forItem: async (userId: bigint, itemId: bigint, type: string) =>
+        void pushed.push({ userId, itemId, type }),
+    } as unknown as PushDispatcher,
   );
-  return { service, rows, sent };
+  return { service, rows, sent, pushed };
 }
 
 describe('NotificationService.create (REQ-NOTIF-05)', () => {
@@ -123,6 +129,22 @@ describe('NotificationService.create (REQ-NOTIF-05)', () => {
       service.create(AN, 'reply', { actor_id: '2' } as never),
     ).rejects.toThrow();
     expect(rows).toHaveLength(0);
+  });
+});
+
+describe('NotificationService.create → push (REQ-NOTIF-02, CR-28 #36)', () => {
+  it('hands each new item to push, which decides whether the type has one', async () => {
+    const { service, pushed } = setup();
+    await service.create(AN, 'reply', reply);
+    expect(pushed).toEqual([{ userId: AN, itemId: 100n, type: 'reply' }]);
+  });
+
+  it('(negative) no push for an item that was not created', async () => {
+    const { service, pushed } = setup();
+    await service.create(AN, 'reply', reply);
+    await service.create(AN, 'mention', { ...reply, via: 'user' });
+    await service.create(2n, 'reply', reply); // the actor itself
+    expect(pushed).toHaveLength(1);
   });
 });
 

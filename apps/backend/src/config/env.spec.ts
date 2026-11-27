@@ -8,6 +8,10 @@ const base = {
 const reachable = {
   S3_PUBLIC_ENDPOINT: 'https://files.nezfocus.app',
   LIVEKIT_URL: 'wss://api.nezfocus.app/livekit',
+  FCM_PROJECT_ID: 'nezfocus-app',
+  FCM_CLIENT_EMAIL: 'push@nezfocus-app.iam.gserviceaccount.com',
+  FCM_PRIVATE_KEY:
+    '-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----\n',
 };
 
 describe('Env', () => {
@@ -59,6 +63,24 @@ describe('Env', () => {
     expect(
       Env.safeParse({ ...prod, LIVEKIT_API_SECRET: 'l'.repeat(40) }).success,
     ).toBe(true);
+  });
+
+  it('refuses a production without the FCM service account (REQ-NOTIF-02)', () => {
+    const prod = {
+      ...base,
+      NODE_ENV: 'production',
+      JWT_SECRET: 'q'.repeat(48),
+      S3_SECRET_KEY: 's'.repeat(40),
+      LIVEKIT_API_SECRET: 'l'.repeat(40),
+      ...reachable,
+    };
+    expect(Env.safeParse(prod).success).toBe(true);
+    const { FCM_PRIVATE_KEY: _, ...noKey } = prod;
+    expect(Env.safeParse(noKey).success).toBe(false);
+    // Outside production the push is only logged.
+    expect(Env.safeParse({ ...base, JWT_SECRET: 'q'.repeat(48) }).success).toBe(
+      true,
+    );
   });
 
   it('refuses phone-facing URLs a phone cannot reach in production', () => {

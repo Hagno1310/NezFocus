@@ -1,20 +1,18 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { PushTokensRepository } from './push-tokens.repository.js';
 
 // REQ-AUTH-07 AC1: a session that ends stops getting push. Abstract class = DI token.
 export abstract class PushTokens {
   abstract removeForSessions(sessionIds: bigint[]): Promise<void>;
 }
 
-// ponytail: push tokens (REQ-NOTIF-02) do not exist yet; P3-B5 (#29) stores them and
-// replaces this with the real delete.
 @Injectable()
-export class LogPushTokens extends PushTokens {
-  private readonly logger = new Logger('PushTokens');
+export class DbPushTokens extends PushTokens {
+  constructor(private readonly repo: PushTokensRepository) {
+    super();
+  }
 
-  async removeForSessions(sessionIds: bigint[]) {
-    if (sessionIds.length)
-      this.logger.log(
-        `would remove push tokens of sessions ${sessionIds.join(', ')}`,
-      );
+  removeForSessions(sessionIds: bigint[]) {
+    return this.repo.removeForSessions(sessionIds);
   }
 }

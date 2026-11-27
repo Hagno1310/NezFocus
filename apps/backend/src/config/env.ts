@@ -46,6 +46,12 @@ export const Env = z
       .string()
       .min(32)
       .default('dev-only-livekit-secret-0123456789abcdef'),
+    // REQ-NOTIF-02: Firebase service account for FCM HTTP v1 (Project settings › Service
+    // accounts). The key keeps its line breaks written as \n. Unset outside production: pushes
+    // are only logged.
+    FCM_PROJECT_ID: z.string().min(1).optional(),
+    FCM_CLIENT_EMAIL: z.string().email().optional(),
+    FCM_PRIVATE_KEY: z.string().min(1).optional(),
   })
   .refine(
     (env) =>
@@ -82,6 +88,18 @@ export const Env = z
     {
       path: ['S3_PUBLIC_ENDPOINT'],
       message: 'set the https address phones upload to (https://S3_DOMAIN)',
+    },
+  )
+  // Without them production boots and no push ever leaves (REQ-NOTIF-02).
+  .refine(
+    (env) =>
+      env.NODE_ENV !== 'production' ||
+      Boolean(
+        env.FCM_PROJECT_ID && env.FCM_CLIENT_EMAIL && env.FCM_PRIVATE_KEY,
+      ),
+    {
+      path: ['FCM_PRIVATE_KEY'],
+      message: 'set FCM_PROJECT_ID, FCM_CLIENT_EMAIL and FCM_PRIVATE_KEY',
     },
   )
   .refine(

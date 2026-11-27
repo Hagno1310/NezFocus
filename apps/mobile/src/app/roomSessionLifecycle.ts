@@ -1,6 +1,6 @@
 import { roomTimer } from '@nezfocus/shared';
 import { LampDesk, WifiOff } from 'lucide-react-native';
-import { AppState } from 'react-native';
+import { AccessibilityInfo, AppState } from 'react-native';
 import { gatewayClient } from '../data/gateway';
 import { playPhaseAlert } from '../data/phaseAlert';
 import { gatewayStore, onGatewayEvent } from '../domain/gateway/gatewayStore';
@@ -30,6 +30,19 @@ function mine() {
   return f?.me ? f : null;
 }
 
+// C-06: the change is also spoken, "Chuyển sang Nghỉ ngắn, 5 phút".
+function announcePhase() {
+  const f = mine();
+  if (!f) return;
+  const timer = roomTimer(f, roomSessionsStore.getState().offsetMs, Date.now());
+  AccessibilityInfo.announceForAccessibility(
+    i18n.t('room.a11yPhase', {
+      phase: i18n.t(`study.phase.${timer.phase}`),
+      minutes: Math.round(timer.totalMs / 60_000),
+    }),
+  );
+}
+
 export function startRoomSessionLifecycle() {
   const stopEvents = onGatewayEvent((event) => {
     roomSessionsStore.setState((s) => reduceRoomSessions(s, event, Date.now()));
@@ -51,7 +64,12 @@ export function startRoomSessionLifecycle() {
     if (event.t !== 'FOCUS_SESSION_END' || event.d.focused_seconds === null)
       return;
     const e = event.d;
-    if (voiceView.getState().open?.channelId === e.channel_id) return;
+    // The summary is for whoever is still in the room; the Toast when its screen is not shown.
+    if (voiceStore.getState().call?.channelId !== e.channel_id) {
+      dropSummary(e.channel_id);
+      return;
+    }
+    if (voiceView.getState().visible === e.channel_id) return;
     const name = homeStore
       .getState()
       .channels[e.server_id]?.find((c) => c.id === e.channel_id)?.name;
@@ -116,8 +134,10 @@ export function startRoomSessionLifecycle() {
     const left = roomTimer(f, offsetMs, Date.now()).remainingMs;
     const due = Date.now() + left;
     alarm = setTimeout(() => {
-      if (AppState.currentState === 'active' && Date.now() - due < LATE_MS)
+      if (AppState.currentState === 'active' && Date.now() - due < LATE_MS) {
         playPhaseAlert();
+        announcePhase();
+      }
       arm();
     }, left);
   };

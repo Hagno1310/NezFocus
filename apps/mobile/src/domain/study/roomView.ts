@@ -17,6 +17,8 @@ export type RoomViewInput = {
   syncing: boolean; // Gateway gone > 3 s (C-06 `syncing`)
   justJoined: boolean; // joined this session less than a minute ago, the Toast gone
   todayMinutes: number;
+  seated: ReadonlySet<string>; // who sits in the room now
+  hostLeft: string | null; // the Host who just left (`host-transferred`)
 };
 
 export type RoleChip =
@@ -34,7 +36,9 @@ export const roleChip = (v: RoomViewInput): RoleChip | null =>
 // S-ROOM-02 › Hàng nút: Host or MANAGE_STUDY_ROOMS; Participant; Participant who may only resume.
 export type RoomControls = 'host' | 'participant' | 'resume';
 
-export function roomControls(v: RoomViewInput): RoomControls {
+export function roomControls(
+  v: Pick<RoomViewInput, 'session' | 'meId' | 'canManage'>,
+): RoomControls {
   if (v.session.host_id === v.meId || v.canManage) return 'host';
   return v.session.host_id === null && v.session.status === 'paused'
     ? 'resume'
@@ -54,14 +58,16 @@ export type CycleLine =
 export function cycleLines(v: RoomViewInput): CycleLine[] {
   const { timer, session } = v;
   if (v.syncing) return [{ key: 'syncing' }];
-  const by = session.last_action?.by ?? null;
+  // Who paused: only a `pause` says so; gone from the room (`host-left-paused`) → press Tiếp tục.
+  const pauser =
+    session.last_action?.action === 'pause' ? session.last_action.by : null;
   const first: CycleLine =
     timer.status === 'paused'
-      ? session.host_id === null
+      ? session.host_id === null || (pauser && !v.seated.has(pauser))
         ? { key: 'pressResume' }
-        : by === v.meId
+        : (pauser ?? session.host_id) === v.meId
           ? { key: 'pausedByMe' }
-          : { key: 'pausedBy', userId: by ?? session.host_id }
+          : { key: 'pausedBy', userId: pauser ?? session.host_id }
       : timer.phase === 'focus'
         ? {
             key: 'round',
@@ -95,6 +101,7 @@ export type SubLine =
   | { key: 'startedAt' | 'joinedAt'; at: string }
   | { key: 'pausedNote' | 'noHost' }
   | { key: 'stretch'; minutes: number }
+  | { key: 'hostLeft'; userId: string }
   | { key: 'roundDone'; round: number; at: string };
 
 // The line under "Mời vào phòng".
@@ -104,6 +111,7 @@ export function subLine(v: RoomViewInput): SubLine | null {
   if (v.others === 0) return null; // edge `alone` (chốt 27/11/2026)
   if (session.host_id === null) return { key: 'noHost' };
   if (timer.status === 'paused') return { key: 'pausedNote' };
+  if (v.hostLeft) return { key: 'hostLeft', userId: v.hostLeft };
   if (timer.phase === 'short_break')
     return { key: 'stretch', minutes: Math.floor(timer.remainingMs / 60_000) };
   if (timer.phase === 'long_break')
@@ -193,3 +201,11 @@ export const leftToast = (seconds: number | null) =>
     : seconds < 60
       ? ({ key: 'leftNone' } as const)
       : ({ key: 'leftMinutes', minutes: Math.floor(seconds / 60) } as const);
+
+// S-ROOM-04 "Bỏ qua pha": where a skip lands (focus → its break, a break → focus).
+export const nextPhaseOf = (timer: RoomTimer): FocusPhase =>
+  timer.status === 'running' && timer.next
+    ? timer.next.phase
+    : timer.phase === 'focus'
+      ? 'short_break'
+      : 'focus';

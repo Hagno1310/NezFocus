@@ -1,4 +1,5 @@
 import {
+  ErrorCode,
   roomTimer,
   type FocusPhase,
   type FocusSessionAction,
@@ -7,8 +8,6 @@ import {
 } from '@nezfocus/shared';
 import { useTranslation } from 'react-i18next';
 import { useMutation } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
-import { AppState } from 'react-native';
 import { useStore } from 'zustand';
 import { ApiError } from '../../../data/api/client';
 import { roomSessionRepository } from '../../../data/study';
@@ -70,22 +69,13 @@ export function useStartRoomSession(
         received: Date.now(),
       }),
     onError: async (e) => {
-      if (e instanceof ApiError && e.code === 40903)
+      if (
+        e instanceof ApiError &&
+        e.code === ErrorCode.FocusSessionAlreadyActive
+      )
         onConflict(await sessionSoon(channelId));
     },
   });
-}
-
-// Whether the app is in the foreground: the phase motion only plays there.
-export function useActive() {
-  const [active, setActive] = useState(AppState.currentState === 'active');
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (s) =>
-      setActive(s === 'active'),
-    );
-    return () => sub.remove();
-  }, []);
-  return active;
 }
 
 export type RoomLine = {

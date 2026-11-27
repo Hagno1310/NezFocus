@@ -1283,6 +1283,7 @@ export const vi = {
       alone: 'Bạn đang học một mình trong phòng này',
     },
     sub: {
+      hostLeft: '{{name}} đã rời phòng',
       today: 'Bạn đã tập trung {{minutes}} phút hôm nay',
       startedAt: 'Phiên học bắt đầu lúc {{time}}',
       joinedAt: 'Bạn vừa vào · được tính từ {{time}}',
@@ -1298,6 +1299,7 @@ export const vi = {
       pressResume: 'Bấm Tiếp tục để chạy lại',
       syncing: 'Đang đồng bộ lại…',
     },
+    a11yPhase: 'Chuyển sang {{phase}}, {{minutes}} phút',
     pausedLabel: 'Tạm dừng · {{phase}}',
     grid: 'Vòng {{round}} · {{n}} người',
     gridCameras: 'Vòng {{round}} · {{n}} người · {{cameras}} bật camera',

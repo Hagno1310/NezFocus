@@ -10,7 +10,15 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { awayOpacity, motion, radius, size, space, useTheme } from '../theme';
+import {
+  awayOpacity,
+  motion,
+  radius,
+  size,
+  space,
+  touchSlop,
+  useTheme,
+} from '../theme';
 import { Icon } from './Icon';
 import { Avatar } from './People';
 import { Text } from './Text';
@@ -201,7 +209,7 @@ export function RingMore({
       accessibilityRole="button"
       accessibilityLabel={t('room.more', { count })}
       onPress={onPress}
-      hitSlop={4}
+      hitSlop={touchSlop(SEAT)}
       style={[
         styles.seat,
         styles.more,
@@ -354,8 +362,8 @@ const styles = StyleSheet.create({
   seatBadge: {
     position: 'absolute',
     bottom: -4,
-    width: 16,
-    height: 16,
+    width: size.badge,
+    height: size.badge,
     borderRadius: radius.full,
     borderWidth: size.strokeThick,
     alignItems: 'center',

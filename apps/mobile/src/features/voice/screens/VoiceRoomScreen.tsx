@@ -5,6 +5,8 @@ import {
   type CycleConfig,
 } from '@nezfocus/shared';
 import {
+  LampDesk,
+  Lock,
   LogOut,
   Mic,
   MicOff,
@@ -14,7 +16,8 @@ import {
   Video,
   VideoOff,
 } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import {
   ScrollView,
@@ -77,7 +80,11 @@ import {
 } from '../../study/hooks/useRoomSession';
 import { RoomControlSheet } from '../../study/components/RoomControlSheet';
 import { RoomSummarySheet } from '../../study/components/RoomSummarySheet';
-import { roomControls, successorOf } from '../../../domain/study/roomView';
+import {
+  nextPhaseOf,
+  roomControls,
+  successorOf,
+} from '../../../domain/study/roomView';
 import {
   dropSummary,
   expectSoloEnd,
@@ -89,7 +96,7 @@ import { leaveRoom } from '../leaveRoom';
 import { homeStore } from '../../../domain/servers/homeStore';
 import { seatsIn } from '../../../domain/voice/voiceRooms';
 import { voiceStore } from '../../../domain/voice/voiceSession';
-import { roomTimer, type FocusPhase, type RoomTimer } from '@nezfocus/shared';
+import { roomTimer } from '@nezfocus/shared';
 import { CameraPreviewSheet } from '../components/CameraPreviewSheet';
 import { MediaSheet } from '../components/MediaSheet';
 import { useMediaFlow } from '../hooks/useMediaFlow';
@@ -155,8 +162,19 @@ export function VoiceRoomScreen({
     return f && f.host_id === meId ? f : null;
   });
   const [toastTop, setToastTop] = useState<number | null>(null);
+  // Solo minutes when "Bắt đầu" was confirmed over a running Solo (`solo-confirm`).
+  const soloAtStart = useRef<number | null>(null);
   const start = useStartRoomSession(channelId, (f) => {
     setStarting(false);
+    // Spec 03 › Chỉ ghi luật: started by someone else while my Solo ran → the Solo's sentence.
+    if (soloAtStart.current !== null) {
+      showToast({
+        icon: LampDesk,
+        message: t('room.soloStopped', { minutes: soloAtStart.current }),
+      });
+      soloAtStart.current = null;
+      return;
+    }
     // S-ROOM-03 `conflict`: the sheet closes onto the new session.
     if (f?.host_id)
       showToast({
@@ -172,13 +190,27 @@ export function VoiceRoomScreen({
   const [joining, setJoining] = useState(false);
   // Spec 03 › Toast: under the header, and under the role chip in a session.
   useToastTop(top + size.header + (toastTop ?? 0));
+  const clock = session ? roomTimer(session, offsetMs, now) : null;
   const background = useRoomBackground(
-    session ? roomTimer(session, offsetMs, now).phase : null,
+    clock?.phase ?? null,
+    // 7.3.6 step 4: a phase slept through (app reopened) is shown at once.
+    !!clock &&
+      clock.status === 'running' &&
+      clock.totalMs - clock.remainingMs < LIVE_PHASE_MS,
   );
+  // Which room screen is on show, for the `ended-elsewhere` Toast.
+  const focused = useIsFocused();
+  useEffect(() => {
+    if (!focused) return;
+    voiceView.setState({ visible: channelId });
+    return () => voiceView.setState({ visible: null });
+  }, [focused, channelId]);
   const otherDevice = useStore(
     voiceNotice,
     (s) => s.otherDevice?.channelId === channelId,
   );
+
+  if (session && starting) setStarting(false);
 
   const { channel, layout, here, joined } = room;
   if (!channel || !layout) return null;
@@ -188,7 +220,12 @@ export function VoiceRoomScreen({
     channel.default_cycle_config ?? CYCLE_PRESETS['25/5'];
 
   const tell = (result: JoinResult, retry: () => void) => {
-    if (result === 'no-connect') showToast({ message: t('voice.noConnect') });
+    // S-STUDY-EDGE `lost-access`: no longer allowed in.
+    if (result === 'no-connect')
+      showToast({
+        icon: Lock,
+        message: t('study.home.lostAccess', { name: channel.name }),
+      });
     else if (result === 'gone') {
       closeVoice();
       showToast({ message: t('voice.gone', { name: channel.name }) });
@@ -256,6 +293,7 @@ export function VoiceRoomScreen({
   const soloMinutes = () =>
     solo ? Math.floor(soloSecondsNow(solo, new Date(now)) / 60) : 0;
   const begin = (cycle_config: CycleConfig, end_solo?: boolean) => {
+    soloAtStart.current = end_solo ? soloMinutes() : null;
     if (end_solo) expectSoloEnd();
     start.mutate(
       { cycle_config, ...(end_solo && { end_solo }) },
@@ -335,17 +373,7 @@ export function VoiceRoomScreen({
   // paused session without Host gets Tiếp tục.
   const sessionButtons = () => {
     if (!session) return null;
-    const role = roomControls({
-      session,
-      timer: roomTimer(session, offsetMs, now),
-      meId,
-      joined,
-      canManage,
-      others: 0,
-      syncing,
-      justJoined: false,
-      todayMinutes: 0,
-    });
+    const role = roomControls({ session, meId, canManage });
     const paused = session.status === 'paused';
     if (role === 'participant') return null;
     const main = (
@@ -732,27 +760,28 @@ function IntentRunner({
   return null;
 }
 
-// S-ROOM-04 "Bỏ qua pha": where a skip lands (focus → its break, a break → focus).
-const nextPhaseOf = (timer: RoomTimer): FocusPhase =>
-  timer.status === 'running' && timer.next
-    ? timer.next.phase
-    : timer.phase === 'focus'
-      ? 'short_break'
-      : 'focus';
-
 // DESIGN.md › Motion "Cả phòng thở ra": the room crossfades to the new phase colour in `long`
 // (Giảm chuyển động: a 200 crossfade).
-function useRoomBackground(phase: keyof typeof phaseRoomColor | null) {
+const LIVE_PHASE_MS = 2000;
+
+function useRoomBackground(
+  phase: keyof typeof phaseRoomColor | null,
+  live: boolean,
+) {
   const { colors } = useTheme();
   const reduced = useReducedMotion();
   const target = phase ? colors[phaseRoomColor[phase]] : colors.bg;
   const color = useSharedValue(target);
   useEffect(() => {
     color.set(
-      withTiming(target, {
-        duration: reduced ? motion.short : motion.long,
-      }),
+      live
+        ? withTiming(target, {
+            duration: reduced ? motion.short : motion.long,
+          })
+        : target,
     );
+    // Only the colour changing animates; `live` just says how.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target, reduced, color]);
   return useAnimatedStyle(() => ({ backgroundColor: color.value }));
 }

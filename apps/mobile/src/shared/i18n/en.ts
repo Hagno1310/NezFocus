@@ -1281,6 +1281,7 @@ export const en: Strings = {
       alone: 'You are studying alone in this room',
     },
     sub: {
+      hostLeft: '{{name}} left the room',
       today: 'You focused {{minutes}} min today',
       startedAt: 'Session started at {{time}}',
       joinedAt: 'You just joined · counted from {{time}}',
@@ -1296,6 +1297,7 @@ export const en: Strings = {
       pressResume: 'Tap Resume to start again',
       syncing: 'Syncing…',
     },
+    a11yPhase: 'Now {{phase}}, {{minutes}} minutes',
     pausedLabel: 'Paused · {{phase}}',
     grid: 'Round {{round}} · {{n}} people',
     gridCameras: 'Round {{round}} · {{n}} people · {{cameras}} on camera',

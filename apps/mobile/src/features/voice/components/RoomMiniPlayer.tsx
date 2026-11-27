@@ -1,7 +1,5 @@
 import { roomTimer } from '@nezfocus/shared';
 import {
-  Coffee,
-  LampDesk,
   LogOut,
   Mic,
   MicOff,
@@ -23,15 +21,18 @@ import { voiceStore } from '../../../domain/voice/voiceSession';
 import { askLeaveRoom, openVoice } from '../../../domain/voice/voiceView';
 import { radius, size, space, useTheme } from '../../../shared/theme';
 import { IconButton } from '../../../shared/ui/Button';
-import { MiniPlayer, PhaseBadge, phaseColor } from '../../../shared/ui/Focus';
-import { Icon, Moon } from '../../../shared/ui/Icon';
+import {
+  MiniPlayer,
+  PhaseBadge,
+  phaseColor,
+  phaseIcon,
+} from '../../../shared/ui/Focus';
+import { Icon } from '../../../shared/ui/Icon';
 import { clockText } from '../../../shared/ui/logic';
 import { Text } from '../../../shared/ui/Text';
 import { useToastAnchor } from '../../../shared/ui/Toast';
 import { useNow, useSolo } from '../../study/hooks/useSolo';
 import { leaveRoom } from '../leaveRoom';
-
-const phaseIcons = { focus: LampDesk, short_break: Coffee, long_break: Moon };
 
 // S-ROOM-08 / C-08 while I sit in a room: `room-session` (`paused`), `voice`, `voice-solo`,
 // `camera-on`, `reconnecting`. Hidden on the room's own screen (`hidden`).
@@ -85,13 +86,13 @@ export function RoomMiniPlayer({
 
   const icon = roomClock ? (
     <Icon
-      as={paused ? Pause : phaseIcons[roomClock.phase]}
+      as={paused ? Pause : phaseIcon[roomClock.phase]}
       size="xl"
       color={paused ? 'text-secondary' : phaseColor[roomClock.phase]}
     />
   ) : soloTimer ? (
     <Icon
-      as={phaseIcons[soloTimer.phase]}
+      as={phaseIcon[soloTimer.phase]}
       size="xl"
       color={phaseColor[soloTimer.phase]}
     />

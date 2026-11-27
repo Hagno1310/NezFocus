@@ -8,6 +8,7 @@ import {
   countLine,
   cycleLines,
   leftToast,
+  nextPhaseOf,
   roomNotice,
   summaryOf,
   roleChip,
@@ -36,6 +37,8 @@ const input = (
     syncing: false,
     justJoined: false,
     todayMinutes: 45,
+    seated: new Set(['1', '2', '3']),
+    hostLeft: null,
     ...extra,
   };
 };
@@ -309,5 +312,46 @@ describe('S-ROOM-EDGE summary and leaving', () => {
     });
     expect(leftToast(40)).toEqual({ key: 'leftNone' });
     expect(leftToast(null)).toEqual({ key: 'left' });
+  });
+});
+
+describe('Review fixes (#149)', () => {
+  const paused = {
+    status: 'paused' as const,
+    phase_ends_at: null,
+    paused_remaining_ms: 600_000,
+  };
+
+  it('host-left-paused: the one who paused left → "Bấm Tiếp tục để chạy lại" for the new Host', () => {
+    const v = input(
+      { ...paused, host_id: '1', last_action: { by: '2', action: 'pause' } },
+      { seated: new Set(['1', '3']) },
+    );
+    expect(cycleLines(v)).toEqual([{ key: 'pressResume' }]);
+  });
+
+  it('a cycle edit while paused does not rename who paused', () => {
+    const v = input({
+      ...paused,
+      host_id: '2',
+      last_action: { by: '3', action: 'config' },
+    });
+    expect(cycleLines(v)[0]).toEqual({ key: 'pausedBy', userId: '2' });
+  });
+
+  it('host-transferred: "Bình đã rời phòng" under the count', () => {
+    expect(subLine(input({}, { hostLeft: '2' }))).toEqual({
+      key: 'hostLeft',
+      userId: '2',
+    });
+  });
+
+  it('S-ROOM-04 "Bỏ qua pha" lands on the next phase', () => {
+    expect(nextPhaseOf(input().timer)).toBe('short_break');
+    const brk = input({
+      phase: 'short_break',
+      phase_ends_at: '2026-10-18T15:11:00.000Z',
+    });
+    expect(nextPhaseOf(brk.timer)).toBe('focus');
   });
 });

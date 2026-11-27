@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { space } from '../../../shared/theme';
 import { EmptyState } from '../../../shared/ui/Feedback';
 import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
@@ -16,7 +16,7 @@ export function ActiveRoomsScreen({
   onShowRoom: () => void;
 }) {
   const { t } = useTranslation();
-  const { rows } = useActiveRooms();
+  const { rows, resort } = useActiveRooms();
   return (
     <View style={styles.screen}>
       <ScreenHeader title={t('study.home.rooms')} onBack={onBack} />
@@ -32,7 +32,13 @@ export function ActiveRoomsScreen({
           }}
         />
       ) : (
-        <ScrollView contentContainerStyle={styles.body}>
+        <ScrollView
+          contentContainerStyle={styles.body}
+          // Spec 04 › Sắp xếp: pulling sorts again.
+          refreshControl={
+            <RefreshControl refreshing={false} onRefresh={resort} />
+          }
+        >
           <Text variant="label" color="text-secondary">
             {t('study.home.roomsCount', { n: rows.length })}
           </Text>

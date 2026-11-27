@@ -40,7 +40,11 @@ import { ringSeats } from '../../../domain/voice/voiceRooms';
 import { size, space, useTheme } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import { ChipStatus } from '../../../shared/ui/ChipStatus';
-import { FocusTimer, FocusTimerCompact } from '../../../shared/ui/Focus';
+import {
+  FocusTimer,
+  FocusTimerCompact,
+  phaseRoomColor,
+} from '../../../shared/ui/Focus';
 import { Mascot } from '../../../shared/ui/Mascot';
 import {
   ParticipantTile,
@@ -107,7 +111,7 @@ export function RoomSessionBody({
   const stats = useStudyStats('week').data;
   const timer = roomTimer(session, offsetMs, now);
   const seconds = myFocusedSeconds(session, offsetMs, now);
-  const joinedAt = useJoinedAt(joined, session, now);
+  const joinedAt = useJoinedAt(joined, session, offsetMs, now);
   const todayMinutes = todayMinutesNow(
     stats?.today_minutes ?? 0,
     session,
@@ -115,7 +119,16 @@ export function RoomSessionBody({
     now,
   );
   useStreakToast(joined && timer.phase === 'focus', todayMinutes, stats);
-  useNoticeToast(joined ? session : null, meId, nameOf);
+  const notice = useNoticeToast(joined ? session : null, meId, nameOf);
+  // `host-transferred`: "Bình đã rời phòng" until the phase changes.
+  const phaseKey = `${timer.round}:${timer.phase}`;
+  const [hostLeft, setHostLeft] = useState<{ id: string; key: string } | null>(
+    null,
+  );
+  const leftHost =
+    notice && 'from' in notice && notice.from ? notice.from : null;
+  if (leftHost && hostLeft?.id !== leftHost)
+    setHostLeft({ id: leftHost, key: phaseKey });
 
   const people = joined ? tiles : tiles.filter((x) => !x.self);
   const v: RoomViewInput = {
@@ -131,6 +144,8 @@ export function RoomSessionBody({
       now - joinedAt > TOAST_MS &&
       (seconds ?? 0) < FIRST_MINUTE_S,
     todayMinutes,
+    seated: new Set(tiles.map((x) => x.userId)),
+    hostLeft: hostLeft?.key === phaseKey ? hostLeft.id : null,
   };
   const chip = roleChip(v);
   const lines = cycleLines(v).map((l) => cycleLineText(t, l, nameOf));
@@ -160,7 +175,7 @@ export function RoomSessionBody({
   const breath = useBreath(session.id, timer);
   const { seated, more } = ringSeats(people.map((x) => x.userId));
   const byId = new Map(people.map((x) => [x.userId, x]));
-  const behind = colors[phaseRoomColorOf(timer)];
+  const behind = colors[phaseRoomColor[timer.phase]];
 
   const header = joined && (
     <View
@@ -311,7 +326,7 @@ export function RoomSessionBody({
           )}
           {sub && (
             <Text variant="label" color="text-secondary" style={styles.center}>
-              {subText(t, sub)}
+              {subText(t, sub, nameOf)}
             </Text>
           )}
         </ScrollView>
@@ -320,18 +335,11 @@ export function RoomSessionBody({
   );
 }
 
-const phaseRoomColorOf = (timer: RoomTimer) =>
-  (
-    ({
-      focus: 'phase-focus-room',
-      short_break: 'phase-short-room',
-      long_break: 'phase-long-room',
-    }) as const
-  )[timer.phase];
-
-type T = TFunction;
-
-function cycleLineText(t: T, l: CycleLine, nameOf: (id: string) => string) {
+function cycleLineText(
+  t: TFunction,
+  l: CycleLine,
+  nameOf: (id: string) => string,
+) {
   switch (l.key) {
     case 'round':
       return t('study.line.round', {
@@ -353,7 +361,7 @@ function cycleLineText(t: T, l: CycleLine, nameOf: (id: string) => string) {
   }
 }
 
-function countText(t: T, c: ReturnType<typeof countLine>) {
+function countText(t: TFunction, c: ReturnType<typeof countLine>) {
   switch (c.key) {
     case 'focusWith':
       return t('room.count.focusWith', { n: c.n });
@@ -366,7 +374,7 @@ function countText(t: T, c: ReturnType<typeof countLine>) {
   }
 }
 
-function subText(t: T, s: SubLine) {
+function subText(t: TFunction, s: SubLine, nameOf: (id: string) => string) {
   switch (s.key) {
     case 'today':
       return t('room.sub.today', { minutes: s.minutes });
@@ -381,6 +389,8 @@ function subText(t: T, s: SubLine) {
       return t('room.sub.roundDone', { round: s.round, time: time(s.at) });
     case 'pausedNote':
       return t('study.line.paused');
+    case 'hostLeft':
+      return t('room.sub.hostLeft', { name: nameOf(s.userId) });
     default:
       return t('room.sub.noHost');
   }
@@ -388,19 +398,29 @@ function subText(t: T, s: SubLine) {
 
 // `just-joined`: sitting down in a running session → "Bạn đang được tính giờ từ 21:47" under
 // the chip, once per stay; the time is kept for the `late-join` line after it.
-function useJoinedAt(joined: boolean, session: FocusSessionState, now: number) {
+// Told once per session for the app run: a remount (MiniPlayer, 💬, back) does not tell again.
+const toldJoined = new Set<string>();
+// A stay older than this is not a fresh sit-down (app reopened, `app-restart-rejoin`).
+const FRESH_JOIN_MS = 10_000;
+
+function useJoinedAt(
+  joined: boolean,
+  session: FocusSessionState,
+  offsetMs: number,
+  now: number,
+) {
   const { t } = useTranslation();
-  const [told, setTold] = useState<string | null>(null);
   const [join, setJoin] = useState<{ at: number; since: string } | null>(null);
   const counting = session.me?.counting_since ?? null;
-  if (!joined && told !== null) {
-    setTold(null);
-    setJoin(null);
-  }
-  if (joined && counting && told !== session.id) {
-    setTold(session.id);
-    // My own Start is not "just joined": only a stay that began after the session did.
-    if (Date.parse(counting) > Date.parse(session.started_at))
+  if (!joined && join) setJoin(null);
+  if (joined && counting && !toldJoined.has(session.id)) {
+    toldJoined.add(session.id);
+    // My own Start is not "just joined": only a stay that began after the session did, just now.
+    const since = Date.parse(counting);
+    if (
+      since > Date.parse(session.started_at) &&
+      now + offsetMs - since < FRESH_JOIN_MS
+    )
       setJoin({ at: now, since: counting });
   }
   useEffect(() => {
@@ -413,7 +433,6 @@ function useJoinedAt(joined: boolean, session: FocusSessionState, now: number) {
   return join?.at ?? null;
 }
 
-// S-ROOM-02 `host-transferred`, `no-host-paused`; edge `host-left-paused`.
 function useNoticeToast(
   session: FocusSessionState | null,
   meId: string,
@@ -442,25 +461,36 @@ function useNoticeToast(
     // Only a new notice, not a new nameOf.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notice, t]);
+  return notice;
 }
 
 // Edge `streak-reached` (STUDY-03 AC5): today's minutes reach 15 in the middle of a focus.
 // ponytail: worked out here from the live minutes; the backend's STREAK_UPDATE only comes when
 // the minutes are credited (end of the phase, or leaving), which is too late for this Toast.
+const QUALIFIED_MINUTES = 15; // DEC-24: a day counts for the streak from 15 minutes
+
 function useStreakToast(
   focusing: boolean,
   todayMinutes: number,
   stats: { today_minutes: number; current_streak_days: number } | undefined,
 ) {
   const { t } = useTranslation();
-  const prev = useRef(todayMinutes);
+  // From the first minutes the stats know, so their arrival itself is not a crossing.
+  const prev = useRef<number | null>(null);
   useEffect(() => {
+    if (!stats) return;
     const before = prev.current;
     prev.current = todayMinutes;
-    if (!focusing || !stats || before >= 15 || todayMinutes < 15) return;
+    if (
+      before === null ||
+      !focusing ||
+      before >= QUALIFIED_MINUTES ||
+      todayMinutes < QUALIFIED_MINUTES
+    )
+      return;
     // Not yet counted for today when it was under 15 at the last credit.
     const days =
-      stats.today_minutes >= 15
+      stats.today_minutes >= QUALIFIED_MINUTES
         ? stats.current_streak_days
         : stats.current_streak_days + 1;
     showToast({ icon: Flame, message: t('room.streakReached', { days }) });

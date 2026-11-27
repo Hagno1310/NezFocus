@@ -1,3 +1,4 @@
+ALTER TABLE "focus_session_participations" ADD COLUMN "credited_days" jsonb DEFAULT '{}'::jsonb NOT NULL;--> statement-breakpoint
 ALTER TABLE "focus_sessions" ADD COLUMN "started_by" bigint;--> statement-breakpoint
 ALTER TABLE "focus_sessions" ADD COLUMN "host_id" bigint;--> statement-breakpoint
 ALTER TABLE "focus_sessions" ADD COLUMN "focus_min" smallint DEFAULT 25 NOT NULL;--> statement-breakpoint

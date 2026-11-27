@@ -159,15 +159,8 @@
     {
       "idx": 22,
       "version": "7",
-      "when": 1795781389093,
-      "tag": "0022_parallel_hex",
-      "breakpoints": true
-    },
-    {
-      "idx": 23,
-      "version": "7",
-      "when": 1795782235344,
-      "tag": "0023_left_whizzer",
+      "when": 1795783279746,
+      "tag": "0022_sad_wild_child",
       "breakpoints": true
     }
   ]

@@ -10,6 +10,7 @@ import {
   type FocusSessionEnd,
   type FocusSessionResponse,
   type ServerResponse,
+  type VoiceLeaveReason,
 } from '@nezfocus/shared';
 import { and, eq } from 'drizzle-orm';
 import { Clock, fixedClock } from '../src/common/clock.js';
@@ -187,7 +188,7 @@ describe('Room Session (e2e)', () => {
       .get(EventEmitter2)
       .emitAsync(VOICE_JOINED, { ...seat, at: clock.now() });
   };
-  const leave = (me: Me, reason: 'left' | 'kicked' = 'left') =>
+  const leave = (me: Me, reason: VoiceLeaveReason = 'left') =>
     app.get(VoiceService).disconnect(me.userId, 'any', reason);
   // LiveKit lost them (VC-01): the seat stays 3 minutes, away; back = away cleared, no new join.
   const goAway = async (me: Me) => {
@@ -235,7 +236,11 @@ describe('Room Session (e2e)', () => {
     focusControl?: 'everyone' | 'managers',
   ) => {
     const room = await studyRoom(members, focusControl);
-    for (const p of room.people) await sit(p, room);
+    // One second apart, in order: "who sat longest" (STUDY-11 AC2) is then An, Bình, Chi…
+    for (const p of room.people) {
+      await sit(p, room);
+      clock.advance(1);
+    }
     const res = await room.people[0]!.post(start(room.voice.id))
       .send(P25)
       .expect(201);
@@ -843,6 +848,64 @@ describe('Room Session (e2e)', () => {
       await leave(binh!);
       expect(await q.getRoomOf(binh!.userId)).toBeNull();
       expect((await q.getRoomOf(an!.userId))!.successorName).toBeNull();
+    });
+  });
+
+  describe('Review gaps (#146 / #147)', () => {
+    it('STUDY-11 AC7: Phòng học off → END focus_disabled by who did it, each with their own seconds', async () => {
+      const room = await running(3);
+      const [an] = room.people;
+      clock.advance(8 * MIN);
+      await an!
+        .patch(ChannelRoutes.byId.replace(':id', room.voice.id))
+        .send({ focus_control: 'off' })
+        .expect(200);
+      const ends = userCopies<FocusSessionEnd>('FOCUS_SESSION_END');
+      expect(ends.size).toBe(3);
+      for (const p of room.people)
+        expect(ends.get(p.userId)).toMatchObject({
+          end_reason: 'focus_disabled',
+          ended_by: an!.id,
+          focused_seconds: 8 * MIN,
+        });
+    });
+
+    it('STUDY-11 AC2: the longest stay who may start takes over, not just the longest', async () => {
+      const room = await studyRoom(4, 'managers');
+      const [, binh, chi, dung] = room.people;
+      await giveRole(room.server.id, P.MANAGE_STUDY_ROOMS, chi!);
+      await giveRole(room.server.id, P.MANAGE_STUDY_ROOMS, dung!);
+      await sit(binh!, room); // longest, but a plain member
+      clock.advance(MIN);
+      await sit(dung!, room);
+      clock.advance(MIN);
+      await sit(chi!, room);
+      const res = await chi!.post(start(room.voice.id)).send(P25).expect(201);
+      const id = BigInt((res.body as FocusSessionResponse).focus_session.id);
+      await leave(chi!, 'logout'); // signing out leaves at once too
+      expect(await hostOf(id)).toBe(dung!.userId);
+    });
+
+    it('STUDY-15 (4): a stay across local midnight is split by day', async () => {
+      // Move to 23:50 in Hồ Chí Minh City (UTC+7), the users' default time zone.
+      const day = 24 * 60 * MIN * 1000;
+      const local = (clock.now().getTime() + 7 * 60 * MIN * 1000) % day;
+      clock.advance(
+        (((((23 * 60 + 50) * MIN * 1000 - local) % day) + day) % day) / 1000,
+      );
+      const room = await running(2);
+      const [, binh] = room.people;
+      const beforeMidnight =
+        (day - ((clock.now().getTime() + 7 * 60 * MIN * 1000) % day)) / 1000;
+      clock.advance(20 * MIN);
+      await leave(binh!);
+      const [part] = (await partsOf(room.sessionId)).filter(
+        (p) => p.userId === binh!.userId,
+      );
+      expect(Object.values(part!.creditedDays)).toEqual([
+        beforeMidnight,
+        20 * MIN - beforeMidnight,
+      ]);
     });
   });
 

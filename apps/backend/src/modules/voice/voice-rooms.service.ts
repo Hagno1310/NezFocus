@@ -411,8 +411,11 @@ export class VoiceRoomsService
   }
 
   // Out of LiveKit, a leave to the room's viewers, the reason to that device only.
-  // `expired`: the 3 minutes away ran out, not a leave the user asked for.
-  private async vacate(seat: Seat, reason: VoiceLeaveReason, expired = false) {
+  private async vacate(
+    seat: Seat,
+    reason: VoiceLeaveReason,
+    expired = false, // the 3 minutes away ran out: not a leave the user asked for
+  ) {
     if (!(await this.seats.remove(seat.userId))) return; // left already
     await this.presence.voiceChanged(seat.userId, null);
     await this.rooms.remove(roomOf(seat.channelId), seat.userId.toString());

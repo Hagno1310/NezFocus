@@ -1,5 +1,5 @@
 {
-  "id": "126d52a2-90d0-4941-bcd4-72264599ff91",
+  "id": "875d1ef4-ae44-4141-ae99-76359ca04d7f",
   "prevId": "cb682810-9987-4618-ac57-21dffc697109",
   "version": "7",
   "dialect": "postgresql",
@@ -834,6 +834,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
+        },
+        "credited_days": {
+          "name": "credited_days",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
         }
       },
       "indexes": {

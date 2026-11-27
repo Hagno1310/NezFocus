@@ -6,7 +6,7 @@ import { meOf } from './room-session.dto.js';
 import { RoomSessionRepository } from './room-session.repository.js';
 import { RoomSessionService } from './room-session.service.js';
 
-// For Hiếu's dialogs (REQ-ROLE-05, SRV-05, AUTH-07): the room a user sits in and what leaving it costs.
+// For the kick / leave-server / logout dialogs (REQ-ROLE-05, SRV-05, AUTH-07): the room a user sits in and what leaving it costs.
 export type StudyRoomOfUser = {
   channelId: bigint;
   serverId: bigint;

@@ -15,7 +15,7 @@ import { StudyStatsRepository } from './study-stats.repository.js';
 import { StudyStatsService } from './study-stats.service.js';
 import { LiveStudyRoomQuery, StudyRoomQuery } from './study-room.query.js';
 
-// Global: the Gateway reads Room Sessions for READY (CR-28 #38), Hiếu's dialogs read StudyRoomQuery.
+// Global: the Gateway reads Room Sessions for READY (CR-28 #38), the kick / leave / logout dialogs read StudyRoomQuery.
 @Global()
 @Module({
   imports: [ServersModule],

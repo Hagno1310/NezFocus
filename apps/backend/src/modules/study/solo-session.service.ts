@@ -117,8 +117,7 @@ export class SoloSessionService {
     await this.change(id, null, advance);
   }
 
-  // REQ-STUDY-10 AC8 / AC9: these people become Participants, so their Solo ends (joined_room) in
-  // the caller's transaction; the returned function announces it once that commits.
+  // STUDY-10 AC8 / AC9: their Solo ends (joined_room) in the caller's transaction; call the result after it commits.
   async joinRoom(tx: Tx, userIds: bigint[], now: Date) {
     const applied: Applied[] = [];
     for (const userId of userIds) {

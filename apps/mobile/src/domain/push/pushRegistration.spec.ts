@@ -18,7 +18,11 @@ function setup(status: Status, opts: { failFirst?: boolean } = {}) {
       tokenListener = cb;
       return () => (tokenListener = null);
     },
-    forget: async () => void forgotten.push(1),
+    forget: async () => {
+      forgotten.push(1);
+      await new Promise((r) => setTimeout(r, 5));
+      token = `tok-new-${forgotten.length}`; // FCM makes a new one on the next ask
+    },
   };
   const stop = startPushRegistration({
     device,
@@ -88,6 +92,15 @@ describe('push token registration (#154: "đăng ký sau đăng nhập và khi F
     t.foreground();
     await t.flush();
     expect(t.registered).toEqual(['tok-1']);
+  });
+
+  it('a sign-in right after a sign-out sends the new token, not the dropped one', async () => {
+    const t = setup('signed-in');
+    await t.flush();
+    t.session.setState({ status: 'signed-out' });
+    t.session.setState({ status: 'signed-in' });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(t.registered).toEqual(['tok-1', 'tok-new-1']);
   });
 
   it('signing out drops the token on the phone, so even an offline sign-out stops push', async () => {

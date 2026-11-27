@@ -21,7 +21,6 @@ export type PushNavigation = {
 
 const READY_WAIT_MS = 15_000;
 
-// Resolves once `ok` holds, or after `ms` (the caller then tries anyway).
 const until = (ok: () => boolean, ms: number) =>
   new Promise<void>((resolve) => {
     const start = Date.now();

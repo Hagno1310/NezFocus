@@ -167,7 +167,10 @@ export default function App() {
         openFriendRequests: () =>
           navigationRef.navigate('Main', {
             screen: 'Home',
-            params: { screen: 'Friends', params: { tab: 'pending' } },
+            params: {
+              screen: 'Friends',
+              params: { tab: 'pending', at: Date.now() },
+            },
           }),
       }),
     [],

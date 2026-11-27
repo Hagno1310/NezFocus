@@ -1,4 +1,4 @@
-import { PUSH_CHANNEL, PushTokenRoutes } from '@nezfocus/shared';
+import { PushChannel, PushTokenRoutes } from '@nezfocus/shared';
 import * as Notifications from 'expo-notifications';
 import type {
   PushDevice,
@@ -30,30 +30,31 @@ export const remotePushTokens: PushTokenRepository = {
   },
 };
 
-// SRS 7.3.5: the channels a push lands on (ids from the contract, PUSH_CHANNEL). "Nhắc học tập"
-// is studyNotifications'; "Phòng học đang chạy" is the voice service's, made here too so all
-// four show in the system settings from launch (S-ME-05 `android-settings`).
+// SRS 7.3.5: "Phòng học đang chạy" is the voice service's, made here too so all four channels
+// show in the system settings from launch (S-ME-05 `android-settings`).
 export const pushChannels = {
   setup: (names: { messages: string; calls: string; roomRunning: string }) =>
     Promise.all([
-      Notifications.setNotificationChannelAsync(PUSH_CHANNEL.dm, {
+      Notifications.setNotificationChannelAsync(PushChannel.enum.messages, {
         name: names.messages,
         importance: Notifications.AndroidImportance.HIGH,
       }),
-      Notifications.setNotificationChannelAsync(PUSH_CHANNEL.call, {
+      Notifications.setNotificationChannelAsync(PushChannel.enum.calls, {
         name: names.calls,
         importance: Notifications.AndroidImportance.MAX,
       }),
-      Notifications.setNotificationChannelAsync('room-running', {
-        name: names.roomRunning,
-        importance: Notifications.AndroidImportance.LOW,
-      }),
+      Notifications.setNotificationChannelAsync(
+        PushChannel.enum['room-running'],
+        {
+          name: names.roomRunning,
+          importance: Notifications.AndroidImportance.LOW,
+        },
+      ),
     ]),
 };
 
-// A tap on a notification, once each: the one that started the app (swiped away before) and
-// those while it runs. The push's data is in content.data; a notification message tapped from a
-// killed app may only have it on the remote message.
+// Once each: the tap that started the app, then those while it runs. A notification message
+// tapped from a killed app may carry its data only on the remote message.
 export function onNotificationTap(
   cb: (data: unknown, done: () => void) => void,
 ) {

@@ -39,6 +39,7 @@ import { startFriendsLifecycle } from './friendsLifecycle';
 import { startDmLifecycle } from './dmLifecycle';
 import { startSettingsLifecycle } from './settingsLifecycle';
 import { startVoiceLifecycle } from './voiceLifecycle';
+import { startPushLifecycle } from './pushLifecycle';
 import { interacted } from '../shared/interaction';
 import { linking } from './navigation/linking';
 import {
@@ -151,6 +152,29 @@ export default function App() {
   useEffect(watchNavigationRestore, []);
   useEffect(watchPendingInvite, []);
   useEffect(clearCacheOnSignOut, []);
+  // REQ-NOTIF-02: token, channels, and where a tapped push leads.
+  useEffect(
+    () =>
+      startPushLifecycle({
+        ready: () =>
+          navigationRef.isReady() &&
+          (navigationRef.getRootState()?.routeNames ?? []).includes('Main'),
+        showHome: () =>
+          navigationRef.navigate('Main', {
+            screen: 'Home',
+            params: { screen: 'HomeRoot' },
+          }),
+        openFriendRequests: () =>
+          navigationRef.navigate('Main', {
+            screen: 'Home',
+            params: {
+              screen: 'Friends',
+              params: { tab: 'pending', at: Date.now() },
+            },
+          }),
+      }),
+    [],
+  );
   // REQ-STUDY-10 / SRS 7.3.5: the "Nhắc học tập" channel exists from launch.
   useEffect(() => {
     void studyNotifications

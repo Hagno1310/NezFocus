@@ -11,6 +11,7 @@ import {
   NotificationsRepository,
   type NotificationSource,
 } from './notifications.repository.js';
+import { PushDispatcher } from './push-service.js';
 import type { NotificationRow } from './notifications.schema.js';
 
 export type { NotificationSource };
@@ -21,6 +22,7 @@ export type CreateNotificationOptions = {
 };
 
 // REQ-NOTIF-05. Owner: notifications (B). Other modules inject this (WORKFLOW 4.3).
+// REQ-NOTIF-02, CR-28 #36: create also pushes, for the types in PushDispatcher's ITEM_PUSH.
 export abstract class NotificationService {
   // null = skipped: data.actor_id is the recipient, or a mention / reply for this message exists.
   // Types without actor_id (task_assigned self-claim, AC9) are filtered by the caller.
@@ -41,6 +43,7 @@ export class DbNotificationService extends NotificationService {
     private readonly events: EventPublisher,
     private readonly ids: SnowflakeGenerator,
     private readonly clock: Clock,
+    private readonly push: PushDispatcher,
   ) {
     super();
   }
@@ -70,6 +73,8 @@ export class DbNotificationService extends NotificationService {
       'NOTIFICATION_CREATE',
       toNotification(row),
     );
+    // Not awaited: a friend request's 201 does not wait for FCM; forItem never throws.
+    void this.push.forItem(userId, row.id, type, parsed as NotificationData<T>);
     return row.id;
   }
 

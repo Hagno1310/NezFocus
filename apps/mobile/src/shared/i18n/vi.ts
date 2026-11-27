@@ -1287,6 +1287,10 @@ export const vi = {
       cancel: 'Hủy',
     },
   },
+  push: {
+    // SRS 7.3.5 Android channels (REQ-NOTIF-02); names shown in the system settings.
+    channels: { messages: 'Tin nhắn', calls: 'Cuộc gọi' },
+  },
   placeholder: {
     note: 'Màn tạm — thay bằng màn thật ở ticket sau',
     noteTicket: 'Màn tạm — thay bằng màn thật ở {{ticket}}',

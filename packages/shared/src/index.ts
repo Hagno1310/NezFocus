@@ -34,6 +34,7 @@ export * from './messages/message.contract.js';
 export * from './messages/typing.contract.js';
 export * from './friends/relationship.contract.js';
 export * from './notifications/notification.contract.js';
+export * from './notifications/push.contract.js';
 export * from './dm/dm.contract.js';
 export * from './account/profile.contract.js';
 export * from './voice/voice.contract.js';

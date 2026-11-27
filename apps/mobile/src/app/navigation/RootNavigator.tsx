@@ -141,7 +141,7 @@ type HomeParamList = {
       | { screen: 'ServerOverview'; serverId: string };
   };
   JoinByCode: undefined; // S-HOME-06 join-by-code
-  Friends: { tab?: FriendsTab } | undefined; // S-DM-04 (main entry: S-DM-01, P2-B3.3 #116)
+  Friends: { tab?: FriendsTab; at?: number } | undefined; // S-DM-04 (main entry: S-DM-01, P2-B3.3 #116)
   // ponytail: where S-HOME-02 / S-HOME-09 / S-SET-01 lead before those screens exist —
   // DMs P2-B3 (#20), and the rest per row.
   HomePlaceholder: { title: string; ticket?: string };
@@ -473,6 +473,8 @@ function HomeTab() {
         <HomeStack.Screen name="Friends">
           {({ navigation, route }) => (
             <FriendsScreen
+              // A push tap (`at`) opens its tab even when S-DM-04 is already open (REQ-NOTIF-02).
+              key={route.params?.at}
               initialTab={route.params?.tab}
               onBack={navigation.goBack}
               onOpenDm={(userId) => openDmWith(userId, navigation.popToTop)}

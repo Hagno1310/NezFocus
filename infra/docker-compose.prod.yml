@@ -22,6 +22,9 @@ x-backend-env: &backend-env
   LIVEKIT_API_URL: http://livekit:7880
   LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
   LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+  FCM_PROJECT_ID: ${FCM_PROJECT_ID}
+  FCM_CLIENT_EMAIL: ${FCM_CLIENT_EMAIL}
+  FCM_PRIVATE_KEY: ${FCM_PRIVATE_KEY}
 
 services:
   # REQ-VC-08 (CR-28 #4): owns 443 and splits it by SNI (nginx/nginx.conf.template).

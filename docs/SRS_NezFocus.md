@@ -1082,6 +1082,7 @@ Xem Mục 3 (điều hướng, sitemap, trạng thái màn hình), `DESIGN.md`, 
 | APNs qua FCM (iOS)  | Tin nhắn, mention, nhắc học           | `apns-push-type: alert`; nhắc học & cuộc gọi MVP dùng `interruption-level: time-sensitive`; `thread-id` = channel_id để nhóm notification; `mutable-content: 1` cho Notification Service Extension (giải mã/ẩn nội dung, v1.x). |
 | APNs VoIP (PushKit) | Cuộc gọi đến (REQ-DMVC-04, v1.x)      | Gửi trực tiếp từ backend tới APNs bằng VoIP token riêng (`push_tokens.kind='apns_voip'`), topic `<bundle_id>.voip`, payload tối thiểu `{ call_id, caller_name, has_video }`.                                                    |
 | Payload chung       | —                                     | `{ type, id, server_id?, channel_id?, message_id?, title, body }`; không chứa nội dung khi user bật "Ẩn nội dung xem trước". Tối đa 4KB. **(v1.9)** `title` / `body` dựng theo ngôn ngữ của người nhận (`user_settings.locale`, NFR-I18N-04).                                                                                        |
+| Chữ push (CR-28 #36) | mention, reply, DM, lời mời kết bạn | mention "{Tên} nhắc tới bạn ở #{kênh}" (qua @everyone / @here / vai trò: "{Tên} nhắc tới @everyone ở #{kênh}", "… @{vai trò} …"); reply "{Tên} trả lời bạn ở #{kênh}"; DM tiêu đề "{Tên}"; ba loại này `body` = nội dung tin (mention hiện "@Tên", chỉ có ảnh: "Đã gửi ảnh"). Lời mời kết bạn "{Tên} muốn kết bạn", `body` = lời nhắn, không có thì username. **Ẩn nội dung:** tin → "NezFocus" · "Bạn có tin nhắn mới"; lời mời kết bạn → "NezFocus" · "Bạn có lời mời kết bạn mới". Không push khi một trong hai đã chặn người kia (REQ-FRIEND-03). Module khác yêu cầu push qua `NotificationService.create` (loại có mục hộp thư) hoặc `PushService.send` (DM, cuộc gọi). |
 
 ### <a id="s-5-7"></a>5.7. Giao diện hệ thống khác
 
@@ -1438,7 +1439,7 @@ Hết 45s không trả lời → backend đặt missed, system message (REQ-DMVC
 | Hạng mục           | Thư viện                                                              | Cấu hình native (qua Expo config plugin)                                                                                                                                                                |
 | ------------------ | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | WebRTC/LiveKit     | `@livekit/react-native`, `@livekit/react-native-webrtc`               | Quyền mic/camera, background mode `audio`; Android foreground service `microphone`/`camera`. Dùng config plugin do LiveKit/cộng đồng cung cấp.                                                          |
-| Push               | `@react-native-firebase/app`, `@react-native-firebase/messaging`      | `google-services.json`, `GoogleService-Info.plist`, capability Push Notifications.                                                                                                                      |
+| Push               | **(CR-28 #35)** `expo-notifications` (token FCM qua `getDevicePushTokenAsync`; không thêm `@react-native-firebase/messaging`: hai thư viện cùng đăng ký dịch vụ nhận FCM trên Android, FCM chỉ giao cho một) | `google-services.json` (gitignore; EAS: biến môi trường dạng file `GOOGLE_SERVICES_JSON`), `GoogleService-Info.plist`, capability Push Notifications. |
 | Local notification | `expo-notifications` (v1.11, CR-28 #16)                               | Android: notification channels (Tin nhắn, Cuộc gọi, Nhắc học tập, Phòng học đang chạy); quyền exact alarm nếu dùng (7.3.6).                                                                             |
 | Cuộc gọi           | `react-native-callkeep`, `react-native-voip-push-notification` (v1.x) | Background mode `voip`, capability PushKit; Android `MANAGE_OWN_CALLS`, `USE_FULL_SCREEN_INTENT`. Nếu thư viện chưa có config plugin phù hợp → viết **local config plugin** trong `plugins/` (RISK-05). |
 | CSDL               | `@op-engineering/op-sqlite`, `drizzle-orm`                            | Migration Drizzle đóng gói trong bundle, chạy khi app khởi động.                                                                                                                                        |
@@ -1714,9 +1715,9 @@ CREATE TABLE push_tokens (                                    -- REQ-NOTIF-02/04
     token               TEXT PRIMARY KEY,
     user_id             BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     session_id          BIGINT REFERENCES auth_sessions(id) ON DELETE CASCADE,
-    kind                VARCHAR(12) NOT NULL,                 -- fcm | apns_voip
+    kind                VARCHAR(12) NOT NULL,                 -- fcm | apns | apns_voip
     platform            VARCHAR(10) NOT NULL,                 -- ios | android
-    locale              VARCHAR(8),
+                                                              -- (CR-28 #36) bỏ cột locale: chữ push theo user_settings.locale (5.6)
     created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_seen_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );

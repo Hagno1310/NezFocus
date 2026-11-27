@@ -29,8 +29,8 @@ const state: FocusSessionResponse = {
 
 describe('Room Session contract (REQ-STUDY-01, STUDY-11, CR-28 #38)', () => {
   it('routes', () => {
-    expect(FocusSessionRoutes.start('20')).toBe('/channels/20/focus-session');
-    expect(FocusSessionRoutes.byId('10')).toBe('/focus-sessions/10');
+    expect(FocusSessionRoutes.start).toBe('/channels/:id/focus-session');
+    expect(FocusSessionRoutes.byId).toBe('/focus-sessions/:id');
   });
 
   it('STUDY-01 AC6: Start with focus 200 minutes is invalid', () => {

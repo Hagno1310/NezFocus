@@ -47,11 +47,11 @@ function nextPhase(c: RoomClock): RoomClock {
 }
 
 // 7.3.6 step 4: the phase at `backendNow`, skipping every phase that ended meanwhile.
-export function roomClockAt<C extends RoomClock>(c: C, backendNow: number): C {
-  let s: RoomClock = c;
-  while (s.status === 'running' && Date.parse(s.phase_ends_at!) <= backendNow)
-    s = nextPhase(s);
-  return { ...c, ...s };
+export function roomClockAt(clock: RoomClock, backendNow: number): RoomClock {
+  let at = clock;
+  while (at.status === 'running' && Date.parse(at.phase_ends_at!) <= backendNow)
+    at = nextPhase(at);
+  return at;
 }
 
 export type RoomTimer = {
@@ -60,7 +60,6 @@ export type RoomTimer = {
   remainingMs: number;
   totalMs: number;
   round: number;
-  phaseEndsAt: string | null;
   next: { phase: FocusPhase; at: string } | null; // running only
   long: boolean; // C-06: a phase of 100+ minutes uses timer-long for the whole phase
   pending: CycleConfig | null;
@@ -88,9 +87,26 @@ export function roomTimer(
     remainingMs: Math.min(totalMs, Math.max(0, left)),
     totalMs,
     round: c.focus_phases_done + (c.phase === 'focus' ? 1 : 0),
-    phaseEndsAt: c.phase_ends_at,
     next: following && { phase: following.phase, at: c.phase_ends_at! },
     long: minutes >= 100,
     pending: c.next_cycle_config,
   };
+}
+
+// My seconds in the session right now: what the backend credited plus the stretch still counting,
+// which stops at the end of its focus phase (the backend credits it there, then sends `me` again).
+export function myFocusedSeconds(
+  session: Pick<FocusSessionState, 'me' | 'phase_ends_at'>,
+  offsetMs: number,
+  localNow: number,
+): number | null {
+  const me = session.me;
+  if (!me) return null;
+  if (!me.counting_since || !session.phase_ends_at) return me.focused_seconds;
+  const until = Math.min(
+    localNow + offsetMs,
+    Date.parse(session.phase_ends_at),
+  );
+  const running = until - Date.parse(me.counting_since);
+  return me.focused_seconds + Math.max(0, Math.floor(running / 1000));
 }

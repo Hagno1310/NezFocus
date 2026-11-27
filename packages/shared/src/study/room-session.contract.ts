@@ -4,11 +4,10 @@ import { CycleConfig, FocusPhase } from './solo.contract.js';
 
 // Paths are relative to /api/v1 (SRS 5.3 Study).
 export const FocusSessionRoutes = {
-  // REQ-STUDY-01 / 11 · POST StartFocusSessionRequest → 201 FocusSessionResponse · 40001, 40302 (focus_control
-  // off or managers without MANAGE_STUDY_ROOMS, not in the room: CR-28 #38), 40401, 40903 (a session runs, or Solo without end_solo)
-  start: (channelId: string) => `/channels/${channelId}/focus-session`,
-  // PATCH FocusSessionAction → 200 FocusSessionResponse, `stop` → 204 · 40302, 40401, 40901 (ended)
-  byId: (id: string) => `/focus-sessions/${id}`,
+  // REQ-STUDY-01/10/11 · 201 FocusSessionResponse · 40001, 40302 (focus rule, not in the room), 40401, 40903 (running, or Solo without end_solo)
+  start: '/channels/:id/focus-session',
+  // REQ-STUDY-11 · 200 FocusSessionResponse, `stop` 204 (also when already ended) · 40302, 40401, 40901 (ended)
+  byId: '/focus-sessions/:id',
 } as const;
 
 export const StartFocusSessionRequest = z.object({
@@ -23,19 +22,18 @@ export const FocusSessionAction = z.discriminatedUnion('action', [
   z.object({ action: z.literal('config'), cycle_config: CycleConfig }),
 ]);
 export type FocusSessionAction = z.infer<typeof FocusSessionAction>;
-export type FocusSessionActionName = FocusSessionAction['action'];
 
-export const RoomSessionStatus = z.enum(['running', 'paused']);
-export type RoomSessionStatus = z.infer<typeof RoomSessionStatus>;
+export const FocusSessionStatus = z.enum(['running', 'paused']);
+export type FocusSessionStatus = z.infer<typeof FocusSessionStatus>;
 
 // SRS 8.2 focus_sessions.end_reason.
-export const RoomEndReason = z.enum([
+export const FocusSessionEndReason = z.enum([
   'stopped',
   'empty_channel',
   'focus_disabled',
   'channel_deleted',
 ]);
-export type RoomEndReason = z.infer<typeof RoomEndReason>;
+export type FocusSessionEndReason = z.infer<typeof FocusSessionEndReason>;
 
 // CR-28 #38: the receiver's own Participation, never someone else's seconds (REQ-STUDY-13).
 export const FocusSessionMe = z.object({
@@ -50,7 +48,7 @@ export const FocusSessionState = z.object({
   id: SnowflakeId,
   channel_id: SnowflakeId,
   server_id: SnowflakeId,
-  status: RoomSessionStatus,
+  status: FocusSessionStatus,
   phase: FocusPhase,
   cycle_config: CycleConfig,
   next_cycle_config: CycleConfig.nullable(), // STUDY-11 AC6: takes over at the next phase
@@ -59,7 +57,7 @@ export const FocusSessionState = z.object({
   paused_remaining_ms: z.number().int().nullable(), // paused only
   host_id: SnowflakeId.nullable(), // null = no Host (STUDY-11)
   started_at: z.iso.datetime(),
-  // STUDY-11: "Bình đã tạm dừng"; null for the clock's own phase changes and in READY.
+  // STUDY-11: "Bình đã tạm dừng"; kept (READY too) until the next action or the clock's next phase change.
   last_action: z
     .object({
       by: SnowflakeId,
@@ -83,7 +81,7 @@ export const FocusSessionEnd = z.object({
   channel_id: SnowflakeId,
   server_id: SnowflakeId,
   ended_at: z.iso.datetime(),
-  end_reason: RoomEndReason,
+  end_reason: FocusSessionEndReason,
   ended_by: SnowflakeId.nullable(), // null when it ended by itself
   focused_seconds: z.number().int().nullable(), // mine in the session; null when I never took part
 });

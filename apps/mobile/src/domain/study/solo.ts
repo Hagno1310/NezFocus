@@ -1,5 +1,7 @@
 import {
   breakAfter,
+  clockOffsetMs,
+  type ClockTiming,
   phaseMinutes,
   SOLO_WAIT_LIMIT_MS,
   toFocusedMinutes,
@@ -38,7 +40,7 @@ export type SoloSnapshot = {
 // Network delay wobbles each measured offset; only a change this big replaces it, so the clock never jumps.
 const OFFSET_JITTER_MS = 1000;
 
-export type Timing = { received: number; sent?: number };
+export type Timing = ClockTiming;
 
 // SRS 7.3.6 step 1: clock_offset = backend_time − the local time it stands for (mid round trip).
 export function snapshotOf(
@@ -47,11 +49,7 @@ export function snapshotOf(
   stoppedHere = false,
   prev: SoloSnapshot | null = null,
 ): SoloSnapshot {
-  const local =
-    timing.sent === undefined
-      ? timing.received
-      : (timing.sent + timing.received) / 2;
-  const measured = Date.parse(r.backend_time) - local;
+  const measured = clockOffsetMs(r.backend_time, timing);
   const offsetMs =
     prev && Math.abs(measured - prev.offsetMs) < OFFSET_JITTER_MS
       ? prev.offsetMs

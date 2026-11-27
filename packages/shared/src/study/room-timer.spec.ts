@@ -1,5 +1,10 @@
 import type { FocusSessionState } from './room-session.contract.js';
-import { clockOffsetMs, roomClockAt, roomTimer } from './room-timer.js';
+import {
+  clockOffsetMs,
+  myFocusedSeconds,
+  roomClockAt,
+  roomTimer,
+} from './room-timer.js';
 
 const MIN = 60_000;
 const T0 = Date.parse('2026-10-18T14:00:00Z'); // 21:00 in Hà Nội
@@ -158,5 +163,27 @@ describe('roomTimer (REQ-STUDY-01, SRS 7.3.6)', () => {
 
   it('a late answer never shows more than the phase length', () => {
     expect(roomTimer(session(), 0, T0 - 5000).remainingMs).toBe(25 * MIN);
+  });
+});
+
+describe('myFocusedSeconds (REQ-STUDY-15, CR-28 #38)', () => {
+  const me = (counting: number | null) => ({
+    focused_seconds: 600,
+    counting_since: counting === null ? null : iso(counting),
+  });
+
+  it('adds the running part to what is credited', () => {
+    const s = session({ me: me(T0 + 5 * MIN) });
+    expect(myFocusedSeconds(s, 0, T0 + 12 * MIN)).toBe(600 + 7 * 60);
+  });
+
+  it('stops at the end of the focus phase until the backend credits it', () => {
+    const s = session({ me: me(T0 + 5 * MIN) });
+    expect(myFocusedSeconds(s, 0, T0 + 40 * MIN)).toBe(600 + 20 * 60);
+  });
+
+  it('not counting (break, paused) → only what is credited; not a Participant → null', () => {
+    expect(myFocusedSeconds(session({ me: me(null) }), 0, T0 + MIN)).toBe(600);
+    expect(myFocusedSeconds(session(), 0, T0)).toBeNull();
   });
 });

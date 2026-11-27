@@ -1043,7 +1043,7 @@ Xem Mục 3 (điều hướng, sitemap, trạng thái màn hình), `DESIGN.md`, 
 **Vòng đời:**
 
 1. Kết nối → nhận `HELLO` → gửi heartbeat đầu tiên sau `heartbeat_interval × random(0..1)` (tránh dồn tải khi backend khởi động lại), sau đó theo chu kỳ.
-2. Gửi `IDENTIFY` (hoặc `RESUME` nếu có `session_id`) → nhận `READY` (user, server tóm tắt, DM, read states, relationships, session_id; **(10/11/2026, P1-B4.1)** `preferred_status` của mình và `presences` ban đầu của người mình nhận presence; **(chốt 26/11/2026, P3-B1)** `voice_states` của các phòng thoại mình xem được; **(CR-28 #38)** `focus_sessions`: Room Session đang chạy của các phòng đó) hoặc `RESUMED`.
+2. Gửi `IDENTIFY` (hoặc `RESUME` nếu có `session_id`) → nhận `READY` (user, server tóm tắt, DM, read states, relationships, session_id; **(10/11/2026, P1-B4.1)** `preferred_status` của mình và `presences` ban đầu của người mình nhận presence; **(chốt 26/11/2026, P3-B1)** `voice_states` của các phòng thoại mình xem được; **(CR-28 #38)** `focus_sessions`: Room Session đang chạy của các phòng đó, kèm `backend_time` để tính độ lệch đồng hồ) hoặc `RESUMED`.
 3. Không nhận `HEARTBEAT_ACK` sau 2 chu kỳ → coi kết nối chết, đóng và kết nối lại với backoff lũy thừa (1s, 2s, 4s … tối đa 30s, có jitter).
 4. **Resume buffer:** backend giữ tối đa **1000 event hoặc 60 giây** gần nhất mỗi session (Redis). RESUME trong giới hạn → phát lại event có `s` > `seq`; quá giới hạn → `INVALID_SESSION(false)`.
 5. App chuyển nền: xem 7.3.3.

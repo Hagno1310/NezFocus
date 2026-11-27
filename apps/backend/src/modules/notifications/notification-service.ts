@@ -21,6 +21,8 @@ export type CreateNotificationOptions = {
 };
 
 // REQ-NOTIF-05. Owner: notifications (B). Other modules inject this (WORKFLOW 4.3).
+// REQ-NOTIF-02, CR-28 #36: create also sends the push of a type that has one (mention, reply,
+// friend_request; task_* and owner_transferred when their owners add them), from P3-B5.2 (#153).
 export abstract class NotificationService {
   // null = skipped: data.actor_id is the recipient, or a mention / reply for this message exists.
   // Types without actor_id (task_assigned self-claim, AC9) are filtered by the caller.

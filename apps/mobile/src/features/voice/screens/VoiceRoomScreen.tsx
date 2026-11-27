@@ -442,10 +442,9 @@ export function VoiceRoomScreen({
 
   return (
     <Animated.View
-      style={[
-        styles.screen,
-        session ? background : { backgroundColor: colors.bg },
-      ]}
+      // Always the animated style (bg without a session): Reanimated keeps the last colour it
+      // set on the view, so swapping in a plain style left another room's phase colour.
+      style={[styles.screen, background]}
     >
       <IntentRunner
         intent={intent}

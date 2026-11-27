@@ -31,6 +31,8 @@ describe('presence store (REQ-AUTH-05)', () => {
           relationships: [],
           private_channels: [],
           voice_states: [],
+          focus_sessions: [],
+          backend_time: new Date().toISOString(),
         },
       }),
     );

@@ -87,6 +87,8 @@ async function connected(client = createGatewayClient(deps)) {
       relationships: [],
       private_channels: [],
       voice_states: [],
+      focus_sessions: [],
+      backend_time: '2026-10-18T14:47:00.000Z',
     },
   });
   return client;
@@ -131,6 +133,8 @@ describe('RemoteGatewayClient', () => {
         relationships: [],
         private_channels: [],
         voice_states: [],
+        focus_sessions: [],
+        backend_time: '2026-10-18T14:47:00.000Z',
       },
     });
     expect(gatewayStore.getState().status).toBe('connected');

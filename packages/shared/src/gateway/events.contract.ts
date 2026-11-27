@@ -38,6 +38,11 @@ import {
 } from '../servers/member.contract.js';
 import { ServerResponse, ServerSummary } from '../servers/server.contract.js';
 import { SnowflakeId } from '../snowflake.js';
+import {
+  FocusSessionEnd,
+  FocusSessionResponse,
+  FocusSessionState,
+} from '../study/room-session.contract.js';
 import { SoloSessionResponse } from '../study/solo.contract.js';
 import { StreakState } from '../study/stats.contract.js';
 import { DmChannel } from '../dm/dm.contract.js';
@@ -56,6 +61,8 @@ export const Ready = z.object({
   relationships: z.array(Relationship), // REQ-FRIEND-04: friends, requests both ways, people I blocked
   private_channels: z.array(DmChannel), // REQ-DM-03: my DMs not closed on my side
   voice_states: z.array(VoiceRoomMember), // CR-28 #30: who is in the voice rooms I can view
+  focus_sessions: z.array(FocusSessionState), // CR-28 #38: Room Sessions of those rooms, `me` mine
+  backend_time: z.iso.datetime(), // SRS 7.3.6 step 1: clock offset for focus_sessions
 });
 export type Ready = z.infer<typeof Ready>;
 
@@ -65,6 +72,10 @@ export const DispatchEvents = {
   RESUMED: z.object({}),
   USER_UPDATE: CurrentUser,
   USER_SETTINGS_UPDATE: UserSettings, // SRS 5.4: after every PATCH /users/@me/settings, to every session of the user
+  // REQ-STUDY-01 / 11, CR-28 #38: to who can view the channel, each with their own `me`.
+  FOCUS_SESSION_START: FocusSessionResponse,
+  FOCUS_SESSION_UPDATE: FocusSessionResponse, // every action (last_action), phase change, and my `me` changing
+  FOCUS_SESSION_END: FocusSessionEnd, // focused_seconds: the receiver's own; STREAK_UPDATE goes first
   SOLO_SESSION_UPDATE: SoloSessionResponse, // REQ-STUDY-10: every change, to every session of the user
   PRESENCE_UPDATE: PresenceEvent, // REQ-AUTH-05: to the people who receive this user's presence, activity filtered per receiver
   STREAK_UPDATE: StreakState, // REQ-STUDY-03: when the streak or today's minutes change, to every session of the user

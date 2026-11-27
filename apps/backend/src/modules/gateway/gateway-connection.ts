@@ -8,6 +8,7 @@ import {
   type PresenceStatus,
   type PresenceUpdate,
   type DmChannel,
+  type FocusSessionState,
   type ReadState,
   type Relationship,
   type ServerSummary,
@@ -43,6 +44,10 @@ export type LoadRelationships = (userId: bigint) => Promise<Relationship[]>;
 // READY's read states (REQ-NOTIF-01).
 export type LoadReadStates = (userId: bigint) => Promise<ReadState[]>;
 export type LoadDms = (userId: bigint) => Promise<DmChannel[]>;
+// CR-28 #38: READY.focus_sessions, the Room Sessions of the voice rooms I can view, `me` mine.
+export type LoadFocusSessions = (
+  userId: bigint,
+) => Promise<FocusSessionState[]>;
 
 // REQ-AUTH-05, implemented by PresenceService; the default keeps a connection test free of it.
 export interface PresenceHooks {
@@ -102,6 +107,7 @@ export class GatewayConnection implements SessionSocket {
     private readonly loadReadStates: LoadReadStates = async () => [],
     private readonly loadDms: LoadDms = async () => [],
     private readonly voice: VoiceHooks = noVoice,
+    private readonly loadFocusSessions: LoadFocusSessions = async () => [],
   ) {}
 
   open() {
@@ -205,6 +211,7 @@ export class GatewayConnection implements SessionSocket {
     const readStates = await this.loadReadStates(auth.userId);
     const dms = await this.loadDms(auth.userId);
     const voiceStates = await this.voice.ready(auth.userId);
+    const focusSessions = await this.loadFocusSessions(auth.userId);
     if (this.isClosed) return;
     this.session = this.sessions.create(auth.userId, auth.authSessionId, this);
     this.sessions.dispatch(this.session, 'READY', {
@@ -217,6 +224,8 @@ export class GatewayConnection implements SessionSocket {
       relationships,
       private_channels: dms,
       voice_states: voiceStates,
+      focus_sessions: focusSessions,
+      backend_time: new Date().toISOString(),
     });
     // SRS 5.4: IDENTIFY may carry the status the app wants (a new login keeps the saved one).
     if (status)

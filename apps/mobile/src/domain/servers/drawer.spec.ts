@@ -147,6 +147,8 @@ describe('reduceHome (Gateway events)', () => {
           relationships: [],
           private_channels: [],
           voice_states: [],
+          focus_sessions: [],
+          backend_time: new Date().toISOString(),
         },
       }),
     );
@@ -172,6 +174,8 @@ describe('reduceHome (Gateway events)', () => {
           relationships: [],
           private_channels: [],
           voice_states: [],
+          focus_sessions: [],
+          backend_time: new Date().toISOString(),
         },
       }),
     );

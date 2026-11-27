@@ -28,7 +28,10 @@ export function formatCycle(c: CycleConfig, locale: Locale): string {
 }
 
 // REQ-STUDY-11: what MANAGE_STUDY_ROOMS alone may change on a voice channel (AC8: no name).
-export const STUDY_ROOM_FIELDS = ['focus_control', 'default_cycle_config'];
+const STUDY_ROOM_FIELDS: readonly string[] = [
+  'focus_control',
+  'default_cycle_config',
+];
 
 export const isStudyRoomSettingsOnly = (body: object) =>
   Object.keys(body).every((k) => STUDY_ROOM_FIELDS.includes(k));

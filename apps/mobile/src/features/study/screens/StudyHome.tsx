@@ -31,6 +31,8 @@ import { Icon } from '../../../shared/ui/Icon';
 import { StatText } from '../../../shared/ui/Stats';
 import { Text } from '../../../shared/ui/Text';
 import { CycleSheet } from '../components/CycleSheet';
+import { RoomRows } from '../components/RoomRows';
+import { useActiveRooms, type RoomRowData } from '../hooks/useActiveRooms';
 import { roomSessionsStore } from '../../../domain/study/roomSessions';
 import { voiceStore } from '../../../domain/voice/voiceSession';
 import { Today } from '../components/Today';
@@ -40,18 +42,21 @@ import { FIRST_FOCUS, useBeginSolo } from '../hooks/useBeginSolo';
 import { useNow, useSolo } from '../hooks/useSolo';
 import { useRefreshStudy, useStudyStats } from '../hooks/useStudyStats';
 
-// S-STUDY-01. "Đang học lúc này" has rooms only from P3-B3.7 (#212); until then it is
-// `no-active-rooms` or `no-server`.
+// S-STUDY-01.
 export function StudyHome({
   onOpenSolo,
   onAskNotifications,
   onOpenStats,
   onCreateServer,
+  onShowRoom,
+  onSeeAllRooms,
 }: {
   onOpenSolo: () => void;
   onAskNotifications: () => void;
   onOpenStats: (date: string) => void;
   onCreateServer: () => void;
+  onShowRoom: () => void;
+  onSeeAllRooms: () => void;
 }) {
   const { t } = useTranslation();
   const { top } = useSafeAreaInsets();
@@ -64,8 +69,10 @@ export function StudyHome({
     onAskNotifications,
   });
 
+  const active = useActiveRooms();
   const pull = async () => {
     setRefreshing(true);
+    active.resort();
     await refresh().finally(() => setRefreshing(false));
   };
 
@@ -82,7 +89,13 @@ export function StudyHome({
           <RefreshControl refreshing={refreshing} onRefresh={pull} />
         }
       >
-        <Rooms online={online} onCreateServer={onCreateServer} />
+        <Rooms
+          online={online}
+          rows={active.rows}
+          onCreateServer={onCreateServer}
+          onShowRoom={onShowRoom}
+          onSeeAll={onSeeAllRooms}
+        />
         <SoloBlock
           cycle={cycle}
           onChangeCycle={setCycle}
@@ -101,20 +114,50 @@ export function StudyHome({
   );
 }
 
+const ROWS_MAX = 3; // spec 04 › Sắp xếp: then "Xem tất cả ({N})"
+
 function Rooms({
   online,
+  rows,
   onCreateServer,
+  onShowRoom,
+  onSeeAll,
 }: {
   online: boolean;
+  rows: RoomRowData[];
   onCreateServer: () => void;
+  onShowRoom: () => void;
+  onSeeAll: () => void;
 }) {
   const { t } = useTranslation();
   // null until READY lists the servers (S-HOME-02: an empty list means no server).
   const servers = useStore(homeStore, (s) => s.servers);
+  const shown = online && rows.length > 0;
   return (
     <View style={styles.section}>
-      <Text variant="headline">{t('study.home.rooms')}</Text>
-      {!online ? (
+      <View style={styles.roomsHead}>
+        <Text variant="headline" style={styles.flex}>
+          {t('study.home.rooms')}
+        </Text>
+        {shown && (
+          <Text variant="label" color="text-secondary">
+            {t('study.home.roomsCount', { n: rows.length })}
+          </Text>
+        )}
+      </View>
+      {shown ? (
+        <>
+          <RoomRows rows={rows.slice(0, ROWS_MAX)} onShowRoom={onShowRoom} />
+          {rows.length > ROWS_MAX && (
+            <Button
+              variant="text"
+              size="S"
+              label={t('study.home.seeAll', { n: rows.length })}
+              onPress={onSeeAll}
+            />
+          )}
+        </>
+      ) : !online ? (
         <Text color="text-secondary">{t('study.home.roomsOffline')}</Text>
       ) : servers === null ? (
         <View style={styles.skeletons}>
@@ -356,6 +399,7 @@ function useRoomWithSession() {
 }
 
 const styles = StyleSheet.create({
+  roomsHead: { flexDirection: 'row', alignItems: 'baseline' },
   // Frame `in-room-solo-blocked`: the off button on its own row, the reason under it.
   blocked: { width: '100%', gap: space[2], alignItems: 'flex-start' },
   screen: { flex: 1 },

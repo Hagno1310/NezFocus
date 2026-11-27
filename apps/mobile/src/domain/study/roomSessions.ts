@@ -12,12 +12,15 @@ import { createStore } from 'zustand/vanilla';
 export type RoomSessions = {
   byChannel: Readonly<Record<string, FocusSessionState>>;
   ended: Readonly<Record<string, FocusSessionEnd>>;
+  // When each room's last session ended, for everyone (S-STUDY-EDGE `room-ended-on-join`).
+  endedAt: Readonly<Record<string, string>>;
   offsetMs: number;
 };
 
 export const emptyRoomSessions: RoomSessions = {
   byChannel: {},
   ended: {},
+  endedAt: {},
   offsetMs: 0,
 };
 
@@ -45,12 +48,14 @@ export function reduceRoomSessions(
           event.d.focus_sessions.map((f) => [f.channel_id, f]),
         ),
         ended: {},
+        endedAt: {},
         offsetMs: clockOffsetMs(event.d.backend_time, { received: receivedAt }),
       };
     case 'FOCUS_SESSION_START':
     case 'FOCUS_SESSION_UPDATE': {
       const f = event.d.focus_session;
       return {
+        ...s,
         byChannel: { ...s.byChannel, [f.channel_id]: f },
         ended:
           event.t === 'FOCUS_SESSION_START'
@@ -67,6 +72,7 @@ export function reduceRoomSessions(
       return {
         ...s,
         byChannel: without(s.byChannel, e.channel_id),
+        endedAt: { ...s.endedAt, [e.channel_id]: e.ended_at },
         ended:
           e.focused_seconds === null
             ? without(s.ended, e.channel_id)
@@ -89,6 +95,7 @@ export function acceptRoomSession(
   timing: { sent: number; received: number },
 ) {
   roomSessionsStore.setState((s) => ({
+    ...s,
     byChannel: { ...s.byChannel, [f.channel_id]: f },
     ended: without(s.ended, f.channel_id),
     offsetMs: steady(s.offsetMs, clockOffsetMs(backendTime, timing)),

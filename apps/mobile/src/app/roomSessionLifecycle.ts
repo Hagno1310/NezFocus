@@ -10,7 +10,8 @@ import {
   soloEndExpected,
   roomSessionsStore,
 } from '../domain/study/roomSessions';
-import { homeStore } from '../domain/servers/homeStore';
+import { serverRepository } from '../data/servers';
+import { homeStore, setServerDetail } from '../domain/servers/homeStore';
 import { voiceView } from '../domain/voice/voiceView';
 import { voiceStore } from '../domain/voice/voiceSession';
 import { i18n } from '../shared/i18n';
@@ -62,6 +63,25 @@ export function startRoomSessionLifecycle() {
         }),
       });
   });
+
+  // S-STUDY-01 rooms of servers never opened: their channels (name, CONNECT) come with
+  // GET /servers/:id (chốt 27/11/2026, no new endpoint).
+  const fetching = new Set<string>();
+  const loadServers = () => {
+    const home = homeStore.getState();
+    for (const f of Object.values(roomSessionsStore.getState().byChannel)) {
+      const id = f.server_id;
+      if (home.channels[id] || fetching.has(id)) continue;
+      if (!home.servers?.some((x) => x.id === id)) continue;
+      fetching.add(id);
+      serverRepository
+        .getServer(id)
+        .then(setServerDetail)
+        .catch(() => {})
+        .finally(() => fetching.delete(id));
+    }
+  };
+  const stopServers = roomSessionsStore.subscribe(loadServers);
 
   const beat = setInterval(() => {
     const f = mine();
@@ -115,6 +135,7 @@ export function startRoomSessionLifecycle() {
 
   return () => {
     stopEvents();
+    stopServers();
     clearInterval(beat);
     stopGap();
     clearTimeout(alarm);

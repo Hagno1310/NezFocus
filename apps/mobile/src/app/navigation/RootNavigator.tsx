@@ -37,6 +37,7 @@ import {
   SoloNotificationOpener,
 } from '../../features/study/components/SoloMiniPlayer';
 import { RoomMiniPlayer } from '../../features/voice/components/RoomMiniPlayer';
+import { ActiveRoomsScreen } from '../../features/study/screens/ActiveRoomsScreen';
 import { roomSessionsStore } from '../../domain/study/roomSessions';
 import { voiceStore } from '../../domain/voice/voiceSession';
 import { voiceView } from '../../domain/voice/voiceView';
@@ -133,6 +134,7 @@ type StudyParamList = {
   Solo: undefined; // S-STUDY-02
   AskNotifications: undefined; // S-ROOM-09 first-focus
   Stats: { date?: string } | undefined; // S-STUDY-03
+  ActiveRooms: undefined; // S-STUDY-06
 };
 
 type HomeParamList = {
@@ -563,6 +565,12 @@ function MainTabBar({
   );
 }
 
+// The room on screen is a Home root (CR-15): bring the Home tab up on it.
+const showRoom = (navigation: { getParent: () => unknown }) =>
+  (
+    navigation.getParent() as BottomTabNavigationProp<TabParamList> | undefined
+  )?.navigate('Home', { screen: 'HomeRoot' });
+
 function StudyTab() {
   return (
     <StudyStack.Navigator screenOptions={{ headerShown: false }}>
@@ -578,6 +586,16 @@ function StudyTab() {
                   BottomTabNavigationProp<TabParamList> | undefined
               )?.navigate('Home', { screen: 'CreateServer' })
             }
+            onShowRoom={() => showRoom(navigation)}
+            onSeeAllRooms={() => navigation.navigate('ActiveRooms')}
+          />
+        )}
+      </StudyStack.Screen>
+      <StudyStack.Screen name="ActiveRooms">
+        {({ navigation }) => (
+          <ActiveRoomsScreen
+            onBack={navigation.goBack}
+            onShowRoom={() => showRoom(navigation)}
           />
         )}
       </StudyStack.Screen>

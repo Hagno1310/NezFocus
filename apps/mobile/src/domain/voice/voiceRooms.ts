@@ -102,3 +102,18 @@ export function keepOrder(
     .map((m) => m.user_id);
   return [...(me && here.has(me) ? [me] : []), ...kept, ...added];
 }
+
+// Under 80% the ring would read as a different component: below that the body scrolls.
+const MIN_RING_SCALE = 0.8;
+
+// C-06 on a phone shorter than the frame: the ring's scale so what is under it ends at `box`.
+// `contentH` was laid out with the ring at `measuredAt`.
+export function ringScale(
+  box: number,
+  contentH: number,
+  measuredAt: number,
+  side: number,
+): number {
+  const rest = contentH - side * measuredAt;
+  return Math.min(1, Math.max(MIN_RING_SCALE, (box - rest) / side));
+}

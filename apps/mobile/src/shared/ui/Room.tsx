@@ -229,6 +229,8 @@ export function RingMore({
 export const SEAT = 40;
 // C-06: seat centres 152 from the ring's centre at 390; at 360 "on the circumference" (144) to
 // keep the 16 margin.
+export const seatRingSide = (radius: number) => radius * 2 + SEAT;
+
 export const seatRadius = (width: number) =>
   Math.min(152, width / 2 - SEAT / 2 - space[3]);
 
@@ -240,27 +242,35 @@ export function SeatRing({
   center,
   seats,
   breath = 0,
+  scale = 1,
 }: {
   radius: number;
   center: ReactNode;
   seats: { key: string; node: ReactNode }[];
   breath?: number;
+  // A phone shorter than the frame (3-button navigation): the whole ring shrinks as one, so
+  // nothing under it is cut by the button row; its proportions stay those of C-06.
+  scale?: number;
 }) {
-  const side = radius * 2 + SEAT;
+  const side = seatRingSide(radius);
   return (
-    <View style={{ width: side, height: side }}>
-      <View style={[StyleSheet.absoluteFill, styles.center]}>{center}</View>
-      {seats.map((s, i) => (
-        <SeatSpot
-          key={s.key}
-          angle={(i / seats.length) * 2 * Math.PI}
-          radius={radius}
-          breath={breath}
-          delay={i * BREATH_STAGGER_MS}
-        >
-          {s.node}
-        </SeatSpot>
-      ))}
+    <View
+      style={[styles.center, { width: side * scale, height: side * scale }]}
+    >
+      <View style={{ width: side, height: side, transform: [{ scale }] }}>
+        <View style={[StyleSheet.absoluteFill, styles.center]}>{center}</View>
+        {seats.map((s, i) => (
+          <SeatSpot
+            key={s.key}
+            angle={(i / seats.length) * 2 * Math.PI}
+            radius={radius}
+            breath={breath}
+            delay={i * BREATH_STAGGER_MS}
+          >
+            {s.node}
+          </SeatSpot>
+        ))}
+      </View>
     </View>
   );
 }

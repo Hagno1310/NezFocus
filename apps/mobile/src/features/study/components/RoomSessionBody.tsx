@@ -39,7 +39,7 @@ import {
   type RoomViewInput,
   type SubLine,
 } from '../../../domain/study/roomView';
-import { ringSeats } from '../../../domain/voice/voiceRooms';
+import { ringScale, ringSeats } from '../../../domain/voice/voiceRooms';
 import { size, space, useTheme } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import { ChipStatus } from '../../../shared/ui/ChipStatus';
@@ -57,6 +57,7 @@ import {
   VideoGrid,
   gridTileWidth,
   seatRadius,
+  seatRingSide,
 } from '../../../shared/ui/Room';
 import { SegmentedControl } from '../../../shared/ui/SegmentedControl';
 import { Text } from '../../../shared/ui/Text';
@@ -186,6 +187,8 @@ export function RoomSessionBody({
   const { seated, more } = ringSeats(people.map((x) => x.userId));
   const byId = new Map(people.map((x) => [x.userId, x]));
   const behind = colors[phaseRoomColor[timer.phase]];
+  const radius = seatRadius(width);
+  const fit = useRingFit(seatRingSide(radius));
 
   const header = joined && (
     <View
@@ -265,9 +268,14 @@ export function RoomSessionBody({
           </VideoGrid>
         </ScrollView>
       ) : (
-        <ScrollView contentContainerStyle={styles.ringBody}>
+        <ScrollView
+          contentContainerStyle={styles.ringBody}
+          onLayout={(e) => fit.onBox(e.nativeEvent.layout.height)}
+          onContentSizeChange={(_, h) => fit.onContent(h)}
+        >
           <SeatRing
-            radius={seatRadius(width)}
+            radius={radius}
+            scale={fit.scale}
             breath={breath}
             center={
               <FocusTimer
@@ -523,6 +531,25 @@ function useBreath(sessionId: string, timer: RoomTimer) {
     if (timer.status === 'running' && elapsed < LIVE_MS) setBreath(breath + 1);
   }
   return breath;
+}
+
+// The ring's scale so the lines under it end above the button row (frame 360 × 800 fits at 1).
+function useRingFit(side: number) {
+  const [box, setBox] = useState(0);
+  // The content height and the scale it was laid out at (it arrives a frame after a change).
+  const [content, setContent] = useState<{ h: number; at: number } | null>(
+    null,
+  );
+  const [scale, setScale] = useState(1);
+  if (box && content) {
+    const next = ringScale(box, content.h, content.at, side);
+    if (Math.abs(next - scale) > 0.005) setScale(next);
+  }
+  return {
+    scale,
+    onBox: setBox,
+    onContent: (h: number) => setContent({ h, at: scale }),
+  };
 }
 
 const styles = StyleSheet.create({

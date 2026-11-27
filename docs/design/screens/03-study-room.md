@@ -416,6 +416,7 @@ Frame nằm trong nhóm "03 · Study Room — Edge case", tên `S-ROOM-EDGE · <
 | Tình huống | Luật |
 |---|---|
 | Học qua nửa đêm | Dòng "Bạn đã tập trung … hôm nay" về 0 lúc 00:00 theo timezone của user; phần trước 00:00 tính cho ngày cũ (STUDY-03 AC3). Phiên không bị ngắt |
+| Máy thấp hơn khung (thanh điều hướng 3 nút) (chốt 27/11/2026) | Cả cụm vòng + ghế thu nhỏ đều cho tới khi mọi dòng dưới vòng nằm trên hàng nút, nhỏ nhất 80%; thấp hơn nữa thì thân màn cuộn. Máy đủ cao giữ vòng 280 |
 | Đồng hồ máy lệch | Mọi thời gian tính theo `backend_time` (7.3.6); không hiển thị gì thêm |
 | Chuyển pha khi đang offline | App tự chuyển pha theo lịch đã biết, giữ state `syncing`; khi có mạng thì đồng bộ lại, không báo thêm nếu khớp |
 | Mở lại app sau khi đã qua nhiều pha | Đồng hồ nhảy thẳng tới pha hiện tại, không có hiệu ứng "thở ra" cho các pha đã qua, không báo |

@@ -1,6 +1,12 @@
 import type { VoiceRoomMember } from '@nezfocus/shared';
 import { describe, expect, it } from 'vitest';
-import { keepOrder, orderSeats, ringOrder, ringSeats } from './voiceRooms';
+import {
+  keepOrder,
+  orderSeats,
+  ringOrder,
+  ringScale,
+  ringSeats,
+} from './voiceRooms';
 
 const seat = (
   user_id: string,
@@ -117,5 +123,20 @@ describe('C-06 ring seats (Room Session)', () => {
   it('12 or fewer: everyone has a seat', () => {
     const ids = ['me', 'a', 'b'];
     expect(ringSeats(ids)).toEqual({ seated: ids, more: 0 });
+  });
+});
+
+describe('C-06 ring fit on a short phone', () => {
+  // Numbers measured on a 360 × 800 phone with 3-button navigation (alone): box 388, ring 328.
+  it('shrinks just enough for the lines under it, whatever scale it was measured at', () => {
+    const k = ringScale(388, 412, 1, 328);
+    expect(k).toBeCloseTo(0.927, 3);
+    // Measured again after shrinking: the same answer, no creeping down.
+    expect(ringScale(388, 412 - 328 * (1 - k), k, 328)).toBeCloseTo(k, 6);
+  });
+
+  it('stays 1 when it fits and never goes below 0.8', () => {
+    expect(ringScale(500, 412, 1, 328)).toBe(1);
+    expect(ringScale(200, 412, 1, 328)).toBe(0.8);
   });
 });

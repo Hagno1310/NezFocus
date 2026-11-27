@@ -2008,7 +2008,10 @@ CREATE TABLE focus_sessions (                                 -- Room Session (D
     study_event_id      BIGINT,                               -- nếu tự bắt đầu từ Study Event (REQ-STUDY-12)
     started_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     ended_at            TIMESTAMPTZ,
-    end_reason          VARCHAR(16)                           -- stopped | empty_channel | focus_disabled | channel_deleted
+    end_reason          VARCHAR(16),                          -- stopped | empty_channel | focus_disabled | channel_deleted
+    ended_by            BIGINT REFERENCES users(id) ON DELETE SET NULL, -- CR-28 #38: FOCUS_SESSION_END `ended_by`
+    last_action         JSONB,                                -- CR-28 #38: {by, action} của thao tác điều khiển gần nhất
+    empty_since         TIMESTAMPTZ                           -- CR-28 #38: phòng không còn ghế từ lúc này (5 phút → empty_channel)
 );
 CREATE UNIQUE INDEX uq_focus_active_per_channel ON focus_sessions(channel_id) WHERE ended_at IS NULL;
 

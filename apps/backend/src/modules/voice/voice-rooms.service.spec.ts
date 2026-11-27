@@ -1,3 +1,4 @@
+import type { EventEmitter2 } from '@nestjs/event-emitter';
 import type { VoiceState } from '@nezfocus/shared';
 import type { WebhookEvent } from 'livekit-server-sdk';
 import { fixedClock, type Clock } from '../../common/clock.js';
@@ -47,6 +48,7 @@ describe('VoiceRoomsService away seats', () => {
       { modMuted: async () => false } as unknown as VoiceRepository,
       clock as Clock,
       { voiceChanged: async () => {} } as unknown as PresenceSink,
+      { emitAsync: async () => [] } as unknown as EventEmitter2,
     );
     await voice.update(BINH, {
       channel_id: ROOM.toString(),

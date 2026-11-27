@@ -116,6 +116,32 @@ const conflict = (s: SoloState, action: string) =>
     `cannot ${action} a ${s.status} Solo Session`,
   );
 
+function ended(
+  s: SoloState,
+  reason: SoloEndReason,
+  now: Date,
+): [SoloState, FocusInterval[]] {
+  if (s.status === 'ended') return [s, []];
+  return [
+    {
+      ...s,
+      status: 'ended',
+      phaseEndsAt: null,
+      pausedRemainingMs: null,
+      endedAt: now,
+      endReason: reason,
+    },
+    focusSoFar(s, now),
+  ];
+}
+
+// REQ-STUDY-10 / 8.4.3: becoming a Room Session Participant ends Solo, minutes kept.
+export function joinRoom(current: SoloState, now: Date): SoloStep {
+  const { state, focus } = advance(current, now);
+  const [s, more] = ended(state, 'joined_room', now);
+  return { state: s, focus: [...focus, ...more] };
+}
+
 // A user action at `now`. Repeating an action that already took effect is a no-op, so a resend after going offline is safe.
 export function applyAction(
   current: SoloState,
@@ -130,18 +156,7 @@ export function applyAction(
 
   switch (action.action) {
     case 'stop':
-      if (s.status === 'ended') return done(s);
-      return done(
-        {
-          ...s,
-          status: 'ended',
-          phaseEndsAt: null,
-          pausedRemainingMs: null,
-          endedAt: now,
-          endReason: 'stopped',
-        },
-        focusSoFar(s, now),
-      );
+      return done(...ended(s, 'stopped', now));
     case 'pause':
       if (s.status === 'paused') return done(s);
       if (s.status !== 'running') throw conflict(s, 'pause');

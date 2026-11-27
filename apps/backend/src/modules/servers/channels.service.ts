@@ -34,7 +34,9 @@ import { ServersRepository } from './servers.repository.js';
 import { ChannelTypeCode, type ChannelRow } from './servers.schema.js';
 import { VoiceService } from '../voice/voice.service.js';
 import {
+  STUDY_ROOM_DELETED,
   STUDY_ROOM_DISABLED,
+  type StudyRoomDeleted,
   type StudyRoomDisabled,
 } from './study-room-events.js';
 
@@ -326,8 +328,15 @@ export class ChannelsService {
       },
     );
     await this.permissionCache.invalidateServer(serverId); // its children left the category
-    if (row.type === ChannelTypeCode.voice)
+    if (row.type === ChannelTypeCode.voice) {
+      // The session ends first, so nobody's leave counts as an emptying room.
+      await this.emitter.emitAsync(STUDY_ROOM_DELETED, {
+        serverId,
+        channelId: row.id,
+        byUserId: userId,
+      } satisfies StudyRoomDeleted);
       await this.voice.roomDeleted(serverId, row.id);
+    }
     await this.events.toServer(serverId, 'CHANNEL_DELETE', {
       id: row.id.toString(),
       server_id: serverId.toString(),

@@ -22,6 +22,10 @@ export abstract class VoiceService {
   abstract roomDeleted(serverId: bigint, channelId: bigint): Promise<void>;
   // The user's room (away included): "Bạn cũng sẽ rời {phòng}", the timeout sheet.
   abstract seatOf(userId: bigint): Promise<VoiceSeat | null>;
+  // Who sits in a room, away seats included (REQ-STUDY-01: everyone in it is a Participant).
+  abstract occupants(
+    channelId: bigint,
+  ): Promise<{ userId: bigint; joinedAt: Date }[]>;
 }
 
 // What the Gateway needs from voice (WORKFLOW 4.3): op 4, READY, a login that ended.

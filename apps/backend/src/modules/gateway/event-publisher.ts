@@ -34,6 +34,7 @@ export abstract class EventPublisher {
     channelId: bigint,
     t: T,
     d: DispatchPayload<T>,
+    except?: readonly bigint[], // who gets their own copy (FOCUS_SESSION_* `me`, CR-28 #38)
   ): Promise<void>;
   // Nothing secret (SERVER_*, roles, CHANNEL_DELETE's id): every member, no permission filter.
   abstract toServer<T extends DispatchEventName>(
@@ -119,9 +120,14 @@ export class GatewayEventPublisher
     channelId: bigint,
     t: T,
     d: DispatchPayload<T>,
+    except: readonly bigint[] = [],
   ) {
     return this.publish(
-      { kind: 'channel', channelId: channelId.toString() },
+      {
+        kind: 'channel',
+        channelId: channelId.toString(),
+        except: except.map(String),
+      },
       t,
       d,
     );

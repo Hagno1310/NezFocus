@@ -155,7 +155,7 @@ export class MembersService {
     await this.channelEvents.updated(
       serverId,
       channels.map(toChannelResponse),
-      [targetId],
+      { only: [targetId] },
     );
   }
 

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   ErrorCode,
   MAX_CHANNELS_PER_SERVER,
@@ -6,6 +7,7 @@ import {
   Permission,
   applyPositions,
   findClash,
+  isStudyRoomSettingsOnly,
   planCategoryDelete,
   privateChannelOverwrites,
   type ChannelRuleError,
@@ -31,6 +33,10 @@ import { toChannelResponse, toServerSummary } from './servers.dto.js';
 import { ServersRepository } from './servers.repository.js';
 import { ChannelTypeCode, type ChannelRow } from './servers.schema.js';
 import { VoiceService } from '../voice/voice.service.js';
+import {
+  STUDY_ROOM_DISABLED,
+  type StudyRoomDisabled,
+} from './study-room-events.js';
 
 const invalid = (field: string, code: string, message: string) =>
   new AppError(ErrorCode.ValidationError, message, {
@@ -70,6 +76,7 @@ export class ChannelsService {
     private readonly channelEvents: ChannelEvents,
     private readonly dms: DmService,
     private readonly voice: VoiceService,
+    private readonly emitter: EventEmitter2,
   ) {}
 
   async list(userId: bigint, serverId: bigint): Promise<ChannelResponse[]> {
@@ -168,26 +175,50 @@ export class ChannelsService {
     return channel;
   }
 
-  // Rename (REQ-SRV-02) and the "Đồng bộ với danh mục" switch (REQ-ROLE-03 v1.7).
+  // Rename (REQ-SRV-02), the "Đồng bộ với danh mục" switch (REQ-ROLE-03 v1.7) and the
+  // Phòng học settings (REQ-STUDY-11).
   async update(
     userId: bigint,
     channelId: bigint,
     body: UpdateChannelRequest,
   ): Promise<ChannelResponse> {
-    const row = await this.manageable(userId, channelId);
+    const row = await this.manageable(
+      userId,
+      channelId,
+      isStudyRoomSettingsOnly(body),
+    );
     const serverId = row.serverId!;
+    const studyRoom =
+      body.focus_control !== undefined ||
+      body.default_cycle_config !== undefined;
+    // CR-28 #37: only a voice channel is a Phòng học.
+    if (studyRoom && row.type !== ChannelTypeCode.voice)
+      throw invalid(
+        body.focus_control !== undefined
+          ? 'focus_control'
+          : 'default_cycle_config',
+        'NOT_VOICE',
+        'Only a voice channel is a Phòng học',
+      );
     let name = body.name;
     if (name !== undefined && row.type === ChannelTypeCode.text) {
       name = normalizeTextChannelName(name);
       if (!name)
         throw invalid('name', 'NO_LETTER_OR_DIGIT', NO_LETTER_OR_DIGIT_MESSAGE);
     }
-    const { channel, resynced } = await this.repo.locked(
+    const { channel, resynced, turnedOff } = await this.repo.locked(
       serverId,
       async (locked) => {
         const current = locked.rows.map(toChannelResponse);
         const self = current.find((c) => c.id === row.id.toString());
         if (!self) throw notFound('Unknown channel'); // deleted meanwhile
+        if (studyRoom)
+          await locked.update(row.id, {
+            focusControl: body.focus_control,
+            defaultCycleConfig: body.default_cycle_config,
+          });
+        const turnedOff =
+          body.focus_control === 'off' && self.focus_control !== 'off';
         if (name !== undefined) {
           const clash = findClash(current, [{ ...self, name }]);
           if (clash) throw rejected(clash);
@@ -225,11 +256,18 @@ export class ChannelsService {
         return {
           channel: toChannelResponse((await locked.reload(row.id))!),
           resynced,
+          turnedOff,
         };
       },
     );
     if (resynced) await this.permissionCache.invalidateServer(serverId);
-    await this.channelEvents.updated(serverId, [channel]);
+    await this.channelEvents.updated(serverId, [channel], { by: userId });
+    if (turnedOff)
+      await this.emitter.emitAsync(STUDY_ROOM_DISABLED, {
+        serverId,
+        channelId: row.id,
+        byUserId: userId,
+      } satisfies StudyRoomDisabled);
     return channel;
   }
 
@@ -313,7 +351,13 @@ export class ChannelsService {
 
   // A live server channel the caller sees (else 40401) with MANAGE_CHANNELS there
   // (overwrites apply, else 40302). Also the gate of the overwrite writes.
-  async manageable(userId: bigint, channelId: bigint): Promise<ChannelRow> {
+  // `studyRoom`: only Phòng học fields change, so MANAGE_STUDY_ROOMS on a voice channel
+  // is enough too (REQ-STUDY-11 AC8).
+  async manageable(
+    userId: bigint,
+    channelId: bigint,
+    studyRoom = false,
+  ): Promise<ChannelRow> {
     const row = await this.servers.findChannel(channelId);
     if (
       !row?.serverId ||
@@ -325,6 +369,16 @@ export class ChannelsService {
       ))
     )
       throw notFound('Unknown channel');
+    if (
+      studyRoom &&
+      row.type === ChannelTypeCode.voice &&
+      (await this.permissions.can(
+        userId,
+        { channelId },
+        Permission.MANAGE_STUDY_ROOMS,
+      ))
+    )
+      return row;
     await this.permissions.require(
       userId,
       { channelId },

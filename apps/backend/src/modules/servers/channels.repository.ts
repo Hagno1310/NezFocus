@@ -1,5 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { PermissionOverwrite } from '@nezfocus/shared';
+import type {
+  CycleConfig,
+  FocusControl,
+  PermissionOverwrite,
+} from '@nezfocus/shared';
 import { and, asc, eq, inArray, isNull, max, sql } from 'drizzle-orm';
 import { DB, type Db, type Tx } from '../../db/db.module.js';
 import { toOverwriteRow } from './servers.dto.js';
@@ -99,7 +103,12 @@ export class LockedChannels {
 
   async update(
     channelId: bigint,
-    set: { name?: string; permissionsSynced?: boolean },
+    set: {
+      name?: string;
+      permissionsSynced?: boolean;
+      focusControl?: FocusControl;
+      defaultCycleConfig?: CycleConfig;
+    },
   ): Promise<void> {
     await this.tx.update(channels).set(set).where(eq(channels.id, channelId));
   }

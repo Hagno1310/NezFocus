@@ -1,3 +1,4 @@
+import type { CycleConfig } from '@nezfocus/shared';
 import { sql } from 'drizzle-orm';
 import {
   bigint,
@@ -6,6 +7,7 @@ import {
   foreignKey,
   index,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   smallint,
@@ -55,6 +57,7 @@ export const channels = pgTable(
     name: varchar({ length: 100 }),
     position: integer().notNull().default(0),
     focusControl: varchar({ length: 10 }).notNull().default('off'), // everyone | managers | off
+    defaultCycleConfig: jsonb().$type<CycleConfig>(), // REQ-STUDY-11; NULL = 25/5 (SRS 8.2)
     permissionsSynced: boolean().notNull().default(true),
     lastMessageId: id(), // SRS 8.2, no FK; the app fetches after= it (7.3.2)
     createdAt: tz().notNull().defaultNow(),

@@ -22,17 +22,22 @@ export class ChannelEvents {
   }
 
   // `only`: the members whose view changed (a role given or taken); default everyone.
+  // `by`: who changed the channel itself (CR-28 #37 updated_by); none when it only moved.
   async updated(
     serverId: bigint,
     channels: readonly ChannelResponse[],
-    only?: readonly bigint[],
+    { only, by }: { only?: readonly bigint[]; by?: bigint } = {},
   ) {
     if (!channels.length) return;
     const members = only ?? (await this.servers.memberIds(serverId));
+    const updated_by = by?.toString() ?? null;
     for (const channel of channels)
       for (const userId of members)
         if (await this.sees(userId, channel))
-          await this.events.toUser(userId, 'CHANNEL_UPDATE', channel);
+          await this.events.toUser(userId, 'CHANNEL_UPDATE', {
+            ...channel,
+            updated_by,
+          });
         else
           await this.events.toUser(userId, 'CHANNEL_DELETE', {
             id: channel.id,

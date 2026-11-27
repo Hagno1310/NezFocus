@@ -23,6 +23,7 @@ const ch = (
   parent_id,
   position: 0,
   focus_control: 'off',
+  default_cycle_config: null,
   permissions_synced: true,
   permission_overwrites: [],
   last_message_id: null,

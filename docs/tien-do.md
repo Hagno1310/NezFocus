@@ -172,10 +172,10 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 - [x] **P3-B1** [#26](https://github.com/Hagno1310/NezFocus/issues/26) Phòng voice: LiveKit, TURN, vào phòng, mic / camera
   - Cần trước: P0-5
   - [x] mốc **P3-B1.1** [#137](https://github.com/Hagno1310/NezFocus/issues/137) Hợp đồng voice trong shared · hợp đồng · người kia chờ: P3-A3 (Hiếu)
-- [ ] **P3-B5** [#29](https://github.com/Hagno1310/NezFocus/issues/29) Push FCM (NOTIF-02)
+- [x] **P3-B5** [#29](https://github.com/Hagno1310/NezFocus/issues/29) Push FCM (NOTIF-02)
   - Cần trước: P2-B4
-  - [ ] mốc **P3-B5.1** [#152](https://github.com/Hagno1310/NezFocus/issues/152) Hợp đồng push trong shared · hợp đồng · người kia chờ: P4-A1 (Hiếu)
-  - [ ] mốc **P3-B5.2** [#153](https://github.com/Hagno1310/NezFocus/issues/153) Backend push: token, gửi FCM theo APP_STATE (NOTIF-02) · người kia chờ: P4-A1 (Hiếu)
+  - [x] mốc **P3-B5.1** [#152](https://github.com/Hagno1310/NezFocus/issues/152) Hợp đồng push trong shared · hợp đồng · người kia chờ: P4-A1 (Hiếu)
+  - [x] mốc **P3-B5.2** [#153](https://github.com/Hagno1310/NezFocus/issues/153) Backend push: token, gửi FCM theo APP_STATE (NOTIF-02) · người kia chờ: P4-A1 (Hiếu)
 - [ ] **P3-B2** [#27](https://github.com/Hagno1310/NezFocus/issues/27) Cài đặt Phòng học (STUDY-11, S-SET-07) · **Thùy chạy phiên**
   - Cần trước: P1-A2 (Hiếu), P3-B3
   - [ ] mốc **P3-B2.1** [#143](https://github.com/Hagno1310/NezFocus/issues/143) Hợp đồng Phòng học trong shared (focus_control, chu kỳ) · hợp đồng · người kia chờ: P4-A2 (Hiếu)

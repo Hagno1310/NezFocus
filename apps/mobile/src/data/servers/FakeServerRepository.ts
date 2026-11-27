@@ -1,4 +1,6 @@
 import {
+  DEFAULT_CYCLE_CONFIG,
+  isStudyRoomSettingsOnly,
   CreateChannelRequest,
   DEFAULT_EVERYONE_PERMISSIONS,
   ErrorCode,
@@ -119,6 +121,7 @@ function buildServer(
         type === 'voice' && summary.template === 'study_server'
           ? 'everyone'
           : 'off',
+      default_cycle_config: type === 'voice' ? DEFAULT_CYCLE_CONFIG : null,
       // SRS 8.5.3: #thong-bao has its own @everyone deny SEND_MESSAGES.
       permissions_synced: name !== 'thong-bao',
       permission_overwrites:
@@ -454,6 +457,8 @@ export function createFakeServerRepository(
             ? (body.focus_control ??
               (server.template === 'study_server' ? 'everyone' : 'off'))
             : 'off',
+        default_cycle_config:
+          body.type === 'voice' ? DEFAULT_CYCLE_CONFIG : null,
         permissions_synced:
           body.type === 'category' || (parent_id !== null && !viewers),
         // v1.9 CR-17: private at creation, from the category's overwrites.
@@ -474,6 +479,22 @@ export function createFakeServerRepository(
       const server = serverOf(channelId);
       const channel = server?.channels.find((c) => c.id === channelId);
       if (!server || !channel) throw fail(404, ErrorCode.NotFound);
+      // REQ-STUDY-11 (S-SET-07): voice only (CR-28 #37).
+      if (isStudyRoomSettingsOnly(body)) {
+        if (channel.type !== 'voice')
+          throw invalid('focus_control', 'NOT_VOICE');
+        const next = {
+          ...channel,
+          focus_control: body.focus_control ?? channel.focus_control,
+          default_cycle_config:
+            body.default_cycle_config ?? channel.default_cycle_config,
+        };
+        setChannels(
+          server,
+          server.channels.map((c) => (c.id === channelId ? next : c)),
+        );
+        return next;
+      }
       // REQ-ROLE-03 v1.7: off copies the category's overwrites, on drops the channel's own.
       if (body.name === undefined) {
         const synced = body.permissions_synced!;

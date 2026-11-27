@@ -207,6 +207,9 @@ export const en: Strings = {
       editNote:
         'The current round stays; the new cycle starts from the next round.',
       apply: 'Apply from the next round',
+      defaultTitle: 'Default cycle',
+      defaultNote: 'Applies from the next start',
+      save: 'Save',
       custom: 'Custom',
       longOff: 'Long break: off · choose Custom to turn it on',
       focus: 'Focus (5–120)',
@@ -573,6 +576,38 @@ export const en: Strings = {
       network:
         "Couldn't create the server. Check your connection and try again.",
       offline: 'You need a connection to create or join a server',
+    },
+    // S-SET-07.
+    studyRoom: {
+      title: 'Study room',
+      session: 'A study session is running · {{count}} people',
+      whoSection: 'WHO CAN START A STUDY SESSION',
+      everyone: 'Everyone',
+      everyoneHint: 'Anyone in the room can start',
+      managers: 'Managers only',
+      managersHint: 'People with Manage study rooms',
+      off: 'Off',
+      offHint: 'A plain voice room, no study sessions',
+      hostKeeps:
+        'You still control the running session. The new rule applies from the next start.',
+      controllerKeeps:
+        'Whoever controls the running session keeps control. The new rule applies from the next start.',
+      offNote:
+        'This is a plain voice room. Choose Everyone or Managers only to turn the study room back on.',
+      cycleSection: 'DEFAULT CYCLE',
+      cycle: 'Cycle',
+      cycleHint:
+        'Filled in when a study session starts. A running session does not change.',
+      offTitle:
+        'Turn off the study room and stop the session ({{count}} people)?',
+      offTitleAlone: 'Turn off the study room and stop the session?',
+      offBody:
+        'The channel becomes a plain voice room. Minutes studied are kept.',
+      cancel: 'Cancel',
+      offConfirm: 'Turn off',
+      saveFailed: 'Could not save the change',
+      retry: 'Retry',
+      changedBy: '{{name}} just changed the study room settings',
     },
     channels: {
       createTitle: 'Create channel',

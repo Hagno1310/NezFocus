@@ -14,6 +14,7 @@ export function RadioRow({
   leading,
   selected,
   onPress,
+  disabled = false,
 }: {
   label: string;
   description?: string;
@@ -22,14 +23,17 @@ export function RadioRow({
   leading?: ReactNode;
   selected: boolean;
   onPress: () => void;
+  // S-SET-07 `offline`: the cached choice shows, nothing can be picked.
+  disabled?: boolean;
 }) {
   const { colors } = useTheme();
   return (
     <Pressable
       accessibilityRole="radio"
       accessibilityLabel={description ? `${label}, ${description}` : label}
-      accessibilityState={{ selected }}
+      accessibilityState={{ selected, disabled }}
       onPress={onPress}
+      disabled={disabled}
       style={({ pressed }) => [
         styles.row,
         description !== undefined && styles.withDescription,
@@ -39,14 +43,22 @@ export function RadioRow({
       <Icon
         as={selected ? CircleDot : Circle}
         size="lg"
-        color={selected ? 'primary' : 'text-tertiary'}
+        color={selected && !disabled ? 'primary' : 'text-tertiary'}
       />
       {typeIcon && <Icon as={typeIcon} size="md" color="text-secondary" />}
       {leading && <View style={styles.leading}>{leading}</View>}
       <View style={styles.text}>
-        <Text numberOfLines={1}>{label}</Text>
+        <Text
+          numberOfLines={1}
+          color={disabled ? 'text-tertiary' : 'text-primary'}
+        >
+          {label}
+        </Text>
         {description && (
-          <Text variant="label" color="text-secondary">
+          <Text
+            variant="label"
+            color={disabled ? 'text-tertiary' : 'text-secondary'}
+          >
             {description}
           </Text>
         )}

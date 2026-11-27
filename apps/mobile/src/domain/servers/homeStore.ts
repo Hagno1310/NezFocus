@@ -97,7 +97,11 @@ export const addServer = (server: ServerResponse) =>
 
 // What a request just answered, before (or instead of) its CHANNEL_* event.
 export const upsertChannel = (channel: ChannelResponse) =>
-  applyGatewayEvent({ t: 'CHANNEL_UPDATE', d: channel, s: 0 });
+  applyGatewayEvent({
+    t: 'CHANNEL_UPDATE',
+    d: { ...channel, updated_by: null },
+    s: 0,
+  });
 
 export const applyChannels = (changed: readonly ChannelResponse[]) =>
   changed.forEach(upsertChannel);

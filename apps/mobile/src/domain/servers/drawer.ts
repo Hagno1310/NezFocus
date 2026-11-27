@@ -1,5 +1,6 @@
 import type {
   ChannelResponse,
+  ChannelUpdateEvent,
   DispatchEvent,
   RoleResponse,
   ServerSummary,
@@ -93,6 +94,15 @@ const upsert = <T extends { id: string }>(list: readonly T[], item: T) =>
     ? list.map((x) => (x.id === item.id ? item : x))
     : [...list, item];
 
+// CR-28 #37: updated_by belongs to the event (who to name in a Toast), not to the channel.
+const withoutUpdater = (
+  c: ChannelResponse | ChannelUpdateEvent,
+): ChannelResponse => {
+  if (!('updated_by' in c)) return c;
+  const { updated_by: _, ...channel } = c;
+  return channel;
+};
+
 function apply(s: HomeState, e: DispatchEvent, meId: string | null): HomeState {
   switch (e.t) {
     case 'READY': {
@@ -168,7 +178,7 @@ function apply(s: HomeState, e: DispatchEvent, meId: string | null): HomeState {
       const next =
         e.t === 'CHANNEL_DELETE'
           ? list.filter((c) => c.id !== e.d.id)
-          : upsert(list, e.d);
+          : upsert(list, withoutUpdater(e.d));
       return { ...s, channels: { ...s.channels, [e.d.server_id]: next } };
     }
     default:

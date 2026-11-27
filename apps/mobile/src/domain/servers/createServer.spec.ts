@@ -19,6 +19,7 @@ const channel = (
   parent_id,
   position,
   focus_control: 'off' as const,
+  default_cycle_config: null,
   permissions_synced: true,
   permission_overwrites: [],
   last_message_id: null,

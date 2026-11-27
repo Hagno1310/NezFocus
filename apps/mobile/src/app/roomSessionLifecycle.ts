@@ -5,9 +5,12 @@ import { gatewayClient } from '../data/gateway';
 import { playPhaseAlert } from '../data/phaseAlert';
 import { gatewayStore, onGatewayEvent } from '../domain/gateway/gatewayStore';
 import {
+  dropSummary,
   reduceRoomSessions,
   roomSessionsStore,
 } from '../domain/study/roomSessions';
+import { homeStore } from '../domain/servers/homeStore';
+import { voiceView } from '../domain/voice/voiceView';
 import { voiceStore } from '../domain/voice/voiceSession';
 import { i18n } from '../shared/i18n';
 import { showToast } from '../shared/ui/Toast';
@@ -26,9 +29,24 @@ function mine() {
 }
 
 export function startRoomSessionLifecycle() {
-  const stopEvents = onGatewayEvent((event) =>
-    roomSessionsStore.setState((s) => reduceRoomSessions(s, event, Date.now())),
-  );
+  const stopEvents = onGatewayEvent((event) => {
+    roomSessionsStore.setState((s) => reduceRoomSessions(s, event, Date.now()));
+    // S-ROOM-EDGE `ended-elsewhere`: not on the room's screen → a Toast; the summary waits there.
+    if (event.t !== 'FOCUS_SESSION_END' || event.d.focused_seconds === null)
+      return;
+    const e = event.d;
+    if (voiceView.getState().open?.channelId === e.channel_id) return;
+    const name = homeStore
+      .getState()
+      .channels[e.server_id]?.find((c) => c.id === e.channel_id)?.name;
+    if (name)
+      showToast({
+        message: i18n.t('room.endedElsewhere', {
+          name,
+          minutes: Math.floor((e.focused_seconds ?? 0) / 60),
+        }),
+      });
+  });
 
   const beat = setInterval(() => {
     const f = mine();
@@ -70,6 +88,9 @@ export function startRoomSessionLifecycle() {
   };
   const stopArm = roomSessionsStore.subscribe(arm);
   const stopCall = voiceStore.subscribe((s, prev) => {
+    // The summary stays until a new session or I leave the room (spec 03 › Chỉ ghi luật).
+    const was = prev.call?.channelId;
+    if (was && was !== s.call?.channelId) dropSummary(was);
     if (
       s.call?.channelId !== prev.call?.channelId ||
       s.call?.phase !== prev.call?.phase

@@ -1,6 +1,7 @@
 import type {
   CycleConfig,
   FocusPhase,
+  FocusSessionEnd,
   FocusSessionState,
   RoomTimer,
 } from '@nezfocus/shared';
@@ -115,3 +116,80 @@ export function subLine(v: RoomViewInput): SubLine | null {
     return { key: 'joinedAt', at: session.me.counting_since };
   return { key: 'today', minutes: v.todayMinutes };
 }
+
+// STUDY-11 (same rule as the backend's RoomSessionService.successor): the longest seat after mine
+// whose holder may start, i.e. anyone, or MANAGE_STUDY_ROOMS when focus_control = managers.
+export function successorOf(
+  seats: readonly { user_id: string; joined_at: string }[],
+  meId: string,
+  focusControl: 'everyone' | 'managers' | 'off',
+  canManage: (userId: string) => boolean,
+): string | null {
+  const next = [...seats]
+    .filter((s) => s.user_id !== meId)
+    .sort((a, b) => a.joined_at.localeCompare(b.joined_at))
+    .find((s) => focusControl !== 'managers' || canManage(s.user_id));
+  return next?.user_id ?? null;
+}
+
+export type RoomNotice =
+  | { key: 'hostToMe' | 'hostLeftToMe'; from: string | null }
+  | { key: 'hostToOther'; to: string }
+  | { key: 'resumedBy'; by: string };
+
+// The Toast an UPDATE brings (S-ROOM-02 `host-transferred`, `no-host-paused`; edge
+// `host-left-paused`). A Start or my own press brings none.
+export function roomNotice(
+  prev: FocusSessionState,
+  next: FocusSessionState,
+  meId: string,
+): RoomNotice | null {
+  if (prev.id !== next.id) return null;
+  if (prev.host_id !== next.host_id) {
+    if (next.host_id === meId)
+      return {
+        key: next.status === 'paused' ? 'hostLeftToMe' : 'hostToMe',
+        from: prev.host_id,
+      };
+    return next.host_id ? { key: 'hostToOther', to: next.host_id } : null;
+  }
+  const by = next.last_action?.by;
+  if (
+    prev.status === 'paused' &&
+    next.status === 'running' &&
+    next.host_id === null &&
+    next.last_action?.action === 'resume' &&
+    by &&
+    by !== meId
+  )
+    return { key: 'resumedBy', by };
+  return null;
+}
+
+export type SummaryReason =
+  | { key: 'stoppedByMe' }
+  | { key: 'stoppedBy' | 'focusOffBy'; by: string }
+  | { key: 'empty' };
+
+// S-ROOM-EDGE `host-stopped` and its kin: why it ended, and my whole minutes (null: under 1).
+export function summaryOf(end: FocusSessionEnd, meId: string) {
+  const by = end.ended_by;
+  const reason: SummaryReason =
+    end.end_reason === 'focus_disabled' && by
+      ? { key: 'focusOffBy', by }
+      : end.end_reason === 'stopped' && by
+        ? by === meId
+          ? { key: 'stoppedByMe' }
+          : { key: 'stoppedBy', by }
+        : { key: 'empty' };
+  const seconds = end.focused_seconds ?? 0;
+  return { reason, minutes: seconds < 60 ? null : Math.floor(seconds / 60) };
+}
+
+// S-ROOM-05 › Rời phòng: `seconds` = mine in the session, null if I never took part.
+export const leftToast = (seconds: number | null) =>
+  seconds === null
+    ? ({ key: 'left' } as const)
+    : seconds < 60
+      ? ({ key: 'leftNone' } as const)
+      : ({ key: 'leftMinutes', minutes: Math.floor(seconds / 60) } as const);

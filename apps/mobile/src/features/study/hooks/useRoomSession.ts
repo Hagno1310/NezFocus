@@ -1,6 +1,7 @@
 import {
   roomTimer,
   type FocusPhase,
+  type FocusSessionAction,
   type FocusSessionState,
   type StartFocusSessionRequest,
 } from '@nezfocus/shared';
@@ -109,4 +110,23 @@ export function useRoomLines(): (channelId: string) => RoomLine | null {
       label: roomListLabel(t, timer),
     };
   };
+}
+
+// STUDY-11 over REST (S-ROOM-02 Tạm dừng / Tiếp tục, S-ROOM-04, S-ROOM-05 `stop`); `stop` answers
+// 204 and the END comes over the Gateway.
+export function useRoomAction() {
+  return useMutation({
+    mutationFn: async (v: { id: string; action: FocusSessionAction }) => {
+      const sent = Date.now();
+      const r = await roomSessionRepository.act(v.id, v.action);
+      return { r, sent };
+    },
+    onSuccess: ({ r, sent }) => {
+      if (r)
+        acceptRoomSession(r.focus_session, r.backend_time, {
+          sent,
+          received: Date.now(),
+        });
+    },
+  });
 }

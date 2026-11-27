@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { useStore } from 'zustand';
 import { friendsStore } from '../../../domain/friends/friends';
 import { gatewayStore } from '../../../domain/gateway/gatewayStore';
+import { myChannelPermissions } from '../../../domain/servers/channelPermissions';
 import { homeStore } from '../../../domain/servers/homeStore';
 import { sessionStore } from '../../../domain/session/sessionStore';
 import { mediaDenied } from '../../../domain/voice/mediaDenied';
@@ -123,6 +124,21 @@ export function useVoiceRoom(
   });
 
   const perms = channel && access ? access.channelPerms(channel) : 0n;
+  const channels = useStore(homeStore, (s) => s.channels[serverId]);
+  // Someone else's permissions here (S-ROOM-05: who may take the Host seat).
+  const permsOf = (userId: string) => {
+    const m = members?.find((x) => x.user.id === userId);
+    return m && channel && access
+      ? myChannelPermissions(
+          access.server,
+          access.roles ?? [],
+          userId,
+          m.role_ids,
+          channel,
+          channels ?? [],
+        )
+      : 0n;
+  };
   const nameOf = (id: string) => {
     const user = people.get(id);
     return user?.display_name ?? user?.username ?? '';
@@ -151,5 +167,7 @@ export function useVoiceRoom(
     cameraPreviewed,
     perms,
     nameOf,
+    permsOf,
+    seats: room,
   };
 }

@@ -1,11 +1,19 @@
-import { roomTimer, type FocusSessionState } from '@nezfocus/shared';
+import {
+  roomTimer,
+  type FocusSessionEnd,
+  type FocusSessionState,
+} from '@nezfocus/shared';
 import { describe, expect, it } from 'vitest';
 import {
   countLine,
   cycleLines,
+  leftToast,
+  roomNotice,
+  summaryOf,
   roleChip,
   roomControls,
   subLine,
+  successorOf,
   type RoomViewInput,
 } from './roomView';
 import { session } from './roomSessions.fixture';
@@ -192,5 +200,114 @@ describe('S-ROOM-02 lines', () => {
       key: 'startedAt',
       at: '2026-10-18T14:11:00.000Z',
     });
+  });
+});
+
+describe('STUDY-11 the next Host (S-ROOM-05 host-leave)', () => {
+  const seat = (user_id: string, joined_at: string) => ({ user_id, joined_at });
+  const seats = [
+    seat('1', '2026-10-18T14:00:00.000Z'), // An, leaving
+    seat('3', '2026-10-18T14:20:00.000Z'),
+    seat('2', '2026-10-18T14:05:00.000Z'), // Bình, longest after An
+  ];
+
+  it('the longest stay after me takes over when anyone may start', () => {
+    expect(successorOf(seats, '1', 'everyone', () => false)).toBe('2');
+  });
+
+  it('managers only: the longest stay who has MANAGE_STUDY_ROOMS', () => {
+    expect(successorOf(seats, '1', 'managers', (id) => id === '3')).toBe('3');
+  });
+
+  it('nobody may: null (no-successor)', () => {
+    expect(successorOf(seats, '1', 'managers', () => false)).toBeNull();
+  });
+});
+
+describe('S-ROOM-02 Toasts from an UPDATE', () => {
+  it('host-transferred: the Host seat comes to me → "Bạn đang điều khiển phiên học"', () => {
+    const prev = session({ host_id: '2' });
+    expect(roomNotice(prev, session({ host_id: '1' }), '1')).toEqual({
+      key: 'hostToMe',
+      from: '2',
+    });
+  });
+
+  it('host-left-paused: to me while paused → "Bình đã rời phòng · bạn đang điều khiển phiên học"', () => {
+    const paused = {
+      status: 'paused' as const,
+      phase_ends_at: null,
+      paused_remaining_ms: 600_000,
+    };
+    expect(
+      roomNotice(
+        session({ ...paused, host_id: '2' }),
+        session({ ...paused, host_id: '1' }),
+        '1',
+      ),
+    ).toEqual({ key: 'hostLeftToMe', from: '2' });
+  });
+
+  it('someone else takes over → "Chi đang điều khiển phiên học"; nobody → no Toast', () => {
+    expect(
+      roomNotice(session({ host_id: '2' }), session({ host_id: '3' }), '1'),
+    ).toEqual({ key: 'hostToOther', to: '3' });
+    expect(
+      roomNotice(session({ host_id: '2' }), session({ host_id: null }), '1'),
+    ).toBeNull();
+  });
+
+  it('no-host-paused: a member resumes → "Bình đã tiếp tục phiên học" for everyone else', () => {
+    const prev = session({
+      host_id: null,
+      status: 'paused',
+      phase_ends_at: null,
+      paused_remaining_ms: 600_000,
+    });
+    const next = session({
+      host_id: null,
+      last_action: { by: '2', action: 'resume' },
+    });
+    expect(roomNotice(prev, next, '1')).toEqual({ key: 'resumedBy', by: '2' });
+    expect(roomNotice(prev, next, '2')).toBeNull();
+  });
+});
+
+describe('S-ROOM-EDGE summary and leaving', () => {
+  const end = (extra: Partial<FocusSessionEnd>): FocusSessionEnd => ({
+    id: '900',
+    channel_id: '700',
+    server_id: '10',
+    ended_at: '2026-10-18T14:47:00.000Z',
+    end_reason: 'stopped',
+    ended_by: '2',
+    focused_seconds: 31 * 60,
+    ...extra,
+  });
+
+  it('host-stopped / ended-self-host / ended-focus-off (STUDY-01 AC10)', () => {
+    expect(summaryOf(end({}), '1')).toEqual({
+      reason: { key: 'stoppedBy', by: '2' },
+      minutes: 31,
+    });
+    expect(summaryOf(end({ ended_by: '1' }), '1').reason).toEqual({
+      key: 'stoppedByMe',
+    });
+    expect(
+      summaryOf(end({ end_reason: 'focus_disabled' }), '1').reason,
+    ).toEqual({ key: 'focusOffBy', by: '2' });
+  });
+
+  it('under a minute: no minutes ("Chưa đủ 1 phút trong phiên này")', () => {
+    expect(summaryOf(end({ focused_seconds: 59 }), '1').minutes).toBeNull();
+  });
+
+  it('left-room-toast: minutes counted, none yet, or never a Participant', () => {
+    expect(leftToast(31 * 60 + 20)).toEqual({
+      key: 'leftMinutes',
+      minutes: 31,
+    });
+    expect(leftToast(40)).toEqual({ key: 'leftNone' });
+    expect(leftToast(null)).toEqual({ key: 'left' });
   });
 });

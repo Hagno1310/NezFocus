@@ -29,7 +29,9 @@ import {
   countLine,
   cycleLines,
   roleChip,
+  roomNotice,
   subLine,
+  type RoomNotice,
   type CycleLine,
   type RoomViewInput,
   type SubLine,
@@ -111,6 +113,7 @@ export function RoomSessionBody({
     now,
   );
   useStreakToast(joined && timer.phase === 'focus', todayMinutes, stats);
+  useNoticeToast(joined ? session : null, meId, nameOf);
 
   const people = joined ? tiles : tiles.filter((x) => !x.self);
   const v: RoomViewInput = {
@@ -397,6 +400,37 @@ function useJoinedAt(joined: boolean, session: FocusSessionState, now: number) {
       });
   }, [join, t]);
   return join?.at ?? null;
+}
+
+// S-ROOM-02 `host-transferred`, `no-host-paused`; edge `host-left-paused`.
+function useNoticeToast(
+  session: FocusSessionState | null,
+  meId: string,
+  nameOf: (userId: string) => string,
+) {
+  const { t } = useTranslation();
+  const [seen, setSeen] = useState(session);
+  const [notice, setNotice] = useState<RoomNotice | null>(null);
+  if (seen !== session) {
+    setSeen(session);
+    setNotice(seen && session ? roomNotice(seen, session, meId) : null);
+  }
+  useEffect(() => {
+    if (!notice) return;
+    const name = (id: string | null) => (id ? nameOf(id) : '');
+    showToast({
+      message:
+        notice.key === 'hostToOther'
+          ? t('room.notice.hostToOther', { name: name(notice.to) })
+          : notice.key === 'resumedBy'
+            ? t('room.notice.resumedBy', { name: name(notice.by) })
+            : notice.key === 'hostLeftToMe'
+              ? t('room.notice.hostLeftToMe', { name: name(notice.from) })
+              : t('room.notice.hostToMe'),
+    });
+    // Only a new notice, not a new nameOf.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notice, t]);
 }
 
 // Edge `streak-reached` (STUDY-03 AC5): today's minutes reach 15 in the middle of a focus.

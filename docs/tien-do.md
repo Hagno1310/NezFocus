@@ -181,7 +181,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
   - [x] mốc **P3-B2.1** [#143](https://github.com/Hagno1310/NezFocus/issues/143) Hợp đồng Phòng học trong shared (focus_control, chu kỳ) · hợp đồng · người kia chờ: P4-A2 (Hiếu)
 - [ ] **P3-B3** [#28](https://github.com/Hagno1310/NezFocus/issues/28) Room Session: phiên học chung trong Phòng học (STUDY-01, S-ROOM-02…06, S-ROOM-08)
   - Cần trước: P1-B1, P1-B2, P3-B1, P3-B2
-  - [ ] mốc **P3-B3.1** [#145](https://github.com/Hagno1310/NezFocus/issues/145) Hợp đồng Room Session trong shared · hợp đồng · người kia chờ: P3-A3 (Hiếu), P3-A4 (Hiếu)
+  - [x] mốc **P3-B3.1** [#145](https://github.com/Hagno1310/NezFocus/issues/145) Hợp đồng Room Session trong shared · hợp đồng · người kia chờ: P3-A3 (Hiếu), P3-A4 (Hiếu)
 - [ ] **P3-B4** [#151](https://github.com/Hagno1310/NezFocus/issues/151) Báo chuyển pha khi khóa máy + xin quyền thông báo theo ngữ cảnh (S-ROOM-07, S-ROOM-09)
   - Cần trước: P1-B2, P3-B1, P3-B3
 - [ ] **P3-B6** [#30](https://github.com/Hagno1310/NezFocus/issues/30) Gọi thoại / video 1-1 và mời vào phòng bằng link (DMVC-01, DMVC-03, STUDY-16)

@@ -53,6 +53,8 @@ describe('DM contract', () => {
       relationships: [],
       private_channels: [dm],
       voice_states: [],
+      focus_sessions: [],
+      backend_time: '2026-10-18T14:47:00.000Z',
     };
     const e = parseDispatch({ op: 0, s: 1, t: 'READY', d: ready });
     expect(e?.t === 'READY' && e.d.private_channels).toEqual([dm]);

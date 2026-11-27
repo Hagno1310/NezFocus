@@ -210,6 +210,8 @@ describe('seats and my seat ending (CR-28 #30)', () => {
             away: false,
           },
         ],
+        focus_sessions: [],
+        backend_time: '2026-11-26T14:00:00.000Z',
       },
     });
     session.apply(seatEvent({ user_id: '3' }));

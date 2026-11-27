@@ -70,6 +70,7 @@ export class GatewayListener
         (userId) => this.readStates.forReady(userId),
         (userId) => this.dms.openFor(userId),
         this.voice,
+        // ponytail: READY.focus_sessions stays [] until P3-B3.2 (#146) passes the Room Sessions here.
       );
       ws.on('message', (data, isBinary) => {
         // A binary frame is not JSON text: receive('') closes with 4002.

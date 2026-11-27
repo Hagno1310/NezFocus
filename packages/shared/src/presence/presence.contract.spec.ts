@@ -103,6 +103,8 @@ describe('READY presence', () => {
         relationships: [],
         private_channels: [],
         voice_states: [],
+        focus_sessions: [],
+        backend_time: '2026-10-18T14:47:00.000Z',
       },
     });
     expect(e?.t === 'READY' && e.d.preferred_status).toBe('invisible');

@@ -1,4 +1,9 @@
-import type { InviteResponse, ServerBan } from '@nezfocus/shared';
+import {
+  SERVER_RESTORE_DAYS,
+  type DeletedServer,
+  type InviteResponse,
+  type ServerBan,
+} from '@nezfocus/shared';
 import { localTime } from '../study/stats';
 
 // S-SET-04 `invites`: "3/10 lượt"; an unlimited invite counts its uses only ("5 lượt").
@@ -51,3 +56,15 @@ export function banDetailLine(b: ServerBan, timeZone: string) {
 
 // Spec 08 S-SET-04: the search field only when more than 10 people are banned.
 export const BAN_SEARCH_FROM = 11;
+
+const DAY_MS = 24 * 60 * 60_000;
+
+// 02 S-HOME-06 `restore-list` "Còn 30 ngày để khôi phục": whole days left, 1 to 30.
+export const daysLeft = (
+  s: Pick<DeletedServer, 'restore_until'>,
+  now: number,
+) =>
+  Math.min(
+    SERVER_RESTORE_DAYS,
+    Math.max(1, Math.ceil((Date.parse(s.restore_until) - now) / DAY_MS)),
+  );

@@ -600,6 +600,57 @@ export const vi = {
       offlineOne: 'Bạn không còn ở {{server}}',
       offlineMany: 'Bạn không còn ở {{count}} server',
       view: 'Xem',
+      // 02 S-HOME-EDGE "Server bị Owner xóa khi đang xem" (SRV-05 AC4)
+      deletedTitle: '{{server}} đã bị xóa',
+      deletedBody: 'Owner đã xóa server này.',
+    },
+    // 02 S-HOME-09 (SRV-05, CR-17 #9)
+    leave: {
+      title: 'Rời {{server}}?',
+      body: 'Bạn sẽ cần lời mời mới để quay lại.',
+      inRoom: 'Bạn cũng sẽ rời {{room}}.',
+      successor: '{{name}} sẽ điều khiển phiên học.',
+      noSuccessor: 'Phiên học vẫn chạy nhưng chưa có người điều khiển.',
+      confirm: 'Rời server',
+      ownerTitle: 'Bạn đang là Owner của {{server}}',
+      ownerBody:
+        'Chuyển quyền Owner cho một thành viên khác trước khi rời server.',
+      transfer: 'Chuyển quyền Owner',
+      later: 'Để sau',
+      failed: 'Không kết nối được · kiểm tra mạng rồi thử lại',
+    },
+    // 08 S-SET-08, 10 S-MOD-03 `password`
+    transfer: {
+      title: 'Chuyển quyền Owner',
+      intro:
+        'Chọn người sẽ là Owner của {{server}}. Bạn vẫn giữ các vai trò hiện có.',
+      search: 'Tìm thành viên',
+      noMatch: 'Không có thành viên nào tên “{{query}}”',
+      aloneTitle: 'Server chưa có thành viên khác',
+      aloneBody: 'Mời bạn bè vào trước, hoặc xóa server nếu không dùng nữa.',
+      confirmTitle: 'Chuyển quyền Owner cho {{name}}?',
+      confirmBody:
+        '{{name}} sẽ là Owner của {{server}}. Bạn vẫn giữ các vai trò hiện có nhưng không còn là Owner.',
+      confirm: 'Chuyển quyền',
+      done: '{{name}} đã là Owner',
+      gone: '{{name}} không còn trong server',
+    },
+    // 08 S-SET-08 `delete-confirm` / `deleted`, 10 S-MOD-03 `type-name`
+    deleteServer: {
+      title: 'Xóa {{server}}?',
+      body: 'Server và mọi kênh, tin nhắn, việc cần làm sẽ bị xóa với {{count}} thành viên. Bạn có 30 ngày để khôi phục.',
+      label: 'Nhập tên server để xác nhận',
+      confirm: 'Xóa server',
+      done: 'Đã xóa {{server}} · Khôi phục được trong 30 ngày',
+    },
+    // 02 S-HOME-06 `restore` / `restore-list`
+    restore: {
+      row: 'Server đã xóa',
+      title: 'Server đã xóa',
+      note: 'Server bạn đã xóa được giữ 30 ngày. Chỉ Owner thấy và khôi phục được.',
+      daysLeft: 'Còn {{count}} ngày để khôi phục',
+      action: 'Khôi phục',
+      done: 'Đã khôi phục {{server}}',
     },
     moderation: {
       title: 'KIỂM DUYỆT',
@@ -843,6 +894,18 @@ export const vi = {
       MANAGE_STUDY_ROOMS: 'Điều khiển mọi phiên học, đổi cài đặt Phòng học.',
       MANAGE_TASKS: 'Sửa, xóa, đổi trạng thái mọi việc.',
     } as Partial<Record<string, string>>,
+  },
+  // 10 S-MOD-03 `password` (chuyển quyền Owner, xóa tài khoản)
+  confirm: {
+    passwordLabel: 'Mật khẩu của bạn',
+    passwordPlaceholder: 'Nhập mật khẩu',
+    passwordEmpty: 'Nhập mật khẩu',
+    passwordWrong: 'Mật khẩu không đúng',
+    forgot: 'Quên mật khẩu?',
+    rateLimited:
+      'Bạn đã nhập sai nhiều lần. Thử lại sau {{count}} phút, hoặc dùng Quên mật khẩu?',
+    resetDone: 'Đã đổi mật khẩu. Nhập mật khẩu mới để tiếp tục.',
+    failed: 'Chưa thực hiện được. Kiểm tra kết nối rồi thử lại.',
   },
   me: {
     streak_one: '🔥 {{count}} ngày',

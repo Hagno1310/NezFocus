@@ -17,6 +17,7 @@ export type PushNavigation = {
   ready(): boolean;
   showHome(): void; // the Home tab at its root, where the opened channel / DM shows
   openFriendRequests(): void; // S-DM-04 `pending`
+  openServerSettings(serverId: string): void; // S-SET-01
 };
 
 const READY_WAIT_MS = 15_000;
@@ -33,6 +34,8 @@ const until = (ok: () => boolean, ms: number) =>
 // drawer's servers (a channel) or the DM list (a DM) before opening, as a tapped row would.
 async function open(target: PushTarget, nav: PushNavigation) {
   const loaded = () => {
+    if (target.kind === 'server-settings')
+      return homeStore.getState().servers !== null;
     if (target.kind !== 'link') return true;
     return target.link.kind === 'channel'
       ? homeStore.getState().servers !== null
@@ -45,6 +48,8 @@ async function open(target: PushTarget, nav: PushNavigation) {
   );
   if (sessionStore.getState().status !== 'signed-in' || !nav.ready()) return;
   if (target.kind === 'friend-requests') return nav.openFriendRequests();
+  if (target.kind === 'server-settings')
+    return nav.openServerSettings(target.serverId);
   // REQ-NOTIF-02 AC3: the message in view with `highlight`; a deleted one → Toast (REQ-MSG-05).
   if ((await openMessageLink(target.link)) === 'opened') nav.showHome();
 }

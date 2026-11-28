@@ -98,14 +98,16 @@ export class ServerLifecycleService implements OnModuleInit, OnModuleDestroy {
     if (server.ownerId !== userId) throw notOwner();
     const rooms = await this.repo.voiceChannelIds(serverId);
     if (!(await this.repo.softDelete(serverId, this.clock.now()))) return;
+    await this.cache.invalidateServer(serverId);
+    // First, so the app drops the server (and leaves its room) before the room's own
+    // `channel_deleted` copy could show "{phòng} không còn khả dụng".
+    await this.events.toServer(serverId, 'SERVER_DELETE', {
+      id: serverId.toString(),
+    });
     for (const channelId of rooms)
       await this.voice
         .roomDeleted(serverId, channelId)
         .catch((err: unknown) => this.logger.error(`room ${channelId}`, err));
-    await this.cache.invalidateServer(serverId);
-    await this.events.toServer(serverId, 'SERVER_DELETE', {
-      id: serverId.toString(),
-    });
     await this.audit.record({
       serverId,
       actorId: userId,

@@ -1,6 +1,7 @@
 import { SERVER_NAME_MAX, type ServerTemplate } from '@nezfocus/shared';
 import { usePreventRemove } from '@react-navigation/native';
 import {
+  ArchiveRestore,
   Camera,
   Circle,
   CircleDot,
@@ -29,6 +30,7 @@ import { FormMessage } from '../../../shared/ui/FormMessage';
 import { Icon } from '../../../shared/ui/Icon';
 import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { SettingsRow } from '../../../shared/ui/SettingsRow';
+import { useDeletedServers } from '../hooks/useServerLifecycle';
 import { Text } from '../../../shared/ui/Text';
 import { TextField } from '../../../shared/ui/TextField';
 import type { ImageFile } from '../../../domain/attachments/AttachmentRepository';
@@ -47,6 +49,7 @@ type Props = {
   onCrop: (photo: PickedPhoto) => void;
   onClose: () => void;
   onJoinByCode: () => void;
+  onDeleted: () => void; // S-HOME-06 `restore-list`
   onCreated: () => void;
 };
 
@@ -56,8 +59,10 @@ export function CreateServerScreen({
   onCrop,
   onClose,
   onJoinByCode,
+  onDeleted,
   onCreated,
 }: Props) {
+  const deleted = useDeletedServers();
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { bottom } = useSafeAreaInsets();
@@ -160,6 +165,15 @@ export function CreateServerScreen({
               label={t('servers.create.join')}
               onPress={onJoinByCode}
             />
+            {/* S-HOME-06 `restore` (SRV-05 v1.7): only while there is one. */}
+            {!!deleted.data?.length && (
+              <SettingsRow
+                icon={ArchiveRestore}
+                label={t('servers.restore.row')}
+                value={String(deleted.data.length)}
+                onPress={onDeleted}
+              />
+            )}
           </>
         ) : (
           <>

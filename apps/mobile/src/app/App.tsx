@@ -177,6 +177,11 @@ export default function App() {
               params: { tab: 'pending', at: Date.now() },
             },
           }),
+        openServerSettings: (serverId) =>
+          navigationRef.navigate('Main', {
+            screen: 'Home',
+            params: { screen: 'ServerSettings', params: { serverId } },
+          }),
       }),
     [],
   );

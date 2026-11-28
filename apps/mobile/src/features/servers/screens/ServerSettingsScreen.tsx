@@ -8,7 +8,7 @@ import {
   Trash2,
   Users,
 } from 'lucide-react-native';
-import { useEffect, useEffectEvent } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,17 +25,25 @@ import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { SettingsRow } from '../../../shared/ui/SettingsRow';
 import { Text } from '../../../shared/ui/Text';
 import { showToast } from '../../../shared/ui/Toast';
+import { DeleteServerSheet } from '../components/DeleteServerSheet';
 import { ServerIcon } from '../components/ServerIcon';
 import { useServerAccess, useServerListLoaded } from '../hooks/useServerAccess';
 
 // Where each placeholder row gets its real screen.
 const TICKETS: Record<
-  Exclude<Row, 'overview' | 'roles' | 'members' | 'invites' | 'bans'>,
+  Exclude<
+    Row,
+    | 'overview'
+    | 'roles'
+    | 'members'
+    | 'invites'
+    | 'bans'
+    | 'transfer'
+    | 'delete'
+  >,
   string
 > = {
   reports: 'P3-A5 (#25)',
-  transfer: 'P3-A4 (#24)',
-  delete: 'P3-A4 (#24)',
 };
 
 const ICONS = {
@@ -48,8 +56,8 @@ const ICONS = {
   transfer: Crown,
 };
 
-// S-SET-01 `owner` / `offline`. Rows follow permission (Q17); Báo cáo (P3-A5 #25), Chuyển
-// quyền / Xóa server (P3-A4 #24) open a placeholder until their ticket.
+// S-SET-01 `owner` / `offline`. Rows follow permission (Q17); Báo cáo (P3-A5 #25) opens a
+// placeholder until its ticket. Xóa server: 08 S-SET-08 `delete-confirm` over this screen.
 export function ServerSettingsScreen({
   serverId,
   onBack,
@@ -58,6 +66,7 @@ export function ServerSettingsScreen({
   onMembers,
   onInvites,
   onBans,
+  onTransfer,
   onRow,
   onLostAccess,
 }: {
@@ -68,6 +77,7 @@ export function ServerSettingsScreen({
   onMembers: () => void;
   onInvites: () => void; // S-SET-04 `invites`
   onBans: () => void; // S-SET-04 `bans`
+  onTransfer: () => void; // S-SET-08 `transfer-picker`
   onRow: (title: string, ticket: string) => void;
   onLostAccess: () => void; // back to the drawer
 }) {
@@ -78,6 +88,7 @@ export function ServerSettingsScreen({
   const listLoaded = useServerListLoaded();
   const offline = useStore(gatewayStore, (s) => s.banner === 'offline');
   const rows = access?.settingsRows ?? [];
+  const [deleting, setDeleting] = useState(false);
 
   // Spec 08 › Edge case: losing every management permission closes the screen.
   const lost = managementLost({
@@ -144,7 +155,9 @@ export function ServerSettingsScreen({
                       ? onInvites()
                       : row === 'bans'
                         ? onBans()
-                        : onRow(label(row), TICKETS[row])
+                        : row === 'reports'
+                          ? onRow(label(row), TICKETS.reports)
+                          : undefined
             }
           />
         ))}
@@ -161,14 +174,14 @@ export function ServerSettingsScreen({
             <SettingsRow
               icon={Crown}
               label={label('transfer')}
-              onPress={() => onRow(label('transfer'), TICKETS.transfer)}
+              onPress={onTransfer}
             />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={label('delete')}
               accessibilityState={{ disabled: offline }}
               disabled={offline}
-              onPress={() => onRow(label('delete'), TICKETS.delete)}
+              onPress={() => setDeleting(true)}
               style={[styles.danger, offline && { opacity: disabledOpacity }]}
             >
               <Icon as={Trash2} size="lg" color="danger" />
@@ -177,6 +190,11 @@ export function ServerSettingsScreen({
           </>
         )}
       </ScrollView>
+      <DeleteServerSheet
+        server={server}
+        visible={deleting}
+        onDismiss={() => setDeleting(false)}
+      />
     </View>
   );
 }

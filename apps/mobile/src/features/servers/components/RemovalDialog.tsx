@@ -38,8 +38,8 @@ function closeServerScreens(nav: Nav, serverId: string) {
   });
 }
 
-// 02 S-HOME-EDGE `kicked` / `banned` / `banned-in-room` (03 S-ROOM-EDGE `kicked` uses the same,
-// chốt 28/11/2026): the background changes first, then this Dialog, one "Đã hiểu".
+// 02 S-HOME-EDGE `kicked` / `banned` / `banned-in-room`, a server deleted by its Owner (03
+// S-ROOM-EDGE `kicked` uses the same, chốt 28/11/2026): the background changes first, then this Dialog, one "Đã hiểu".
 export function RemovalHost({ nav }: { nav: Nav }) {
   const { t } = useTranslation();
   const shown = useStore(removalStore, (s) => s.shown);
@@ -56,19 +56,24 @@ export function RemovalHost({ nav }: { nav: Nav }) {
     dropPendingToasts();
     dismissRemoval();
   };
-  const kicked = shown?.action === 'kick';
+  // SRV-05 AC4 "Server bị Owner xóa khi đang xem": the same Dialog, its own words.
+  const words =
+    shown?.action === 'kick'
+      ? (['servers.removed.kickedTitle', 'servers.removed.kickedBody'] as const)
+      : shown?.action === 'deleted'
+        ? ([
+            'servers.removed.deletedTitle',
+            'servers.removed.deletedBody',
+          ] as const)
+        : ([
+            'servers.removed.bannedTitle',
+            'servers.removed.bannedBody',
+          ] as const);
   return (
     <Dialog
       visible={!!shown}
-      title={t(
-        kicked ? 'servers.removed.kickedTitle' : 'servers.removed.bannedTitle',
-        {
-          server: shown?.serverName ?? '',
-        },
-      )}
-      body={t(
-        kicked ? 'servers.removed.kickedBody' : 'servers.removed.bannedBody',
-      )}
+      title={t(words[0], { server: shown?.serverName ?? '' })}
+      body={t(words[1])}
       confirm={{ label: t('servers.removed.ok'), onPress: close }}
       onDismiss={close}
     >

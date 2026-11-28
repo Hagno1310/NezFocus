@@ -241,4 +241,15 @@ describe('uploads (S-HOME-05, SRS 5.3 Upload)', () => {
     storage.puts[1]!.fail(new TypeError('Network request failed'));
     await expect(first).resolves.toEqual({ ok: false, kind: 'network' });
   });
+
+  it('CR-17 #17: the server of a channel went away → its uploads stop and go, others stay', async () => {
+    const { uploads, storage, item } = setup();
+    const gone = uploads.add('7', photo);
+    const kept = uploads.add('8', photo);
+    await settle();
+    uploads.dropChannels(['7']);
+    expect(item(gone)).toBeUndefined();
+    expect(storage.puts[0]!.signal?.aborted).toBe(true);
+    expect(item(kept)).toMatchObject({ status: 'uploading' });
+  });
 });

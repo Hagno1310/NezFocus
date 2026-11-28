@@ -1,7 +1,13 @@
 import type { ServerSummary } from '@nezfocus/shared';
 import { describe, expect, it } from 'vitest';
 import { emptyHome, reduceHome, type HomeState } from './drawer';
-import { offlineRemovalToast, studiedMinutes } from './removal';
+import {
+  offlineRemovalToast,
+  removalCleared,
+  removalStore,
+  studiedMinutes,
+  type Removal,
+} from './removal';
 
 const server = (id: string, name: string): ServerSummary => ({
   id,
@@ -126,5 +132,37 @@ describe('AC7 `removed-while-offline`', () => {
     });
     expect(offlineRemovalToast(items, new Set(['n1', 'n2']))).toBeNull();
     expect(offlineRemovalToast(items, new Set(['n1']))?.ids).toEqual(['n2']);
+  });
+});
+
+describe('deleted by the Owner, left (REQ-SRV-05 AC4, AC5)', () => {
+  it('SERVER_DELETE takes the server off the rail like a kick; the next one is shown', () => {
+    const { state } = reduceHome(
+      home(),
+      { t: 'SERVER_DELETE', s: 1, d: { id: 'g1' } },
+      'me',
+    );
+    expect(state.servers!.map((s) => s.id)).toEqual(['g2', 'g3']);
+    expect(state.selectedServerId).toBe('g2');
+  });
+
+  it('a Dialog only for kick, ban and "đã bị xóa"; leaving or my own delete has none', () => {
+    const of = (action: Removal['action']): Removal => ({
+      serverId: 'g1',
+      serverName: 'Ôn thi Giải tích 2',
+      action,
+      reason: null,
+      minutes: null,
+    });
+    for (const action of ['kick', 'ban', 'deleted'] as const) {
+      removalStore.setState({ pending: of(action), shown: null });
+      removalCleared();
+      expect(removalStore.getState().shown?.action).toBe(action);
+    }
+    for (const action of ['left', 'deleted_here'] as const) {
+      removalStore.setState({ pending: of(action), shown: null });
+      removalCleared();
+      expect(removalStore.getState()).toEqual({ pending: null, shown: null });
+    }
   });
 });

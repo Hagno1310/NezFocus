@@ -198,6 +198,7 @@ export function Dialog({
   error,
   children,
   row = false,
+  stacked = false,
   onDismiss,
   lifted,
 }: {
@@ -211,6 +212,9 @@ export function Dialog({
   // Side by side whatever the label length, where a frame overrides C-09's stacking rule
   // (07 S-ME-01 `discard-confirm`).
   row?: boolean;
+  // Stacked, full width, whatever the label length (02 S-HOME-09 `owner-leave`, 01 S-AUTH-04
+  // `pending-deletion`: "hai nút xếp dọc").
+  stacked?: boolean;
   error?: string | null;
   // One input under the text (08 S-SET-06 `category-rename`).
   children?: ReactNode;
@@ -219,7 +223,9 @@ export function Dialog({
   const { colors } = useTheme();
   const layout = row
     ? 'row'
-    : dialogLayout(cancel ? [cancel.label, confirm.label] : [confirm.label]);
+    : stacked
+      ? 'column'
+      : dialogLayout(cancel ? [cancel.label, confirm.label] : [confirm.label]);
   const busy = !!confirm.loading;
   const confirmButton = (
     <Button

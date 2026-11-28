@@ -25,7 +25,9 @@ import {
   planRoleReorder,
   privateChannelOverwrites,
   toPermissionBitmap,
+  SERVER_RESTORE_DAYS,
   type ChannelResponse,
+  type DeletedServer,
   type RoleResponse,
   type ServerBan,
   type ServerMember,
@@ -35,6 +37,7 @@ import {
 } from '@nezfocus/shared';
 import type { ServerRepository } from '../../domain/servers/ServerRepository';
 import { ApiError } from '../api/client';
+import { FAKE_PASSWORD } from '../auth/FakeAuthRepository';
 import { fakeUploadedUri } from '../attachments/FakeAttachmentRepository';
 
 // EXPO_PUBLIC_FAKE=servers (WORKFLOW 4.2): An (id 1) owns the three sample servers of
@@ -269,6 +272,43 @@ export function createFakeServerRepository(
     servers.set(server.id, { ...server, roles });
   const members = new Map<string, ServerMember[]>();
   const bans = new Map<string, ServerBan[]>();
+  // 02 S-HOME-06 `restore-list`: An deleted "Ôn thi Đại số tuyến tính" today.
+  const deleted = new Map<string, { server: ServerResponse; at: string }>();
+  {
+    const algebra = buildServer(
+      sample(
+        '190',
+        'Ôn thi Đại số tuyến tính',
+        'study_server',
+        12,
+        now().toISOString(),
+      ),
+      id,
+    );
+    deleted.set(algebra.id, { server: algebra, at: now().toISOString() });
+  }
+  let wrongPasswords = 0; // CR-16 #12: the 5th wrong try → 40029
+  const checkPassword = (password: string) => {
+    if (wrongPasswords >= 5)
+      throw new ApiError(429, {
+        code: ErrorCode.RateLimited,
+        message: 'fake 40029',
+        retry_after: 600,
+      });
+    if (password === FAKE_NETWORK_NAME)
+      throw new TypeError('Network request failed');
+    if (password !== FAKE_PASSWORD) {
+      wrongPasswords++;
+      if (wrongPasswords >= 5)
+        throw new ApiError(429, {
+          code: ErrorCode.RateLimited,
+          message: 'fake 40029',
+          retry_after: 600,
+        });
+      throw fail(401, ErrorCode.InvalidCredentials);
+    }
+    wrongPasswords = 0;
+  };
   const membersOf = (serverId: string) => {
     const server = serverFor(serverId);
     if (!members.has(serverId))
@@ -699,6 +739,49 @@ export function createFakeServerRepository(
         server,
         server.channels.map((c) => moved.get(c.id) ?? c),
       );
+    },
+    async leaveServer(serverId) {
+      await wait();
+      const server = serverFor(serverId);
+      if (server.owner_id === '1') throw fail(403, ErrorCode.OwnerCannotLeave);
+      servers.delete(serverId);
+    },
+    async deleteServer(serverId) {
+      await wait();
+      const server = serverFor(serverId);
+      if (server.owner_id !== '1') throw fail(403, ErrorCode.Forbidden);
+      servers.delete(serverId);
+      deleted.set(serverId, { server, at: now().toISOString() });
+    },
+    async restoreServer(serverId) {
+      await wait();
+      const gone = deleted.get(serverId);
+      if (!gone) throw fail(404, ErrorCode.NotFound);
+      deleted.delete(serverId);
+      servers.set(serverId, gone.server);
+      return gone.server;
+    },
+    async listDeletedServers(): Promise<DeletedServer[]> {
+      await wait();
+      return [...deleted.values()].map(({ server, at }) => ({
+        id: server.id,
+        name: server.name,
+        icon_url: server.icon_url,
+        deleted_at: at,
+        restore_until: new Date(
+          Date.parse(at) + SERVER_RESTORE_DAYS * 86_400_000,
+        ).toISOString(),
+      }));
+    },
+    // Someone not in the member list → 40401 ("Bình không còn trong server").
+    async transferOwner(serverId, userId, password) {
+      await wait();
+      const server = serverFor(serverId);
+      if (server.owner_id !== '1') throw fail(403, ErrorCode.Forbidden);
+      checkPassword(password);
+      if (!membersOf(serverId).some((m) => m.user.id === userId))
+        throw fail(404, ErrorCode.NotFound);
+      servers.set(serverId, { ...server, owner_id: userId });
     },
     async getServer(serverId) {
       await wait();

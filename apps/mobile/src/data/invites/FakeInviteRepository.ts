@@ -133,6 +133,16 @@ export function createFakeInviteRepository(
       await wait();
       revoked.add(code);
     },
+    async listInvites(serverId) {
+      await wait();
+      return made
+        .filter((i) => i.server_id === serverId && !revoked.has(i.code))
+        .reverse()
+        .map((i) => ({
+          ...i,
+          creator: { id: '1', display_name: 'An', username: 'an.nguyen' },
+        }));
+    },
     async previewInvite(code) {
       await wait();
       if (revoked.has(code)) throw fail(ErrorCode.InviteInvalid);

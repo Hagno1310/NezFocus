@@ -86,6 +86,8 @@ import { ChannelSettingsScreen } from '../../features/servers/screens/ChannelSet
 import { StudyRoomSettingsScreen } from '../../features/servers/screens/StudyRoomSettingsScreen';
 import { OverwriteEditScreen } from '../../features/servers/screens/OverwriteEditScreen';
 import { MemberDetailScreen } from '../../features/servers/screens/MemberDetailScreen';
+import { BansScreen } from '../../features/servers/screens/BansScreen';
+import { InvitesScreen } from '../../features/servers/screens/InvitesScreen';
 import { MembersScreen } from '../../features/servers/screens/MembersScreen';
 import { RoleEditScreen } from '../../features/servers/screens/RoleEditScreen';
 import { RoleMembersScreen } from '../../features/servers/screens/RoleMembersScreen';
@@ -159,6 +161,8 @@ type HomeParamList = {
   RoleMembers: { serverId: string; roleId: string }; // S-SET-02 role-members
   Members: { serverId: string }; // S-SET-03
   MemberDetail: { serverId: string; userId: string }; // S-SET-03 member-detail
+  ServerInvites: { serverId: string }; // S-SET-04 invites
+  ServerBans: { serverId: string }; // S-SET-04 bans
   ChannelSettings: { serverId: string; channelId: string }; // S-SET-06
   // S-SET-06 `overwrites` (a category: `category-overwrites`)
   ChannelPermissions: { serverId: string; channelId: string };
@@ -301,6 +305,16 @@ function HomeTab() {
                   serverId: route.params.serverId,
                 })
               }
+              onInvites={() =>
+                navigation.navigate('ServerInvites', {
+                  serverId: route.params.serverId,
+                })
+              }
+              onBans={() =>
+                navigation.navigate('ServerBans', {
+                  serverId: route.params.serverId,
+                })
+              }
               onRow={(title, ticket) =>
                 navigation.navigate('HomePlaceholder', { title, ticket })
               }
@@ -354,6 +368,28 @@ function HomeTab() {
                   userId,
                 })
               }
+              onLostAccess={() =>
+                navigation.popTo('ServerSettings', route.params)
+              }
+            />
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen name="ServerInvites">
+          {({ navigation, route }) => (
+            <InvitesScreen
+              serverId={route.params.serverId}
+              onBack={navigation.goBack}
+              onLostAccess={() =>
+                navigation.popTo('ServerSettings', route.params)
+              }
+            />
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen name="ServerBans">
+          {({ navigation, route }) => (
+            <BansScreen
+              serverId={route.params.serverId}
+              onBack={navigation.goBack}
               onLostAccess={() =>
                 navigation.popTo('ServerSettings', route.params)
               }

@@ -2,6 +2,7 @@ import {
   InvitePreview,
   InviteResponse,
   InviteRoutes,
+  ServerInviteList,
   ServerResponse,
 } from '@nezfocus/shared';
 import type { InviteRepository } from '../../domain/invites/InviteRepository';
@@ -20,6 +21,10 @@ export const remoteInviteRepository: InviteRepository = {
   revokeInvite: async (code) => {
     await api.request(byCode(code), { method: 'DELETE' });
   },
+  listInvites: async (serverId) =>
+    ServerInviteList.parse(
+      await api.request(InviteRoutes.forServer.replace(':id', serverId)),
+    ),
   previewInvite: async (code) =>
     InvitePreview.parse(await api.request(byCode(code), { auth: false })),
   acceptInvite: async (code) =>

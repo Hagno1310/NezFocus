@@ -540,6 +540,7 @@ function ProfileSheet({
               serverId={serverId}
               member={member}
               onRemoved={closeMemberProfile}
+              bleed
               onRoles={
                 canRoles
                   ? () => {
@@ -603,7 +604,8 @@ function ProfileSheet({
 }
 
 const styles = StyleSheet.create({
-  modTitle: { paddingHorizontal: space[3], paddingBottom: space[1] },
+  // Frame S-HOME-10 `moderator`: the label lines up with the name, 16 under the buttons.
+  modTitle: { marginTop: space[3], paddingBottom: space[1] },
   flex: { flex: 1, minWidth: 0 },
   // The button keeps its label whole; a ChipStatus beside it shrinks instead.
   main: { flexGrow: 1, flexShrink: 0 },

@@ -498,7 +498,7 @@ Không áp dụng: `empty`, `loading`, `forbidden` (không có `ATTACH_FILES` th
 | `keyboard-open` | `OS/Keyboard · text` ở `name-server` (phím "Xong") và `join-by-code` (phím "Tiếp"); nút chính nằm ngay trên bàn phím (C-02). Hai frame: `keyboard-open · name`, `keyboard-open · code` | |
 | `offline` | Nút chính `disabled` kèm dòng "Cần kết nối mạng để tạo hoặc tham gia server" (`wifi-off`) | |
 | `restore` 🆕 | (21/10/2026, area 08 Q16) An có server đã xóa trong 30 ngày: dưới "Nhập mã mời" thêm `SettingsRow` "Server đã xóa" (icon `archive-restore`, giá trị "1") | Chỉ hiện khi có |
-| `restore-list` 🆕 | Chạm hàng → màn "Server đã xóa": mỗi hàng icon server + tên + "Còn 30 ngày để khôi phục" + `Button · secondary · S` "Khôi phục" → server về rail, mở server đó + `Toast` "Đã khôi phục Ôn thi Đại số tuyến tính". Server đã xóa mẫu là **"Ôn thi Đại số tuyến tính"** (đổi 22/10/2026 — trùng tên server đang dùng gây nhầm), tên 1 dòng cắt `…` | Offline: nút `disabled` |
+| `restore-list` 🆕 | Chạm hàng → màn "Server đã xóa": dòng ghi chú `info` trên danh sách "Server bạn đã xóa được giữ 30 ngày. Chỉ Owner thấy và khôi phục được." (theo frame, 28/11/2026); mỗi hàng icon server + tên + "Còn 30 ngày để khôi phục" + `Button · secondary · S` "Khôi phục" → server về rail, mở server đó + `Toast` "Đã khôi phục Ôn thi Đại số tuyến tính". Server đã xóa mẫu là **"Ôn thi Đại số tuyến tính"** (đổi 22/10/2026 — trùng tên server đang dùng gây nhầm), tên 1 dòng cắt `…` | Offline: nút `disabled` |
 
 (v1.9, CR-16 #5) **Bỏ `from-onboarding`**: S-ONB-02 không còn; hoàn tất tài khoản xong không có lời mời thì vào Home `no-server`, từ đó mở màn này như thường (có `TabBar`).
 

@@ -464,6 +464,7 @@ Backend gửi lý do kèm close code `4004` / lỗi `40103` (`40100` = hết h�
 |---|---|---|---|
 | Mật khẩu được đổi / đặt lại ở thiết bị khác | `key-round` | "Mật khẩu vừa được đổi trên thiết bị khác · hãy đăng nhập lại" | `session-revoked` |
 | Bị thu hồi từ thiết bị khác (07 S-ME-03 "Đăng xuất" / "Đăng xuất mọi thiết bị khác") | `log-out` | "Bạn đã bị đăng xuất khỏi thiết bị này · hãy đăng nhập lại" | 07 S-ME-EDGE `session-revoked-here` |
+| Tài khoản vừa được yêu cầu xóa trên thiết bị khác (CR-28 #41, `account_deleted`) | `calendar-x` | "Tài khoản đang chờ xóa · đăng nhập trước hạn để khôi phục" | — (cùng khuôn) |
 | Refresh token bị dùng lại (mới) | `shield-alert` | "Phiên đăng nhập đã được đóng để bảo vệ tài khoản · hãy đổi mật khẩu nếu đó không phải bạn" | `session-reuse` |
 | Còn lại (hết hạn, `40100`, không có lý do) | `clock-3` | "Phiên đăng nhập đã hết hạn · hãy đăng nhập lại" | — (cùng khuôn) |
 

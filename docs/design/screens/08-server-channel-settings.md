@@ -552,9 +552,9 @@ Kênh riêng tư lúc tạo (v1.9): tạo xong kênh có @everyone bị từ ch�
 | `transfer-picker` | Như bố cục | — |
 | `transfer-search` | Gõ "bi" → Bình | — |
 | `transfer-alone` | Server chỉ còn An: `EmptyState` | "Server chưa có thành viên khác" · "Mời bạn bè vào trước, hoặc xóa server nếu không dùng nữa." · "Xóa server" (`danger · text`) |
-| `transfer-confirm` | 10 S-MOD-03 `password` trên danh sách (A2) | "Chuyển quyền Owner cho Bình?" |
+| `transfer-confirm` | 10 S-MOD-03 `password` trên danh sách (A2). Frame thiếu "Quên mật khẩu?" là lỗi vẽ (28/11/2026, bảng hỏi #24): luôn có như S-MOD-03 | "Chuyển quyền Owner cho Bình?" |
 | `transferred` | Từ Cài đặt server: về S-SET-01 ở góc nhìn mới (An còn Trưởng nhóm → `moderator`-like, mất nhóm CHỈ OWNER) + `Toast` "Bình đã là Owner" (A3) | Dòng ghi chú như `moderator`: "Bạn thấy các mục mà vai trò Trưởng nhóm được quản lý." |
-| `transferred-leave` | Từ luồng rời server: `Toast` + mở ngay 02 S-HOME-09 `leave-confirm` (A3) | — |
+| `transferred-leave` | Từ luồng rời server: `Toast` + mở ngay 02 S-HOME-09 `leave-confirm` (A3); Toast hiện cùng dialog như frame (ngoại lệ có chủ đích của luật "không toast trên lớp phủ", 28/11/2026) | — |
 | `delete-confirm` | 10 S-MOD-03 `type-name` (chữ đã có ở 10) | — |
 | `deleted` | Một luật với 02 S-HOME-EDGE `kicked`: server biến khỏi rail, mở server kế tiếp trên rail (Nhóm đồ án Mobile, kênh mở gần nhất) + `Toast`; không còn server → 02 S-HOME-02 `no-server` | "Đã xóa Ôn thi Giải tích 2 · Khôi phục được trong 30 ngày" |
 | `restore` | Khôi phục nằm ở 02 S-HOME-06 `restore` / `restore-list` (màn Thêm server, Q16) — không vẽ lại ở đây. Server đã xóa mẫu ở đó là **"Ôn thi Đại số tuyến tính"** (server khác, An là Owner), không trùng server đang dùng; frame `deleted` ở trên là nhánh "nếu An xóa Ôn thi Giải tích 2" nên giữ tên đó | — |

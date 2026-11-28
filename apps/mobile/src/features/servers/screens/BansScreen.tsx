@@ -219,7 +219,7 @@ export function BansScreen({
         }}
       >
         {open && (
-          <>
+          <View style={styles.detail}>
             <View style={styles.head}>
               <Avatar
                 name={memberName(open)}
@@ -238,7 +238,7 @@ export function BansScreen({
               </View>
             </View>
             {open.reason && (
-              <>
+              <View style={styles.reasonBlock}>
                 <Text variant="label" weight="600" color="text-secondary">
                   {t('servers.bans.reason')}
                 </Text>
@@ -246,12 +246,12 @@ export function BansScreen({
                 <ScrollView style={styles.reason}>
                   <Text>{open.reason}</Text>
                 </ScrollView>
-              </>
+              </View>
             )}
             <Text variant="label" color="text-tertiary">
               {detail(open)}
             </Text>
-          </>
+          </View>
         )}
       </BottomSheet>
       <Dialog
@@ -296,4 +296,7 @@ const styles = StyleSheet.create({
   noMatch: { textAlign: 'center', padding: space[4] },
   head: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
   reason: { flexGrow: 0, flexShrink: 1 },
+  // Frame `ban-detail`: head, reason, then the date line, 12 apart; label to reason 4.
+  detail: { gap: space[3], paddingBottom: space[2] },
+  reasonBlock: { gap: space[1], flexShrink: 1 },
 });

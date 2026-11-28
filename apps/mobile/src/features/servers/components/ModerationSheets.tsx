@@ -259,44 +259,47 @@ function TimeoutSheet({
         disabled: error === 'hierarchy',
       }}
     >
-      <Text color="text-secondary">
-        {t('servers.moderation.timeoutBody', { name })}
-      </Text>
-      <View>
-        {TIMEOUT_LEVELS.map((l) => (
-          <RadioRow
-            key={l.key}
-            label={t(`servers.moderation.levels.${l.key}`)}
-            selected={level === l.key}
-            onPress={() => setLevel(l.key)}
-          />
-        ))}
-      </View>
-      <View style={styles.end}>
-        <Icon as={Clock3} size="sm" color="text-secondary" />
-        <Text variant="label" color="text-secondary">
-          {end.date
-            ? t('servers.moderation.endsOn', end)
-            : t('servers.moderation.endsToday', end)}
+      <View style={styles.body}>
+        <Text color="text-secondary">
+          {t('servers.moderation.timeoutBody', { name })}
         </Text>
+        <View>
+          {TIMEOUT_LEVELS.map((l) => (
+            <RadioRow
+              key={l.key}
+              label={t(`servers.moderation.levels.${l.key}`)}
+              selected={level === l.key}
+              dense
+              onPress={() => setLevel(l.key)}
+            />
+          ))}
+        </View>
+        <View style={styles.end}>
+          <Icon as={Clock3} size="sm" color="text-secondary" />
+          <Text variant="label" color="text-secondary">
+            {end.date
+              ? t('servers.moderation.endsOn', end)
+              : t('servers.moderation.endsToday', end)}
+          </Text>
+        </View>
+        {room && (
+          <FormMessage
+            tone="info"
+            variant="field"
+            text={t('servers.moderation.inRoom', { name, room })}
+          />
+        )}
+        {mode === 'set' && (
+          <TextField
+            label={t('servers.moderation.reason')}
+            placeholder={t('servers.moderation.reasonHint')}
+            value={reason}
+            onChangeText={setReason}
+            counterMax={MODERATION_REASON_MAX}
+            maxLength={MODERATION_REASON_MAX}
+          />
+        )}
       </View>
-      {room && (
-        <FormMessage
-          tone="info"
-          variant="field"
-          text={t('servers.moderation.inRoom', { name, room })}
-        />
-      )}
-      {mode === 'set' && (
-        <TextField
-          label={t('servers.moderation.reason')}
-          placeholder={t('servers.moderation.reasonHint')}
-          value={reason}
-          onChangeText={setReason}
-          counterMax={MODERATION_REASON_MAX}
-          maxLength={MODERATION_REASON_MAX}
-        />
-      )}
     </BottomSheet>
   );
 }
@@ -406,6 +409,7 @@ function RemoveDialog({
               key={d}
               label={t(`servers.moderation.delete${d}`)}
               selected={days === d}
+              dense
               onPress={() => setDays(d)}
             />
           ))}
@@ -429,5 +433,6 @@ function useRoomOf(serverId: string, userId: string) {
 const styles = StyleSheet.create({
   group: { alignSelf: 'stretch' },
   bleed: { marginHorizontal: -space[3] },
+  body: { gap: space[2] },
   end: { flexDirection: 'row', alignItems: 'center', gap: space[1] },
 });

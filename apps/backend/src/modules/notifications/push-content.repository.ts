@@ -5,7 +5,7 @@ import { attachments } from '../attachments/attachments.schema.js';
 import { channelRecipients } from '../channels/dm.schema.js';
 import { friendships } from '../friends/friends.schema.js';
 import { messages } from '../messaging/messages.schema.js';
-import { channels, roles } from '../servers/servers.schema.js';
+import { channels, roles, servers } from '../servers/servers.schema.js';
 import { users } from '../users/users.schema.js';
 import type { PushNames } from './push-text.js';
 
@@ -90,6 +90,14 @@ export class PushContentRepository {
         channelRows.flatMap((c) => (c.name ? [[String(c.id), c.name]] : [])),
       ),
     };
+  }
+
+  async serverName(id: string) {
+    const [row] = await this.db
+      .select({ name: servers.name })
+      .from(servers)
+      .where(eq(servers.id, BigInt(id)));
+    return row?.name;
   }
 
   async roleName(id: string) {

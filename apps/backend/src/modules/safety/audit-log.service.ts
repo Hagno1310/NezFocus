@@ -23,7 +23,9 @@ export type AuditAction =
   | 'INVITE_CREATE'
   | 'INVITE_DELETE'
   | 'SERVER_UPDATE'
-  | 'SERVER_OWNER_TRANSFER';
+  | 'SERVER_OWNER_TRANSFER'
+  | 'SERVER_DELETE'
+  | 'SERVER_RESTORE';
 
 export type AuditEntry = {
   serverId: bigint;

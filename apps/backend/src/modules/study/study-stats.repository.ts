@@ -305,7 +305,8 @@ export class StudyStatsRepository {
         channelName: channels.name,
         deleted: sql<boolean>`${channels.deletedAt} is not null`,
         serverName: servers.name,
-        member: sql<boolean>`${serverMembers.userId} is not null`,
+        // REQ-SRV-05: a deleted server's rooms are `gone` (STUDY-17 AC5, #130).
+        member: sql<boolean>`${serverMembers.userId} is not null and ${servers.deletedAt} is null`,
       })
       .from(channels)
       .innerJoin(servers, eq(servers.id, channels.serverId))

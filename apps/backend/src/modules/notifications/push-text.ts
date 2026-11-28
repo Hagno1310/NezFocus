@@ -26,7 +26,8 @@ export type PushSubject =
       actor: string;
       username: string;
       note: string | null;
-    };
+    }
+  | { type: 'owner_transferred'; actor: string; server: string };
 
 // SRS 5.6 (CR-28 #36): the inbox wording of spec 06; names are data, never translated.
 const TEXT = {
@@ -36,6 +37,8 @@ const TEXT = {
       `${a} nhắc tới @${who} ở #${c}`,
     reply: (a: string, c: string) => `${a} trả lời bạn ở #${c}`,
     friendRequest: (a: string) => `${a} muốn kết bạn`,
+    ownerTransferred: (a: string, s: string) =>
+      `${a} đã chuyển quyền Owner của ${s} cho bạn`,
     image: 'Đã gửi ảnh',
     unknown: 'Không rõ',
   },
@@ -45,6 +48,8 @@ const TEXT = {
       `${a} mentioned @${who} in #${c}`,
     reply: (a: string, c: string) => `${a} replied to you in #${c}`,
     friendRequest: (a: string) => `${a} wants to be friends`,
+    ownerTransferred: (a: string, s: string) =>
+      `${a} made you the Owner of ${s}`,
     image: 'Sent an image',
     unknown: 'Unknown',
   },
@@ -76,6 +81,12 @@ export function pushText(subject: PushSubject, locale: Locale) {
       return {
         title: t.friendRequest(subject.actor),
         body: subject.note ?? subject.username,
+      };
+    // Spec 06 `owner_transferred`: the item's sentence; its source line is the server.
+    case 'owner_transferred':
+      return {
+        title: t.ownerTransferred(subject.actor, subject.server),
+        body: subject.server,
       };
   }
 }

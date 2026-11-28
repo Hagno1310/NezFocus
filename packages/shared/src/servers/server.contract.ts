@@ -10,7 +10,20 @@ export const ServerRoutes = {
   // GET: ServerResponse · 40401 (not a member) · PATCH: ServerSummary · 40001 (name; system channel
   // not a text channel of this server), 40302 (MANAGE_SERVER), 40401
   byId: '/servers/:id',
+  // REQ-SRV-05 (DELETE on byId): Owner only (else 40302) → 204, soft-deleted for 30 days.
+  // POST TransferOwnerRequest → 204 · 40102, 40029 (shared wrong-password limit), 40302 (not
+  // the Owner), 40303 (pending deletion / suspended), 40401 (not in the server), 40001 (oneself)
+  transfer: '/servers/:id/transfer',
+  // POST → ServerResponse · Owner only, within 30 days (else 40401)
+  restore: '/servers/:id/restore',
+  // DELETE → 204 (leave) · 40012 (the Owner) · 40401 (not a member)
+  leave: '/users/@me/servers/:id',
+  // GET → DeletedServersResponse (CR-28 #41): mine, deleted in the last 30 days
+  deleted: '/users/@me/servers/deleted',
 } as const;
+
+// REQ-SRV-05 / SRS 8.6: a deleted server can be restored for 30 days, then it is purged.
+export const SERVER_RESTORE_DAYS = 30;
 
 // REQ-SRV-01: 2–100 characters; REQ-SRV-04: at most 100 servers per user.
 export const SERVER_NAME_MIN = 2;
@@ -74,3 +87,29 @@ export const UpdateServerRequest = z
   })
   .refine((body) => Object.keys(body).length > 0, 'nothing to update');
 export type UpdateServerRequest = z.infer<typeof UpdateServerRequest>;
+
+// REQ-SRV-05: the password again (S-MOD-03 `password`).
+export const TransferOwnerRequest = z.object({
+  user_id: SnowflakeId,
+  password: z.string().min(1).max(128),
+});
+export type TransferOwnerRequest = z.infer<typeof TransferOwnerRequest>;
+
+// 02 S-HOME-06 `restore-list`: "Còn 30 ngày để khôi phục".
+export const DeletedServer = z.object({
+  id: SnowflakeId,
+  name: z.string(),
+  icon_url: z.string().nullable(),
+  deleted_at: z.iso.datetime(),
+  restore_until: z.iso.datetime(),
+});
+export type DeletedServer = z.infer<typeof DeletedServer>;
+
+export const DeletedServersResponse = z.object({
+  servers: z.array(DeletedServer),
+});
+export type DeletedServersResponse = z.infer<typeof DeletedServersResponse>;
+
+// SRS 5.4 SERVER_DELETE (SRV-05 AC4), to the members: the server leaves the rail.
+export const ServerDeleted = z.object({ id: SnowflakeId });
+export type ServerDeleted = z.infer<typeof ServerDeleted>;

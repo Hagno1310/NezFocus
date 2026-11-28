@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
 import {
   channelPermissionOverwrites,
@@ -52,7 +52,7 @@ export class PermissionsRepository {
       this.db
         .select({ ownerId: servers.ownerId })
         .from(servers)
-        .where(eq(servers.id, serverId)),
+        .where(and(eq(servers.id, serverId), isNull(servers.deletedAt))),
       this.db
         .select({
           id: roles.id,

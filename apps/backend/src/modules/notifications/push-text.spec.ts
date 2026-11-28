@@ -74,6 +74,18 @@ describe('push text (REQ-NOTIF-02, SRS 5.6 CR-28 #36)', () => {
       body: 'giang.vo',
     });
   });
+
+  it('owner_transferred (SRV-05, spec 06): the item sentence, the server as body', () => {
+    const subject = {
+      type: 'owner_transferred' as const,
+      actor: 'An',
+      server: 'Ôn thi Giải tích 2',
+    };
+    expect(pushText(subject, 'vi')).toEqual({
+      title: 'An đã chuyển quyền Owner của Ôn thi Giải tích 2 cho bạn',
+      body: 'Ôn thi Giải tích 2',
+    });
+  });
 });
 
 describe('messageBody', () => {

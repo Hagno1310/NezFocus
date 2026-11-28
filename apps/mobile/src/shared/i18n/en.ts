@@ -339,6 +339,14 @@ export const en: Strings = {
       account_deleted:
         'Your account is waiting to be deleted · log in before then to restore it',
     },
+    pendingDeletion: {
+      title: 'Account waiting to be deleted',
+      body: 'Your account will be deleted for good on {{date}} ({{count}} days left). Restore it to keep going; your servers, messages and study streak are all still there.',
+      restore: 'Restore account',
+      later: 'Later',
+      notice:
+        'Your account will be deleted on {{date}} · log in before then to restore it',
+    },
     update: {
       title: 'Update NezFocus',
       body: 'The version you’re using ({{current}}) is out of date. Update to {{min}} to keep studying with everyone.',
@@ -1009,6 +1017,20 @@ export const en: Strings = {
     deleteAccount: 'Delete account',
     deleteNote:
       'Your account is deleted after 14 days; log in again before then to restore it.',
+    deleteBlockedTitle: 'You are the Owner of {{count}} servers',
+    deleteBlockedBody:
+      'Transfer the Owner role or delete the servers before deleting your account.',
+    deleteBlockedRow: '{{count}} members',
+    deleteClose: 'Close',
+    deleteContinue: 'Continue deleting',
+    deleteTitle: 'Delete account?',
+    deleteBody:
+      'Your account will be deleted for good on {{date}}. Within 14 days, log in again to restore it. After that your profile, study streak and friends are deleted; messages show "Deleted account".',
+    deleteSolo: 'Servers with only you — deleted with your account',
+    deleteSoloRow: '1 member',
+    deleteInvites:
+      'Every invite link of these servers is revoked now, even if you restore your account.',
+    deleteConfirm: 'Delete account',
     currentPassword: 'Current password',
     forgot: 'Forgot password?',
     newPassword: 'New password',

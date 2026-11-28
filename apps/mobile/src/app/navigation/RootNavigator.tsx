@@ -205,7 +205,6 @@ type MeParamList = {
   Account: undefined; // S-ME-03
   ChangePassword: { mode?: 'code' } | undefined; // S-ME-03 password-form / password-code
   Sessions: undefined; // S-ME-03 sessions
-  DeleteAccount: undefined; // S-ME-03 delete (P3-A4 #24)
   Privacy: undefined; // S-ME-04
   Blocked: undefined; // S-DM-04 `blocked`, Back to S-ME-04
   Notifications: undefined; // S-ME-05
@@ -722,13 +721,7 @@ function StudyTab() {
 
 type Action = { label: string; onPress: () => void };
 
-// Child screens not built yet: each names the ticket that replaces it.
-const meChildren = [
-  ['DeleteAccount', 'me.deleteAccount', 'P3-A4 (#24)'],
-] as const;
-
 function MeTab({ devActions }: { devActions: Action[] }) {
-  const { t } = useTranslation();
   return (
     <MeStack.Navigator>
       <MeStack.Screen name="MeRoot" options={{ headerShown: false }}>
@@ -791,7 +784,15 @@ function MeTab({ devActions }: { devActions: Action[] }) {
             onBack={navigation.goBack}
             onChangePassword={() => navigation.navigate('ChangePassword')}
             onSessions={() => navigation.navigate('Sessions')}
-            onDeleteAccount={() => navigation.navigate('DeleteAccount')}
+            onOpenServer={(serverId) =>
+              navigation.getParent()?.navigate('Home', {
+                screen: 'TransferOwner',
+                params: { serverId },
+              })
+            }
+            onForgot={() =>
+              navigation.navigate('ChangePassword', { mode: 'code' })
+            }
           />
         )}
       </MeStack.Screen>
@@ -829,11 +830,6 @@ function MeTab({ devActions }: { devActions: Action[] }) {
       <MeStack.Screen name="Sessions" options={{ headerShown: false }}>
         {({ navigation }) => <SessionsScreen onBack={navigation.goBack} />}
       </MeStack.Screen>
-      {meChildren.map(([name, title, ticket]) => (
-        <MeStack.Screen key={name} name={name} options={{ title: t(title) }}>
-          {() => <Placeholder title={t(title)} ticket={ticket} />}
-        </MeStack.Screen>
-      ))}
     </MeStack.Navigator>
   );
 }

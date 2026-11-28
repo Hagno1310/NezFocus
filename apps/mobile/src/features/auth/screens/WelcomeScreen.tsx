@@ -6,6 +6,11 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CalendarX } from 'lucide-react-native';
+import { useState } from 'react';
+import { deletionDay } from '../../../domain/account/deletion';
+import { Banner } from '../../../shared/ui/Feedback';
+import { useAuthFlow } from '../authFlowStore';
 import { PendingInviteBanner } from '../components/PendingInviteBanner';
 import {
   fontScale as textScale,
@@ -19,6 +24,8 @@ import { Mascot } from '../../../shared/ui/Mascot';
 import { Avatar } from '../../../shared/ui/People';
 import { Text } from '../../../shared/ui/Text';
 import { BottomFade } from '../components/BottomFade';
+
+const zone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 // Frame S-AUTH-01 · default: six sample people around the ring, clockwise from 12 o'clock.
 const PEOPLE = ['Bình', 'Chi', 'Dũng', 'Giang', 'Hà', 'Khánh'];
@@ -40,11 +47,23 @@ export function WelcomeScreen({
   const { fontScale } = useWindowDimensions();
   // large-text: the body scrolls and the buttons are pinned under a border line.
   const large = fontScale >= textScale.large;
+  // `pending-deletion-notice`: just deleted on this phone (AUTH-10 AC1).
+  const deletionNotice = useAuthFlow((s) => s.deletionNotice);
+  const [now] = useState(() => Date.now());
   return (
     <View
       style={[styles.screen, { paddingTop: top, backgroundColor: colors.bg }]}
     >
-      <PendingInviteBanner step="signIn" />
+      {deletionNotice ? (
+        <Banner
+          icon={CalendarX}
+          text={t('auth.pendingDeletion.notice', {
+            date: deletionDay(deletionNotice, now, zone()).date,
+          })}
+        />
+      ) : (
+        <PendingInviteBanner step="signIn" />
+      )}
       <View style={styles.flex}>
         <ScrollView
           contentContainerStyle={styles.body}

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { LogIn, Mail } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { Keyboard } from 'react-native';
+import { accountRepository } from '../../../data/account';
 import { authRepository } from '../../../data/auth';
 import { checkEmail, type SignInMode } from '../../../domain/auth/authFlow';
 import {
@@ -30,12 +31,34 @@ export const showErrorToast = (kind: 'network' | 'other') =>
 // Spec 01 › Điều hướng sau khi vào được tài khoản: the root navigator swaps stacks on status
 // (incomplete → S-ONB-01, else Main or the screen before the session ended).
 function startSession(
-  user: { id: string; email: string; account_completed: boolean },
+  user: {
+    id: string;
+    email: string;
+    account_completed: boolean;
+    deletion_scheduled_at?: string | null;
+  },
   method: SignInMode,
   { fromCreateAccount = false, suggestedUsername = null as string | null } = {},
 ) {
+  // REQ-AUTH-10 AC4: ask first (S-AUTH-04 `pending-deletion`, also over S-AUTH-03).
+  if (user.deletion_scheduled_at) {
+    useAuthFlow.setState({
+      pendingDeletion: {
+        user,
+        method,
+        deletesAt: user.deletion_scheduled_at,
+        suggestedUsername,
+      },
+    });
+    return;
+  }
   rememberMethod(method);
-  useAuthFlow.setState({ sentCode: null, resetCode: null, suggestedUsername });
+  useAuthFlow.setState({
+    sentCode: null,
+    resetCode: null,
+    suggestedUsername,
+    deletionNotice: null,
+  });
   signIn(
     { id: user.id, email: user.email },
     { completed: user.account_completed },
@@ -146,6 +169,29 @@ export function useFinishAccount(current: { id: string; email: string }) {
       signIn(result.user ?? current, { completed: true });
     }
     return result;
+  });
+}
+
+// AC4 "Khôi phục tài khoản": the deletion is cancelled, then the sign-in goes on as usual.
+export function useRestoreAccount() {
+  return useGuardedMutation(async () => {
+    const pending = useAuthFlow.getState().pendingDeletion;
+    if (!pending) return;
+    await accountRepository.cancelDeletion();
+    useAuthFlow.setState({ pendingDeletion: null });
+    startSession(
+      { ...pending.user, deletion_scheduled_at: null },
+      pending.method,
+      { suggestedUsername: pending.suggestedUsername },
+    );
+  });
+}
+
+// AC4 "Để sau": the session just opened ends; the account still waits to be deleted.
+export function useLaterRestore() {
+  return useGuardedMutation(async () => {
+    await authRepository.logout().catch(() => {});
+    useAuthFlow.setState({ pendingDeletion: null });
   });
 }
 

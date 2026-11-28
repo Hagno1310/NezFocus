@@ -25,6 +25,7 @@ import {
 import { space } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import { Banner, SystemBanner } from '../../../shared/ui/Feedback';
+import { PendingDeletionDialog } from '../components/PendingDeletionDialog';
 import { PendingInviteBanner } from '../components/PendingInviteBanner';
 import { FormMessage } from '../../../shared/ui/FormMessage';
 import { Text } from '../../../shared/ui/Text';
@@ -278,6 +279,9 @@ export function SignInScreen({ navigation, route }: Props) {
         prefix={t('auth.signIn.noAccount')}
         link={t('auth.signIn.createAccount')}
         onPress={() => navigation.navigate('CreateAccount')}
+      />
+      <PendingDeletionDialog
+        onLater={(mode, email) => navigation.setParams({ mode, email })}
       />
     </AuthScreen>
   );

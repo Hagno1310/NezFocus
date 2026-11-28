@@ -17,6 +17,9 @@ const user = {
 };
 const account = (over: Partial<AccountRepository>): AccountRepository => ({
   me: noCall,
+  deletionPreview: noCall,
+  deleteAccount: noCall,
+  cancelDeletion: noCall,
   changePassword: noCall,
   sessions: noCall,
   revokeSession: noCall,

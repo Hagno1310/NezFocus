@@ -330,6 +330,15 @@ export const vi = {
       account_deleted:
         'Tài khoản đang chờ xóa · đăng nhập trước hạn để khôi phục',
     },
+    // 01 S-AUTH-04 `pending-deletion`, S-AUTH-01 `pending-deletion-notice` (AUTH-10)
+    pendingDeletion: {
+      title: 'Tài khoản đang chờ xóa',
+      body: 'Tài khoản sẽ bị xóa vĩnh viễn vào {{date}} (còn {{count}} ngày). Khôi phục để dùng tiếp; server, tin nhắn và chuỗi ngày học vẫn còn nguyên.',
+      restore: 'Khôi phục tài khoản',
+      later: 'Để sau',
+      notice:
+        'Tài khoản sẽ bị xóa vào {{date}} · đăng nhập trước ngày đó để khôi phục',
+    },
     update: {
       title: 'Cần cập nhật NezFocus',
       body: 'Phiên bản bạn đang dùng ({{current}}) đã cũ. Cập nhật lên {{min}} để tiếp tục học cùng mọi người.',
@@ -1004,6 +1013,21 @@ export const vi = {
     deleteAccount: 'Xóa tài khoản',
     deleteNote:
       'Tài khoản bị xóa sau 14 ngày; đăng nhập lại trước hạn để khôi phục.',
+    // 07 S-ME-03 `delete-blocked-owner`, `delete-confirm` (AUTH-10, CR-16 #12)
+    deleteBlockedTitle: 'Bạn đang là Owner của {{count}} server',
+    deleteBlockedBody:
+      'Chuyển quyền Owner hoặc xóa server trước khi xóa tài khoản.',
+    deleteBlockedRow: '{{count}} thành viên',
+    deleteClose: 'Đóng',
+    deleteContinue: 'Tiếp tục xóa',
+    deleteTitle: 'Xóa tài khoản?',
+    deleteBody:
+      'Tài khoản sẽ bị xóa vĩnh viễn vào {{date}}. Trong 14 ngày, đăng nhập lại để khôi phục. Sau đó hồ sơ, chuỗi ngày học và bạn bè bị xóa; tin nhắn hiện "Tài khoản đã bị xóa".',
+    deleteSolo: 'Server chỉ có bạn — sẽ bị xóa cùng tài khoản',
+    deleteSoloRow: '1 thành viên',
+    deleteInvites:
+      'Mọi link mời của các server này bị thu hồi ngay, kể cả khi bạn khôi phục tài khoản.',
+    deleteConfirm: 'Xóa tài khoản',
     currentPassword: 'Mật khẩu hiện tại',
     forgot: 'Quên mật khẩu?',
     newPassword: 'Mật khẩu mới',

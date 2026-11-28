@@ -1822,6 +1822,7 @@ CREATE TABLE server_members (
     mod_muted           BOOLEAN NOT NULL DEFAULT FALSE,
     mod_deafened        BOOLEAN NOT NULL DEFAULT FALSE,
     timeout_until       TIMESTAMPTZ,
+    timeout_reason      VARCHAR(512),                         -- CR-28 #40: chip `timed-out` ở S-SET-03
     last_active_at      TIMESTAMPTZ,                          -- REQ-STUDY-13
     PRIMARY KEY (server_id, user_id)
 );

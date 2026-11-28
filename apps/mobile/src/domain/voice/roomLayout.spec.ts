@@ -20,6 +20,18 @@ describe('S-ROOM-01 layout', () => {
     });
   });
 
+  it('08 S-SET-EDGE `timed-out-voice`: Vào phòng off, no Mic / Camera; offline wins', () => {
+    expect(roomLayout({ ...base, timedOut: true })).toEqual({
+      access: 'timed-out',
+      start: 'hint',
+      mic: false,
+      camera: false,
+    });
+    expect(roomLayout({ ...base, timedOut: true, online: false }).access).toBe(
+      'offline',
+    );
+  });
+
   it('`study-room-idle`: the Start button once in', () => {
     expect(roomLayout({ ...base, joined: true }).start).toBe('start');
   });

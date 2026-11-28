@@ -21,6 +21,8 @@ export type ToastEvent =
   | { type: 'show'; toast: Toast; now: number }
   | { type: 'tick'; now: number }
   | { type: 'dismiss' }
+  // REQ-ROLE-05: errors of a server just left come back late; they never show (CR-17 #17).
+  | { type: 'drop-pending' }
   | { type: 'overlay'; open: true }
   | { type: 'overlay'; open: false; now: number };
 
@@ -50,6 +52,8 @@ export function toastReducer(s: ToastState, e: ToastEvent): ToastState {
         : s;
     case 'dismiss':
       return { ...s, current: null };
+    case 'drop-pending':
+      return { ...s, pending: null };
     case 'overlay': {
       if (e.open) return { ...s, overlays: s.overlays + 1, current: null };
       const overlays = Math.max(0, s.overlays - 1);

@@ -86,6 +86,7 @@ import { ChannelSettingsScreen } from '../../features/servers/screens/ChannelSet
 import { StudyRoomSettingsScreen } from '../../features/servers/screens/StudyRoomSettingsScreen';
 import { OverwriteEditScreen } from '../../features/servers/screens/OverwriteEditScreen';
 import { MemberDetailScreen } from '../../features/servers/screens/MemberDetailScreen';
+import { RemovalHost } from '../../features/servers/components/RemovalDialog';
 import { BansScreen } from '../../features/servers/screens/BansScreen';
 import { InvitesScreen } from '../../features/servers/screens/InvitesScreen';
 import { MembersScreen } from '../../features/servers/screens/MembersScreen';
@@ -896,6 +897,8 @@ function MainTabs() {
     nav.navigate('Main', { screen: 'Home', params: { screen: 'HomeRoot' } });
   return (
     <>
+      {/* REQ-ROLE-05: kicked / banned while the app is open, over every tab. */}
+      <RemovalHost nav={nav} />
       {/* S-HOME-10: one sheet over every tab. */}
       <ProfileSheetHost
         onOpenedDm={toHome}

@@ -154,7 +154,7 @@ function buildServer(
         is_mentionable: false,
       },
     ],
-    me: { role_ids: [] },
+    me: { role_ids: [], timeout_until: null },
   };
 }
 
@@ -262,7 +262,7 @@ export function createFakeServerRepository(
     servers.set('100', {
       ...study,
       roles: [...study.roles, ...roles],
-      me: { role_ids: [roles[1]!.id] },
+      me: { role_ids: [roles[1]!.id], timeout_until: null },
     });
   }
   const setRoles = (server: ServerResponse, roles: RoleResponse[]) =>
@@ -406,6 +406,7 @@ export function createFakeServerRepository(
       servers.set(serverId, {
         ...servers.get(serverId)!,
         me: {
+          ...server.me,
           role_ids: server.me.role_ids.filter((r) => r !== roleId),
         },
       });

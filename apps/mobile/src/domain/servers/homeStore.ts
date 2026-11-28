@@ -31,6 +31,7 @@ export const setServerDetail = ({ id, channels, roles, me }: ServerResponse) =>
     channels: { ...s.channels, [id]: channels },
     roles: { ...s.roles, [id]: roles },
     myRoleIds: { ...s.myRoleIds, [id]: me.role_ids },
+    myTimeouts: { ...s.myTimeouts, [id]: me.timeout_until },
   }));
 
 // GET /servers/:id/roles (S-SET-02 `list`): the newest roles, without their counts.

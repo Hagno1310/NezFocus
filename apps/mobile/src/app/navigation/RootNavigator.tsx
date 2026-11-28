@@ -864,6 +864,12 @@ function MainTabs() {
       <ProfileSheetHost
         onOpenedDm={toHome}
         onOpenedServer={toHome}
+        onMemberRoles={(serverId, userId) =>
+          nav.navigate('Main', {
+            screen: 'Home',
+            params: { screen: 'MemberDetail', params: { serverId, userId } },
+          })
+        }
         onEditProfile={() =>
           nav.navigate('Main', {
             screen: 'Me',

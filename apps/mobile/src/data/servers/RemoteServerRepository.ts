@@ -1,4 +1,6 @@
 import {
+  BanListResponse,
+  BanRoutes,
   ChannelResponse,
   ChannelRoutes,
   MEMBER_PAGE_MAX,
@@ -11,7 +13,7 @@ import {
   ServerResponse,
   ServerRoutes,
   ServerSummary,
-  type ServerMember,
+  ServerMember,
 } from '@nezfocus/shared';
 import type { ServerRepository } from '../../domain/servers/ServerRepository';
 import { api } from '../api';
@@ -20,6 +22,12 @@ const permission = (channelId: string, targetId: string) =>
   ChannelRoutes.permission
     .replace(':id', channelId)
     .replace(':targetId', targetId);
+
+const member = (serverId: string, userId: string) =>
+  MemberRoutes.member.replace(':id', serverId).replace(':userId', userId);
+
+const ban = (serverId: string, userId: string) =>
+  BanRoutes.one.replace(':id', serverId).replace(':userId', userId);
 
 const role = (serverId: string, roleId: string) =>
   RoleRoutes.byId.replace(':id', serverId).replace(':roleId', roleId);
@@ -125,5 +133,32 @@ export const remoteServerRepository: ServerRepository = {
         .replace(':roleId', roleId),
       { method: give ? 'PUT' : 'DELETE' },
     );
+  },
+  timeoutMember: async (serverId, userId, until, reason) =>
+    ServerMember.parse(
+      await api.request(member(serverId, userId), {
+        method: 'PATCH',
+        body: { timeout_until: until, reason },
+      }),
+    ),
+  kickMember: async (serverId, userId, reason) => {
+    await api.request(member(serverId, userId), {
+      method: 'DELETE',
+      body: { reason },
+    });
+  },
+  banMember: async (serverId, userId, body) => {
+    await api.request(ban(serverId, userId), { method: 'PUT', body });
+  },
+  listBans: async (serverId, { q, after }) => {
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (after) params.set('after', after);
+    return BanListResponse.parse(
+      await api.request(`${BanRoutes.list.replace(':id', serverId)}?${params}`),
+    );
+  },
+  unbanMember: async (serverId, userId) => {
+    await api.request(ban(serverId, userId), { method: 'DELETE' });
   },
 };

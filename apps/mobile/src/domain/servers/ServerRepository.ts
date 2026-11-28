@@ -1,4 +1,6 @@
 import type {
+  BanListResponse,
+  BanRequest,
   ChannelResponse,
   CreateChannelRequest,
   CreateRoleRequest,
@@ -67,4 +69,23 @@ export interface ServerRepository {
     roleId: string,
     give: boolean,
   ): Promise<void>;
+  // REQ-ROLE-05: set, change (from now) or lift (null) a timeout.
+  timeoutMember(
+    serverId: string,
+    userId: string,
+    until: string | null,
+    reason?: string | null,
+  ): Promise<ServerMember>;
+  kickMember(
+    serverId: string,
+    userId: string,
+    reason: string | null,
+  ): Promise<void>;
+  banMember(serverId: string, userId: string, body: BanRequest): Promise<void>;
+  // REQ-ROLE-07: newest ban first; `after`: next_cursor of the previous page.
+  listBans(
+    serverId: string,
+    query: { q?: string; after?: string | null },
+  ): Promise<BanListResponse>;
+  unbanMember(serverId: string, userId: string): Promise<void>;
 }

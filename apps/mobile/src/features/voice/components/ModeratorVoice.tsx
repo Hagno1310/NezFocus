@@ -16,16 +16,8 @@ import { showToast } from '../../../shared/ui/Toast';
 import { useMembers } from '../../servers/hooks/useMembers';
 import { useServerAccess } from '../../servers/hooks/useServerAccess';
 
-// 02 S-HOME-10 `moderator-voice` (REQ-VC-04): "Tắt mic" / "Bật lại mic" and "Ngắt khỏi phòng",
-// at once, no question. The rows follow VOICE_STATE_UPDATE (mod_muted, the seat leaving).
-export function ModeratorVoice({
-  serverId,
-  userId,
-}: {
-  serverId: string;
-  userId: string;
-}) {
-  const { t } = useTranslation();
+// Which voice rows the viewer gets on this person; null: none (REQ-VC-04 AC4, not in a room).
+export function useModeratorVoiceRows(serverId: string, userId: string) {
   const access = useServerAccess(serverId);
   const seat = useStore(voiceStore, (s) => s.seats[userId]);
   const channel = useStore(homeStore, (s) =>
@@ -34,7 +26,6 @@ export function ModeratorVoice({
       : undefined,
   );
   const them = useMembers(serverId).data?.find((m) => m.user.id === userId);
-  const [busy, setBusy] = useState(false);
   if (!access?.roles || !access.userId || !seat || !channel || !them)
     return null;
   const rows = moderatorVoiceRows({
@@ -44,7 +35,25 @@ export function ModeratorVoice({
     seat,
     roomPerms: access.channelPerms(channel),
   });
-  if (!rows.mute && !rows.disconnect) return null;
+  return rows.mute || rows.disconnect ? rows : null;
+}
+
+// 02 S-HOME-10 `moderator-voice` (REQ-VC-04): "Tắt mic" / "Bật lại mic" and "Ngắt khỏi phòng",
+// at once, no question. The rows follow VOICE_STATE_UPDATE (mod_muted, the seat leaving).
+// `bare`: the rows only, under the "Kiểm duyệt" label of the moderation group (P3-A3.2).
+export function ModeratorVoice({
+  serverId,
+  userId,
+  bare = false,
+}: {
+  serverId: string;
+  userId: string;
+  bare?: boolean;
+}) {
+  const { t } = useTranslation();
+  const rows = useModeratorVoiceRows(serverId, userId);
+  const [busy, setBusy] = useState(false);
+  if (!rows) return null;
 
   const act = (body: UpdateMemberVoiceRequest) => {
     setBusy(true);
@@ -53,15 +62,17 @@ export function ModeratorVoice({
       .finally(() => setBusy(false));
   };
   return (
-    <View style={styles.group}>
-      <Text
-        variant="label"
-        weight="600"
-        color="text-tertiary"
-        style={styles.title}
-      >
-        {t('voice.moderation.title')}
-      </Text>
+    <View style={!bare && styles.group}>
+      {!bare && (
+        <Text
+          variant="label"
+          weight="600"
+          color="text-tertiary"
+          style={styles.title}
+        >
+          {t('voice.moderation.title')}
+        </Text>
+      )}
       {rows.mute && (
         <ActionRow
           item={{

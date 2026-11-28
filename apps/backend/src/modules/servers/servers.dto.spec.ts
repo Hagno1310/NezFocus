@@ -15,12 +15,13 @@ const full: FullServer = {
   channels: [],
   roles: [],
   myRoleIds: [101n],
+  myTimeoutUntil: null,
 } as unknown as FullServer;
 
 describe('toServerResponse', () => {
   it("sends the caller's own roles as strings (P1-A3.1 #64)", () => {
     const server = toServerResponse(full);
-    expect(server.me).toEqual({ role_ids: ['101'] });
+    expect(server.me).toEqual({ role_ids: ['101'], timeout_until: null });
     expect(ServerResponse.safeParse(server).success).toBe(true);
   });
 });

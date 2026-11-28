@@ -24,6 +24,7 @@ export type FullServer = ServerWithCount & {
   channels: ChannelWithOverwrites[];
   roles: RoleRow[];
   myRoleIds: bigint[]; // the caller's roles, without @everyone
+  myTimeoutUntil: Date | null; // REQ-ROLE-05
 };
 
 const memberCount = sql<number>`(SELECT count(*)::int FROM ${serverMembers} WHERE ${serverMembers.serverId} = ${servers.id})`;
@@ -116,7 +117,7 @@ export class ServersRepository {
     if (!(await this.isMember(serverId, userId))) return undefined;
     const server = await this.summary(serverId);
     if (!server) return undefined;
-    const [channelRows, roleRows, myRoles] = await Promise.all([
+    const [channelRows, roleRows, myRoles, [mine]] = await Promise.all([
       this.db
         .select()
         .from(channels)
@@ -136,12 +137,22 @@ export class ServersRepository {
             eq(serverMemberRoles.userId, userId),
           ),
         ),
+      this.db
+        .select({ timeoutUntil: serverMembers.timeoutUntil })
+        .from(serverMembers)
+        .where(
+          and(
+            eq(serverMembers.serverId, serverId),
+            eq(serverMembers.userId, userId),
+          ),
+        ),
     ]);
     return {
       ...server,
       channels: await withOverwrites(this.db, channelRows),
       roles: roleRows,
       myRoleIds: myRoles.map((r) => r.roleId),
+      myTimeoutUntil: mine?.timeoutUntil ?? null,
     };
   }
 

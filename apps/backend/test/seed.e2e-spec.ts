@@ -101,6 +101,7 @@ describe('db:seed (e2e)', () => {
       username: 'an.nguyen',
       display_name: 'An',
       account_completed: true,
+      deletion_scheduled_at: null,
     });
   });
 

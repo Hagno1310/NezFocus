@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { OwnedServer } from './auth/auth.contract.js';
 
 // SRS 11.1. Codes are never reused; the app maps `code` to its own vi/en strings.
 export const ErrorCode = {
@@ -68,6 +69,7 @@ export const ApiErrorBody = z.object({
   // 40100 / 40103: why the session ended (SessionEndReason; admin web has its own values)
   reason: z.string().optional(),
   timeout_until: z.iso.datetime().optional(), // 40307 (REQ-ROLE-05 AC2)
+  owned_servers: z.array(OwnedServer).optional(), // 40010 (REQ-AUTH-10 AC2, CR-28 #41)
   // 42601: the lowest app version the backend accepts (S-AUTH-00 shows it when present)
   min_version: z.string().optional(),
 });

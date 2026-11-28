@@ -327,6 +327,8 @@ export const vi = {
       reuse_detected:
         'Phiên đăng nhập đã được đóng để bảo vệ tài khoản · hãy đổi mật khẩu nếu đó không phải bạn',
       expired: 'Phiên đăng nhập đã hết hạn · hãy đăng nhập lại',
+      account_deleted:
+        'Tài khoản đang chờ xóa · đăng nhập trước hạn để khôi phục',
     },
     update: {
       title: 'Cần cập nhật NezFocus',

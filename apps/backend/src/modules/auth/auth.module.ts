@@ -28,6 +28,6 @@ import { TokenService } from './token.service.js';
   ],
   // The Gateway checks IDENTIFY / RESUME tokens the same way (P0-5.2); AuthService asks for
   // the password again (SRV-05 transfer, AUTH-10 delete).
-  exports: [TokenService, SessionRepository, AuthService],
+  exports: [TokenService, SessionRepository, AuthService, SessionService],
 })
 export class AuthModule {}

@@ -93,6 +93,7 @@ describe('READY presence', () => {
           bio: null,
           avatar: null,
           account_completed: true,
+          deletion_scheduled_at: null,
           created_at: NOW.toISOString(),
         },
         servers: [],

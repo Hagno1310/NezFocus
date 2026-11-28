@@ -34,6 +34,7 @@ const userFor = (email: string): CurrentUser =>
         bio: null,
         avatar: null,
         account_completed: true,
+        deletion_scheduled_at: null,
         created_at: '2026-10-01T08:00:00.000Z',
       }
     : {
@@ -44,6 +45,7 @@ const userFor = (email: string): CurrentUser =>
         bio: null,
         avatar: null,
         account_completed: false,
+        deletion_scheduled_at: null,
         created_at: '2026-10-18T14:47:00.000Z',
       };
 
@@ -146,6 +148,7 @@ export function createFakeAuthRepository(
         bio: null,
         avatar: null,
         account_completed: true,
+        deletion_scheduled_at: null,
       };
       return current;
     },

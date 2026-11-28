@@ -336,6 +336,8 @@ export const en: Strings = {
       reuse_detected:
         'Your session was closed to protect your account · change your password if that wasn’t you',
       expired: 'Your session has expired · please log in again',
+      account_deleted:
+        'Your account is waiting to be deleted · log in before then to restore it',
     },
     update: {
       title: 'Update NezFocus',

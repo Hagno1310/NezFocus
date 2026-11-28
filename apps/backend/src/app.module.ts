@@ -10,6 +10,7 @@ import { HealthModule } from './modules/health/health.module.js';
 import { MessagingModule } from './modules/messaging/messaging.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { PermissionsModule } from './modules/permissions/permissions.module.js';
+import { AccountDeletionModule } from './modules/users/account-deletion.module.js';
 import { ServerLifecycleModule } from './modules/servers/server-lifecycle.module.js';
 import { ServersModule } from './modules/servers/servers.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
@@ -35,6 +36,7 @@ import { SafetyModule } from './modules/safety/safety.module.js';
     StudyModule,
     ServersModule,
     ServerLifecycleModule,
+    AccountDeletionModule,
     MessagingModule,
     FriendsModule,
     DmModule,

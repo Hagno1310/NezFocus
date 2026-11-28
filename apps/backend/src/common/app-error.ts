@@ -1,4 +1,4 @@
-import { ErrorCode } from '@nezfocus/shared';
+import { ErrorCode, type OwnedServer } from '@nezfocus/shared';
 
 // HTTP status = code / 100, except the codes SRS 11.1 maps differently.
 const STATUS_OVERRIDES: Partial<Record<ErrorCode, number>> = {
@@ -30,6 +30,7 @@ export type AppErrorDetails = {
   attemptsLeft?: number;
   reason?: string;
   timeoutUntil?: Date; // 40307
+  ownedServers?: OwnedServer[]; // 40010
 };
 
 export class AppError extends Error {

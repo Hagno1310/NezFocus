@@ -22,6 +22,7 @@ export const FAKE_ME: CurrentUser = {
   bio: 'Sinh viên năm 3 PTIT · đang ôn Giải tích 2',
   avatar: null,
   account_completed: true,
+  deletion_scheduled_at: null,
   created_at: '2026-10-01T08:00:00.000Z',
 };
 

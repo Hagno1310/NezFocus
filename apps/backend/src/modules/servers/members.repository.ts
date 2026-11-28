@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, sql, type SQL } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
+import { shownUser } from '../users/shown-user.js';
 import { users } from '../users/users.schema.js';
 import { serverMemberRoles, serverMembers } from './servers.schema.js';
 
@@ -46,9 +47,7 @@ export class MembersRepository {
     return this.db
       .select({
         userId: serverMembers.userId,
-        username: users.username,
-        displayName: users.displayName,
-        avatarKey: users.avatarKey,
+        ...shownUser,
         roleIds,
         joinedAt: serverMembers.joinedAt,
         timeoutUntil: serverMembers.timeoutUntil,

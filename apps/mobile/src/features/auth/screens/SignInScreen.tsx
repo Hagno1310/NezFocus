@@ -1,5 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
+  CalendarX,
   Clock3,
   KeyRound,
   LogOut,
@@ -45,6 +46,7 @@ const endedIcon: Record<EndReason, LucideIcon> = {
   revoked: LogOut,
   reuse_detected: ShieldAlert,
   expired: Clock3,
+  account_deleted: CalendarX, // CR-28 #41
 };
 
 // S-AUTH-04: OTP mode (default on a new phone) and password mode; opens the way of the last

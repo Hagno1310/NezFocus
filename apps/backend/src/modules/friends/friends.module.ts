@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { BlockQuery, DbBlockQuery } from './block-query.js';
+import { FriendsEraser } from './friends-eraser.js';
 import { FriendsController } from './friends.controller.js';
 import { FriendsRepository } from './friends.repository.js';
 import { FriendsService } from './friends.service.js';
@@ -12,7 +13,8 @@ import { FriendsService } from './friends.service.js';
     FriendsRepository,
     FriendsService,
     { provide: BlockQuery, useClass: DbBlockQuery },
+    FriendsEraser,
   ],
-  exports: [BlockQuery, FriendsService],
+  exports: [BlockQuery, FriendsService, FriendsEraser],
 })
 export class FriendsModule {}

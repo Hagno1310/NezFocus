@@ -43,6 +43,7 @@ describe('DM contract', () => {
         avatar: null,
         bio: null,
         account_completed: true,
+        deletion_scheduled_at: null,
         created_at: '2026-10-01T00:00:00.000Z',
       },
       servers: [],

@@ -176,6 +176,13 @@
       "when": 1795862178155,
       "tag": "0024_watery_veda",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1795862829212,
+      "tag": "0025_sparkling_stryfe",
+      "breakpoints": true
     }
   ]
 }

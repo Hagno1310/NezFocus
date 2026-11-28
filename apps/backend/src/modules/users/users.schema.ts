@@ -27,6 +27,7 @@ export const users = pgTable(
     termsVersion: varchar({ length: 20 }),
     termsAcceptedAt: timestamp({ withTimezone: true }),
     accountCompletedAt: timestamp({ withTimezone: true }), // NULL → every sign-in lands on Complete account
+    deletionRequestedAt: timestamp({ withTimezone: true }), // REQ-AUTH-10: purged 14 days later
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },

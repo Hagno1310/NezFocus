@@ -93,12 +93,19 @@ export function TransferOwnerScreen({
 
   const confirm = async (password: string) => {
     if (!picked) return;
-    await transfer(serverId, picked.user.id, password);
+    // Before the call: the new Owner shows at once and must not read as "lost access".
     done.current = true;
+    try {
+      await transfer(serverId, picked.user.id, password);
+    } catch (err) {
+      done.current = false;
+      throw err;
+    }
     setOpen(false);
     showToast({
       message: t('servers.transfer.done', { name: nameOf(picked) }),
       icon: Crown,
+      overOverlay: true,
     });
     onDone();
   };

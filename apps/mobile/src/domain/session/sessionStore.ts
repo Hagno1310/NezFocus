@@ -62,9 +62,21 @@ export const markAccountIncomplete = () => {
     sessionStore.setState({ status: 'incomplete' });
 };
 
+// An end this device asked for itself (deleting the account here, AUTH-10 AC1): it may come
+// back by the Gateway before the request answers, and then shows no "session ended" banner.
+let ownEnd: EndReason | null = null;
+export const expectSessionEnd = (reason: EndReason | null) => {
+  ownEnd = reason;
+};
+
 export const endSession = (reason: EndReason) => {
   const { status, user, navigationState } = sessionStore.getState();
   if (status === 'signed-out') return; // concurrent 401s: keep the first snapshot
+  if (reason === ownEnd) {
+    ownEnd = null;
+    signOut();
+    return;
+  }
   sessionStore.setState({
     status: 'signed-out',
     user: null,

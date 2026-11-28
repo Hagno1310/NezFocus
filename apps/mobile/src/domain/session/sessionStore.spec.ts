@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   endSession,
+  expectSessionEnd,
   markAccountIncomplete,
   takeNavigationToRestore,
   requireUpgrade,
@@ -23,6 +24,19 @@ describe('sessionStore', () => {
       status: 'signed-in',
       user: an,
     });
+  });
+
+  it('AUTH-10 AC1: the account deleted here ends quietly (no banner); another reason still shows', () => {
+    signIn(an, { completed: true });
+    expectSessionEnd('account_deleted');
+    endSession('account_deleted');
+    expect(sessionStore.getState()).toMatchObject({
+      status: 'signed-out',
+      ended: null,
+    });
+    signIn(an, { completed: true });
+    endSession('account_deleted');
+    expect(sessionStore.getState().ended?.reason).toBe('account_deleted');
   });
 
   it('AUTH-04 AC5: ending a session keeps the reason, who it was and the screen being viewed', () => {

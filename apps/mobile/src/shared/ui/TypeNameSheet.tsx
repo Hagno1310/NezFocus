@@ -2,6 +2,7 @@ import { Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
+import { useKeyboardVisible } from '../hooks/useKeyboardVisible';
 import { useOnOpen } from '../hooks/useOnOpen';
 import { space } from '../theme';
 import { typedNameMatches } from './logic';
@@ -36,6 +37,8 @@ export function TypeNameSheet({
 }) {
   const { t } = useTranslation();
   const [typed, setTyped] = useState('');
+  // `type-name-keyboard`: the description shrinks to 2 lines so field and button stay in view.
+  const keyboard = useKeyboardVisible();
   useOnOpen(visible, () => setTyped('')); // each opening starts empty
   return (
     <BottomSheet
@@ -58,7 +61,9 @@ export function TypeNameSheet({
       onDismiss={onDismiss}
     >
       <View style={styles.body}>
-        <Text color="text-secondary">{body}</Text>
+        <Text color="text-secondary" numberOfLines={keyboard ? 2 : undefined}>
+          {body}
+        </Text>
         <TextField
           label={label}
           value={typed}

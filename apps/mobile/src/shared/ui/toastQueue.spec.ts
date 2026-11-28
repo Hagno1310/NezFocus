@@ -93,4 +93,13 @@ describe('toast queue (S-MOD-04)', () => {
     );
     expect(s.current).toBeNull();
   });
+
+  it('overOverlay (S-SET-08 A3): shows at once and stays when a dialog opens', () => {
+    const toast = { message: 'Bình đã là Owner', overOverlay: true };
+    let s = toastReducer(initialToastState, { type: 'overlay', open: true });
+    s = toastReducer(s, { type: 'show', toast, now: 0 });
+    expect(s.current?.toast).toBe(toast);
+    s = toastReducer(s, { type: 'overlay', open: true });
+    expect(s.current?.toast).toBe(toast);
+  });
 });

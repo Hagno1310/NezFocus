@@ -8,7 +8,10 @@ import { useEffect } from 'react';
 import { accountRepository } from '../../../data/account';
 import { secureTokenStore } from '../../../data/auth/secureTokenStore';
 import { onGatewayEvent } from '../../../domain/gateway/gatewayStore';
-import { signOut } from '../../../domain/session/sessionStore';
+import {
+  expectSessionEnd,
+  signOut,
+} from '../../../domain/session/sessionStore';
 import { useAuthFlow } from '../../auth/authFlowStore';
 
 const PREVIEW = ['account', 'deletion'] as const;
@@ -57,14 +60,18 @@ export async function deleteAccount(
   password: string,
   deletesAt: string | null,
 ): Promise<'done' | 'blocked'> {
+  useAuthFlow.setState({ deletionNotice: deletesAt });
+  expectSessionEnd('account_deleted');
   try {
     await accountRepository.deleteAccount(password);
   } catch (err) {
+    expectSessionEnd(null);
+    useAuthFlow.setState({ deletionNotice: null });
     if ((err as { code?: number }).code === ErrorCode.OwnershipTransferRequired)
       return 'blocked';
     throw err;
   }
-  useAuthFlow.setState({ deletionNotice: deletesAt });
+  expectSessionEnd(null);
   await secureTokenStore.clear().catch(() => {});
   signOut();
   return 'done';

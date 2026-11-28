@@ -2,12 +2,10 @@ import { ErrorCode } from '@nezfocus/shared';
 import { CircleCheck, Clock3 } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useOnOpen } from '../hooks/useOnOpen';
-import { space, type ColorToken } from '../theme';
+import { space, touchSlop, typography, type ColorToken } from '../theme';
 import type { IconComponent } from './Icon';
-import { Button } from './Button';
-import { FormMessage } from './FormMessage';
 import { BottomSheet } from './Overlay';
 import { Text } from './Text';
 import { TextField } from './TextField';
@@ -106,6 +104,20 @@ export function PasswordSheet({
       title={title}
       icon={icon}
       error={error}
+      // Pinned over the button, never scrolled away under a long body (07 `delete-confirm`).
+      notice={
+        wait !== null
+          ? t(
+              wait.unit === 'seconds'
+                ? 'confirm.rateLimitedSeconds'
+                : 'confirm.rateLimited',
+              { count: wait.count },
+            )
+          : resetDone && !error && !fieldError
+            ? t('confirm.resetDone')
+            : null
+      }
+      noticeIcon={wait !== null ? Clock3 : CircleCheck}
       action={{
         label: confirmLabel,
         variant: 'danger',
@@ -139,34 +151,27 @@ export function PasswordSheet({
             onSubmitEditing={() => void submit()}
           />
           <View style={styles.forgot}>
-            <Button
-              variant="text"
-              size="S"
-              label={t('confirm.forgot')}
+            {/* Frame: a `label` link right under the field, as on Đổi mật khẩu. */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: busy }}
               disabled={busy}
               onPress={onForgot}
-            />
+              hitSlop={{
+                top: touchSlop(typography.label.lineHeight),
+                bottom: touchSlop(typography.label.lineHeight),
+              }}
+            >
+              <Text
+                variant="label"
+                weight="600"
+                color={busy ? 'text-tertiary' : 'primary'}
+              >
+                {t('confirm.forgot')}
+              </Text>
+            </Pressable>
           </View>
         </View>
-        {wait !== null && (
-          <FormMessage
-            tone="info"
-            icon={Clock3}
-            text={t(
-              wait.unit === 'seconds'
-                ? 'confirm.rateLimitedSeconds'
-                : 'confirm.rateLimited',
-              { count: wait.count },
-            )}
-          />
-        )}
-        {resetDone && wait === null && !error && !fieldError && (
-          <FormMessage
-            tone="info"
-            icon={CircleCheck}
-            text={t('confirm.resetDone')}
-          />
-        )}
       </View>
     </BottomSheet>
   );
@@ -174,5 +179,5 @@ export function PasswordSheet({
 
 const styles = StyleSheet.create({
   body: { gap: space[3] },
-  forgot: { alignItems: 'flex-end' },
+  forgot: { alignItems: 'flex-end', paddingTop: space[2] },
 });

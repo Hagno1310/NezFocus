@@ -80,8 +80,9 @@ describe('VoiceRoomsService away seats', () => {
     clock.advance(1);
     await voice.expireAway();
     expect(await voice.seatOf(BINH.userId)).toBeNull();
-    expect(sent.at(-2)).toMatchObject({ to: 'room', d: { channel_id: null } });
-    expect(sent.at(-1)).toMatchObject({ to: 'device', d: { reason: 'left' } });
+    // The leaver's own copy (with the reason) goes first.
+    expect(sent.at(-2)).toMatchObject({ to: 'device', d: { reason: 'left' } });
+    expect(sent.at(-1)).toMatchObject({ to: 'room', d: { channel_id: null } });
     expect(removed).toEqual([`voice:${ROOM}`]);
   });
 

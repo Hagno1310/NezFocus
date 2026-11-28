@@ -16,6 +16,9 @@ const apiError = (code: number, extra = {}) =>
 const noCall = () => Promise.reject(new Error('no call'));
 const repo = (over: Partial<AccountRepository>): AccountRepository => ({
   me: noCall,
+  deletionPreview: noCall,
+  deleteAccount: noCall,
+  cancelDeletion: noCall,
   changePassword: async () => {},
   sessions: noCall,
   revokeSession: noCall,

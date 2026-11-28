@@ -116,6 +116,9 @@ export class FriendsService {
     const other = body.username
       ? await this.repo.userByUsername(body.username)
       : await this.repo.user(BigInt(body.user_id!));
+    if (!other && body.user_id)
+      if (await this.repo.isPendingDeletion(BigInt(body.user_id)))
+        throw cannotRequest();
     if (!other) throw notFound();
     if (other.id === me)
       throw new AppError(ErrorCode.ValidationError, 'Cannot befriend yourself');

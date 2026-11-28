@@ -36,6 +36,9 @@ export const servers = pgTable('servers', {
     onDelete: 'set null',
   }),
   createdAt: tz().notNull().defaultNow(),
+  // REQ-SRV-05: soft-delete, restorable for 30 days; every read of live servers filters on it.
+  // The purge keeps the row (and its channels) so study history stays (CR-28 #42).
+  deletedAt: tz(),
 });
 
 export const ChannelTypeCode = {

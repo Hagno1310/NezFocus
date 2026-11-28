@@ -5,6 +5,7 @@ import {
   FAKE_FULL_NAME,
   FAKE_NETWORK_NAME,
 } from './FakeServerRepository';
+import { FAKE_PASSWORD } from '../auth/FakeAuthRepository';
 
 const repo = createFakeServerRepository(0);
 
@@ -157,5 +158,39 @@ describe('FakeServerRepository channels (REQ-SRV-02)', () => {
     expect(
       await field(fresh.updateRole('100', created.id, { name: 'Hết quyền' })),
     ).toBe(ErrorCode.Forbidden);
+  });
+});
+
+describe('FakeServerRepository leave / delete / transfer (SRV-05)', () => {
+  const code = (p: Promise<unknown>) =>
+    p.then(
+      () => 0,
+      (e: { code: number }) => e.code,
+    );
+
+  it('the Owner cannot leave (40012); delete → listed, restore → back', async () => {
+    const r = createFakeServerRepository(0);
+    expect(await code(r.leaveServer('100'))).toBe(ErrorCode.OwnerCannotLeave);
+    const before = (await r.listDeletedServers()).length;
+    await r.deleteServer('100');
+    expect(await code(r.getServer('100'))).toBe(ErrorCode.NotFound);
+    expect((await r.listDeletedServers()).map((s) => s.id)).toContain('100');
+    expect((await r.restoreServer('100')).id).toBe('100');
+    expect(await r.listDeletedServers()).toHaveLength(before);
+  });
+
+  it('transfer: wrong password 40102, the 5th 40029; a non-member 40401', async () => {
+    const r = createFakeServerRepository(0);
+    for (let i = 0; i < 4; i++)
+      expect(await code(r.transferOwner('100', '1', 'sai'))).toBe(
+        ErrorCode.InvalidCredentials,
+      );
+    expect(await code(r.transferOwner('100', '1', 'sai'))).toBe(
+      ErrorCode.RateLimited,
+    );
+    const fresh = createFakeServerRepository(0);
+    expect(await code(fresh.transferOwner('100', '99', FAKE_PASSWORD))).toBe(
+      ErrorCode.NotFound,
+    );
   });
 });

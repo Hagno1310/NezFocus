@@ -168,6 +168,12 @@ export function createUploads(deps: UploadsDeps) {
       });
     },
 
+    // CR-17 #17: the server of these channels went away; its uploads stop, tiles go.
+    dropChannels(channelIds: readonly string[]) {
+      for (const item of Object.values(state.getState().items))
+        if (channelIds.includes(item.channelId)) this.remove(item.key);
+    },
+
     // The backend no longer takes these ids (40001, e.g. swept after 24h): the next try
     // uploads the photos again.
     stale(keys: readonly string[]) {

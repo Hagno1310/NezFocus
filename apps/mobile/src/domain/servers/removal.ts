@@ -1,11 +1,19 @@
 import { createStore } from 'zustand/vanilla';
 
+// Why a server left my rail. `deleted`: the Owner deleted it ("{Server} đã bị xóa", SRV-05
+// AC4); `deleted_here` (I am the Owner) and `left` (SRV-05 AC5) have no Dialog.
+export type RemovalKind = 'kick' | 'ban' | 'deleted' | 'deleted_here' | 'left';
+
+// The kinds with a Dialog (one "Đã hiểu").
+export const hasRemovalDialog = (kind: RemovalKind) =>
+  kind === 'kick' || kind === 'ban' || kind === 'deleted';
+
 // 02 S-HOME-EDGE `kicked` / `banned` / `banned-in-room`, 03 S-ROOM-EDGE `kicked` (one Dialog,
 // chốt 28/11/2026). Never says who did it (REQ-ROLE-05).
 export type Removal = {
   serverId: string;
   serverName: string;
-  action: 'kick' | 'ban';
+  action: RemovalKind;
   reason: string | null;
   minutes: number | null; // "{31 phút} đã học trong phiên học vẫn được tính.", from 1 minute
 };
@@ -18,7 +26,11 @@ export const removalStore = createStore<{
 }>(() => ({ pending: null, shown: null }));
 
 export const removalCleared = () =>
-  removalStore.setState((s) => ({ pending: null, shown: s.pending }));
+  removalStore.setState((s) => ({
+    pending: null,
+    shown:
+      s.pending && hasRemovalDialog(s.pending.action) ? s.pending : s.shown,
+  }));
 
 export const dismissRemoval = () => removalStore.setState({ shown: null });
 

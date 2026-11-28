@@ -1,5 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
+  CalendarX,
   Clock3,
   KeyRound,
   LogOut,
@@ -24,6 +25,7 @@ import {
 import { space } from '../../../shared/theme';
 import { Button } from '../../../shared/ui/Button';
 import { Banner, SystemBanner } from '../../../shared/ui/Feedback';
+import { PendingDeletionDialog } from '../components/PendingDeletionDialog';
 import { PendingInviteBanner } from '../components/PendingInviteBanner';
 import { FormMessage } from '../../../shared/ui/FormMessage';
 import { Text } from '../../../shared/ui/Text';
@@ -45,6 +47,7 @@ const endedIcon: Record<EndReason, LucideIcon> = {
   revoked: LogOut,
   reuse_detected: ShieldAlert,
   expired: Clock3,
+  account_deleted: CalendarX, // CR-28 #41
 };
 
 // S-AUTH-04: OTP mode (default on a new phone) and password mode; opens the way of the last
@@ -276,6 +279,9 @@ export function SignInScreen({ navigation, route }: Props) {
         prefix={t('auth.signIn.noAccount')}
         link={t('auth.signIn.createAccount')}
         onPress={() => navigation.navigate('CreateAccount')}
+      />
+      <PendingDeletionDialog
+        onLater={(mode, email) => navigation.setParams({ mode, email })}
       />
     </AuthScreen>
   );

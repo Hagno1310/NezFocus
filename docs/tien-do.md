@@ -159,10 +159,10 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
 - [x] **P3-A3** [#23](https://github.com/Hagno1310/NezFocus/issues/23) Kiểm duyệt thành viên: tạm khóa, mời ra, cấm, audit log (ROLE-05, ROLE-07, ROLE-09)
   - Cần trước: P2-A2, P3-B1.1 (Hoàng)
   - Trong lúc làm: P3-A3.4 chờ P3-B3.1 (Hoàng)
-- [ ] **P3-A4** [#24](https://github.com/Hagno1310/NezFocus/issues/24) Rời / xóa / chuyển quyền server và xóa tài khoản (SRV-05, AUTH-10)
+- [x] **P3-A4** [#24](https://github.com/Hagno1310/NezFocus/issues/24) Rời / xóa / chuyển quyền server và xóa tài khoản (SRV-05, AUTH-10)
   - Cần trước: P3-A3
   - Trong lúc làm: P3-A4.2 chờ P3-B3.1 (Hoàng)
-  - [ ] mốc **P3-A4.4** [#133](https://github.com/Hagno1310/NezFocus/issues/133) App: xóa và khôi phục tài khoản (S-ME-03, S-AUTH-01, S-AUTH-04) · người kia chờ: P4-B2 (Hoàng)
+  - [x] mốc **P3-A4.4** [#133](https://github.com/Hagno1310/NezFocus/issues/133) App: xóa và khôi phục tài khoản (S-ME-03, S-AUTH-01, S-AUTH-04) · người kia chờ: P4-B2 (Hoàng)
 - [ ] **P3-A5** [#25](https://github.com/Hagno1310/NezFocus/issues/25) Báo cáo vi phạm và tab Báo cáo của moderator (SAFE-01, S-MOD-02, S-SET-05) · **Thùy chạy phiên**
   - Cần trước: P2-B4 (Hoàng), P3-A1, P3-A3
   - [ ] mốc **P3-A5.3** [#136](https://github.com/Hagno1310/NezFocus/issues/136) App: tab Báo cáo của moderator (S-SET-05) · người kia chờ: P4-B1 (Hoàng)

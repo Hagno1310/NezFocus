@@ -38,6 +38,12 @@ describe('pushTarget (REQ-NOTIF-02 "bấm notification mở đúng màn hình")'
     });
   });
 
+  it('owner_transferred opens the settings of that server (spec 06, SRV-05)', () => {
+    expect(
+      pushTarget({ type: 'owner_transferred', id: '92', server_id: '100' }),
+    ).toEqual({ kind: 'server-settings', serverId: '100' });
+  });
+
   it('(negative) ignores what is not one of our pushes', () => {
     expect(pushTarget(undefined)).toBeNull();
     expect(pushTarget({ open: 'solo' })).toBeNull(); // a Solo phase alert (STUDY-10)

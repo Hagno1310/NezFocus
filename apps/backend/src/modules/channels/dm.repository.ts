@@ -209,6 +209,7 @@ export class DmRepository {
         and(
           eq(serverMembers.userId, viewer),
           inArray(serverMembers.serverId, theirs),
+          isNull(servers.deletedAt), // REQ-SRV-05: a deleted server is shared by nobody
         ),
       )
       .orderBy(asc(serverMembers.joinedAt), asc(servers.id));

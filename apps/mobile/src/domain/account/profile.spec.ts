@@ -12,10 +12,14 @@ const user = {
   bio: null,
   avatar: null,
   account_completed: true,
+  deletion_scheduled_at: null,
   created_at: '2026-10-01T08:00:00.000Z',
 };
 const account = (over: Partial<AccountRepository>): AccountRepository => ({
   me: noCall,
+  deletionPreview: noCall,
+  deleteAccount: noCall,
+  cancelDeletion: noCall,
   changePassword: noCall,
   sessions: noCall,
   revokeSession: noCall,

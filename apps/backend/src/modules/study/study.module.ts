@@ -10,6 +10,7 @@ import { SoloSessionController } from './solo-session.controller.js';
 import { SoloSessionRepository } from './solo-session.repository.js';
 import { SoloScheduler, SoloSessionService } from './solo-session.service.js';
 import { StreakService } from './streak.service.js';
+import { StudyDataEraser } from './study-data-eraser.js';
 import { StudyStatsController } from './study-stats.controller.js';
 import { StudyStatsRepository } from './study-stats.repository.js';
 import { StudyStatsService } from './study-stats.service.js';
@@ -38,6 +39,7 @@ import { LiveStudyRoomQuery, StudyRoomQuery } from './study-room.query.js';
     { provide: RoomScheduler, useClass: BullRoomScheduler },
     RoomPhaseWorker,
     RoomSessionListener,
+    StudyDataEraser,
   ],
   exports: [
     StudyStatsRepository,
@@ -45,6 +47,7 @@ import { LiveStudyRoomQuery, StudyRoomQuery } from './study-room.query.js';
     StreakService,
     StudyRoomQuery,
     RoomSessionService,
+    StudyDataEraser, // REQ-AUTH-10 account purge
   ],
 })
 export class StudyModule {}

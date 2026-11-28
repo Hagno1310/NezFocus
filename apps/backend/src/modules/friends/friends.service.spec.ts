@@ -42,6 +42,7 @@ function setup() {
   const repo = {
     user: async (id: bigint) => PEOPLE.find((p) => p.id === id),
     userByUsername: async (u: string) => PEOPLE.find((p) => p.username === u),
+    isPendingDeletion: async (id: bigint) => id === 77n,
     pair: async (a: bigint, b: bigint) => pairs.get(k(a, b)),
     isBlocked: async (a: bigint, b: bigint) => blocks.has(`${a}>${b}`),
     insertRequest: async (r: {
@@ -192,6 +193,13 @@ describe('FriendsService (REQ-FRIEND-01..03)', () => {
     ).toBeNull();
     expect(await code(t.service.send(AN, { user_id: '99' }))).toBe(
       ErrorCode.NotFound,
+    );
+  });
+
+  it('REQ-AUTH-10: an account waiting to be deleted → 40303', async () => {
+    const t = setup();
+    expect(await code(t.service.send(AN, { user_id: '77' }))).toBe(
+      ErrorCode.CannotMessageUser,
     );
   });
 

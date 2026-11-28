@@ -5,6 +5,7 @@ import type {
   CreateChannelRequest,
   CreateRoleRequest,
   CreateServerRequest,
+  DeletedServer,
   PermissionOverwrite,
   PutChannelPermissionRequest,
   RoleListResponse,
@@ -88,4 +89,11 @@ export interface ServerRepository {
     query: { q?: string; after?: string | null },
   ): Promise<BanListResponse>;
   unbanMember(serverId: string, userId: string): Promise<void>;
+  // REQ-SRV-05: leave (40012 for the Owner), delete (Owner, 30 days to restore), restore,
+  // the deleted ones (02 S-HOME-06 `restore-list`), transfer with the password again.
+  leaveServer(id: string): Promise<void>;
+  deleteServer(id: string): Promise<void>;
+  restoreServer(id: string): Promise<ServerResponse>;
+  listDeletedServers(): Promise<DeletedServer[]>;
+  transferOwner(id: string, userId: string, password: string): Promise<void>;
 }

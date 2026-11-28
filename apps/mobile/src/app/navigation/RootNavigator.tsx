@@ -76,7 +76,7 @@ import { useMeSync } from '../../features/me/hooks/useMe';
 import { Button } from '../../shared/ui/Button';
 import { StyleSheet, View } from 'react-native';
 import { space } from '../../shared/theme';
-import { homeStore } from '../../domain/servers/homeStore';
+import { homeStore, selectServer } from '../../domain/servers/homeStore';
 import { openInviteSheet } from '../../domain/invites/inviteSheetStore';
 import { InviteSheet } from '../../features/servers/components/InviteSheet';
 import { NoServerHome } from '../../features/servers/screens/LeftDrawer';
@@ -87,6 +87,13 @@ import { StudyRoomSettingsScreen } from '../../features/servers/screens/StudyRoo
 import { OverwriteEditScreen } from '../../features/servers/screens/OverwriteEditScreen';
 import { MemberDetailScreen } from '../../features/servers/screens/MemberDetailScreen';
 import { RemovalHost } from '../../features/servers/components/RemovalDialog';
+import {
+  askToLeave,
+  LeaveServerDialogs,
+} from '../../features/servers/components/LeaveServerDialogs';
+import { DeletedServersScreen } from '../../features/servers/screens/DeletedServersScreen';
+import { TransferOwnerScreen } from '../../features/servers/screens/TransferOwnerScreen';
+import { passwordWasReset } from '../../domain/account/passwordReset';
 import { BansScreen } from '../../features/servers/screens/BansScreen';
 import { InvitesScreen } from '../../features/servers/screens/InvitesScreen';
 import { MembersScreen } from '../../features/servers/screens/MembersScreen';
@@ -175,6 +182,11 @@ type HomeParamList = {
   }; // S-SET-06 `overwrite-edit`
   ChannelOverview: { serverId: string; channelId: string }; // S-SET-06 overview
   StudyRoomSettings: { serverId: string; channelId: string }; // S-SET-07
+  // S-SET-08; `leave`: started from S-HOME-09 `owner-leave`, done → `leave-confirm` (A3)
+  TransferOwner: { serverId: string; then?: 'leave' };
+  DeletedServers: undefined; // S-HOME-06 `restore-list`
+  // S-ME-03 `password-code` from S-MOD-03 "Quên mật khẩu?" on a Home screen
+  PasswordCode: undefined;
 };
 
 type TabParamList = {
@@ -193,7 +205,6 @@ type MeParamList = {
   Account: undefined; // S-ME-03
   ChangePassword: { mode?: 'code' } | undefined; // S-ME-03 password-form / password-code
   Sessions: undefined; // S-ME-03 sessions
-  DeleteAccount: undefined; // S-ME-03 delete (P3-A4 #24)
   Privacy: undefined; // S-ME-04
   Blocked: undefined; // S-DM-04 `blocked`, Back to S-ME-04
   Notifications: undefined; // S-ME-05
@@ -248,12 +259,13 @@ function HomeTab() {
                     },
                     settings: (serverId) =>
                       navigation.navigate('ServerSettings', { serverId }),
-                    // ponytail: report (P3-A5 #25), leave / owner-leave (P3-A4 #24).
+                    // ponytail: report (P3-A5 #25).
                     report: placeholder(
                       t('servers.menu.report'),
                       'P3-A5 (#25)',
                     ),
-                    leave: placeholder(t('servers.menu.leave'), 'P3-A4 (#24)'),
+                    leave: () =>
+                      askToLeave(homeStore.getState().selectedServerId),
                   },
                   onChannelSettings: (channel) =>
                     navigation.navigate('ChannelSettings', {
@@ -282,6 +294,7 @@ function HomeTab() {
               }
               onClose={navigation.goBack}
               onJoinByCode={() => navigation.navigate('JoinByCode')}
+              onDeleted={() => navigation.navigate('DeletedServers')}
               onCreated={() => navigation.popTo('HomeRoot')}
             />
           )}
@@ -316,10 +329,54 @@ function HomeTab() {
                   serverId: route.params.serverId,
                 })
               }
+              onTransfer={() =>
+                navigation.navigate('TransferOwner', {
+                  serverId: route.params.serverId,
+                })
+              }
               onRow={(title, ticket) =>
                 navigation.navigate('HomePlaceholder', { title, ticket })
               }
               onLostAccess={() => navigation.popTo('HomeRoot')}
+            />
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen name="TransferOwner">
+          {({ navigation, route }) => (
+            <TransferOwnerScreen
+              serverId={route.params.serverId}
+              onBack={navigation.goBack}
+              onDone={() => {
+                navigation.goBack();
+                // A3: from the leave flow, the leave Dialog opens at once.
+                if (route.params.then === 'leave')
+                  askToLeave(route.params.serverId);
+              }}
+              onForgot={() => navigation.navigate('PasswordCode')}
+              onLostAccess={navigation.goBack}
+            />
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen name="PasswordCode">
+          {({ navigation }) => (
+            <ChangePasswordScreen
+              initialMode="code"
+              onBack={navigation.goBack}
+              onSaved={() => {
+                passwordWasReset();
+                navigation.goBack();
+              }}
+            />
+          )}
+        </HomeStack.Screen>
+        <HomeStack.Screen name="DeletedServers">
+          {({ navigation }) => (
+            <DeletedServersScreen
+              onBack={navigation.goBack}
+              onOpen={(serverId) => {
+                selectServer(serverId);
+                navigation.popTo('HomeRoot');
+              }}
             />
           )}
         </HomeStack.Screen>
@@ -664,13 +721,7 @@ function StudyTab() {
 
 type Action = { label: string; onPress: () => void };
 
-// Child screens not built yet: each names the ticket that replaces it.
-const meChildren = [
-  ['DeleteAccount', 'me.deleteAccount', 'P3-A4 (#24)'],
-] as const;
-
 function MeTab({ devActions }: { devActions: Action[] }) {
-  const { t } = useTranslation();
   return (
     <MeStack.Navigator>
       <MeStack.Screen name="MeRoot" options={{ headerShown: false }}>
@@ -733,7 +784,15 @@ function MeTab({ devActions }: { devActions: Action[] }) {
             onBack={navigation.goBack}
             onChangePassword={() => navigation.navigate('ChangePassword')}
             onSessions={() => navigation.navigate('Sessions')}
-            onDeleteAccount={() => navigation.navigate('DeleteAccount')}
+            onOpenServer={(serverId) =>
+              navigation.getParent()?.navigate('Home', {
+                screen: 'TransferOwner',
+                params: { serverId },
+              })
+            }
+            onForgot={() =>
+              navigation.navigate('ChangePassword', { mode: 'code' })
+            }
           />
         )}
       </MeStack.Screen>
@@ -742,7 +801,10 @@ function MeTab({ devActions }: { devActions: Action[] }) {
           <ChangePasswordScreen
             initialMode={route.params?.mode}
             onBack={navigation.goBack}
-            onSaved={() => navigation.goBack()}
+            onSaved={() => {
+              passwordWasReset(); // S-MOD-03 `password-reset-done` (xóa tài khoản)
+              navigation.goBack();
+            }}
           />
         )}
       </MeStack.Screen>
@@ -768,11 +830,6 @@ function MeTab({ devActions }: { devActions: Action[] }) {
       <MeStack.Screen name="Sessions" options={{ headerShown: false }}>
         {({ navigation }) => <SessionsScreen onBack={navigation.goBack} />}
       </MeStack.Screen>
-      {meChildren.map(([name, title, ticket]) => (
-        <MeStack.Screen key={name} name={name} options={{ title: t(title) }}>
-          {() => <Placeholder title={t(title)} ticket={ticket} />}
-        </MeStack.Screen>
-      ))}
     </MeStack.Navigator>
   );
 }
@@ -899,6 +956,18 @@ function MainTabs() {
     <>
       {/* REQ-ROLE-05: kicked / banned while the app is open, over every tab. */}
       <RemovalHost nav={nav} />
+      {/* S-HOME-09 leave / owner-leave (SRV-05), over every tab. */}
+      <LeaveServerDialogs
+        onTransfer={(serverId) =>
+          nav.navigate('Main', {
+            screen: 'Home',
+            params: {
+              screen: 'TransferOwner',
+              params: { serverId, then: 'leave' },
+            },
+          })
+        }
+      />
       {/* S-HOME-10: one sheet over every tab. */}
       <ProfileSheetHost
         onOpenedDm={toHome}

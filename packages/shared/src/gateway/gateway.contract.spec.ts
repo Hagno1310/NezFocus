@@ -83,6 +83,7 @@ describe('gateway contract', () => {
       bio: null,
       avatar: null,
       account_completed: true,
+      deletion_scheduled_at: null,
       created_at: '2026-11-05T08:00:00.000Z',
     };
 

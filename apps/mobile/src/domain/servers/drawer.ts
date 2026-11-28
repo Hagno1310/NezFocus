@@ -201,6 +201,9 @@ function apply(s: HomeState, e: DispatchEvent, meId: string | null): HomeState {
     // REQ-ROLE-05 (CR-17 #14): kicked or banned → off the rail; the next server is shown.
     case 'SERVER_MEMBER_REMOVE':
       return e.d.user_id === meId ? withoutServer(s, e.d.server_id) : s;
+    // REQ-SRV-05 AC4: deleted by its Owner (a restore comes back as SERVER_CREATE).
+    case 'SERVER_DELETE':
+      return withoutServer(s, e.d.id);
     case 'SERVER_UPDATE':
       return s.servers ? { ...s, servers: upsert(s.servers, e.d) } : s;
     case 'CHANNEL_CREATE':

@@ -1,4 +1,9 @@
-import { AccountRoutes, CurrentUser, SessionInfo } from '@nezfocus/shared';
+import {
+  AccountDeletionPreview,
+  AccountRoutes,
+  CurrentUser,
+  SessionInfo,
+} from '@nezfocus/shared';
 import type { AccountRepository } from '../../domain/account/AccountRepository';
 import { api } from '../api';
 
@@ -21,4 +26,15 @@ export const remoteAccountRepository: AccountRepository = {
     CurrentUser.parse(
       await api.request(AccountRoutes.me, { method: 'PATCH', body }),
     ),
+  deletionPreview: async () =>
+    AccountDeletionPreview.parse(await api.request(AccountRoutes.deletion)),
+  deleteAccount: async (password) => {
+    await api.request(AccountRoutes.me, {
+      method: 'DELETE',
+      body: { password },
+    });
+  },
+  cancelDeletion: async () => {
+    await api.request(AccountRoutes.deletion, { method: 'DELETE' });
+  },
 };

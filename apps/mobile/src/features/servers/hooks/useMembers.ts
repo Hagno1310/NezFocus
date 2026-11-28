@@ -7,7 +7,7 @@ import { applyMemberEvent } from '../../../domain/servers/members';
 import { roleErrorOf, type RoleError } from '../../../domain/servers/roles';
 
 const membersRoot = (serverId: string) => ['servers', serverId, 'members'];
-const membersKey = (serverId: string, channelId?: string) => [
+export const membersKey = (serverId: string, channelId?: string) => [
   ...membersRoot(serverId),
   channelId ?? 'all',
 ];

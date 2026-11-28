@@ -4,6 +4,7 @@ import {
   BAN_SEARCH_FROM,
   banDetailLine,
   banRowLine,
+  daysLeft,
   inviteExpiry,
   inviteUses,
 } from './serverLists';
@@ -70,5 +71,16 @@ describe('S-SET-04 `bans`', () => {
 
   it('the search shows from 11 people', () => {
     expect(BAN_SEARCH_FROM).toBe(11);
+  });
+});
+
+describe('restore-list (S-HOME-06, SRV-05 v1.7)', () => {
+  it('"Còn 30 ngày" just deleted, whole days rounded up, never under 1', () => {
+    const now = Date.parse('2026-10-18T13:12:00Z');
+    const until = (iso: string) => ({ restore_until: iso });
+    expect(daysLeft(until('2026-11-17T13:12:00Z'), now)).toBe(30);
+    expect(daysLeft(until('2026-10-19T20:00:00Z'), now)).toBe(2);
+    expect(daysLeft(until('2026-10-18T14:00:00Z'), now)).toBe(1);
+    expect(daysLeft(until('2026-10-18T12:00:00Z'), now)).toBe(1);
   });
 });

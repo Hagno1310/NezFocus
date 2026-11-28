@@ -327,6 +327,17 @@ export const vi = {
       reuse_detected:
         'Phiên đăng nhập đã được đóng để bảo vệ tài khoản · hãy đổi mật khẩu nếu đó không phải bạn',
       expired: 'Phiên đăng nhập đã hết hạn · hãy đăng nhập lại',
+      account_deleted:
+        'Tài khoản đang chờ xóa · đăng nhập trước hạn để khôi phục',
+    },
+    // 01 S-AUTH-04 `pending-deletion`, S-AUTH-01 `pending-deletion-notice` (AUTH-10)
+    pendingDeletion: {
+      title: 'Tài khoản đang chờ xóa',
+      body: 'Tài khoản sẽ bị xóa vĩnh viễn vào {{date}} (còn {{count}} ngày). Khôi phục để dùng tiếp; server, tin nhắn và chuỗi ngày học vẫn còn nguyên.',
+      restore: 'Khôi phục tài khoản',
+      later: 'Để sau',
+      notice:
+        'Tài khoản sẽ bị xóa vào {{date}} · đăng nhập trước ngày đó để khôi phục',
     },
     update: {
       title: 'Cần cập nhật NezFocus',
@@ -598,6 +609,56 @@ export const vi = {
       offlineOne: 'Bạn không còn ở {{server}}',
       offlineMany: 'Bạn không còn ở {{count}} server',
       view: 'Xem',
+      // 02 S-HOME-EDGE "Server bị Owner xóa khi đang xem" (SRV-05 AC4)
+      deletedTitle: '{{server}} đã bị xóa',
+      deletedBody: 'Owner đã xóa server này.',
+    },
+    // 02 S-HOME-09 (SRV-05, CR-17 #9)
+    leave: {
+      title: 'Rời {{server}}?',
+      body: 'Bạn sẽ cần lời mời mới để quay lại.',
+      inRoom: 'Bạn cũng sẽ rời {{room}}.',
+      successor: '{{name}} sẽ điều khiển phiên học.',
+      noSuccessor: 'Phiên học vẫn chạy nhưng chưa có người điều khiển.',
+      confirm: 'Rời server',
+      ownerTitle: 'Bạn đang là Owner của {{server}}',
+      ownerBody:
+        'Chuyển quyền Owner cho một thành viên khác trước khi rời server.',
+      transfer: 'Chuyển quyền Owner',
+      later: 'Để sau',
+    },
+    // 08 S-SET-08, 10 S-MOD-03 `password`
+    transfer: {
+      title: 'Chuyển quyền Owner',
+      intro:
+        'Chọn người sẽ là Owner của {{server}}. Bạn vẫn giữ các vai trò hiện có.',
+      search: 'Tìm thành viên',
+      noMatch: 'Không có thành viên nào tên “{{query}}”',
+      aloneTitle: 'Server chưa có thành viên khác',
+      aloneBody: 'Mời bạn bè vào trước, hoặc xóa server nếu không dùng nữa.',
+      confirmTitle: 'Chuyển quyền Owner cho {{name}}?',
+      confirmBody:
+        '{{name}} sẽ là Owner của {{server}}. Bạn vẫn giữ các vai trò hiện có nhưng không còn là Owner.',
+      confirm: 'Chuyển quyền',
+      done: '{{name}} đã là Owner',
+      gone: '{{name}} không còn trong server',
+    },
+    // 08 S-SET-08 `delete-confirm` / `deleted`, 10 S-MOD-03 `type-name`
+    deleteServer: {
+      title: 'Xóa {{server}}?',
+      body: 'Server và mọi kênh, tin nhắn, việc cần làm sẽ bị xóa với {{count}} thành viên. Bạn có 30 ngày để khôi phục.',
+      label: 'Nhập tên server để xác nhận',
+      confirm: 'Xóa server',
+      done: 'Đã xóa {{server}} · Khôi phục được trong 30 ngày',
+    },
+    // 02 S-HOME-06 `restore` / `restore-list`
+    restore: {
+      row: 'Server đã xóa',
+      title: 'Server đã xóa',
+      note: 'Server bạn đã xóa được giữ 30 ngày. Chỉ Owner thấy và khôi phục được.',
+      daysLeft: 'Còn {{count}} ngày để khôi phục',
+      action: 'Khôi phục',
+      done: 'Đã khôi phục {{server}}',
     },
     moderation: {
       title: 'KIỂM DUYỆT',
@@ -842,6 +903,20 @@ export const vi = {
       MANAGE_TASKS: 'Sửa, xóa, đổi trạng thái mọi việc.',
     } as Partial<Record<string, string>>,
   },
+  // 10 S-MOD-03 `password` (chuyển quyền Owner, xóa tài khoản)
+  confirm: {
+    passwordLabel: 'Mật khẩu của bạn',
+    passwordPlaceholder: 'Nhập mật khẩu',
+    passwordEmpty: 'Nhập mật khẩu',
+    passwordWrong: 'Mật khẩu không đúng',
+    forgot: 'Quên mật khẩu?',
+    rateLimited:
+      'Bạn đã nhập sai nhiều lần. Thử lại sau {{count}} phút, hoặc dùng Quên mật khẩu?',
+    rateLimitedSeconds:
+      'Bạn đã nhập sai nhiều lần. Thử lại sau {{count}} giây, hoặc dùng Quên mật khẩu?',
+    resetDone: 'Đã đổi mật khẩu. Nhập mật khẩu mới để tiếp tục.',
+    failed: 'Chưa thực hiện được. Kiểm tra kết nối rồi thử lại.',
+  },
   me: {
     streak_one: '🔥 {{count}} ngày',
     streak_other: '🔥 {{count}} ngày',
@@ -939,6 +1014,21 @@ export const vi = {
     deleteAccount: 'Xóa tài khoản',
     deleteNote:
       'Tài khoản bị xóa sau 14 ngày; đăng nhập lại trước hạn để khôi phục.',
+    // 07 S-ME-03 `delete-blocked-owner`, `delete-confirm` (AUTH-10, CR-16 #12)
+    deleteBlockedTitle: 'Bạn đang là Owner của {{count}} server',
+    deleteBlockedBody:
+      'Chuyển quyền Owner hoặc xóa server trước khi xóa tài khoản.',
+    deleteBlockedRow: '{{count}} thành viên',
+    deleteClose: 'Đóng',
+    deleteContinue: 'Tiếp tục xóa',
+    deleteTitle: 'Xóa tài khoản?',
+    deleteBody:
+      'Tài khoản sẽ bị xóa vĩnh viễn vào {{date}}. Trong 14 ngày, đăng nhập lại để khôi phục. Sau đó hồ sơ, chuỗi ngày học và bạn bè bị xóa; tin nhắn hiện "Tài khoản đã bị xóa".',
+    deleteSolo: 'Server chỉ có bạn — sẽ bị xóa cùng tài khoản',
+    deleteSoloRow: '1 thành viên',
+    deleteInvites:
+      'Mọi link mời của các server này bị thu hồi ngay, kể cả khi bạn khôi phục tài khoản.',
+    deleteConfirm: 'Xóa tài khoản',
     currentPassword: 'Mật khẩu hiện tại',
     forgot: 'Quên mật khẩu?',
     newPassword: 'Mật khẩu mới',

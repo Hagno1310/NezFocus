@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PresenceStatus } from '@nezfocus/shared';
-import { and, eq, inArray, ne, or } from 'drizzle-orm';
+import { and, eq, inArray, isNull, ne, or } from 'drizzle-orm';
 import { FriendshipStatus, friendships } from '../friends/friends.schema.js';
 import { DB, type Db } from '../../db/db.module.js';
-import { serverMembers } from '../servers/servers.schema.js';
+import { serverMembers, servers } from '../servers/servers.schema.js';
 import { userSettings } from '../users/users.schema.js';
 
 export type PresenceSettings = {
@@ -41,7 +41,9 @@ export class PresenceRepository {
     const mine = this.db
       .select({ serverId: serverMembers.serverId })
       .from(serverMembers)
-      .where(eq(serverMembers.userId, userId));
+      .innerJoin(servers, eq(servers.id, serverMembers.serverId))
+      // REQ-SRV-05: a deleted server is shared by nobody.
+      .where(and(eq(serverMembers.userId, userId), isNull(servers.deletedAt)));
     const [members, friends] = await Promise.all([
       this.db
         .selectDistinct({ userId: serverMembers.userId })

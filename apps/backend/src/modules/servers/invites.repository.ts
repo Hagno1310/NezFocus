@@ -42,12 +42,14 @@ export type ListedInvite = InviteRow & {
 export class InvitesRepository {
   constructor(@Inject(DB) private readonly db: Db) {}
 
+  // REQ-SRV-05 AC4: an invite of a deleted server is unknown (40041) until a restore.
   async find(code: string): Promise<InviteRow | undefined> {
     const [row] = await this.db
-      .select()
+      .select({ invite: invites })
       .from(invites)
-      .where(eq(invites.code, code));
-    return row;
+      .innerJoin(servers, eq(servers.id, invites.serverId))
+      .where(and(eq(invites.code, code), isNull(servers.deletedAt)));
+    return row?.invite;
   }
 
   ownInvites(creatorId: bigint, channelId: bigint): Promise<InviteRow[]> {

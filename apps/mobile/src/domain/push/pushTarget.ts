@@ -1,7 +1,9 @@
 import type { NezfocusLink } from '../messages/links';
 
 export type PushTarget =
-  { kind: 'link'; link: NezfocusLink } | { kind: 'friend-requests' }; // S-DM-04 `pending`
+  | { kind: 'link'; link: NezfocusLink }
+  | { kind: 'friend-requests' } // S-DM-04 `pending`
+  | { kind: 'server-settings'; serverId: string }; // spec 06 `owner_transferred` → S-SET-01
 
 const ID = /^\d{1,20}$/;
 
@@ -31,6 +33,10 @@ export function pushTarget(data: unknown): PushTarget | null {
       return { kind: 'link', link: { kind: 'dm', channelId, messageId } };
     case 'friend_request':
       return { kind: 'friend-requests' };
+    case 'owner_transferred': {
+      const serverId = id('server_id');
+      return serverId ? { kind: 'server-settings', serverId } : null;
+    }
     default:
       return null;
   }

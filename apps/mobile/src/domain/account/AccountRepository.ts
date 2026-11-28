@@ -1,4 +1,5 @@
 import type {
+  AccountDeletionPreview,
   ChangePasswordRequest,
   CurrentUser,
   SessionInfo,
@@ -16,4 +17,10 @@ export interface AccountRepository {
   revokeOtherSessions(): Promise<void>;
   // AUTH-06: USER_UPDATE reaches the other devices.
   updateProfile(body: UpdateProfileRequest): Promise<CurrentUser>;
+  // REQ-AUTH-10 (CR-28 #41): the servers blocking a deletion and the ones going with it.
+  deletionPreview(): Promise<AccountDeletionPreview>;
+  // 204 → every session ends (this one too) · 40010, 40102, 40029.
+  deleteAccount(password: string): Promise<void>;
+  // AC4 "Khôi phục tài khoản".
+  cancelDeletion(): Promise<void>;
 }

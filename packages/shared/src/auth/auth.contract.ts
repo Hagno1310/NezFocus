@@ -44,7 +44,15 @@ export const AccountRoutes = {
   // REQ-AUTH-07 · bearer · DELETE → 204, ends that session (4004 revoked) · 40401 when it is
   // not one of yours or already ended. The calling session itself: use /auth/logout.
   session: '/users/@me/sessions/:id',
+  // REQ-AUTH-10 · bearer · DELETE on `me` with DeleteAccountRequest → 204: pending_deletion for
+  // 14 days, every session ends (4004 account_deleted) · 40010 (details.owned_servers),
+  // 40102, 40029 (shared wrong-password limit).
+  // GET → AccountDeletionPreview (CR-28 #41) · DELETE → 204, cancels a pending deletion.
+  deletion: '/users/@me/deletion',
 } as const;
+
+// REQ-AUTH-10: 14 days to come back.
+export const ACCOUNT_DELETION_DAYS = 14;
 
 // Bump when the Terms / Privacy Policy text changes; the app sends the version it showed.
 export const TERMS_VERSION = '2026-11-05';
@@ -95,6 +103,7 @@ export const SessionEndReason = z.enum([
   'password_reset',
   'revoked',
   'reuse_detected',
+  'account_deleted', // REQ-AUTH-10, CR-28 #41: deletion asked on another device
 ]);
 export type SessionEndReason = z.infer<typeof SessionEndReason>;
 
@@ -120,8 +129,34 @@ export const CurrentUser = z.object({
   avatar: AvatarUrls.nullable(), // null → the app draws initials
   account_completed: z.boolean(), // false → open Complete account (40309 elsewhere)
   created_at: z.iso.datetime(),
+  // REQ-AUTH-10 AC4 (CR-28 #41): set while the account waits to be deleted → S-AUTH-04
+  // `pending-deletion` before anything else.
+  deletion_scheduled_at: z.iso.datetime().nullable(),
 });
 export type CurrentUser = z.infer<typeof CurrentUser>;
+
+export const DeleteAccountRequest = z.object({
+  password: z.string().min(1).max(128),
+});
+export type DeleteAccountRequest = z.infer<typeof DeleteAccountRequest>;
+
+// 07 S-ME-03 `delete-blocked-owner` / `delete-confirm`: "Ôn thi Giải tích 2 · 24 thành viên".
+export const OwnedServer = z.object({
+  id: SnowflakeId,
+  name: z.string(),
+  icon_url: z.string().nullable(),
+  member_count: z.number().int(),
+});
+export type OwnedServer = z.infer<typeof OwnedServer>;
+
+// owned_servers: still have other members, block the deletion (also 40010's details);
+// solo_servers: only me, deleted with the account. deletes_at: if requested now.
+export const AccountDeletionPreview = z.object({
+  owned_servers: z.array(OwnedServer),
+  solo_servers: z.array(OwnedServer),
+  deletes_at: z.iso.datetime(),
+});
+export type AccountDeletionPreview = z.infer<typeof AccountDeletionPreview>;
 
 export const TokenPairResponse = z.object({
   access_token: z.string(), // JWT, 15 minutes

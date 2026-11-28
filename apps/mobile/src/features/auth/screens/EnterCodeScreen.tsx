@@ -25,6 +25,7 @@ import {
   useVerifyCode,
 } from '../hooks/useAuthActions';
 import { useNow, useOnline } from '../hooks/useAuthForm';
+import { PendingDeletionDialog } from '../components/PendingDeletionDialog';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EnterCode'>;
 
@@ -188,6 +189,10 @@ export function EnterCodeScreen({ navigation, route }: Props) {
           }
         />
       </View>
+      {/* AUTH-10 AC4 by OTP: the dialog over S-AUTH-03; "Để sau" → S-AUTH-04 OTP mode. */}
+      <PendingDeletionDialog
+        onLater={(mode, email) => navigation.popTo('SignIn', { mode, email })}
+      />
     </AuthScreen>
   );
 }

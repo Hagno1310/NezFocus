@@ -22,6 +22,7 @@ export const FAKE_ME: CurrentUser = {
   bio: 'Sinh viên năm 3 PTIT · đang ôn Giải tích 2',
   avatar: null,
   account_completed: true,
+  deletion_scheduled_at: null,
   created_at: '2026-10-01T08:00:00.000Z',
 };
 
@@ -41,6 +42,8 @@ export function createFakeAccountRepository(
   let wrongPasswords = 0;
   let lockedUntil = 0;
   let codeAttempts = MAX_WRONG;
+  // Flip to false to play `delete-confirm` ("frame giả định An đã chuyển Owner cho Bình").
+  const ownsShared = true;
   let sessions: SessionInfo[] = [
     {
       id: '100',
@@ -109,6 +112,53 @@ export function createFakeAccountRepository(
       wrongPasswords = 0;
       codeAttempts = MAX_WRONG;
       sessions = sessions.filter((s) => s.current);
+    },
+    // 07 S-ME-03: An owns "Ôn thi Giải tích 2" (24) → `delete-blocked-owner`; the fake has no
+    // other owned server, so `delete-confirm` shows "Góc tự học của An" alone.
+    async deletionPreview() {
+      await wait();
+      return {
+        owned_servers: ownsShared
+          ? [
+              {
+                id: '100',
+                name: 'Ôn thi Giải tích 2',
+                icon_url: null,
+                member_count: 24,
+              },
+            ]
+          : [],
+        solo_servers: [
+          {
+            id: '180',
+            name: 'Góc tự học của An',
+            icon_url: null,
+            member_count: 1,
+          },
+        ],
+        deletes_at: new Date(now() + 14 * 86_400_000).toISOString(),
+      };
+    },
+    async deleteAccount(body) {
+      await wait();
+      if (now() < lockedUntil)
+        throw fail(429, ErrorCode.RateLimited, {
+          retry_after: Math.ceil((lockedUntil - now()) / 1000),
+        });
+      if (body !== password) {
+        wrongPasswords += 1;
+        if (wrongPasswords >= MAX_WRONG) {
+          wrongPasswords = 0;
+          lockedUntil = now() + WAIT_SECONDS * 1000;
+          throw fail(429, ErrorCode.RateLimited, { retry_after: WAIT_SECONDS });
+        }
+        throw fail(401, ErrorCode.InvalidCredentials);
+      }
+      if (ownsShared) throw fail(409, ErrorCode.OwnershipTransferRequired);
+      wrongPasswords = 0;
+    },
+    async cancelDeletion() {
+      await wait();
     },
     async sessions() {
       await wait();

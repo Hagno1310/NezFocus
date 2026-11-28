@@ -38,7 +38,11 @@ import {
   ServerMemberRemove,
 } from '../servers/member.contract.js';
 import { ServerBanEvent, ServerBanRemove } from '../servers/ban.contract.js';
-import { ServerResponse, ServerSummary } from '../servers/server.contract.js';
+import {
+  ServerDeleted,
+  ServerResponse,
+  ServerSummary,
+} from '../servers/server.contract.js';
 import { SnowflakeId } from '../snowflake.js';
 import {
   FocusSessionEnd,
@@ -83,6 +87,7 @@ export const DispatchEvents = {
   STREAK_UPDATE: StreakState, // REQ-STUDY-03: when the streak or today's minutes change, to every session of the user
   SERVER_CREATE: ServerResponse, // REQ-SRV-01 / SRV-04: to every session of the creator, or of who joins
   SERVER_UPDATE: ServerSummary, // to the members
+  SERVER_DELETE: ServerDeleted, // REQ-SRV-05 AC4: to the members (a restore sends SERVER_CREATE)
   SERVER_MEMBER_ADD: ServerMemberEvent, // REQ-SRV-04 AC1: to the members, the newcomer included
   SERVER_MEMBER_UPDATE: ServerMemberEvent, // REQ-ROLE-04 AC2 roles, REQ-ROLE-05 timeout, to the members
   SERVER_MEMBER_REMOVE: ServerMemberRemove, // leave / kick / ban, to the members; the removed user's copy has action + reason

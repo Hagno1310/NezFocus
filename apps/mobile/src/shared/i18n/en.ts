@@ -336,6 +336,16 @@ export const en: Strings = {
       reuse_detected:
         'Your session was closed to protect your account · change your password if that wasn’t you',
       expired: 'Your session has expired · please log in again',
+      account_deleted:
+        'Your account is waiting to be deleted · log in before then to restore it',
+    },
+    pendingDeletion: {
+      title: 'Account waiting to be deleted',
+      body: 'Your account will be deleted for good on {{date}} ({{count}} days left). Restore it to keep going; your servers, messages and study streak are all still there.',
+      restore: 'Restore account',
+      later: 'Later',
+      notice:
+        'Your account will be deleted on {{date}} · log in before then to restore it',
     },
     update: {
       title: 'Update NezFocus',
@@ -601,6 +611,51 @@ export const en: Strings = {
       offlineOne: 'You are no longer in {{server}}',
       offlineMany: 'You are no longer in {{count}} servers',
       view: 'View',
+      deletedTitle: '{{server}} was deleted',
+      deletedBody: 'The Owner deleted this server.',
+    },
+    leave: {
+      title: 'Leave {{server}}?',
+      body: 'You will need a new invite to come back.',
+      inRoom: 'You will also leave {{room}}.',
+      successor: '{{name}} will run the study session.',
+      noSuccessor: 'The study session keeps running with nobody running it.',
+      confirm: 'Leave server',
+      ownerTitle: 'You are the Owner of {{server}}',
+      ownerBody: 'Make another member the Owner before you leave the server.',
+      transfer: 'Transfer Owner',
+      later: 'Later',
+    },
+    transfer: {
+      title: 'Transfer Owner',
+      intro:
+        'Pick who will be the Owner of {{server}}. You keep the roles you have.',
+      search: 'Search members',
+      noMatch: 'No member named “{{query}}”',
+      aloneTitle: 'No other members yet',
+      aloneBody:
+        'Invite friends first, or delete the server if you no longer use it.',
+      confirmTitle: 'Make {{name}} the Owner?',
+      confirmBody:
+        '{{name}} will be the Owner of {{server}}. You keep your roles but are no longer the Owner.',
+      confirm: 'Transfer',
+      done: '{{name}} is now the Owner',
+      gone: '{{name}} is no longer in the server',
+    },
+    deleteServer: {
+      title: 'Delete {{server}}?',
+      body: 'The server and every channel, message and task go for its {{count}} members. You have 30 days to restore it.',
+      label: 'Type the server name to confirm',
+      confirm: 'Delete server',
+      done: 'Deleted {{server}} · You can restore it within 30 days',
+    },
+    restore: {
+      row: 'Deleted servers',
+      title: 'Deleted servers',
+      note: 'Servers you deleted are kept for 30 days. Only the Owner sees and restores them.',
+      daysLeft: '{{count}} days left to restore',
+      action: 'Restore',
+      done: 'Restored {{server}}',
     },
     moderation: {
       title: 'MODERATION',
@@ -851,6 +906,19 @@ export const en: Strings = {
       MANAGE_TASKS: 'Edit, delete and change the status of every task.',
     },
   },
+  confirm: {
+    passwordLabel: 'Your password',
+    passwordPlaceholder: 'Enter password',
+    passwordEmpty: 'Enter your password',
+    passwordWrong: 'Wrong password',
+    forgot: 'Forgot password?',
+    rateLimited:
+      'Too many wrong tries. Try again in {{count}} minutes, or use Forgot password?',
+    rateLimitedSeconds:
+      'Too many wrong tries. Try again in {{count}} seconds, or use Forgot password?',
+    resetDone: 'Password changed. Enter the new password to go on.',
+    failed: 'Couldn’t do that. Check your connection and try again.',
+  },
   me: {
     streak_one: '🔥 {{count}} day',
     streak_other: '🔥 {{count}} days',
@@ -950,6 +1018,20 @@ export const en: Strings = {
     deleteAccount: 'Delete account',
     deleteNote:
       'Your account is deleted after 14 days; log in again before then to restore it.',
+    deleteBlockedTitle: 'You are the Owner of {{count}} servers',
+    deleteBlockedBody:
+      'Transfer the Owner role or delete the servers before deleting your account.',
+    deleteBlockedRow: '{{count}} members',
+    deleteClose: 'Close',
+    deleteContinue: 'Continue deleting',
+    deleteTitle: 'Delete account?',
+    deleteBody:
+      'Your account will be deleted for good on {{date}}. Within 14 days, log in again to restore it. After that your profile, study streak and friends are deleted; messages show "Deleted account".',
+    deleteSolo: 'Servers with only you — deleted with your account',
+    deleteSoloRow: '1 member',
+    deleteInvites:
+      'Every invite link of these servers is revoked now, even if you restore your account.',
+    deleteConfirm: 'Delete account',
     currentPassword: 'Current password',
     forgot: 'Forgot password?',
     newPassword: 'New password',

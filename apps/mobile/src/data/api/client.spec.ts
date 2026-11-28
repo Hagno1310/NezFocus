@@ -291,3 +291,36 @@ describe('ApiClient timeout', () => {
     }
   });
 });
+
+describe('dropRequests (CR-17 #17)', () => {
+  it('a request of a server that went away stops and never answers; others go on', async () => {
+    const fetch = vi.fn(
+      (_url: string, init: RequestInit) =>
+        new Promise<Response>((resolve, reject) => {
+          init.signal?.addEventListener('abort', () =>
+            reject(new DOMException('aborted', 'AbortError')),
+          );
+          setTimeout(() => resolve(json(200, { ok: true })), 20);
+        }),
+    );
+    const client = createApiClient({
+      baseUrl: 'http://api',
+      fetch: fetch as unknown as typeof globalThis.fetch,
+      tokens: memoryTokens({ access_token: 'a', refresh_token: 'r' }),
+      clientHeaders: () => ({}),
+      onSessionEnded: vi.fn(),
+      onAccountIncomplete: vi.fn(),
+      onUpgradeRequired: vi.fn(),
+    });
+    const settled = vi.fn();
+    void client.request('/servers/1/members?limit=5').then(settled, settled);
+    void client.request('/channels/7/messages').then(settled, settled);
+    const other = client.request('/servers/12/members');
+    await Promise.resolve();
+    await Promise.resolve();
+    client.dropRequests(['/servers/1', '/channels/7']);
+    await expect(other).resolves.toEqual({ ok: true });
+    await new Promise((r) => setTimeout(r, 40));
+    expect(settled).not.toHaveBeenCalled();
+  });
+});

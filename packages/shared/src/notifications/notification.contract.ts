@@ -47,6 +47,13 @@ export const ModerationData = z.object({
 });
 export type ModerationData = z.infer<typeof ModerationData>;
 
+// REQ-SRV-05 (08 A4): "An đã chuyển quyền Owner của Ôn thi Giải tích 2 cho bạn".
+export const OwnerTransferredData = z.object({
+  actor_id: SnowflakeId,
+  server_id: SnowflakeId,
+});
+export type OwnerTransferredData = z.infer<typeof OwnerTransferredData>;
+
 // ponytail: the owner of each remaining type fills in its fields (P4-B1.1 #187); until then
 // any object passes so callers can already create them.
 const Pending = z.looseObject({});
@@ -60,7 +67,7 @@ export const NotificationData = {
   task_reminder: Pending,
   task_unassigned: Pending,
   missed_call: Pending,
-  owner_transferred: Pending,
+  owner_transferred: OwnerTransferredData,
   moderation: ModerationData,
   report_reviewed: Pending,
   reports_pending: Pending,

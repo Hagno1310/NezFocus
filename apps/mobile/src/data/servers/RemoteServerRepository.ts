@@ -3,6 +3,7 @@ import {
   BanRoutes,
   ChannelResponse,
   ChannelRoutes,
+  DeletedServersResponse,
   MEMBER_PAGE_MAX,
   MemberListResponse,
   MemberRoutes,
@@ -160,5 +161,30 @@ export const remoteServerRepository: ServerRepository = {
   },
   unbanMember: async (serverId, userId) => {
     await api.request(ban(serverId, userId), { method: 'DELETE' });
+  },
+  leaveServer: async (id) => {
+    await api.request(ServerRoutes.leave.replace(':id', id), {
+      method: 'DELETE',
+    });
+  },
+  deleteServer: async (id) => {
+    await api.request(ServerRoutes.byId.replace(':id', id), {
+      method: 'DELETE',
+    });
+  },
+  restoreServer: async (id) =>
+    ServerResponse.parse(
+      await api.request(ServerRoutes.restore.replace(':id', id), {
+        method: 'POST',
+      }),
+    ),
+  listDeletedServers: async () =>
+    DeletedServersResponse.parse(await api.request(ServerRoutes.deleted))
+      .servers,
+  transferOwner: async (id, userId, password) => {
+    await api.request(ServerRoutes.transfer.replace(':id', id), {
+      method: 'POST',
+      body: { user_id: userId, password },
+    });
   },
 };

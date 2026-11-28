@@ -1,6 +1,21 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, count, eq, isNull, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gt,
+  inArray,
+  isNull,
+  lte,
+  ne,
+  sql,
+  type SQL,
+} from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
+import { messages, readStates } from '../messaging/messages.schema.js';
+import { userServerSettings } from '../users/user-server-settings.schema.js';
 import { users } from '../users/users.schema.js';
 import {
   withOverwrites,
@@ -10,12 +25,15 @@ import type { ServerRows } from './server-templates.js';
 import {
   channelPermissionOverwrites,
   channels,
+  invites,
   roles,
+  serverBans,
   serverMemberRoles,
   serverMembers,
   servers,
   type ChannelRow,
   type RoleRow,
+  ChannelTypeCode,
   type ServerRow,
 } from './servers.schema.js';
 
@@ -46,7 +64,13 @@ export class ServersRepository {
       const [joined] = await tx
         .select({ n: count() })
         .from(serverMembers)
-        .where(eq(serverMembers.userId, server.ownerId));
+        .innerJoin(servers, eq(servers.id, serverMembers.serverId))
+        .where(
+          and(
+            eq(serverMembers.userId, server.ownerId),
+            isNull(servers.deletedAt),
+          ),
+        );
       if (joined!.n >= limit) return false;
 
       // The welcome channel does not exist yet: point at it once the channels are in.
@@ -83,7 +107,7 @@ export class ServersRepository {
       .select({ server: servers, memberCount })
       .from(serverMembers)
       .innerJoin(servers, eq(servers.id, serverMembers.serverId))
-      .where(eq(serverMembers.userId, userId))
+      .where(and(eq(serverMembers.userId, userId), isNull(servers.deletedAt)))
       .orderBy(asc(serverMembers.joinedAt), asc(servers.id))
       .then((r) => r.map((x) => ({ ...x.server, memberCount: x.memberCount })));
   }
@@ -92,18 +116,21 @@ export class ServersRepository {
     const [row] = await this.db
       .select({ server: servers, memberCount })
       .from(servers)
-      .where(eq(servers.id, serverId));
+      .where(and(eq(servers.id, serverId), isNull(servers.deletedAt)));
     return row && { ...row.server, memberCount: row.memberCount };
   }
 
+  // A soft-deleted server has no members as far as any caller is concerned (SRV-05 AC4).
   async isMember(serverId: bigint, userId: bigint) {
     const [row] = await this.db
       .select({ userId: serverMembers.userId })
       .from(serverMembers)
+      .innerJoin(servers, eq(servers.id, serverMembers.serverId))
       .where(
         and(
           eq(serverMembers.serverId, serverId),
           eq(serverMembers.userId, userId),
+          isNull(servers.deletedAt),
         ),
       );
     return !!row;
@@ -182,5 +209,177 @@ export class ServersRepository {
     },
   ) {
     await this.db.update(servers).set(patch).where(eq(servers.id, serverId));
+  }
+
+  // false: not a member any more (left twice, or kicked meanwhile).
+  async removeMember(serverId: bigint, userId: bigint): Promise<boolean> {
+    const gone = await this.db
+      .delete(serverMembers)
+      .where(
+        and(
+          eq(serverMembers.serverId, serverId),
+          eq(serverMembers.userId, userId),
+        ),
+      )
+      .returning({ userId: serverMembers.userId });
+    return gone.length > 0;
+  }
+
+  // The row whatever its state: restore and the Owner checks need a deleted server too.
+  async findAny(serverId: bigint): Promise<ServerRow | undefined> {
+    const [row] = await this.db
+      .select()
+      .from(servers)
+      .where(eq(servers.id, serverId));
+    return row;
+  }
+
+  async voiceChannelIds(serverId: bigint): Promise<bigint[]> {
+    const rows = await this.db
+      .select({ id: channels.id })
+      .from(channels)
+      .where(
+        and(
+          eq(channels.serverId, serverId),
+          eq(channels.type, ChannelTypeCode.voice),
+          isNull(channels.deletedAt),
+        ),
+      );
+    return rows.map((r) => r.id);
+  }
+
+  // false: already deleted (two taps, two devices).
+  async softDelete(serverId: bigint, at: Date): Promise<boolean> {
+    const done = await this.db
+      .update(servers)
+      .set({ deletedAt: at })
+      .where(and(eq(servers.id, serverId), isNull(servers.deletedAt)))
+      .returning({ id: servers.id });
+    return done.length > 0;
+  }
+
+  // false: not deleted, or deleted before `since` (30 days are over).
+  async restore(serverId: bigint, since: Date): Promise<boolean> {
+    const done = await this.db
+      .update(servers)
+      .set({ deletedAt: null })
+      .where(and(eq(servers.id, serverId), gt(servers.deletedAt, since)))
+      .returning({ id: servers.id });
+    return done.length > 0;
+  }
+
+  // 02 S-HOME-06 `restore-list`: newest deletion first.
+  deletedOwnedBy(ownerId: bigint, since: Date): Promise<ServerRow[]> {
+    return this.db
+      .select()
+      .from(servers)
+      .where(and(eq(servers.ownerId, ownerId), gt(servers.deletedAt, since)))
+      .orderBy(desc(servers.deletedAt));
+  }
+
+  // REQ-SRV-05 AC1, in one statement so a recipient who just left cannot become Owner.
+  // 'not_member' covers a server that is gone; 'not_owner' a transfer already done elsewhere.
+  async transferOwner(
+    serverId: bigint,
+    fromId: bigint,
+    toId: bigint,
+  ): Promise<'ok' | 'not_owner' | 'not_member'> {
+    return this.db.transaction(async (tx) => {
+      const [server] = await tx
+        .select({ ownerId: servers.ownerId })
+        .from(servers)
+        .where(and(eq(servers.id, serverId), isNull(servers.deletedAt)))
+        .for('update');
+      if (server?.ownerId !== fromId) return 'not_owner';
+      const [member] = await tx
+        .select({ userId: serverMembers.userId })
+        .from(serverMembers)
+        .where(
+          and(
+            eq(serverMembers.serverId, serverId),
+            eq(serverMembers.userId, toId),
+          ),
+        )
+        .for('update');
+      if (!member) return 'not_member';
+      await tx
+        .update(servers)
+        .set({ ownerId: toId })
+        .where(eq(servers.id, serverId));
+      return 'ok';
+    });
+  }
+
+  // SRS 8.6 (CR-28 #42): what a server deleted before `cutoff` still holds goes; the server
+  // and channel rows stay so focus_sessions and study history keep their room. A deleted
+  // server keeps its Owner as a member until then, so "has members" marks the unpurged ones.
+  purgeDeletedBefore(cutoff: Date): Promise<bigint[]> {
+    return this.purgeWhere(lte(servers.deletedAt, cutoff));
+  }
+
+  // REQ-AUTH-10: the servers deleted with an account go with its purge, not 16 days later.
+  purgeDeletedWith(ownerId: bigint, at: Date): Promise<bigint[]> {
+    return this.purgeWhere(
+      and(eq(servers.ownerId, ownerId), eq(servers.deletedAt, at))!,
+    );
+  }
+
+  private async purgeWhere(match: SQL): Promise<bigint[]> {
+    return this.db.transaction(async (tx) => {
+      const due = await tx
+        .select({ id: servers.id, deletedAt: servers.deletedAt })
+        .from(servers)
+        .where(
+          and(
+            match,
+            sql`EXISTS (SELECT 1 FROM ${serverMembers} WHERE ${serverMembers.serverId} = ${servers.id})`,
+          ),
+        );
+      const ids = due.map((r) => r.id);
+      if (!ids.length) return ids;
+      const channelIds = tx
+        .select({ id: channels.id })
+        .from(channels)
+        .where(inArray(channels.serverId, ids));
+      await tx
+        .delete(serverMembers)
+        .where(inArray(serverMembers.serverId, ids));
+      await tx
+        .delete(roles)
+        .where(and(inArray(roles.serverId, ids), ne(roles.id, roles.serverId)));
+      await tx.delete(serverBans).where(inArray(serverBans.serverId, ids));
+      await tx.delete(invites).where(inArray(invites.serverId, ids));
+      await tx
+        .delete(userServerSettings)
+        .where(inArray(userServerSettings.serverId, ids));
+      await tx
+        .delete(channelPermissionOverwrites)
+        .where(inArray(channelPermissionOverwrites.channelId, channelIds));
+      await tx
+        .delete(readStates)
+        .where(inArray(readStates.channelId, channelIds));
+      // Soft-deleted with the server's date, so the attachment sweep takes their files now.
+      for (const { id, deletedAt } of due)
+        await tx
+          .update(messages)
+          .set({ deletedAt })
+          .where(
+            and(
+              isNull(messages.deletedAt),
+              inArray(
+                messages.channelId,
+                tx
+                  .select({ id: channels.id })
+                  .from(channels)
+                  .where(eq(channels.serverId, id)),
+              ),
+            ),
+          );
+      await tx
+        .update(servers)
+        .set({ iconKey: null, systemChannelId: null })
+        .where(inArray(servers.id, ids));
+      return ids;
+    });
   }
 }

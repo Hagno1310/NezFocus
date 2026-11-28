@@ -43,6 +43,7 @@ export class ApiError extends Error {
   readonly reason: string | undefined;
   readonly request_id: string | undefined;
   readonly min_version: string | undefined;
+  readonly owned_servers: ApiErrorBody['owned_servers'];
 
   constructor(
     readonly status: number,
@@ -57,6 +58,7 @@ export class ApiError extends Error {
     this.reason = body.reason;
     this.request_id = body.request_id;
     this.min_version = body.min_version;
+    this.owned_servers = body.owned_servers;
   }
 }
 
@@ -65,8 +67,14 @@ const endReason = (reason: string | undefined): EndReason => {
   return parsed.success ? parsed.data : 'expired';
 };
 
+// Never settles: the caller of a dropped request hears nothing back, not even an error.
+const silence = () => new Promise<never>(() => {});
+
 export function createApiClient(deps: ApiClientDeps) {
   let refreshing: Promise<string | null> | null = null;
+  // CR-17 #17: requests of a server that went away are dropped, their answers unheard.
+  const inFlight = new Set<{ path: string; abort: AbortController }>();
+  const dropped = new WeakSet<AbortController>();
 
   async function send(path: string, opts: RequestOptions, token?: string) {
     const headers: Record<string, string> = {
@@ -78,6 +86,8 @@ export function createApiClient(deps: ApiClientDeps) {
     // fetch never times out: an unanswered request would block every Solo command queued behind it.
     const abort = new AbortController();
     const timer = setTimeout(() => abort.abort(), REQUEST_TIMEOUT_MS);
+    const entry = { path, abort };
+    inFlight.add(entry);
     const res = await deps
       .fetch(`${deps.baseUrl}${path}`, {
         method: opts.method ?? 'GET',
@@ -85,7 +95,15 @@ export function createApiClient(deps: ApiClientDeps) {
         body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
         signal: abort.signal,
       })
-      .finally(() => clearTimeout(timer));
+      .catch((err: unknown) => {
+        if (dropped.has(abort)) return silence();
+        throw err;
+      })
+      .finally(() => {
+        clearTimeout(timer);
+        inFlight.delete(entry);
+      });
+    if (dropped.has(abort)) return silence();
     if (res.status === 204) return { ok: true as const, data: undefined };
     const json: unknown = await res.json().catch(() => null);
     if (res.ok) return { ok: true as const, data: json };
@@ -183,8 +201,24 @@ export function createApiClient(deps: ApiClientDeps) {
     return result.data as T;
   }
 
+  // Paths under these prefixes (`/servers/1`, `/channels/7`) stop now and never answer.
+  function dropRequests(prefixes: readonly string[]) {
+    for (const entry of inFlight)
+      if (
+        prefixes.some(
+          (p) =>
+            entry.path === p ||
+            entry.path.startsWith(`${p}/`) ||
+            entry.path.startsWith(`${p}?`),
+        )
+      ) {
+        dropped.add(entry.abort);
+        entry.abort.abort();
+      }
+  }
+
   // The Gateway refreshes through here when IDENTIFY gets 4004 without a reason.
-  return { request, refresh };
+  return { request, refresh, dropRequests };
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>;

@@ -4,6 +4,8 @@ export type Toast = {
   message: string;
   icon?: IconComponent;
   action?: { label: string; onPress: () => void };
+  // 08 S-SET-08 `transferred-leave` (A3): shown at once, over the dialog that follows.
+  overOverlay?: boolean;
 };
 
 // S-MOD-04: one at a time; a toast that waited behind an overlay for more than this is dropped.
@@ -40,7 +42,7 @@ const shown = (toast: Toast, now: number) => ({
 export function toastReducer(s: ToastState, e: ToastEvent): ToastState {
   switch (e.type) {
     case 'show':
-      if (s.overlays > 0)
+      if (s.overlays > 0 && !e.toast.overOverlay)
         return { ...s, pending: { toast: e.toast, since: e.now } };
       // Same message only resets the timer.
       if (s.current?.toast.message === e.toast.message)
@@ -55,7 +57,12 @@ export function toastReducer(s: ToastState, e: ToastEvent): ToastState {
     case 'drop-pending':
       return { ...s, pending: null };
     case 'overlay': {
-      if (e.open) return { ...s, overlays: s.overlays + 1, current: null };
+      if (e.open)
+        return {
+          ...s,
+          overlays: s.overlays + 1,
+          current: s.current?.toast.overOverlay ? s.current : null,
+        };
       const overlays = Math.max(0, s.overlays - 1);
       if (overlays > 0 || !s.pending) return { ...s, overlays };
       const fresh = e.now - s.pending.since <= MAX_WAIT_MS;

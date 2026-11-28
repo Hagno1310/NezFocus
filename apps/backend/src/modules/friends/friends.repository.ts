@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, inArray, isNotNull, or } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
 import { serverMembers, servers } from '../servers/servers.schema.js';
 import { users } from '../users/users.schema.js';
@@ -50,6 +50,17 @@ export class FriendsRepository {
       .from(users)
       .where(and(eq(users.id, id), findable));
     return row as FriendUser | undefined;
+  }
+
+  // REQ-AUTH-10: an account waiting to be deleted takes no request (40303, not 40401).
+  async isPendingDeletion(id: bigint): Promise<boolean> {
+    const [row] = await this.db
+      .select({ id: users.id })
+      .from(users)
+      .where(
+        and(eq(users.id, id), eq(users.accountStatus, 'pending_deletion')),
+      );
+    return !!row;
   }
 
   async userByUsername(username: string): Promise<FriendUser | undefined> {
@@ -223,7 +234,11 @@ export class FriendsRepository {
       .from(serverMembers)
       .innerJoin(servers, eq(servers.id, serverMembers.serverId))
       .where(
-        and(eq(serverMembers.userId, b), inArray(serverMembers.serverId, mine)),
+        and(
+          eq(serverMembers.userId, b),
+          inArray(serverMembers.serverId, mine),
+          isNull(servers.deletedAt), // REQ-SRV-05: a deleted server is shared by nobody
+        ),
       )
       .orderBy(asc(servers.name));
   }

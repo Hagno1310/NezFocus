@@ -54,7 +54,7 @@ import {
   sheetEnter,
   sheetExit,
 } from './transitions';
-import { overlayClosed, overlayOpened } from './Toast';
+import { overlayClosed, overlayOpened, ToastHost } from './Toast';
 import { interacted } from '../interaction';
 
 // Drag distance / speed that closes a sheet on release.
@@ -174,6 +174,8 @@ function Overlay({
             </SheetLayout.Provider>
           </View>
         </KeyboardAvoidingView>
+        {/* A toast marked `overOverlay` sits above this window's scrim. */}
+        <ToastHost />
       </GestureHandlerRootView>
     </Modal>
   );
@@ -198,6 +200,7 @@ export function Dialog({
   error,
   children,
   row = false,
+  stacked = false,
   onDismiss,
   lifted,
 }: {
@@ -211,6 +214,9 @@ export function Dialog({
   // Side by side whatever the label length, where a frame overrides C-09's stacking rule
   // (07 S-ME-01 `discard-confirm`).
   row?: boolean;
+  // Stacked, full width, whatever the label length (02 S-HOME-09 `owner-leave`, 01 S-AUTH-04
+  // `pending-deletion`: "hai nút xếp dọc").
+  stacked?: boolean;
   error?: string | null;
   // One input under the text (08 S-SET-06 `category-rename`).
   children?: ReactNode;
@@ -219,7 +225,9 @@ export function Dialog({
   const { colors } = useTheme();
   const layout = row
     ? 'row'
-    : dialogLayout(cancel ? [cancel.label, confirm.label] : [confirm.label]);
+    : stacked
+      ? 'column'
+      : dialogLayout(cancel ? [cancel.label, confirm.label] : [confirm.label]);
   const busy = !!confirm.loading;
   const confirmButton = (
     <Button
@@ -366,6 +374,7 @@ export function BottomSheet({
   secondary,
   error,
   notice,
+  noticeIcon,
   icon,
   onBack,
   onDismiss,
@@ -388,6 +397,8 @@ export function BottomSheet({
   error?: string | null;
   // Neutral FormMessage above the button (S-SET-09 `limit`).
   notice?: string | null;
+  // The notice's own icon (S-MOD-03 `password-rate-limited` clock-3, `password-reset-done` circle-check).
+  noticeIcon?: IconComponent;
   // 32 above the title (S-MOD-03 `trash-2` danger). `circle`: the permission sheets
   // (10 S-MOD-05) put it in a 64 `surface-2` circle and centre the title; the caller
   // centres its own text.
@@ -467,7 +478,9 @@ export function BottomSheet({
               >
                 {children}
               </ScrollView>
-              {notice && <FormMessage tone="info" text={notice} />}
+              {notice && (
+                <FormMessage tone="info" icon={noticeIcon} text={notice} />
+              )}
               {error && <FormMessage tone="error" text={error} />}
               {action && <Button size="L" fullWidth {...action} />}
               {secondary && (

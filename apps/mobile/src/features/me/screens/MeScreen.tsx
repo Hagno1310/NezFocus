@@ -9,6 +9,7 @@ import {
 } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useMyRoomLine } from '../../servers/hooks/useMyRoomLine';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MY_STATUSES, myDot } from '../../../domain/account/status';
@@ -56,6 +57,7 @@ export function MeScreen({
   onOpenAppearance: () => void;
   devActions?: ReactNode; // __DEV__ only (UI Gallery, sample badges…)
 }) {
+  const room = useMyRoomLine();
   const { t } = useTranslation();
   const { top } = useSafeAreaInsets();
   const { colors } = useTheme();
@@ -204,7 +206,18 @@ export function MeScreen({
       <Dialog
         visible={confirming}
         title={t('me.logoutTitle')}
-        body={unsent ? t('me.logoutUnsent') : undefined}
+        body={
+          [
+            // `logout-confirm-host` (AUTH-07 AC3): who runs the session after me.
+            room?.successor !== undefined &&
+              (room.successor
+                ? t('servers.leave.successor', { name: room.successor })
+                : t('servers.leave.noSuccessor')),
+            unsent && t('me.logoutUnsent'),
+          ]
+            .filter(Boolean)
+            .join('\n') || undefined
+        }
         confirm={{
           label: t('me.logout'),
           variant: 'danger',

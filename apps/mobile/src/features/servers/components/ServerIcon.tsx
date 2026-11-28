@@ -13,7 +13,7 @@ export function ServerIcon({
   uri,
 }: {
   server: Pick<ServerSummary, 'name'> & { icon_url?: string | null };
-  size: 40 | 48 | 72 | 96; // 72: S-MOD-01 invite card
+  size: 32 | 40 | 48 | 72 | 96; // 72: S-MOD-01 invite card; 32: S-ME-03 `delete-confirm`
   uri?: string | null;
 }) {
   const { colors } = useTheme();

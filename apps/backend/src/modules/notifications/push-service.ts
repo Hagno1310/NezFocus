@@ -24,12 +24,13 @@ export abstract class PushService {
   abstract send(userId: bigint, request: PushRequest): Promise<void>;
 }
 
-// Inbox types that push. ponytail: task_assigned (P4-A1.2 #163), task_reminder → deadline
-// (P4-A1.3 #164) and owner_transferred (P3-A4.1 #130) add their text here with their item.
+// Inbox types that push. ponytail: task_assigned (P4-A1.2 #163) and task_reminder → deadline
+// (P4-A1.3 #164) add their text here with their item.
 const ITEM_PUSH: Partial<Record<NotificationType, PushType>> = {
   mention: 'mention',
   reply: 'reply',
   friend_request: 'friend_request',
+  owner_transferred: 'owner_transferred',
 };
 
 // What a push is about, before its text is written in the recipient's language.
@@ -98,6 +99,22 @@ export class PushDispatcher extends PushService {
             actor: actor.name,
             username: actor.username,
             note: await this.content.requestNote(actorId, userId),
+          },
+        };
+      }
+      if (pushType === 'owner_transferred') {
+        const { server_id } = data as NotificationData<'owner_transferred'>;
+        const server = await this.content.serverName(server_id);
+        if (!server) return null;
+        return {
+          type: 'owner_transferred',
+          id,
+          server_id,
+          actorId,
+          subject: {
+            type: 'owner_transferred',
+            actor: await this.name(actorId),
+            server,
           },
         };
       }

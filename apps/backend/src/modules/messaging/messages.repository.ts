@@ -26,6 +26,7 @@ import {
   serverMemberRoles,
   serverMembers,
 } from '../servers/servers.schema.js';
+import { shownUser } from '../users/shown-user.js';
 import { users } from '../users/users.schema.js';
 import type { AuthorRow } from './messages.dto.js';
 import {
@@ -42,12 +43,7 @@ export type MessageWithAuthor = { message: MessageRow; author: AuthorRow };
 export class AttachmentsUnavailable extends Error {}
 export type NewMessage = typeof messages.$inferInsert;
 
-const author = {
-  id: users.id,
-  username: users.username,
-  displayName: users.displayName,
-  avatarKey: users.avatarKey,
-};
+const author = { id: users.id, ...shownUser };
 
 @Injectable()
 export class MessagesRepository {

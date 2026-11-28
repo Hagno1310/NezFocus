@@ -50,6 +50,7 @@ const fakeUsers = () => {
         termsVersion: null,
         termsAcceptedAt: null,
         accountCompletedAt: null,
+        deletionRequestedAt: null,
         createdAt: now,
         updatedAt: now,
       };
@@ -156,6 +157,7 @@ describe('AuthService.verifyEmailCode', () => {
       bio: null,
       avatar: null,
       account_completed: false,
+      deletion_scheduled_at: null,
     });
     expect(res.suggested_username).toBe('an.nguyen');
     expect(res).toMatchObject({ access_token: 'access', session_id: '1' });
@@ -214,6 +216,7 @@ describe('AuthService.completeAccount (AUTH-01)', () => {
       bio: null,
       avatar: null,
       account_completed: true,
+      deletion_scheduled_at: null,
     });
     expect(s.users.rows.get(id)).toMatchObject({
       passwordHash: 'hashed:Ontap2026!',

@@ -11,11 +11,8 @@ import { Text } from '../../../shared/ui/Text';
 import { showErrorToast } from '../../auth/hooks/useAuthActions';
 import { ConnectionBanner } from '../../gateway/components/ConnectionBanner';
 import { useOnline } from '../../gateway/hooks/useOnline';
-import {
-  DeleteAccountSheets,
-  firstDeleteStep,
-  type DeleteStep,
-} from '../components/DeleteAccountSheets';
+import { DeleteAccountSheets } from '../components/DeleteAccountSheets';
+import { firstDeleteStep, type DeleteStep } from '../hooks/useAccountDeletion';
 import { useSessions } from '../hooks/useAccount';
 import { useMe } from '../hooks/useMe';
 

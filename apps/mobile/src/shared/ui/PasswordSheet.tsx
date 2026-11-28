@@ -49,9 +49,11 @@ export function PasswordSheet({
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Retry-After of the 40029: the button holds until then, the sentence says the minutes.
-  const [wait, setWait] = useState<{ until: number; minutes: number } | null>(
-    null,
-  );
+  const [wait, setWait] = useState<{
+    until: number;
+    count: number;
+    unit: 'seconds' | 'minutes';
+  } | null>(null);
   const [busy, setBusy] = useState(false);
   useOnOpen(visible, () => {
     setPassword('');
@@ -86,9 +88,11 @@ export function PasswordSheet({
         setFieldError(t('confirm.passwordWrong'));
       else if (f.code === ErrorCode.RateLimited) {
         const seconds = f.retry_after ?? 600;
+        // S-MOD-04 rounding: seconds under 60, else minutes rounded up.
         setWait({
           until: Date.now() + seconds * 1000,
-          minutes: Math.max(1, Math.ceil(seconds / 60)),
+          count: seconds < 60 ? seconds : Math.ceil(seconds / 60),
+          unit: seconds < 60 ? 'seconds' : 'minutes',
         });
       } else setError(t('confirm.failed'));
     } finally {
@@ -148,7 +152,12 @@ export function PasswordSheet({
           <FormMessage
             tone="info"
             icon={Clock3}
-            text={t('confirm.rateLimited', { count: wait.minutes })}
+            text={t(
+              wait.unit === 'seconds'
+                ? 'confirm.rateLimitedSeconds'
+                : 'confirm.rateLimited',
+              { count: wait.count },
+            )}
           />
         )}
         {resetDone && wait === null && !error && !fieldError && (

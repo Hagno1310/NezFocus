@@ -1,47 +1,26 @@
-import { ErrorCode, type OwnedServer } from '@nezfocus/shared';
+import type { OwnedServer } from '@nezfocus/shared';
 import { useFocusEffect } from '@react-navigation/native';
-import {
-  useQuery,
-  useQueryClient,
-  type QueryClient,
-} from '@tanstack/react-query';
 import { ChevronRight, Trash2 } from 'lucide-react-native';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { accountRepository } from '../../../data/account';
-import { secureTokenStore } from '../../../data/auth/secureTokenStore';
 import { deletionDay } from '../../../domain/account/deletion';
 import { passwordResetStore } from '../../../domain/account/passwordReset';
-import { onGatewayEvent } from '../../../domain/gateway/gatewayStore';
-import { signOut } from '../../../domain/session/sessionStore';
 import { size, space, useTheme } from '../../../shared/theme';
 import { Icon } from '../../../shared/ui/Icon';
 import { BottomSheet } from '../../../shared/ui/Overlay';
 import { PasswordSheet } from '../../../shared/ui/PasswordSheet';
 import { Text } from '../../../shared/ui/Text';
-import { useAuthFlow } from '../../auth/authFlowStore';
 import { ServerIcon } from '../../servers/components/ServerIcon';
+import {
+  deleteAccount,
+  useDeletionPreview,
+  type DeleteStep,
+} from '../hooks/useAccountDeletion';
 
-const PREVIEW = ['account', 'deletion'] as const;
 const zone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-export type DeleteStep = 'blocked' | 'confirm' | null;
-
-// "Xóa tài khoản": which sheet opens, from the backend's lists (CR-28 #41).
-export async function firstDeleteStep(qc: QueryClient): Promise<DeleteStep> {
-  const preview = await qc.fetchQuery({
-    queryKey: PREVIEW,
-    queryFn: accountRepository.deletionPreview,
-    staleTime: 0,
-  });
-  return preview.owned_servers.length ? 'blocked' : 'confirm';
-}
-
-// 07 S-ME-03 `delete-blocked-owner` (checked first, no waiting for 40010; updates when a
-// transfer finishes elsewhere, then "Đóng" becomes "Tiếp tục xóa") and `delete-confirm`
-// (10 S-MOD-03 `password` + the "server chỉ có bạn" block). Done → S-AUTH-01
-// `pending-deletion-notice` (AUTH-10 AC1).
+// 07 S-ME-03 `delete-blocked-owner` / `delete-confirm` (AUTH-10 AC1, AC2; edge "chuyển Owner xong ở máy khác").
 export function DeleteAccountSheets({
   step,
   onStep,
@@ -55,38 +34,22 @@ export function DeleteAccountSheets({
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const qc = useQueryClient();
-  const preview = useQuery({
-    queryKey: PREVIEW,
-    queryFn: accountRepository.deletionPreview,
-    enabled: step !== null,
-  });
+  const preview = useDeletionPreview(step);
+  const { refresh } = preview;
   const forgotAt = useRef<number | null>(null);
   const [resetDone, setResetDone] = useState(false);
   const [now] = useState(() => Date.now());
 
-  // A transfer or a delete done on another device changes what blocks.
-  useEffect(
-    () =>
-      onGatewayEvent((e) => {
-        if (
-          step === 'blocked' &&
-          (e.t === 'SERVER_UPDATE' || e.t === 'SERVER_DELETE')
-        )
-          void qc.invalidateQueries({ queryKey: PREVIEW });
-      }),
-    [qc, step],
-  );
   // Back from S-SET-08 or "Quên mật khẩu?": fresh lists, the sheet again.
   useFocusEffect(
     useCallback(() => {
-      void qc.invalidateQueries({ queryKey: PREVIEW });
+      void refresh();
       const since = forgotAt.current;
       if (since === null) return;
       forgotAt.current = null;
       setResetDone(passwordResetStore.getState().at > since);
       onStep('confirm');
-    }, [qc, onStep, setResetDone]),
+    }, [refresh, onStep, setResetDone]),
   );
 
   const data = preview.data;
@@ -94,22 +57,12 @@ export function DeleteAccountSheets({
   const deletesAt = data ? deletionDay(data.deletes_at, now, zone()).date : '';
 
   const confirm = async (password: string) => {
-    try {
-      await accountRepository.deleteAccount(password);
-    } catch (err) {
-      // A server gained a member meanwhile: back to the list of what blocks.
-      if (
-        (err as { code?: number }).code !== ErrorCode.OwnershipTransferRequired
-      )
-        throw err;
-      await qc.invalidateQueries({ queryKey: PREVIEW });
+    if (
+      (await deleteAccount(password, data?.deletes_at ?? null)) === 'blocked'
+    ) {
+      await refresh();
       onStep('blocked');
-      return;
     }
-    // Every session ended (this one too): no 4004 banner here, the Welcome notice instead.
-    useAuthFlow.setState({ deletionNotice: data?.deletes_at ?? null });
-    await secureTokenStore.clear().catch(() => {});
-    signOut();
   };
 
   const row = (s: OwnedServer, onPress?: () => void) => (

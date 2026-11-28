@@ -626,7 +626,6 @@ export const vi = {
         'Chuyển quyền Owner cho một thành viên khác trước khi rời server.',
       transfer: 'Chuyển quyền Owner',
       later: 'Để sau',
-      failed: 'Không kết nối được · kiểm tra mạng rồi thử lại',
     },
     // 08 S-SET-08, 10 S-MOD-03 `password`
     transfer: {
@@ -913,6 +912,8 @@ export const vi = {
     forgot: 'Quên mật khẩu?',
     rateLimited:
       'Bạn đã nhập sai nhiều lần. Thử lại sau {{count}} phút, hoặc dùng Quên mật khẩu?',
+    rateLimitedSeconds:
+      'Bạn đã nhập sai nhiều lần. Thử lại sau {{count}} giây, hoặc dùng Quên mật khẩu?',
     resetDone: 'Đã đổi mật khẩu. Nhập mật khẩu mới để tiếp tục.',
     failed: 'Chưa thực hiện được. Kiểm tra kết nối rồi thử lại.',
   },

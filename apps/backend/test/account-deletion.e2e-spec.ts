@@ -6,13 +6,14 @@ import {
   ErrorCode,
   InviteRoutes,
   MemberRoutes,
+  RelationshipRoutes,
   ServerRoutes,
   type AccountDeletionPreview,
   type CurrentUser,
   type ServerMember,
   type ServerResponse,
 } from '@nezfocus/shared';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { DB, type Db } from '../src/db/db.module.js';
 import { friendships } from '../src/modules/friends/friends.schema.js';
 import {
@@ -98,11 +99,24 @@ describe('Account deletion (e2e)', () => {
     http(app)
       .post(AuthRoutes.login)
       .send({ email: who.email, password: PASSWORD, device: device() });
-  const requestedDaysAgo = (who: Me, days: number) =>
-    db
-      .update(users)
-      .set({ deletionRequestedAt: new Date(Date.now() - days * DAY_MS) })
+  // The request and the servers deleted with it share one timestamp, as in production.
+  const requestedDaysAgo = async (who: Me, days: number) => {
+    const at = new Date(Date.now() - days * DAY_MS);
+    const [me] = await db
+      .select({ was: users.deletionRequestedAt })
+      .from(users)
       .where(eq(users.id, who.userId));
+    await db
+      .update(users)
+      .set({ deletionRequestedAt: at })
+      .where(eq(users.id, who.userId));
+    await db
+      .update(servers)
+      .set({ deletedAt: at })
+      .where(
+        and(eq(servers.ownerId, who.userId), eq(servers.deletedAt, me!.was!)),
+      );
+  };
 
   it('AC2 (âm): Owner of a server with other members → preview lists it, DELETE → 40010 with the list', async () => {
     const [an, binh] = await Promise.all([signedIn('An'), signedIn('Bình')]);
@@ -175,6 +189,10 @@ describe('Account deletion (e2e)', () => {
     expect(
       code(await binh.post(DmRoutes.create).send({ recipient_id: an.id })),
     ).toBe(ErrorCode.CannotMessageUser);
+    // ... and no friend request (REQ-AUTH-10, #132 › Chỗ chạm).
+    expect(
+      code(await binh.post(RelationshipRoutes.list).send({ user_id: an.id })),
+    ).toBe(ErrorCode.CannotMessageUser);
   });
 
   it('AC4: logging in again shows the date; cancel → active, the solo server back, its old invite still 40041', async () => {
@@ -223,6 +241,7 @@ describe('Account deletion (e2e)', () => {
     const [an, binh] = await Promise.all([signedIn('An'), signedIn('Bình')]);
     const shared = await newServer(binh, 'Nhóm đồ án Mobile');
     await join(shared, an);
+    const solo = await newServer(an, 'Góc tự học của An');
     const [low, high] =
       an.userId < binh.userId
         ? [an.userId, binh.userId]
@@ -287,5 +306,12 @@ describe('Account deletion (e2e)', () => {
           .where(eq(servers.id, BigInt(shared.id)))
       ).length,
     ).toBe(1);
+    // The server deleted with the account is purged now, not 30 days after the request.
+    expect(
+      await db
+        .select()
+        .from(serverMembers)
+        .where(eq(serverMembers.serverId, BigInt(solo.id))),
+    ).toEqual([]);
   });
 });

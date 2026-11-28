@@ -625,7 +625,6 @@ export const en: Strings = {
       ownerBody: 'Make another member the Owner before you leave the server.',
       transfer: 'Transfer Owner',
       later: 'Later',
-      failed: 'Can’t connect · check your network and try again',
     },
     transfer: {
       title: 'Transfer Owner',
@@ -915,6 +914,8 @@ export const en: Strings = {
     forgot: 'Forgot password?',
     rateLimited:
       'Too many wrong tries. Try again in {{count}} minutes, or use Forgot password?',
+    rateLimitedSeconds:
+      'Too many wrong tries. Try again in {{count}} seconds, or use Forgot password?',
     resetDone: 'Password changed. Enter the new password to go on.',
     failed: 'Couldn’t do that. Check your connection and try again.',
   },

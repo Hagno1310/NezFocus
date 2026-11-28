@@ -1,4 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { WifiOff } from 'lucide-react-native';
+import { i18n } from '../../../shared/i18n';
+import { showToast } from '../../../shared/ui/Toast';
 import { serverGone } from '../serverGone';
 import { serverRepository } from '../../../data/servers';
 import {
@@ -50,4 +53,15 @@ export function useDeletedServers() {
     queryKey: deletedServersKey,
     queryFn: () => serverRepository.listDeletedServers(),
   });
+}
+
+// CR-17 #16: no answer → the connection Toast; an answer the screen has no words for → the
+// generic one.
+export function lifecycleErrorToast(err: unknown) {
+  const answered = typeof (err as { code?: unknown } | null)?.code === 'number';
+  showToast(
+    answered
+      ? { message: i18n.t('auth.errors.other') }
+      : { message: i18n.t('auth.errors.network'), icon: WifiOff },
+  );
 }

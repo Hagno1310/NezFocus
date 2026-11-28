@@ -15,6 +15,7 @@ import { Text } from '../../../shared/ui/Text';
 import { showToast } from '../../../shared/ui/Toast';
 import { ServerIcon } from '../components/ServerIcon';
 import {
+  lifecycleErrorToast,
   useDeletedServers,
   useServerLifecycle,
 } from '../hooks/useServerLifecycle';
@@ -45,8 +46,8 @@ export function DeletedServersScreen({
         icon: ArchiveRestore,
       });
       onOpen(s.id);
-    } catch {
-      showToast({ message: t('servers.leave.failed') });
+    } catch (err) {
+      lifecycleErrorToast(err);
     } finally {
       setBusy(null);
     }

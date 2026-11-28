@@ -5,6 +5,7 @@ import {
   DbNotificationService,
   NotificationService,
 } from './notification-service.js';
+import { NotificationsEraser } from './notifications-eraser.js';
 import { NotificationsRepository } from './notifications.repository.js';
 import { PushContentRepository } from './push-content.repository.js';
 import { FcmPushSender, LogPushSender, PushSender } from './push-sender.js';
@@ -32,6 +33,7 @@ import { PushListener } from './push.listener.js';
     { provide: PushQueue, useClass: BullPushQueue },
     PushWorker,
     PushListener,
+    NotificationsEraser,
     {
       provide: PushSender,
       inject: [ConfigService],
@@ -45,6 +47,6 @@ import { PushListener } from './push.listener.js';
       },
     },
   ],
-  exports: [NotificationService, PushService, PushTokens],
+  exports: [NotificationService, PushService, PushTokens, NotificationsEraser],
 })
 export class NotificationsModule {}

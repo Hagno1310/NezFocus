@@ -5,9 +5,11 @@ import { createStore } from 'zustand/vanilla';
 import { homeStore } from '../../../domain/servers/homeStore';
 import { sessionStore } from '../../../domain/session/sessionStore';
 import { Dialog } from '../../../shared/ui/Overlay';
-import { showToast } from '../../../shared/ui/Toast';
 import { useMyRoomLine } from '../hooks/useMyRoomLine';
-import { useServerLifecycle } from '../hooks/useServerLifecycle';
+import {
+  lifecycleErrorToast,
+  useServerLifecycle,
+} from '../hooks/useServerLifecycle';
 
 const leaveStore = createStore<{ serverId: string | null }>(() => ({
   serverId: null,
@@ -73,8 +75,8 @@ export function LeaveServerDialogs({
     try {
       await leave(server.id);
       close();
-    } catch {
-      showToast({ message: t('servers.leave.failed') });
+    } catch (err) {
+      lifecycleErrorToast(err);
     } finally {
       setBusy(false);
     }

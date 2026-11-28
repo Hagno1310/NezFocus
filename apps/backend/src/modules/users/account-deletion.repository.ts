@@ -111,9 +111,9 @@ export class AccountDeletionRepository {
     });
   }
 
-  async due(cutoff: Date): Promise<bigint[]> {
+  async due(cutoff: Date): Promise<{ id: bigint; requestedAt: Date }[]> {
     const rows = await this.db
-      .select({ id: users.id })
+      .select({ id: users.id, requestedAt: users.deletionRequestedAt })
       .from(users)
       .where(
         and(
@@ -121,7 +121,7 @@ export class AccountDeletionRepository {
           lte(users.deletionRequestedAt, cutoff),
         ),
       );
-    return rows.map((r) => r.id);
+    return rows.map((r) => ({ id: r.id, requestedAt: r.requestedAt! }));
   }
 
   // AC3: PII gone (the username freed, CR-28 #41), out of every server. Messages stay with

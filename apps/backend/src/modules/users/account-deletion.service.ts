@@ -17,7 +17,9 @@ import { AuthService } from '../auth/auth.service.js';
 import { SessionService } from '../auth/session.service.js';
 import { FriendsEraser } from '../friends/friends-eraser.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
+import { NotificationsEraser } from '../notifications/notifications-eraser.js';
 import { PermissionCache } from '../permissions/permission-cache.js';
+import { ServersRepository } from '../servers/servers.repository.js';
 import { StudyDataEraser } from '../study/study-data-eraser.js';
 import {
   AccountDeletionRepository,
@@ -48,6 +50,8 @@ export class AccountDeletionService implements OnModuleInit, OnModuleDestroy {
     private readonly sessions: SessionService,
     private readonly study: StudyDataEraser,
     private readonly friends: FriendsEraser,
+    private readonly inbox: NotificationsEraser,
+    private readonly servers: ServersRepository,
     private readonly cache: PermissionCache,
     private readonly events: EventPublisher,
     private readonly clock: Clock,
@@ -117,12 +121,14 @@ export class AccountDeletionService implements OnModuleInit, OnModuleDestroy {
       this.clock.now().getTime() - ACCOUNT_DELETION_DAYS * DAY_MS,
     );
     const due = await this.repo.due(cutoff);
-    for (const userId of due) {
-      const left = await this.repo.erase(userId, this.clock.now());
+    for (const { id: userId, requestedAt } of due) {
+      // The others first: a failure leaves the account pending, so the next run retries it.
       await this.study.eraseUser(userId);
       await this.friends.eraseUser(userId);
-      // Sessions opened meanwhile (logged in, then "Để sau" never sent) end with their push.
+      await this.inbox.eraseUser(userId);
+      await this.servers.purgeDeletedWith(userId, requestedAt);
       await this.sessions.revokeOthers(userId, null, 'account_deleted');
+      const left = await this.repo.erase(userId, this.clock.now());
       for (const serverId of left) {
         await this.cache.invalidateServer(serverId);
         await this.events.toServer(serverId, 'SERVER_MEMBER_REMOVE', {
@@ -132,7 +138,7 @@ export class AccountDeletionService implements OnModuleInit, OnModuleDestroy {
       }
     }
     if (due.length) this.logger.log(`purged ${due.length} accounts`);
-    return due;
+    return due.map((d) => d.id);
   }
 
   private deletesAt(from: Date) {

@@ -11,6 +11,7 @@ import {
   lte,
   ne,
   sql,
+  type SQL,
 } from 'drizzle-orm';
 import { DB, type Db } from '../../db/db.module.js';
 import { messages, readStates } from '../messaging/messages.schema.js';
@@ -312,14 +313,25 @@ export class ServersRepository {
   // SRS 8.6 (CR-28 #42): what a server deleted before `cutoff` still holds goes; the server
   // and channel rows stay so focus_sessions and study history keep their room. A deleted
   // server keeps its Owner as a member until then, so "has members" marks the unpurged ones.
-  async purgeDeletedBefore(cutoff: Date): Promise<bigint[]> {
+  purgeDeletedBefore(cutoff: Date): Promise<bigint[]> {
+    return this.purgeWhere(lte(servers.deletedAt, cutoff));
+  }
+
+  // REQ-AUTH-10: the servers deleted with an account go with its purge, not 16 days later.
+  purgeDeletedWith(ownerId: bigint, at: Date): Promise<bigint[]> {
+    return this.purgeWhere(
+      and(eq(servers.ownerId, ownerId), eq(servers.deletedAt, at))!,
+    );
+  }
+
+  private async purgeWhere(match: SQL): Promise<bigint[]> {
     return this.db.transaction(async (tx) => {
       const due = await tx
         .select({ id: servers.id, deletedAt: servers.deletedAt })
         .from(servers)
         .where(
           and(
-            lte(servers.deletedAt, cutoff),
+            match,
             sql`EXISTS (SELECT 1 FROM ${serverMembers} WHERE ${serverMembers.serverId} = ${servers.id})`,
           ),
         );

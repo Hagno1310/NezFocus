@@ -156,7 +156,7 @@ Bảng chọn việc của cả nhóm. Mỗi dòng là **một phiên agent** (m
   - Cần trước: P2-A1, P2-A3
 - [x] **P3-A2** [#22](https://github.com/Hagno1310/NezFocus/issues/22) Đính kèm ảnh (MSG-04) và ghim tin (MSG-10)
   - Cần trước: P2-A3, P2-A4, P3-A1
-- [ ] **P3-A3** [#23](https://github.com/Hagno1310/NezFocus/issues/23) Kiểm duyệt thành viên: tạm khóa, mời ra, cấm, audit log (ROLE-05, ROLE-07, ROLE-09)
+- [x] **P3-A3** [#23](https://github.com/Hagno1310/NezFocus/issues/23) Kiểm duyệt thành viên: tạm khóa, mời ra, cấm, audit log (ROLE-05, ROLE-07, ROLE-09)
   - Cần trước: P2-A2, P3-B1.1 (Hoàng)
   - Trong lúc làm: P3-A3.4 chờ P3-B3.1 (Hoàng)
 - [ ] **P3-A4** [#24](https://github.com/Hagno1310/NezFocus/issues/24) Rời / xóa / chuyển quyền server và xóa tài khoản (SRV-05, AUTH-10)

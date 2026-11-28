@@ -14,6 +14,7 @@ import { SnowflakeGenerator } from '../../common/snowflake.js';
 import { AttachmentsService } from '../attachments/attachments.service.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
 import { PermissionService } from '../permissions/permission.service.js';
+import { AuditLogService } from '../safety/audit-log.service.js';
 import { buildServer } from './server-templates.js';
 import {
   toChannelResponse,
@@ -39,6 +40,7 @@ export class ServersService {
     private readonly events: EventPublisher,
     private readonly permissions: PermissionService,
     private readonly attachments: AttachmentsService,
+    private readonly audit: AuditLogService,
   ) {}
 
   // REQ-SRV-01 icon: the caller's own completed `server_icon` upload → its storage prefix.
@@ -134,6 +136,7 @@ export class ServersService {
         );
     }
     const icon = body.icon_attachment_id;
+    const before = toServerSummary((await this.repo.summary(serverId))!);
     await this.repo.update(serverId, {
       name: body.name,
       systemChannelId: welcome == null ? welcome : BigInt(welcome),
@@ -141,6 +144,18 @@ export class ServersService {
     });
     const server = toServerSummary((await this.repo.summary(serverId))!);
     await this.events.toServer(serverId, 'SERVER_UPDATE', server);
+    const shape = (s: ServerSummary) => ({
+      name: s.name,
+      system_channel_id: s.system_channel_id,
+      icon_url: s.icon_url,
+    });
+    await this.audit.record({
+      serverId,
+      actorId: userId,
+      targetId: serverId,
+      action: 'SERVER_UPDATE',
+      changes: { before: shape(before), after: shape(server) },
+    });
     return server;
   }
 

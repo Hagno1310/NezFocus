@@ -18,6 +18,7 @@ export type HomeState = {
   channels: Record<string, ChannelResponse[]>; // server id → channels the caller may view
   roles: Record<string, RoleResponse[]>; // server id → roles (rows shown by permission)
   myRoleIds: Record<string, string[]>; // server id → the caller's roles, without @everyone
+  myTimeouts: Record<string, string | null>; // server id → my timeout_until (REQ-ROLE-05)
   open: OpenChannel | null; // the channel on screen
   collapsed: Record<string, string[]>; // server id → collapsed category ids (per device)
 };
@@ -28,6 +29,7 @@ export const emptyHome: HomeState = {
   channels: {},
   roles: {},
   myRoleIds: {},
+  myTimeouts: {},
   open: null,
   collapsed: {},
 };
@@ -103,6 +105,32 @@ const withoutUpdater = (
   return channel;
 };
 
+// The server after it on the rail (or before it, at the end); none left → no server.
+export function withoutServer(s: HomeState, serverId: string): HomeState {
+  const list = s.servers ?? [];
+  const at = list.findIndex((x) => x.id === serverId);
+  if (at < 0) return s;
+  const servers = list.filter((x) => x.id !== serverId);
+  const drop = <T>(r: Record<string, T>) => {
+    const { [serverId]: _, ...rest } = r;
+    return rest;
+  };
+  const selected =
+    s.selectedServerId === serverId
+      ? (servers[at]?.id ?? servers[at - 1]?.id ?? null)
+      : s.selectedServerId;
+  return {
+    ...s,
+    servers,
+    channels: drop(s.channels),
+    roles: drop(s.roles),
+    myRoleIds: drop(s.myRoleIds),
+    myTimeouts: drop(s.myTimeouts),
+    selectedServerId: selected,
+    open: s.open?.serverId === serverId ? null : s.open,
+  };
+}
+
 function apply(s: HomeState, e: DispatchEvent, meId: string | null): HomeState {
   switch (e.t) {
     case 'READY': {
@@ -116,6 +144,7 @@ function apply(s: HomeState, e: DispatchEvent, meId: string | null): HomeState {
         channels: {},
         roles: {},
         myRoleIds: {},
+        myTimeouts: {},
         selectedServerId: has(s.selectedServerId)
           ? s.selectedServerId
           : (servers[0]?.id ?? null),
@@ -130,6 +159,7 @@ function apply(s: HomeState, e: DispatchEvent, meId: string | null): HomeState {
         channels: { ...s.channels, [server.id]: channels },
         roles: { ...s.roles, [server.id]: roles },
         myRoleIds: { ...s.myRoleIds, [server.id]: me.role_ids },
+        myTimeouts: { ...s.myTimeouts, [server.id]: me.timeout_until },
       };
     }
     // REQ-ROLE-01: kept up only for a server whose roles were fetched.
@@ -166,7 +196,11 @@ function apply(s: HomeState, e: DispatchEvent, meId: string | null): HomeState {
       return {
         ...s,
         myRoleIds: { ...s.myRoleIds, [e.d.server_id]: e.d.role_ids },
+        myTimeouts: { ...s.myTimeouts, [e.d.server_id]: e.d.timeout_until },
       };
+    // REQ-ROLE-05 (CR-17 #14): kicked or banned → off the rail; the next server is shown.
+    case 'SERVER_MEMBER_REMOVE':
+      return e.d.user_id === meId ? withoutServer(s, e.d.server_id) : s;
     case 'SERVER_UPDATE':
       return s.servers ? { ...s, servers: upsert(s.servers, e.d) } : s;
     case 'CHANNEL_CREATE':

@@ -16,6 +16,7 @@ import {
   findDuplicateChannel,
   findDuplicateRole,
   keepHiddenPermissions,
+  matchesMember,
   newRolePlace,
   normalizeTextChannelName,
   parsePermissionBitmap,
@@ -26,6 +27,7 @@ import {
   toPermissionBitmap,
   type ChannelResponse,
   type RoleResponse,
+  type ServerBan,
   type ServerMember,
   type ServerResponse,
   type ServerSummary,
@@ -152,7 +154,7 @@ function buildServer(
         is_mentionable: false,
       },
     ],
-    me: { role_ids: [] },
+    me: { role_ids: [], timeout_until: null },
   };
 }
 
@@ -260,12 +262,13 @@ export function createFakeServerRepository(
     servers.set('100', {
       ...study,
       roles: [...study.roles, ...roles],
-      me: { role_ids: [roles[1]!.id] },
+      me: { role_ids: [roles[1]!.id], timeout_until: null },
     });
   }
   const setRoles = (server: ServerResponse, roles: RoleResponse[]) =>
     servers.set(server.id, { ...server, roles });
   const members = new Map<string, ServerMember[]>();
+  const bans = new Map<string, ServerBan[]>();
   const membersOf = (serverId: string) => {
     const server = serverFor(serverId);
     if (!members.has(serverId))
@@ -280,6 +283,7 @@ export function createFakeServerRepository(
           role_ids: server.me.role_ids,
           joined_at: '2026-10-01T00:00:00Z',
           timeout_until: null,
+          timeout_reason: null,
         },
       ]);
     return members.get(serverId)!;
@@ -402,6 +406,7 @@ export function createFakeServerRepository(
       servers.set(serverId, {
         ...servers.get(serverId)!,
         me: {
+          ...server.me,
           role_ids: server.me.role_ids.filter((r) => r !== roleId),
         },
       });
@@ -619,6 +624,68 @@ export function createFakeServerRepository(
             ? { ...m, role_ids: give ? [...roleIds, roleId] : roleIds }
             : x,
         ),
+      );
+    },
+    async timeoutMember(serverId, userId, until, reason) {
+      await wait();
+      const list = membersOf(serverId);
+      const m = list.find((x) => x.user.id === userId);
+      if (!m) throw fail(404, ErrorCode.NotFound);
+      const next: ServerMember = {
+        ...m,
+        timeout_until: until,
+        timeout_reason: until ? (reason ?? m.timeout_reason) : null,
+      };
+      members.set(
+        serverId,
+        list.map((x) => (x === m ? next : x)),
+      );
+      return next;
+    },
+    async kickMember(serverId, userId) {
+      await wait();
+      const list = membersOf(serverId);
+      if (!list.some((x) => x.user.id === userId))
+        throw fail(404, ErrorCode.NotFound);
+      members.set(
+        serverId,
+        list.filter((x) => x.user.id !== userId),
+      );
+    },
+    async banMember(serverId, userId, body) {
+      await wait();
+      const list = membersOf(serverId);
+      const m = list.find((x) => x.user.id === userId);
+      if (!m) throw fail(404, ErrorCode.NotFound);
+      members.set(
+        serverId,
+        list.filter((x) => x !== m),
+      );
+      bans.set(serverId, [
+        {
+          user: m.user,
+          reason: body.reason ?? null,
+          banned_by: { id: '1', username: 'an.nguyen', display_name: 'An' },
+          created_at: now().toISOString(),
+        },
+        ...(bans.get(serverId) ?? []),
+      ]);
+    },
+    async listBans(serverId, { q }) {
+      await wait();
+      const all = (bans.get(serverId) ?? []).filter((b) =>
+        matchesMember(b, q ?? ''),
+      );
+      return { bans: all, next_cursor: null };
+    },
+    async unbanMember(serverId, userId) {
+      await wait();
+      const list = bans.get(serverId) ?? [];
+      if (!list.some((b) => b.user.id === userId))
+        throw fail(404, ErrorCode.NotFound);
+      bans.set(
+        serverId,
+        list.filter((b) => b.user.id !== userId),
       );
     },
     async setChannelPositions(serverId, body) {

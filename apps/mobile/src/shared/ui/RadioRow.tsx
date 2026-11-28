@@ -15,6 +15,7 @@ export function RadioRow({
   selected,
   onPress,
   disabled = false,
+  dense = false,
 }: {
   label: string;
   description?: string;
@@ -25,6 +26,9 @@ export function RadioRow({
   onPress: () => void;
   // S-SET-07 `offline`: the cached choice shows, nothing can be picked.
   disabled?: boolean;
+  // A list of short choices inside a sheet or dialog (08 S-SET-03 `timeout-sheet`, `ban-confirm`):
+  // the frame draws 44; DESIGN.md › touch keeps 48.
+  dense?: boolean;
 }) {
   const { colors } = useTheme();
   return (
@@ -36,6 +40,7 @@ export function RadioRow({
       disabled={disabled}
       style={({ pressed }) => [
         styles.row,
+        dense && styles.dense,
         description !== undefined && styles.withDescription,
         pressed && { backgroundColor: colors['overlay-pressed'] },
       ]}
@@ -74,6 +79,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space[2] + space[1],
   },
+  dense: { minHeight: size.touch },
   // 00-components C-34: with a description the row grows with the text, icons on the first line.
   withDescription: {
     alignItems: 'flex-start',

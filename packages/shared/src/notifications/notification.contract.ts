@@ -37,6 +37,16 @@ const MentionData = z.discriminatedUnion('via', [
 
 const FromUser = z.object({ actor_id: SnowflakeId });
 
+// REQ-NOTIF-05 `moderation` (no push, never says who): timeout, a changed duration, kick, ban.
+// The server's name is read when the inbox is listed: the user may no longer be in it.
+export const ModerationData = z.object({
+  server_id: SnowflakeId,
+  action: z.enum(['timeout', 'timeout_changed', 'kick', 'ban']),
+  timeout_until: z.iso.datetime().nullable(),
+  reason: z.string().nullable(),
+});
+export type ModerationData = z.infer<typeof ModerationData>;
+
 // ponytail: the owner of each remaining type fills in its fields (P4-B1.1 #187); until then
 // any object passes so callers can already create them.
 const Pending = z.looseObject({});
@@ -51,7 +61,7 @@ export const NotificationData = {
   task_unassigned: Pending,
   missed_call: Pending,
   owner_transferred: Pending,
-  moderation: Pending,
+  moderation: ModerationData,
   report_reviewed: Pending,
   reports_pending: Pending,
   profile_reset: Pending,

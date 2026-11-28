@@ -99,5 +99,8 @@ export const toServerResponse = (s: FullServer): ServerResponse => ({
   ...toServerSummary(s),
   channels: s.channels.map(toChannelResponse),
   roles: s.roles.map(toRoleResponse),
-  me: { role_ids: s.myRoleIds.map(String) },
+  me: {
+    role_ids: s.myRoleIds.map(String),
+    timeout_until: s.myTimeoutUntil?.toISOString() ?? null,
+  },
 });

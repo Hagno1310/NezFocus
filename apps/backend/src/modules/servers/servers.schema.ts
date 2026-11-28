@@ -133,7 +133,8 @@ export const serverMembers = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     joinedAt: tz().notNull().defaultNow(),
-    timeoutUntil: tz(), // CR-28 #17: until then only VIEW_CHANNEL (set by P3-A3 #23)
+    timeoutUntil: tz(), // CR-28 #17: until then only VIEW_CHANNEL (REQ-ROLE-05)
+    timeoutReason: varchar({ length: 512 }), // CR-28 #40
     // REQ-VC-04 AC5: no mic in any room of the server until a moderator turns it back on
     modMuted: boolean().notNull().default(false),
   },
@@ -164,7 +165,7 @@ export const serverMemberRoles = pgTable(
   ],
 );
 
-// REQ-ROLE-07. Only read here (40306 on join); the ban API comes with P3-A3 (#23).
+// REQ-ROLE-07: 40306 on join; written by ModerationService.
 export const serverBans = pgTable(
   'server_bans',
   {

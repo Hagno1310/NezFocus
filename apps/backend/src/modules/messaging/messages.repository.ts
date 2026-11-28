@@ -291,6 +291,57 @@ export class MessagesRepository {
     });
   }
 
+  // REQ-ROLE-05 AC1: a banned user's messages in the server from `since`, per channel; each
+  // channel's last_message_id steps back past them (NOTIF-01).
+  async softDeleteByAuthor(
+    serverId: bigint,
+    authorId: bigint,
+    since: Date,
+    at: Date,
+  ) {
+    return this.db.transaction(async (tx) => {
+      const gone = await tx
+        .update(messages)
+        .set({ deletedAt: at })
+        .where(
+          and(
+            eq(messages.authorId, authorId),
+            isNull(messages.deletedAt),
+            gte(messages.createdAt, since),
+            inArray(
+              messages.channelId,
+              tx
+                .select({ id: channels.id })
+                .from(channels)
+                .where(eq(channels.serverId, serverId)),
+            ),
+          ),
+        )
+        .returning({ id: messages.id, channelId: messages.channelId });
+      const byChannel = new Map<bigint, bigint[]>();
+      for (const m of gone)
+        byChannel.set(m.channelId, [
+          ...(byChannel.get(m.channelId) ?? []),
+          m.id,
+        ]);
+      for (const channelId of byChannel.keys()) {
+        const [last] = await tx
+          .select({ id: messages.id })
+          .from(messages)
+          .where(
+            and(eq(messages.channelId, channelId), isNull(messages.deletedAt)),
+          )
+          .orderBy(desc(messages.id))
+          .limit(1);
+        await tx
+          .update(channels)
+          .set({ lastMessageId: last?.id ?? null })
+          .where(eq(channels.id, channelId));
+      }
+      return byChannel;
+    });
+  }
+
   // Per message, emoji in the order first put, with whether `viewerId` put it.
   async reactions(messageIds: bigint[], viewerId: bigint) {
     if (!messageIds.length) return [];

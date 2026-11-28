@@ -1,4 +1,8 @@
-import { CANNOT_MESSAGE_TEXT } from '@nezfocus/shared';
+import {
+  CANNOT_MESSAGE_TEXT,
+  Permission,
+  hasPermission,
+} from '@nezfocus/shared';
 import * as Clipboard from 'expo-clipboard';
 import { randomUUID } from 'expo-crypto';
 import {
@@ -66,7 +70,12 @@ import { usePresence } from '../../presence/hooks/usePresence';
 import { useMembers } from '../../servers/hooks/useMembers';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { BlockDialog } from './BlockDialog';
-import { ModeratorVoice } from '../../voice/components/ModeratorVoice';
+import { ModerationGroup } from '../../servers/components/ModerationSheets';
+import { useServerAccess } from '../../servers/hooks/useServerAccess';
+import {
+  ModeratorVoice,
+  useModeratorVoiceRows,
+} from '../../voice/components/ModeratorVoice';
 import { RelationIcon, type RelationIconKind } from './RelationIcon';
 
 // S-HOME-10, mounted once above the tabs; it keeps the last person while it animates out.
@@ -74,10 +83,12 @@ export function ProfileSheetHost({
   onOpenedDm,
   onEditProfile,
   onOpenedServer,
+  onMemberRoles,
 }: {
   onOpenedDm: () => void; // show the Home tab root, where the DM now is
   onEditProfile: () => void; // S-ME-01
   onOpenedServer: () => void;
+  onMemberRoles: (serverId: string, userId: string) => void; // "Vai trò ›" → S-SET-03
 }) {
   const target = useStore(profileSheet, (s) => s.target);
   const visible = useStore(profileSheet, (s) => s.visible);
@@ -89,6 +100,7 @@ export function ProfileSheetHost({
       onOpenedDm={onOpenedDm}
       onEditProfile={onEditProfile}
       onOpenedServer={onOpenedServer}
+      onMemberRoles={onMemberRoles}
     />
   );
 }
@@ -99,12 +111,14 @@ function ProfileSheet({
   onOpenedDm,
   onEditProfile,
   onOpenedServer,
+  onMemberRoles,
 }: {
   target: ProfileTarget;
   visible: boolean;
   onOpenedDm: () => void;
   onEditProfile: () => void;
   onOpenedServer: () => void;
+  onMemberRoles: (serverId: string, userId: string) => void;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -124,6 +138,10 @@ function ProfileSheet({
   const member = useMembers(serverId ?? '').data?.find(
     (m) => m.user.id === userId,
   );
+  const access = useServerAccess(serverId ?? '');
+  const canRoles =
+    !!access && hasPermission(access.perms, Permission.MANAGE_ROLES);
+  const voiceRows = useModeratorVoiceRows(serverId ?? '', userId);
   const [menu, setMenu] = useState(false);
   const [unfriend, setUnfriend] = useState(false);
   const [blocking, setBlocking] = useState(false);
@@ -516,9 +534,37 @@ function ProfileSheet({
               </Text>
             </View>
           )}
-          {/* P3-B1.6 (#142): the voice rows of "Kiểm duyệt"; P3-A3.1 (#126) adds its rows here. */}
-          {serverId && !self && (
-            <ModeratorVoice serverId={serverId} userId={userId} />
+          {/* "Kiểm duyệt": voice rows (P3-B1.6) then timeout / kick / ban (P3-A3.2), one label. */}
+          {serverId && !self && member && (
+            <ModerationGroup
+              serverId={serverId}
+              member={member}
+              onRemoved={closeMemberProfile}
+              bleed
+              onRoles={
+                canRoles
+                  ? () => {
+                      closeMemberProfile();
+                      onMemberRoles(serverId, userId);
+                    }
+                  : undefined
+              }
+              above={
+                voiceRows && (
+                  <ModeratorVoice serverId={serverId} userId={userId} bare />
+                )
+              }
+              title={(text) => (
+                <Text
+                  variant="label"
+                  weight="600"
+                  color="text-tertiary"
+                  style={styles.modTitle}
+                >
+                  {text}
+                </Text>
+              )}
+            />
           )}
         </View>
       </BottomSheet>
@@ -558,6 +604,8 @@ function ProfileSheet({
 }
 
 const styles = StyleSheet.create({
+  // Frame S-HOME-10 `moderator`: the label lines up with the name, 16 under the buttons.
+  modTitle: { marginTop: space[3], paddingBottom: space[1] },
   flex: { flex: 1, minWidth: 0 },
   // The button keeps its label whole; a ChipStatus beside it shrinks instead.
   main: { flexGrow: 1, flexShrink: 0 },

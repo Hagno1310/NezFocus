@@ -7,6 +7,7 @@ import { myChannelPermissions } from '../../../domain/servers/channelPermissions
 import { homeStore } from '../../../domain/servers/homeStore';
 import { sessionStore } from '../../../domain/session/sessionStore';
 import { mediaDenied } from '../../../domain/voice/mediaDenied';
+import { useMyTimeout } from '../../servers/hooks/useMyTimeout';
 import { roomLayout } from '../../../domain/voice/roomLayout';
 import {
   keepOrder,
@@ -43,6 +44,7 @@ export function useVoiceRoom(
   host?: string | null,
 ) {
   const access = useServerAccess(serverId);
+  const timeout = useMyTimeout(serverId);
   const channel = useStore(homeStore, (s) =>
     s.channels[serverId]?.find((c) => c.id === channelId),
   );
@@ -151,12 +153,15 @@ export function useVoiceRoom(
           perms,
           joined,
           online,
+          timedOut: !!timeout,
         })
       : null;
 
   return {
     channel,
     layout,
+    timeout, // `timed-out-voice`: "Bạn đang bị tạm khóa đến 22:47 · chưa vào phòng được"
+
     tiles,
     call,
     here,

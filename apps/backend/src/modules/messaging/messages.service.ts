@@ -12,7 +12,7 @@ import {
   type MessageResponse,
   type MessageType,
 } from '@nezfocus/shared';
-import { AppError, rateLimited } from '../../common/app-error.js';
+import { AppError, rateLimited, timedOut } from '../../common/app-error.js';
 import { Clock } from '../../common/clock.js';
 import { isUniqueViolation } from '../../common/db-errors.js';
 import { SnowflakeGenerator } from '../../common/snowflake.js';
@@ -92,7 +92,6 @@ export class MessagesService {
     await this.requireSend(userId, channel);
     const attachmentIds = (body.attachment_ids ?? []).map(BigInt);
     if (attachmentIds.length) await this.requireAttach(userId, channel);
-    // ponytail: timed-out members get 40302 instead of 40307 until P3-A3.1 (#126).
     // A retry of a message already saved gets it back without touching the rate limit.
     const sent = await this.repo.byNonce(userId, body.nonce);
     if (sent) return this.replay(sent, channelId, body.content);
@@ -330,14 +329,35 @@ export class MessagesService {
       );
   }
 
-  // REQ-DM-02 / FRIEND-03 AC1 in a DM: 40303 with one sentence; elsewhere SEND_MESSAGES.
+  // REQ-ROLE-05 AC1: a ban's "Xóa tin nhắn gần đây"; one MESSAGE_DELETE_BULK per channel.
+  async deleteRecentOf(serverId: bigint, userId: bigint, since: Date) {
+    const byChannel = await this.repo.softDeleteByAuthor(
+      serverId,
+      userId,
+      since,
+      this.clock.now(),
+    );
+    for (const [channelId, ids] of byChannel)
+      await this.events.toChannel(channelId, 'MESSAGE_DELETE_BULK', {
+        ids: ids.map(String),
+        channel_id: channelId.toString(),
+        server_id: serverId.toString(),
+      });
+    return [...byChannel.values()].flat();
+  }
+
+  // REQ-DM-02 / FRIEND-03 AC1 in a DM: 40303 with one sentence; elsewhere SEND_MESSAGES, and
+  // REQ-ROLE-05 AC2: timed out → 40307 with timeout_until, before the 40302 it would also be.
   private async requireSend(userId: bigint, channel: ChannelRow) {
-    if (channel.serverId)
+    if (channel.serverId) {
+      const until = await this.repo.timeoutUntil(channel.serverId, userId);
+      if (until && until > this.clock.now()) throw timedOut(until);
       return this.permissions.require(
         userId,
         { channelId: channel.id },
         Permission.SEND_MESSAGES,
       );
+    }
     if (!(await this.dmPolicy.canSend(userId, channel.id)))
       throw new AppError(ErrorCode.CannotMessageUser, CANNOT_MESSAGE_TEXT);
   }

@@ -41,7 +41,7 @@ const server: ServerResponse = {
     channel('201', 'text', '200', 0),
   ],
   roles: [],
-  me: { role_ids: [] },
+  me: { role_ids: [], timeout_until: null },
 };
 
 const repo = (createServer: ServerRepository['createServer']) => ({

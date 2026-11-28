@@ -200,6 +200,7 @@ describe('member targets (P2-A2: the member list gives their roles)', () => {
     role_ids: roleIds,
     joined_at: '2026-10-01T00:00:00Z',
     timeout_until: null,
+    timeout_reason: null,
   });
   const tuan = { userId: '9', roleIds: ['103'] };
   const members = [

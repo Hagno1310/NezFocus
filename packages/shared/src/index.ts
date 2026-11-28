@@ -32,6 +32,8 @@ export * from './servers/role-rules.js';
 export * from './servers/invite.contract.js';
 export * from './servers/member.contract.js';
 export * from './servers/member-rules.js';
+export * from './servers/ban.contract.js';
+export * from './servers/moderation-rules.js';
 export * from './idempotency.js';
 export * from './messages/message.contract.js';
 export * from './messages/typing.contract.js';

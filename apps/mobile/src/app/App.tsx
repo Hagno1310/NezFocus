@@ -34,6 +34,7 @@ import { startGatewayLifecycle } from './gatewayLifecycle';
 import { startTypingLifecycle } from './typingLifecycle';
 import { startUnreadLifecycle } from './unreadLifecycle';
 import { startHomeLifecycle } from './homeLifecycle';
+import { startRemovalLifecycle } from './removalLifecycle';
 import { startPresenceLifecycle } from './presenceLifecycle';
 import { startFriendsLifecycle } from './friendsLifecycle';
 import { startDmLifecycle } from './dmLifecycle';
@@ -139,6 +140,8 @@ export default function App() {
     void sessionRestored.then(() => setReady(true));
   }, []);
   // Before the Gateway starts, so READY reaches the Home tab.
+  // Before the home lifecycle: a kick / ban reads the server before it leaves the rail.
+  useEffect(startRemovalLifecycle, []);
   useEffect(startHomeLifecycle, []);
   useEffect(startPresenceLifecycle, []);
   useEffect(startFriendsLifecycle, []);

@@ -24,6 +24,7 @@ import { SnowflakeGenerator } from '../../common/snowflake.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
 import { PermissionCache } from '../permissions/permission-cache.js';
 import { PermissionService } from '../permissions/permission.service.js';
+import { AuditLogService } from '../safety/audit-log.service.js';
 import { ChannelEvents } from './channel-events.js';
 import { ruleError } from './channel-rules.js';
 import { ChannelsRepository, type ChannelMove } from './channels.repository.js';
@@ -63,6 +64,17 @@ const toMove = (c: ChannelResponse, before?: ChannelResponse): ChannelMove => ({
       : undefined,
 });
 
+// before / after of a channel in the audit log (REQ-ROLE-09): what its settings change.
+const channelShape = (c: ChannelResponse) => ({
+  name: c.name,
+  type: c.type,
+  parent_id: c.parent_id,
+  position: c.position,
+  permissions_synced: c.permissions_synced,
+  focus_control: c.focus_control,
+  default_cycle_config: c.default_cycle_config,
+});
+
 // REQ-SRV-02: categories, text and voice channels; names, order, delete. CHANNEL_CREATE /
 // UPDATE go through ChannelEvents (viewers only); CHANNEL_DELETE goes to every member.
 @Injectable()
@@ -79,6 +91,7 @@ export class ChannelsService {
     private readonly dms: DmService,
     private readonly voice: VoiceService,
     private readonly emitter: EventEmitter2,
+    private readonly audit: AuditLogService,
   ) {}
 
   async list(userId: bigint, serverId: bigint): Promise<ChannelResponse[]> {
@@ -174,6 +187,13 @@ export class ChannelsService {
       );
     });
     await this.channelEvents.created(channel);
+    await this.audit.record({
+      serverId,
+      actorId: userId,
+      targetId: BigInt(channel.id),
+      action: 'CHANNEL_CREATE',
+      changes: { after: channelShape(channel) },
+    });
     return channel;
   }
 
@@ -264,6 +284,16 @@ export class ChannelsService {
     );
     if (resynced) await this.permissionCache.invalidateServer(serverId);
     await this.channelEvents.updated(serverId, [channel], { by: userId });
+    await this.audit.record({
+      serverId,
+      actorId: userId,
+      targetId: row.id,
+      action: 'CHANNEL_UPDATE',
+      changes: {
+        before: channelShape(toChannelResponse({ ...row, overwrites: [] })),
+        after: channelShape(channel),
+      },
+    });
     if (turnedOff)
       await this.emitter.emitAsync(STUDY_ROOM_DISABLED, {
         serverId,
@@ -295,6 +325,19 @@ export class ChannelsService {
     // A synced channel follows its new category's overwrites.
     await this.permissionCache.invalidateServer(serverId);
     await this.channelEvents.updated(serverId, changed);
+    if (changed.length)
+      await this.audit.record({
+        serverId,
+        actorId: userId,
+        action: 'CHANNEL_UPDATE',
+        changes: {
+          after: changed.map((c) => ({
+            id: c.id,
+            parent_id: c.parent_id,
+            position: c.position,
+          })),
+        },
+      });
   }
 
   async remove(userId: bigint, channelId: bigint): Promise<void> {
@@ -340,6 +383,15 @@ export class ChannelsService {
     await this.events.toServer(serverId, 'CHANNEL_DELETE', {
       id: row.id.toString(),
       server_id: serverId.toString(),
+    });
+    await this.audit.record({
+      serverId,
+      actorId: userId,
+      targetId: row.id,
+      action: 'CHANNEL_DELETE',
+      changes: {
+        before: channelShape(toChannelResponse({ ...row, overwrites: [] })),
+      },
     });
     await this.channelEvents.updated(serverId, moved);
     if (welcomeCleared)

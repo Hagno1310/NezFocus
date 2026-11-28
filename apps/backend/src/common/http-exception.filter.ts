@@ -29,7 +29,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof AppError) {
       status = exception.status;
-      const { retryAfter, attemptsLeft, reason } = exception.details;
+      const { retryAfter, attemptsLeft, reason, timeoutUntil } =
+        exception.details;
       body = {
         code: exception.code,
         message: exception.message,
@@ -37,6 +38,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         retry_after: retryAfter,
         attempts_left: attemptsLeft,
         reason,
+        timeout_until: timeoutUntil?.toISOString(),
       };
       if (retryAfter !== undefined) res.setHeader('Retry-After', retryAfter);
     } else if (exception instanceof HttpException) {

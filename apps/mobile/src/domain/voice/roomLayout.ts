@@ -3,27 +3,31 @@ import { Permission, hasPermission, type FocusControl } from '@nezfocus/shared';
 // S-ROOM-01 by state. `start`: the Start bar — none on a plain voice channel (`not-study-room`),
 // a hint before joining, the button once in, managers only (`managers-only`, REQ-STUDY-11).
 export type StartBar = 'none' | 'hint' | 'start' | 'managers-only';
-// Preview only: why "Vào phòng" is off (`offline`, `no-connect`).
-export type RoomAccess = 'ok' | 'offline' | 'no-connect';
+// Preview only: why "Vào phòng" is off (`offline`, 08 S-SET-EDGE `timed-out-voice`, `no-connect`).
+export type RoomAccess = 'ok' | 'offline' | 'timed-out' | 'no-connect';
 
 export function roomLayout({
   focusControl,
   perms,
   joined,
   online,
+  timedOut = false,
 }: {
   focusControl: FocusControl;
   perms: bigint;
   joined: boolean;
   online: boolean;
+  timedOut?: boolean; // REQ-ROLE-05: my timeout in this server is running
 }) {
   const access: RoomAccess = joined
     ? 'ok'
     : !online
       ? 'offline'
-      : hasPermission(perms, Permission.CONNECT)
-        ? 'ok'
-        : 'no-connect';
+      : timedOut
+        ? 'timed-out'
+        : hasPermission(perms, Permission.CONNECT)
+          ? 'ok'
+          : 'no-connect';
   const start: StartBar =
     focusControl === 'off'
       ? 'none'

@@ -162,6 +162,13 @@
       "when": 1795783279746,
       "tag": "0022_sad_wild_child",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795855926468,
+      "tag": "0023_smooth_sunfire",
+      "breakpoints": true
     }
   ]
 }

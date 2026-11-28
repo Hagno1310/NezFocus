@@ -227,6 +227,7 @@ export class InvitesRepository {
   }
 
   // REQ-SRV-03 v1.7: live ones (not revoked, not expired, uses left), newest first.
+  // ponytail: khi một server có > 100 lời mời còn hiệu lực: phân trang (S-SET-04 › "Rất nhiều lời mời", cursor như danh sách cấm).
   async liveForServer(serverId: bigint, now: Date): Promise<ListedInvite[]> {
     const rows = await this.db
       .select({

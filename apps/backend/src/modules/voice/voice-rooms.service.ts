@@ -420,11 +420,13 @@ export class VoiceRoomsService
     await this.presence.voiceChanged(seat.userId, null);
     await this.rooms.remove(roomOf(seat.channelId), seat.userId.toString());
     const left = await this.leaving(seat);
-    await this.events.toChannel(seat.channelId, 'VOICE_STATE_UPDATE', left);
+    // The leaver's own copy first: one who still views the room (timed out, moved by a mod)
+    // would otherwise end the call on the copy without `reason` (S-SET-EDGE Toasts).
     await this.events.toLogin(seat.authSessionId, 'VOICE_STATE_UPDATE', {
       ...left,
       reason,
     });
+    await this.events.toChannel(seat.channelId, 'VOICE_STATE_UPDATE', left);
     await this.tell<VoiceLeft>(VOICE_LEFT, {
       userId: seat.userId,
       serverId: seat.serverId,

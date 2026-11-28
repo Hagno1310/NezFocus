@@ -1,10 +1,11 @@
 import {
   Permission,
   hasPermission,
+  isTimedOut,
   memberName,
   type RoleResponse,
 } from '@nezfocus/shared';
-import { Lock, Shield } from 'lucide-react-native';
+import { Lock, Shield, Timer } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -16,12 +17,14 @@ import {
   memberRoleRows,
   sinceText,
 } from '../../../domain/servers/members';
+import { timeoutChip } from '../../../domain/servers/moderation';
 import { roleActor } from '../../../domain/servers/roles';
 import { useChatClock } from '../../chat/hooks/useChatClock';
 import { avatarUri } from '../../me/avatarUri';
 import { useShownPresence } from '../../presence/hooks/usePresence';
 import { size, space, useTheme } from '../../../shared/theme';
 import { Checkbox } from '../../../shared/ui/Checkbox';
+import { ChipStatus } from '../../../shared/ui/ChipStatus';
 import { SystemBanner } from '../../../shared/ui/Feedback';
 import { NoteLine } from '../../../shared/ui/NoteLine';
 import { Avatar } from '../../../shared/ui/People';
@@ -29,11 +32,12 @@ import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
 import { SectionLabel } from '../../../shared/ui/SectionLabel';
 import { Text } from '../../../shared/ui/Text';
 import { showToast } from '../../../shared/ui/Toast';
+import { ModerationGroup } from '../components/ModerationSheets';
 import { useMembers, useSetMemberRole } from '../hooks/useMembers';
 import { useServerAccess } from '../hooks/useServerAccess';
 
-// S-SET-03 `member-detail` (VAI TRÒ only), `member-blocked`, `save-error`, `offline`; Edge case
-// P2 "người đó rời server". ponytail: the KIỂM DUYỆT group comes with P3-A3.2 (#127).
+// S-SET-03 `member-detail`, `member-blocked`, `timed-out`, `save-error`, `offline`, `done` (a
+// kick / ban goes back to the list); Edge case P2 "người đó rời server".
 export function MemberDetailScreen({
   serverId,
   userId,
@@ -48,7 +52,7 @@ export function MemberDetailScreen({
   const { bottom } = useSafeAreaInsets();
   const access = useServerAccess(serverId);
   const offline = useStore(gatewayStore, (s) => s.banner === 'offline');
-  const { timeZone } = useChatClock();
+  const { timeZone, now } = useChatClock();
   const members = useMembers(serverId);
   const setRole = useSetMemberRole(serverId);
   const presence = useShownPresence(userId);
@@ -119,6 +123,24 @@ export function MemberDetailScreen({
             </Text>
           </View>
         </View>
+        {!gone && isTimedOut(shown.timeout_until, now) && (
+          <View style={styles.chip}>
+            <ChipStatus
+              icon={Timer}
+              label={(() => {
+                const chip = timeoutChip(
+                  shown.timeout_until!,
+                  shown.timeout_reason,
+                  now,
+                  timeZone,
+                );
+                return chip.reason
+                  ? t('servers.moderation.chipReason', chip)
+                  : t('servers.moderation.chip', chip);
+              })()}
+            />
+          </View>
+        )}
         {gone ? (
           <NoteLine text={t('servers.members.gone', { name })} />
         ) : (
@@ -150,6 +172,15 @@ export function MemberDetailScreen({
                 ))}
               </>
             )}
+            <ModerationGroup
+              serverId={serverId}
+              member={shown}
+              onRemoved={onBack}
+              bleed
+              title={(text) => (
+                <SectionLabel style={styles.group}>{text}</SectionLabel>
+              )}
+            />
           </>
         )}
       </ScrollView>
@@ -168,4 +199,5 @@ const styles = StyleSheet.create({
     paddingVertical: space[3],
   },
   group: { minHeight: size.groupTitle, paddingTop: space[2] },
+  chip: { alignItems: 'flex-start' },
 });

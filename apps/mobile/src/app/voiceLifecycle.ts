@@ -1,4 +1,4 @@
-import { MicOff, RotateCw } from 'lucide-react-native';
+import { MicOff, RotateCw, Timer } from 'lucide-react-native';
 import { AppState } from 'react-native';
 import { gatewayClient } from '../data/gateway';
 import { voiceSession } from '../data/voice';
@@ -11,6 +11,9 @@ import { savedRoom } from '../data/voice/savedRoom';
 import { dmView } from '../domain/dm/dmStore';
 import { onGatewayEvent } from '../domain/gateway/gatewayStore';
 import { homeStore } from '../domain/servers/homeStore';
+import { untilText } from '../domain/servers/members';
+import { settingsStore } from '../domain/settings/settingsStore';
+import { deviceTimeZone } from '../features/auth/timeZoneList';
 import { sessionStore } from '../domain/session/sessionStore';
 import { mediaDenied } from '../domain/voice/mediaDenied';
 import {
@@ -29,6 +32,9 @@ import { closeVoice, openVoice, voiceView } from '../domain/voice/voiceView';
 import { i18n } from '../shared/i18n';
 import { showToast } from '../shared/ui/Toast';
 
+const userTimeZone = () =>
+  settingsStore.getState().settings?.timezone ?? deviceTimeZone();
+
 const channelName = ({ serverId, channelId }: VoiceTarget) =>
   homeStore.getState().channels[serverId]?.find((c) => c.id === channelId)
     ?.name;
@@ -40,6 +46,23 @@ function onEnded(end: VoiceEnd, name: string | undefined) {
     // S-SET-EDGE `disconnected-by-mod`: this room's preview, joinable again at once.
     openVoice(end);
     showToast({ message: i18n.t('voice.disconnectedByMod') });
+    return;
+  }
+  if (end.reason === 'timed_out') {
+    // 08 › Bị tạm khóa khi đang ở trong phòng thoại: as `disconnected-by-mod`, with the end time
+    // (SERVER_MEMBER_UPDATE came first, REQ-ROLE-05 AC4).
+    openVoice(end);
+    const until = homeStore.getState().myTimeouts[end.serverId];
+    showToast(
+      until
+        ? {
+            icon: Timer,
+            message: i18n.t('voice.timedOutLeft', {
+              until: untilText(until, Date.now(), userTimeZone()),
+            }),
+          }
+        : { message: i18n.t('voice.disconnectedByMod') },
+    );
     return;
   }
   if (end.reason === 'other_device') {

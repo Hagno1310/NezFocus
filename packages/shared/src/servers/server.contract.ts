@@ -42,8 +42,11 @@ export type ServerSummary = z.infer<typeof ServerSummary>;
 
 // The caller's own membership; with `roles` and each channel's overwrites it is what the
 // app's calculator needs (REQ-ROLE-08). Role ids leave out @everyone, like PermissionMember.
-// SERVER_MEMBER_UPDATE keeps it current; the timeout joins with P3-A3.1 (#126).
-export const ServerMe = z.object({ role_ids: z.array(SnowflakeId) });
+// SERVER_MEMBER_UPDATE keeps it current. `timeout_until`: S-HOME-01 / voice preview `timed-out`.
+export const ServerMe = z.object({
+  role_ids: z.array(SnowflakeId),
+  timeout_until: z.iso.datetime().nullable(),
+});
 export type ServerMe = z.infer<typeof ServerMe>;
 
 // "Server đầy đủ": the categories and channels the caller may view, the roles, and the

@@ -3,6 +3,7 @@ import { AppError } from '../../common/app-error.js';
 import { fixedClock } from '../../common/clock.js';
 import type { EventPublisher } from '../gateway/event-publisher.js';
 import type { PermissionService } from '../permissions/permission.service.js';
+import type { AuditLogService } from '../safety/audit-log.service.js';
 import type { ServerRows } from './server-templates.js';
 import type { FullServer, ServersRepository } from './servers.repository.js';
 import type { AttachmentsService } from '../attachments/attachments.service.js';
@@ -80,6 +81,7 @@ function setup(o: { atLimit?: boolean; allowed?: boolean } = {}) {
     } as unknown as EventPublisher,
     permissions,
     { usable: async () => undefined } as unknown as AttachmentsService,
+    { record: async () => {} } as unknown as AuditLogService,
   );
   return { service, repo, events, asked };
 }

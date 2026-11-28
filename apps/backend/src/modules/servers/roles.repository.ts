@@ -19,7 +19,7 @@ export type RoleWithCount = RoleRow & { memberCount: number };
 // The writes of one server's roles while its row is locked (`RolesRepository.locked`).
 export class LockedRoles {
   constructor(
-    private readonly tx: Tx,
+    readonly tx: Tx, // moderation writes join the lock (ModerationService)
     private readonly serverId: bigint,
     readonly rows: RoleRow[],
     readonly caller: Caller, // read under the lock, like the rows

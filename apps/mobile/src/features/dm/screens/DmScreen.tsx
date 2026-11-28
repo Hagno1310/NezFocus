@@ -33,6 +33,7 @@ const asMember = (u: ServerMember['user']): ServerMember => ({
   role_ids: [],
   joined_at: new Date(0).toISOString(),
   timeout_until: null,
+  timeout_reason: null,
 });
 
 // S-DM-02: the channel chat (ChatView) with the DM header, strips and composer states.

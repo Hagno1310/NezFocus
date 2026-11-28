@@ -279,8 +279,9 @@ describe('Pins (e2e)', () => {
         ),
       );
     await app.get(PermissionCache).invalidateServer(BigInt(server.id));
+    // REQ-ROLE-05: refused for the timeout, so 40307 with timeout_until.
     expect(code(await chi.put(pinPath(server.text, sent.id)))).toBe(
-      ErrorCode.Forbidden,
+      ErrorCode.MemberTimedOut,
     );
   });
 

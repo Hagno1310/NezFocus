@@ -33,6 +33,7 @@ const dispatch = (e: ToastEvent) =>
 export const showToast = (toast: Toast) =>
   dispatch({ type: 'show', toast, now: Date.now() });
 export const overlayOpened = () => dispatch({ type: 'overlay', open: true });
+export const dropPendingToasts = () => dispatch({ type: 'drop-pending' });
 export const overlayClosed = () =>
   dispatch({ type: 'overlay', open: false, now: Date.now() });
 

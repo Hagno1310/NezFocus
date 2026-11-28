@@ -101,6 +101,9 @@ import { CameraPreviewSheet } from '../components/CameraPreviewSheet';
 import { MediaSheet } from '../components/MediaSheet';
 import { useMediaFlow } from '../hooks/useMediaFlow';
 import { useVoiceRoom } from '../hooks/useVoiceRoom';
+import { untilText } from '../../../domain/servers/members';
+import { FormMessage } from '../../../shared/ui/FormMessage';
+import { useChatClock } from '../../chat/hooks/useChatClock';
 
 const BODY_X = space[3];
 // useVoiceRoom's stand-in for my seat before the backend's VOICE_STATE_UPDATE.
@@ -119,6 +122,7 @@ export function VoiceRoomScreen({
   const { width } = useWindowDimensions();
   const { top } = useSafeAreaInsets();
   const { session, summary, offsetMs } = useRoomSessionOf(channelId);
+  const chatClock = useChatClock();
   const room = useVoiceRoom(
     serverId,
     channelId,
@@ -572,14 +576,33 @@ export function VoiceRoomScreen({
           </View>
         ) : (
           <View style={styles.locked}>
+            {layout.access === 'timed-out' && room.timeout && (
+              // 08 S-SET-EDGE `timed-out-voice` (CR-17 #1): the reason above the button.
+              <FormMessage
+                tone="info"
+                text={t('voice.timedOut', {
+                  until: untilText(
+                    room.timeout,
+                    chatClock.now,
+                    chatClock.timeZone,
+                  ),
+                })}
+              />
+            )}
             <Button label={t('voice.join')} size="L" fullWidth disabled />
-            <Text variant="label" color="text-secondary" style={styles.center}>
-              {t(
-                layout.access === 'offline'
-                  ? 'voice.offline'
-                  : 'voice.noConnect',
-              )}
-            </Text>
+            {layout.access !== 'timed-out' && (
+              <Text
+                variant="label"
+                color="text-secondary"
+                style={styles.center}
+              >
+                {t(
+                  layout.access === 'offline'
+                    ? 'voice.offline'
+                    : 'voice.noConnect',
+                )}
+              </Text>
+            )}
           </View>
         )}
       </View>

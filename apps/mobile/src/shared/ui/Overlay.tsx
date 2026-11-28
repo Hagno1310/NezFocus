@@ -1,5 +1,5 @@
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
-import { Check, ChevronLeft } from 'lucide-react-native';
+import { Check, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import {
   createContext,
   useContext,
@@ -184,6 +184,8 @@ export type DialogAction = {
   onPress: () => void;
   variant?: 'primary' | 'danger';
   loading?: boolean;
+  // Really impossible now (08 › Edge case P2: kick / ban against a role just raised, 40301).
+  disabled?: boolean;
 };
 
 // C-09: confirmation without inputs. `cancel` omitted = single-button dialog.
@@ -224,6 +226,7 @@ export function Dialog({
       label={confirm.label}
       variant={confirm.variant ?? 'primary'}
       loading={busy}
+      disabled={confirm.disabled}
       onPress={confirm.onPress}
       fullWidth={layout === 'column'}
     />
@@ -530,6 +533,7 @@ export type ActionItem = {
   selected?: boolean;
   disabled?: boolean; // e.g. offline (chốt 25/11/2026): shown, not pressable
   hint?: string; // the reason under a disabled row (S-HOME-04 offline: "Cần kết nối mạng")
+  chevron?: boolean; // opens a sheet or a screen (S-SET-03 "Tạm khóa ›")
 };
 
 export type ActionGroup = { title?: string; items: ActionItem[] };
@@ -739,6 +743,9 @@ export function ActionRow({
       </View>
       {pickOne && item.selected && (
         <Icon as={Check} size="md" color="primary" />
+      )}
+      {item.chevron && (
+        <Icon as={ChevronRight} size="md" color="text-tertiary" />
       )}
     </Pressable>
   );

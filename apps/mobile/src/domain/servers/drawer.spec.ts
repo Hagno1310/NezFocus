@@ -191,7 +191,7 @@ describe('reduceHome (Gateway events)', () => {
       ...summary('300', 'CLB Guitar PTIT'),
       channels: [ch('301', 'text', 'general', null, 0)],
       roles: [],
-      me: { role_ids: [] },
+      me: { role_ids: [], timeout_until: null },
     };
     let { state } = reduceHome(
       loaded,
@@ -265,7 +265,7 @@ describe('reduceHome (Gateway events)', () => {
           ...summary('300', 'CLB Guitar PTIT'),
           channels: [],
           roles: [lead],
-          me: { role_ids: ['102'] },
+          me: { role_ids: ['102'], timeout_until: null },
         },
       }),
     );
@@ -327,6 +327,7 @@ describe('reduceHome (Gateway events)', () => {
           role_ids: ['r1'],
           joined_at: '2026-10-01T00:00:00Z',
           timeout_until: null,
+          timeout_reason: null,
         },
       });
     const { state } = reduceHome(loaded, update('me'), 'me');

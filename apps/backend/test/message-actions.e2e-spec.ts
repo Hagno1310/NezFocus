@@ -257,7 +257,7 @@ describe('Message actions (e2e)', () => {
         .expect(200);
     });
 
-    it('timed out → cannot edit (40302 until P3-A3.1 #126); blank content → 40001', async () => {
+    it('timed out → cannot edit (40307, ROLE-05 AC2); blank content → 40001', async () => {
       const [an, binh] = [await signedIn(), await signedIn()];
       const server = await serverOf(an, binh);
       const sent = await send(binh, server.text, 'Tin cũ');
@@ -269,7 +269,7 @@ describe('Message actions (e2e)', () => {
       const res = await binh
         .patch(messagePath(server.text, sent.id))
         .send({ content: 'Tin mới' });
-      expectCode(res, ErrorCode.Forbidden);
+      expectCode(res, ErrorCode.MemberTimedOut);
     });
 
     it('CR-28 #27: a mention added by an edit shows, but makes no inbox item and no mention_count', async () => {
@@ -469,7 +469,7 @@ describe('Message actions (e2e)', () => {
       await binh.put(myReaction(server.text, sent.id, '❤️')).expect(204);
     });
 
-    it('timed out (ROLE-05) and system messages: no reaction → 40302', async () => {
+    it('timed out (40307, ROLE-05 AC2) and system messages (40302): no reaction', async () => {
       const [an, binh] = [await signedIn(), await signedIn()];
       const server = await serverOf(an, binh);
       const sent = await send(an, server.text, 'Tin');
@@ -487,12 +487,12 @@ describe('Message actions (e2e)', () => {
       await timeOut(server.id, binh);
       expectCode(
         await binh.put(myReaction(server.text, sent.id, '👍')),
-        ErrorCode.Forbidden,
+        ErrorCode.MemberTimedOut,
       );
       // Removing is reacting too (CR-28 #27).
       expectCode(
         await binh.del(myReaction(server.text, sent.id, '🎉')),
-        ErrorCode.Forbidden,
+        ErrorCode.MemberTimedOut,
       );
     });
 

@@ -225,6 +225,14 @@ export const MessageDeleteEvent = z.object({
 });
 export type MessageDeleteEvent = z.infer<typeof MessageDeleteEvent>;
 
+// MESSAGE_DELETE_BULK (REQ-ROLE-05 AC1): a ban's recent messages, one event per channel.
+export const MessageDeleteBulkEvent = z.object({
+  ids: z.array(SnowflakeId),
+  channel_id: SnowflakeId,
+  server_id: SnowflakeId,
+});
+export type MessageDeleteBulkEvent = z.infer<typeof MessageDeleteBulkEvent>;
+
 // MESSAGE_REACTION_ADD / REMOVE: the app sets `me` when user_id is the signed-in user.
 export const MessageReactionEvent = z.object({
   user_id: SnowflakeId,

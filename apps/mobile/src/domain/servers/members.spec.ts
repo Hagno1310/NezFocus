@@ -43,6 +43,7 @@ const member = (
   role_ids: roleIds,
   joined_at: '2026-10-05T03:00:00Z',
   timeout_until: timeout,
+  timeout_reason: null,
 });
 const an = member('an', 'An', ['tn']);
 const tuan = member('tuan', 'Tuấn', ['qt']);

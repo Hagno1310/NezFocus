@@ -9,6 +9,10 @@ import {
 import { AppError } from '../../common/app-error.js';
 import { PermissionCache } from '../permissions/permission-cache.js';
 import { PermissionService } from '../permissions/permission.service.js';
+import {
+  AuditLogService,
+  type AuditAction,
+} from '../safety/audit-log.service.js';
 import { ChannelEvents } from './channel-events.js';
 import {
   ChannelsRepository,
@@ -39,6 +43,7 @@ export class ChannelOverwritesService {
     private readonly permissions: PermissionService,
     private readonly cache: PermissionCache,
     private readonly channelEvents: ChannelEvents,
+    private readonly audit: AuditLogService,
   ) {}
 
   async put(
@@ -54,6 +59,7 @@ export class ChannelOverwritesService {
     const channel = await this.write(
       userId,
       channelId,
+      { action: 'OVERWRITE_UPDATE', targetId },
       async (locked, self) => {
         const people = await locked.people(self.serverId, [userId, targetId]);
         if (!overwriteTarget(people, next))
@@ -80,7 +86,8 @@ export class ChannelOverwritesService {
 
   // 204 also when there is nothing to drop; then nothing is invalidated or sent.
   async remove(userId: bigint, channelId: bigint, targetId: bigint) {
-    await this.write(userId, channelId, async (locked, self) => {
+    const audit = { action: 'OVERWRITE_DELETE' as const, targetId };
+    await this.write(userId, channelId, audit, async (locked, self) => {
       const existing = self.channel.permission_overwrites.find(
         (o) => o.target_id === targetId.toString(),
       );
@@ -96,6 +103,7 @@ export class ChannelOverwritesService {
   private async write(
     userId: bigint,
     channelId: bigint,
+    audit: { action: AuditAction; targetId: bigint }, // REQ-ROLE-09
     change: (
       locked: LockedChannels,
       self: { serverId: bigint; channel: ChannelResponse },
@@ -115,7 +123,7 @@ export class ChannelOverwritesService {
           'The channel follows its category; turn syncing off first',
         );
       if (!(await change(locked, { serverId, channel: self })))
-        return { changed: false, channels: [self] };
+        return { changed: false, channels: [self], before: self };
       // A category's synced channels change who sees them too, so they go out again.
       const followers = locked.rows
         .filter((c) => c.parentId === channelId && c.permissionsSynced)
@@ -126,12 +134,27 @@ export class ChannelOverwritesService {
           toChannelResponse((await locked.reload(channelId))!),
           ...followers,
         ],
+        before: self,
       };
     });
     if (result.changed) {
       await this.cache.invalidateServer(serverId);
       await this.channelEvents.updated(serverId, result.channels, {
         by: userId,
+      });
+      const of = (c: ChannelResponse) =>
+        c.permission_overwrites.find(
+          (o) => o.target_id === audit.targetId.toString(),
+        ) ?? null;
+      await this.audit.record({
+        serverId,
+        actorId: userId,
+        targetId: channelId,
+        action: audit.action,
+        changes: {
+          before: of(result.before),
+          after: of(result.channels[0]!),
+        },
       });
     }
     return result.channels[0]!;

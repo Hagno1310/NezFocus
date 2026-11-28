@@ -13,6 +13,10 @@ export const MemberRoutes = {
   // REQ-VC-04, CR-28 #2, #31 · PATCH UpdateMemberVoiceRequest (voice.contract.ts) · 204 · 40001,
   // 40301 (role at or above own highest; the Owner), 40302 (MUTE_MEMBERS / MOVE_MEMBERS), 40401
   voice: '/servers/:id/members/:userId/voice',
+  // REQ-ROLE-05 · PATCH UpdateMemberRequest → ServerMember (timeout) · DELETE KickMemberRequest
+  // → 204 (kick) · 40001, 40301 (Owner, role at or above own highest; timeout: an
+  // ADMINISTRATOR), 40302 (MODERATE_MEMBERS / KICK_MEMBERS), 40401
+  member: '/servers/:id/members/:userId',
 } as const;
 
 export const MEMBER_PAGE_MAX = 1000;
@@ -26,7 +30,8 @@ export const ServerMember = z.object({
   }),
   role_ids: z.array(SnowflakeId), // without @everyone
   joined_at: z.iso.datetime(),
-  timeout_until: z.iso.datetime().nullable(), // REQ-ROLE-05; set by P3-A3 (#23)
+  timeout_until: z.iso.datetime().nullable(), // REQ-ROLE-05
+  timeout_reason: z.string().nullable(), // CR-28 #40: the `timed-out` chip of S-SET-03
 });
 export type ServerMember = z.infer<typeof ServerMember>;
 
@@ -55,8 +60,30 @@ export const ServerMemberEvent = ServerMember.extend({
 export type ServerMemberEvent = z.infer<typeof ServerMemberEvent>;
 
 // SRS 5.4 SERVER_MEMBER_REMOVE: leave, kick, ban. Sent by P3-A4.1 (#130) and P3-A3.1 (#126).
+// REQ-ROLE-05: the removed user's own copy says kick or ban and the reason, never by whom.
 export const ServerMemberRemove = z.object({
   server_id: SnowflakeId,
   user_id: SnowflakeId,
+  action: z.enum(['kick', 'ban']).optional(),
+  reason: z.string().nullable().optional(),
 });
 export type ServerMemberRemove = z.infer<typeof ServerMemberRemove>;
+
+export const MODERATION_REASON_MAX = 512; // REQ-ROLE-05
+const Reason = z
+  .string()
+  .trim()
+  .max(MODERATION_REASON_MAX)
+  .transform((r) => r || null)
+  .nullable()
+  .optional();
+
+// REQ-ROLE-05: set, change (counted again from now, AC5) or lift (null) a timeout.
+export const UpdateMemberRequest = z.object({
+  timeout_until: z.iso.datetime().nullable(),
+  reason: Reason, // a change of duration keeps the reason already there (CR-28 #40)
+});
+export type UpdateMemberRequest = z.input<typeof UpdateMemberRequest>;
+
+export const KickMemberRequest = z.object({ reason: Reason });
+export type KickMemberRequest = z.input<typeof KickMemberRequest>;

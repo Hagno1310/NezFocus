@@ -12,3 +12,4 @@ export * from '../modules/notifications/notifications.schema.js';
 export * from '../modules/notifications/push-tokens.schema.js';
 export * from '../modules/friends/friends.schema.js';
 export * from '../modules/channels/dm.schema.js';
+export * from '../modules/safety/audit-log.schema.js';

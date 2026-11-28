@@ -11,7 +11,7 @@ import {
   type MessageResponse,
   type ReactionUsersResponse,
 } from '@nezfocus/shared';
-import { AppError, rateLimited } from '../../common/app-error.js';
+import { AppError, rateLimited, timedOut } from '../../common/app-error.js';
 import { Clock } from '../../common/clock.js';
 import { KeyValueStore } from '../../redis/key-value-store.js';
 import { DmAccessPolicy } from '../channels/dm-access-policy.js';
@@ -77,7 +77,7 @@ export class MessageActionsService {
   }
 
   // AC1, AC2 (only the author, MANAGE_MESSAGES or not), MSG-11 AC2 (not a system message).
-  // Timed out: 40302 (40307 comes with P3-A3.1 #126); losing SEND_MESSAGES does not stop it.
+  // Timed out: 40307 (REQ-ROLE-05 AC2); losing SEND_MESSAGES does not stop it.
   async edit(
     userId: bigint,
     channelId: bigint,
@@ -310,7 +310,7 @@ export class MessageActionsService {
   private async notTimedOut(userId: bigint, channel: ChannelRow) {
     if (!channel.serverId) return;
     const until = await this.repo.timeoutUntil(channel.serverId, userId);
-    if (until && until > this.clock.now()) throw forbidden();
+    if (until && until > this.clock.now()) throw timedOut(until);
   }
 
   // Putting and removing alike (CR-28 #27): not timed out; in a DM, as sending (40303).

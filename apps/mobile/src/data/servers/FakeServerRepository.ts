@@ -280,6 +280,7 @@ export function createFakeServerRepository(
           role_ids: server.me.role_ids,
           joined_at: '2026-10-01T00:00:00Z',
           timeout_until: null,
+          timeout_reason: null,
         },
       ]);
     return members.get(serverId)!;

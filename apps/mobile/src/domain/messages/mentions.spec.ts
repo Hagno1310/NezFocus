@@ -14,6 +14,7 @@ const member = (id: string, name: string, username: string) => ({
   role_ids: [],
   joined_at: '2026-10-01T00:00:00Z',
   timeout_until: null,
+  timeout_reason: null,
 });
 
 // Dữ liệu mẫu 02: Bình, Chi, Dũng, Hà, Khánh online; Mai offline; An is me.

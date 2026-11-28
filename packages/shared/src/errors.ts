@@ -67,6 +67,7 @@ export const ApiErrorBody = z.object({
   attempts_left: z.number().int().optional(), // 40003
   // 40100 / 40103: why the session ended (SessionEndReason; admin web has its own values)
   reason: z.string().optional(),
+  timeout_until: z.iso.datetime().optional(), // 40307 (REQ-ROLE-05 AC2)
   // 42601: the lowest app version the backend accepts (S-AUTH-00 shows it when present)
   min_version: z.string().optional(),
 });

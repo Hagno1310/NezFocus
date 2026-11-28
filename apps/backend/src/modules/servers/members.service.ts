@@ -16,6 +16,7 @@ import { avatarUrls } from '../attachments/media.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
 import { PermissionCache } from '../permissions/permission-cache.js';
 import { PermissionService } from '../permissions/permission.service.js';
+import { AuditLogService } from '../safety/audit-log.service.js';
 import { ChannelEvents } from './channel-events.js';
 import { ChannelsRepository } from './channels.repository.js';
 import { MembersRepository, type MemberRow } from './members.repository.js';
@@ -38,6 +39,7 @@ export const toServerMember = (m: MemberRow): ServerMember => ({
   role_ids: m.roleIds,
   joined_at: m.joinedAt.toISOString(),
   timeout_until: m.timeoutUntil?.toISOString() ?? null,
+  timeout_reason: m.timeoutReason,
 });
 
 // REQ-ROLE-04: the member list (S-SET-03, S-HOME-03) and giving / taking one role (CR-28 #23).
@@ -52,6 +54,7 @@ export class MembersService {
     private readonly cache: PermissionCache,
     private readonly events: EventPublisher,
     private readonly channelEvents: ChannelEvents,
+    private readonly audit: AuditLogService,
   ) {}
 
   async list(
@@ -144,6 +147,15 @@ export class MembersService {
     if (!changed) return;
     // ROLE-08 AC3: the next request of the member computes again.
     await this.cache.invalidateServer(serverId);
+    await this.audit.record({
+      serverId,
+      actorId: userId,
+      targetId,
+      action: 'MEMBER_ROLE_UPDATE',
+      changes: give
+        ? { after: { added: [roleId.toString()] } }
+        : { after: { removed: [roleId.toString()] } },
+    });
     const member = await this.repo.one(serverId, targetId);
     if (member)
       await this.events.toServer(serverId, 'SERVER_MEMBER_UPDATE', {

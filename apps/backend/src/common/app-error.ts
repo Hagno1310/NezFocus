@@ -29,6 +29,7 @@ export type AppErrorDetails = {
   retryAfter?: number;
   attemptsLeft?: number;
   reason?: string;
+  timeoutUntil?: Date; // 40307
 };
 
 export class AppError extends Error {
@@ -49,4 +50,10 @@ export class AppError extends Error {
 export const rateLimited = (retryAfter: number) =>
   new AppError(ErrorCode.RateLimited, 'Too many requests', undefined, {
     retryAfter: Math.max(1, Math.ceil(retryAfter)),
+  });
+
+// REQ-ROLE-05 AC2: sending, reacting or editing while timed out.
+export const timedOut = (until: Date) =>
+  new AppError(ErrorCode.MemberTimedOut, 'You are timed out', undefined, {
+    timeoutUntil: until,
   });

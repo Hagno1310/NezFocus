@@ -1,7 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { NotificationService } from '../notifications/notification-service.js';
-import { MEMBER_JOINED, type MemberJoined } from '../servers/member-events.js';
+import {
+  MEMBER_BANNED,
+  MEMBER_JOINED,
+  type MemberBanned,
+  type MemberJoined,
+} from '../servers/member-events.js';
 import { ServersRepository } from '../servers/servers.repository.js';
 import { MESSAGE_CREATED, type MessageCreated } from './message-events.js';
 import { MessagesService } from './messages.service.js';
@@ -68,6 +73,18 @@ export class MessagingListener {
       );
     } catch (err) {
       this.logger.error(`join message ${serverId}/${userId}`, err);
+    }
+  }
+
+  // REQ-ROLE-05 AC1. Awaited by the ban (emitAsync); their mention / reply items go too.
+  @OnEvent(MEMBER_BANNED, { promisify: true })
+  async banned({ serverId, userId, since }: MemberBanned) {
+    try {
+      const ids = await this.messages.deleteRecentOf(serverId, userId, since);
+      for (const id of ids)
+        await this.notifications.deleteBySource({ message_id: id });
+    } catch (err) {
+      this.logger.error(`ban messages ${serverId}/${userId}`, err);
     }
   }
 }

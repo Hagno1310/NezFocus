@@ -13,6 +13,7 @@ import {
   ChannelPinsUpdateEvent,
   MessageAck,
   MessageCreateEvent,
+  MessageDeleteBulkEvent,
   MessageDeleteEvent,
   MessageReactionEvent,
   MessageUpdateEvent,
@@ -36,6 +37,7 @@ import {
   ServerMemberEvent,
   ServerMemberRemove,
 } from '../servers/member.contract.js';
+import { ServerBanEvent, ServerBanRemove } from '../servers/ban.contract.js';
 import { ServerResponse, ServerSummary } from '../servers/server.contract.js';
 import { SnowflakeId } from '../snowflake.js';
 import {
@@ -82,8 +84,10 @@ export const DispatchEvents = {
   SERVER_CREATE: ServerResponse, // REQ-SRV-01 / SRV-04: to every session of the creator, or of who joins
   SERVER_UPDATE: ServerSummary, // to the members
   SERVER_MEMBER_ADD: ServerMemberEvent, // REQ-SRV-04 AC1: to the members, the newcomer included
-  SERVER_MEMBER_UPDATE: ServerMemberEvent, // REQ-ROLE-04 AC2: roles (timeout with P3-A3.1 (#126)), to the members
-  SERVER_MEMBER_REMOVE: ServerMemberRemove, // leave / kick / ban (P3-A4.1 #130, P3-A3.1 #126), to the members
+  SERVER_MEMBER_UPDATE: ServerMemberEvent, // REQ-ROLE-04 AC2 roles, REQ-ROLE-05 timeout, to the members
+  SERVER_MEMBER_REMOVE: ServerMemberRemove, // leave / kick / ban, to the members; the removed user's copy has action + reason
+  SERVER_BAN_ADD: ServerBanEvent, // REQ-ROLE-07: to the members with BAN_MEMBERS (S-SET-04 `bans`)
+  SERVER_BAN_REMOVE: ServerBanRemove,
   SERVER_ROLE_CREATE: ServerRoleEvent, // REQ-ROLE-01: to the members
   SERVER_ROLE_UPDATE: ServerRoleEvent, // also one per role moved by a reorder
   SERVER_ROLE_DELETE: ServerRoleDeleted,
@@ -96,6 +100,7 @@ export const DispatchEvents = {
   MESSAGE_CREATE: MessageCreateEvent, // REQ-MSG-01: to who can view the channel, nonce echoed (MSG-09)
   MESSAGE_UPDATE: MessageUpdateEvent, // REQ-MSG-05 AC1: to who can view the channel
   MESSAGE_DELETE: MessageDeleteEvent, // REQ-MSG-05 AC3
+  MESSAGE_DELETE_BULK: MessageDeleteBulkEvent, // REQ-ROLE-05 AC1: to who can view the channel
   MESSAGE_REACTION_ADD: MessageReactionEvent, // REQ-MSG-05
   MESSAGE_REACTION_REMOVE: MessageReactionEvent,
   MESSAGE_ACK: MessageAck, // REQ-NOTIF-01: to every session of the user who acked

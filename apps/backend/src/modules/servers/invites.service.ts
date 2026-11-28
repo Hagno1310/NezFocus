@@ -17,6 +17,7 @@ import { avatarUrls, serverIconUrl } from '../attachments/media.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
 import { PresenceReader } from '../gateway/presence.service.js';
 import { PermissionService } from '../permissions/permission.service.js';
+import { AuditLogService } from '../safety/audit-log.service.js';
 import { InviteCodes, isLive, maxAgeOf } from './invite-rules.js';
 import { InvitesRepository } from './invites.repository.js';
 import { MEMBER_JOINED, type MemberJoined } from './member-events.js';
@@ -54,6 +55,7 @@ export class InvitesService {
     private readonly clock: Clock,
     private readonly codes: InviteCodes,
     private readonly emitter: EventEmitter2,
+    private readonly audit: AuditLogService,
   ) {}
 
   async create(
@@ -94,8 +96,22 @@ export class InvitesService {
         revokedAt: null,
         createdAt: now,
       };
-      if (await this.repo.insert(row))
+      if (await this.repo.insert(row)) {
+        await this.audit.record({
+          serverId: channel.serverId,
+          actorId: userId,
+          targetId: channelId,
+          action: 'INVITE_CREATE',
+          changes: {
+            after: {
+              code: row.code,
+              max_uses: row.maxUses,
+              max_age: body.max_age,
+            },
+          },
+        });
         return { invite: toInviteResponse(row), created: true };
+      }
     }
     throw new AppError(ErrorCode.InternalError, 'No free invite code');
   }
@@ -167,6 +183,7 @@ export class InvitesService {
         role_ids: [],
         joined_at: now.toISOString(),
         timeout_until: null,
+        timeout_reason: null,
       });
       const joined: MemberJoined = { serverId: invite.serverId, userId };
       this.emitter.emit(MEMBER_JOINED, joined);
@@ -188,6 +205,15 @@ export class InvitesService {
       );
     }
     await this.repo.revoke(code, this.clock.now());
+    await this.audit.record({
+      serverId: invite.serverId,
+      actorId: userId,
+      targetId: invite.channelId,
+      action: 'INVITE_DELETE',
+      changes: {
+        before: { code, uses: invite.uses, max_uses: invite.maxUses },
+      },
+    });
   }
 
   async listForServer(

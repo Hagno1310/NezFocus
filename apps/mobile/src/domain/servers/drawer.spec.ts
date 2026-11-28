@@ -327,6 +327,7 @@ describe('reduceHome (Gateway events)', () => {
           role_ids: ['r1'],
           joined_at: '2026-10-01T00:00:00Z',
           timeout_until: null,
+          timeout_reason: null,
         },
       });
     const { state } = reduceHome(loaded, update('me'), 'me');

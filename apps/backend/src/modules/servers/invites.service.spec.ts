@@ -7,6 +7,7 @@ import { MemoryKeyValueStore } from '../../redis/key-value-store.js';
 import type { EventPublisher } from '../gateway/event-publisher.js';
 import type { PresenceReader } from '../gateway/presence.service.js';
 import type { PermissionService } from '../permissions/permission.service.js';
+import type { AuditLogService } from '../safety/audit-log.service.js';
 import type {
   AcceptResult,
   InvitesRepository,
@@ -141,6 +142,10 @@ function setup(
       emit: (t: string, d: { userId: bigint }) =>
         void events.push({ to: 'internal', id: d.userId, t, d }),
     } as unknown as EventEmitter2,
+    {
+      record: async (e: { action: string; actorId: bigint }) =>
+        void events.push({ to: 'audit', id: e.actorId, t: e.action, d: e }),
+    } as unknown as AuditLogService,
   );
   return { service, repo, events, asked, clock, members };
 }

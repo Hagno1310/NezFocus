@@ -27,6 +27,7 @@ import { SnowflakeGenerator } from '../../common/snowflake.js';
 import { EventPublisher } from '../gateway/event-publisher.js';
 import { PermissionCache } from '../permissions/permission-cache.js';
 import { PermissionService } from '../permissions/permission.service.js';
+import { AuditLogService, roleShape } from '../safety/audit-log.service.js';
 import { ChannelEvents } from './channel-events.js';
 import { ChannelsRepository } from './channels.repository.js';
 import { RolesRepository, type LockedRoles } from './roles.repository.js';
@@ -90,6 +91,7 @@ export class RolesService {
     private readonly clock: Clock,
     private readonly channels: ChannelsRepository,
     private readonly channelEvents: ChannelEvents,
+    private readonly audit: AuditLogService,
   ) {}
 
   async list(userId: bigint, serverId: bigint): Promise<RoleListResponse> {
@@ -141,6 +143,13 @@ export class RolesService {
       role: response,
     });
     await this.announce(serverId, shifted);
+    await this.audit.record({
+      serverId,
+      actorId: userId,
+      targetId: role.id,
+      action: 'ROLE_CREATE',
+      changes: { after: roleShape(role) },
+    });
     return response;
   }
 
@@ -183,10 +192,10 @@ export class RolesService {
           );
         set.permissions = next;
       }
-      return locked.update(role.id, set);
+      return { before: role, after: await locked.update(role.id, set) };
     });
     await this.cache.invalidateServer(serverId);
-    const response = toRoleResponse(role);
+    const response = toRoleResponse(role.after);
     await this.events.toServer(serverId, 'SERVER_ROLE_UPDATE', {
       server_id: serverId.toString(),
       role: response,
@@ -199,6 +208,13 @@ export class RolesService {
         channels.map(toChannelResponse),
       );
     }
+    await this.audit.record({
+      serverId,
+      actorId: userId,
+      targetId: roleId,
+      action: 'ROLE_UPDATE',
+      changes: { before: roleShape(role.before), after: roleShape(role.after) },
+    });
     return response;
   }
 
@@ -208,7 +224,8 @@ export class RolesService {
       if (roleId === serverId)
         throw invalid('role_id', 'EVERYONE', '@everyone cannot be deleted');
       const actor = actorOf(serverId, userId, locked);
-      return locked.remove(this.manageable(actor, locked, roleId));
+      const role = this.manageable(actor, locked, roleId);
+      return { role, channels: await locked.remove(role) };
     });
     await this.cache.invalidateServer(serverId);
     await this.events.toServer(serverId, 'SERVER_ROLE_DELETE', {
@@ -216,7 +233,14 @@ export class RolesService {
       role_id: roleId.toString(),
     });
     // The channels whose overwrites lost the role, and the ones synced to such a category.
-    const hit = new Set(touched);
+    await this.audit.record({
+      serverId,
+      actorId: userId,
+      targetId: roleId,
+      action: 'ROLE_DELETE',
+      changes: { before: roleShape(touched.role) },
+    });
+    const hit = new Set(touched.channels);
     const affected = (await this.channels.listForServer(serverId)).filter(
       (c) =>
         hit.has(c.id) ||
@@ -249,6 +273,18 @@ export class RolesService {
     });
     await this.cache.invalidateServer(serverId);
     await this.announce(serverId, moved);
+    if (moved.length)
+      await this.audit.record({
+        serverId,
+        actorId: userId,
+        action: 'ROLE_UPDATE',
+        changes: {
+          after: moved.map((r) => ({
+            id: r.id.toString(),
+            position: r.position,
+          })),
+        },
+      });
   }
 
   // 40401 for a server that does not exist and for one the caller is not in.

@@ -12,6 +12,7 @@ export type MemberRow = {
   roleIds: string[];
   joinedAt: Date;
   timeoutUntil: Date | null;
+  timeoutReason: string | null;
 };
 
 const roleIds = sql<string[]>`coalesce((
@@ -51,6 +52,7 @@ export class MembersRepository {
         roleIds,
         joinedAt: serverMembers.joinedAt,
         timeoutUntil: serverMembers.timeoutUntil,
+        timeoutReason: serverMembers.timeoutReason,
       })
       .from(serverMembers)
       .innerJoin(users, eq(users.id, serverMembers.userId))

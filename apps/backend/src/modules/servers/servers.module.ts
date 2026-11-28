@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AttachmentsModule } from '../attachments/attachments.module.js';
+import { BansController } from './bans.controller.js';
 import { ChannelEvents } from './channel-events.js';
 import { ChannelOverwritesService } from './channel-overwrites.service.js';
 import { ChannelsController } from './channels.controller.js';
@@ -13,6 +14,8 @@ import { InvitesService } from './invites.service.js';
 import { MembersController } from './members.controller.js';
 import { MembersRepository } from './members.repository.js';
 import { MembersService } from './members.service.js';
+import { ModerationRepository } from './moderation.repository.js';
+import { ModerationService } from './moderation.service.js';
 import { RolesController } from './roles.controller.js';
 import { RolesRepository } from './roles.repository.js';
 import { RolesService } from './roles.service.js';
@@ -27,6 +30,7 @@ import { ServersService } from './servers.service.js';
     ChannelsController,
     RolesController,
     MembersController,
+    BansController,
     InvitesController,
     InvitePageController,
   ],
@@ -41,6 +45,8 @@ import { ServersService } from './servers.service.js';
     RolesService,
     MembersRepository,
     MembersService,
+    ModerationRepository,
+    ModerationService,
     InvitesRepository,
     InvitesService,
     { provide: InviteCodes, useClass: RandomInviteCodes },

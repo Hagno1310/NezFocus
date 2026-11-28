@@ -1,6 +1,7 @@
 import type { BanRequest, ServerMember } from '@nezfocus/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { serverRepository } from '../../../data/servers';
+import { bansRoot } from './useServerLists';
 
 const membersRoot = (serverId: string) => ['servers', serverId, 'members'];
 
@@ -37,7 +38,7 @@ export function useModerate(serverId: string) {
     ban: async (userId: string, body: BanRequest) => {
       await serverRepository.banMember(serverId, userId, body);
       drop(userId);
-      void qc.invalidateQueries({ queryKey: ['servers', serverId, 'bans'] });
+      void qc.invalidateQueries({ queryKey: bansRoot(serverId) });
     },
   };
 }

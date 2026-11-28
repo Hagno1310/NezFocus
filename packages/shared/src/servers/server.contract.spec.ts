@@ -81,7 +81,7 @@ const full = {
       is_mentionable: false,
     },
   ],
-  me: { role_ids: [] }, // the Owner of a new server has no role
+  me: { role_ids: [], timeout_until: null }, // the Owner of a new server has no role
 };
 
 describe('server contract (SRS 5.3 Server, REQ-SRV-01)', () => {

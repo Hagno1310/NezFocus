@@ -139,9 +139,10 @@ export class MembersService {
           !canActOnMember(actor.server, actor.member, target)
         )
           throw outranked('The member is the Owner or level with or above you');
-        return give
-          ? locked.giveRole(targetId, roleId)
-          : locked.takeRole(targetId, roleId);
+        const done = give
+          ? await locked.giveRole(targetId, roleId)
+          : await locked.takeRole(targetId, roleId);
+        return done ? targetRoles : null; // the roles before, for the audit entry
       },
     );
     if (!changed) return;
@@ -152,9 +153,14 @@ export class MembersService {
       actorId: userId,
       targetId,
       action: 'MEMBER_ROLE_UPDATE',
-      changes: give
-        ? { after: { added: [roleId.toString()] } }
-        : { after: { removed: [roleId.toString()] } },
+      changes: {
+        before: { role_ids: changed.map(String) },
+        after: {
+          role_ids: give
+            ? [...changed, roleId].map(String)
+            : changed.filter((id) => id !== roleId).map(String),
+        },
+      },
     });
     const member = await this.repo.one(serverId, targetId);
     if (member)

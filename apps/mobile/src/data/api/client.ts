@@ -43,7 +43,6 @@ export class ApiError extends Error {
   readonly reason: string | undefined;
   readonly request_id: string | undefined;
   readonly min_version: string | undefined;
-  readonly timeout_until: string | undefined; // 40307
 
   constructor(
     readonly status: number,
@@ -58,7 +57,6 @@ export class ApiError extends Error {
     this.reason = body.reason;
     this.request_id = body.request_id;
     this.min_version = body.min_version;
-    this.timeout_until = body.timeout_until;
   }
 }
 

@@ -210,7 +210,7 @@ describe('the full server lets the app compute permissions', () => {
     created_at: '2026-11-05T08:00:00.000Z',
     channels: [thongBao],
     roles: [quanTri, everyone],
-    me: { role_ids: ['101'] },
+    me: { role_ids: ['101'], timeout_until: null },
   });
 
   const canSend = (userId: string, roleIds: readonly string[]) => {

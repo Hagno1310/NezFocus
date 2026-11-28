@@ -32,7 +32,7 @@ import { closeVoice, openVoice, voiceView } from '../domain/voice/voiceView';
 import { i18n } from '../shared/i18n';
 import { showToast } from '../shared/ui/Toast';
 
-const timeZoneNow = () =>
+const userTimeZone = () =>
   settingsStore.getState().settings?.timezone ?? deviceTimeZone();
 
 const channelName = ({ serverId, channelId }: VoiceTarget) =>
@@ -53,13 +53,16 @@ function onEnded(end: VoiceEnd, name: string | undefined) {
     // (SERVER_MEMBER_UPDATE came first, REQ-ROLE-05 AC4).
     openVoice(end);
     const until = homeStore.getState().myTimeouts[end.serverId];
-    if (until)
-      showToast({
-        icon: Timer,
-        message: i18n.t('voice.timedOutLeft', {
-          until: untilText(until, Date.now(), timeZoneNow()),
-        }),
-      });
+    showToast(
+      until
+        ? {
+            icon: Timer,
+            message: i18n.t('voice.timedOutLeft', {
+              until: untilText(until, Date.now(), userTimeZone()),
+            }),
+          }
+        : { message: i18n.t('voice.disconnectedByMod') },
+    );
     return;
   }
   if (end.reason === 'other_device') {

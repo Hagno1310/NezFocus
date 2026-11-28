@@ -60,12 +60,13 @@ export const toServerBan = (b: BanRow): ServerBan => ({
 
 // "{created_at}|{user_id}" of the last row: newest first, ties by user id.
 const banCursor = (b: ServerBan) => `${b.created_at}|${b.user.id}`;
-const after = (b: ServerBan, cursor: string) => {
+// An unreadable cursor starts at the top, like the member list (pageMembers).
+const afterCursor = (cursor: string) => {
   const [at, id] = cursor.split('|');
-  return (
-    b.created_at < at! ||
-    (b.created_at === at && BigInt(b.user.id) < BigInt(id ?? 0))
-  );
+  if (!at || !id || !/^\d{1,20}$/.test(id)) return () => true;
+  const last = BigInt(id);
+  return (b: ServerBan) =>
+    b.created_at < at || (b.created_at === at && BigInt(b.user.id) < last);
 };
 
 // REQ-ROLE-05 timeout / kick / ban, REQ-ROLE-07 ban list. Every success: the permission cache
@@ -291,7 +292,7 @@ export class ModerationService {
     const all = (await this.repo.bans(serverId))
       .map(toServerBan)
       .filter((b) => matchesMember(b, query.q ?? ''));
-    const rest = query.after ? all.filter((b) => after(b, query.after!)) : all;
+    const rest = query.after ? all.filter(afterCursor(query.after)) : all;
     const bans = rest.slice(0, query.limit);
     return {
       bans,

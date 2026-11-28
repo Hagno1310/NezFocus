@@ -73,12 +73,15 @@ export function BansScreen({
     rows.length >= BAN_SEARCH_FROM || !!bans.data?.pages[0]?.next_cursor;
   if (many && !searchable && !query) setSearchable(true);
 
-  const line = (b: ServerBan) => {
+  // `long-ban-reason`: only the reason is cut; "· 15/10 · bởi An" always shows.
+  const tail = (b: ServerBan) => {
     const l = banRowLine(b, timeZone);
-    return [l.reason, l.date, l.by && t('servers.bans.by', { name: l.by })]
+    return [l.date, l.by && t('servers.bans.by', { name: l.by })]
       .filter(Boolean)
       .join(' · ');
   };
+  const line = (b: ServerBan) =>
+    [b.reason, tail(b)].filter(Boolean).join(' · ');
   const detail = (b: ServerBan) => {
     const d = banDetailLine(b, timeZone);
     return d.by && d.username
@@ -184,9 +187,21 @@ export function BansScreen({
                 <Text weight="600" numberOfLines={1}>
                   {memberName(item)}
                 </Text>
-                <Text variant="label" color="text-secondary" numberOfLines={1}>
-                  {line(item)}
-                </Text>
+                <View style={styles.line}>
+                  {item.reason && (
+                    <Text
+                      variant="label"
+                      color="text-secondary"
+                      numberOfLines={1}
+                      style={styles.shrink}
+                    >
+                      {`${item.reason} · `}
+                    </Text>
+                  )}
+                  <Text variant="label" color="text-secondary">
+                    {tail(item)}
+                  </Text>
+                </View>
               </View>
               <Icon as={ChevronRight} size="md" color="text-tertiary" />
             </Pressable>
@@ -276,6 +291,8 @@ const styles = StyleSheet.create({
     paddingVertical: space[2],
   },
   skeleton: { gap: space[2] },
+  line: { flexDirection: 'row' },
+  shrink: { flexShrink: 1 },
   noMatch: { textAlign: 'center', padding: space[4] },
   head: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
   reason: { flexGrow: 0, flexShrink: 1 },

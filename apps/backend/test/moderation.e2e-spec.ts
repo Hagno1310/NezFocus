@@ -535,6 +535,10 @@ describe('Moderation (e2e)', () => {
           .expect(200)
       ).body as BanListResponse;
       expect(next.bans.map((b) => b.user.display_name)).toEqual(['Khánh']);
+      // An unreadable cursor starts at the top, never a 500.
+      await s.tuan
+        .get(`${s.bans}?after=${encodeURIComponent('x|y')}`)
+        .expect(200);
       expect(code(await s.binh.get(s.bans))).toBe(ErrorCode.Forbidden);
     });
 
@@ -574,6 +578,12 @@ describe('Moderation (e2e)', () => {
       expect(entries.map((e) => e.actionType)).toEqual(
         expect.arrayContaining(['MEMBER_ROLE_UPDATE', 'SERVER_UPDATE']),
       );
+      expect(
+        entries.find((e) => e.actionType === 'MEMBER_ROLE_UPDATE')!.changes,
+      ).toEqual({
+        before: { role_ids: [] },
+        after: { role_ids: [quanTri.id] },
+      });
       expect(
         entries.find((e) => e.actionType === 'SERVER_UPDATE')!.changes,
       ).toEqual({

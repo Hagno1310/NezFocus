@@ -329,7 +329,6 @@ export class MessagesService {
       );
   }
 
-  // REQ-DM-02 / FRIEND-03 AC1 in a DM: 40303 with one sentence; elsewhere SEND_MESSAGES.
   // REQ-ROLE-05 AC1: a ban's "Xóa tin nhắn gần đây"; one MESSAGE_DELETE_BULK per channel.
   async deleteRecentOf(serverId: bigint, userId: bigint, since: Date) {
     const byChannel = await this.repo.softDeleteByAuthor(
@@ -347,18 +346,18 @@ export class MessagesService {
     return [...byChannel.values()].flat();
   }
 
+  // REQ-DM-02 / FRIEND-03 AC1 in a DM: 40303 with one sentence; elsewhere SEND_MESSAGES, and
   // REQ-ROLE-05 AC2: timed out → 40307 with timeout_until, before the 40302 it would also be.
   private async requireSend(userId: bigint, channel: ChannelRow) {
     if (channel.serverId) {
       const until = await this.repo.timeoutUntil(channel.serverId, userId);
       if (until && until > this.clock.now()) throw timedOut(until);
-    }
-    if (channel.serverId)
       return this.permissions.require(
         userId,
         { channelId: channel.id },
         Permission.SEND_MESSAGES,
       );
+    }
     if (!(await this.dmPolicy.canSend(userId, channel.id)))
       throw new AppError(ErrorCode.CannotMessageUser, CANNOT_MESSAGE_TEXT);
   }

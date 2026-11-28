@@ -11,7 +11,7 @@ import { serverRepository } from '../../../data/servers';
 import { onGatewayEvent } from '../../../domain/gateway/gatewayStore';
 
 const invitesKey = (serverId: string) => ['servers', serverId, 'invites'];
-const bansRoot = (serverId: string) => ['servers', serverId, 'bans'];
+export const bansRoot = (serverId: string) => ['servers', serverId, 'bans'];
 
 // S-SET-04 `invites`: no event tells about another person's invite, so it is read on open.
 export function useServerInvites(serverId: string) {

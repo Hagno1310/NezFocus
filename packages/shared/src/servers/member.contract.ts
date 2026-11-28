@@ -70,7 +70,8 @@ export const ServerMemberRemove = z.object({
 export type ServerMemberRemove = z.infer<typeof ServerMemberRemove>;
 
 export const MODERATION_REASON_MAX = 512; // REQ-ROLE-05
-const Reason = z
+// REQ-ROLE-05: a blank reason is no reason.
+export const ModerationReason = z
   .string()
   .trim()
   .max(MODERATION_REASON_MAX)
@@ -81,9 +82,9 @@ const Reason = z
 // REQ-ROLE-05: set, change (counted again from now, AC5) or lift (null) a timeout.
 export const UpdateMemberRequest = z.object({
   timeout_until: z.iso.datetime().nullable(),
-  reason: Reason, // a change of duration keeps the reason already there (CR-28 #40)
+  reason: ModerationReason, // a change of duration keeps the reason already there (CR-28 #40)
 });
 export type UpdateMemberRequest = z.input<typeof UpdateMemberRequest>;
 
-export const KickMemberRequest = z.object({ reason: Reason });
+export const KickMemberRequest = z.object({ reason: ModerationReason });
 export type KickMemberRequest = z.input<typeof KickMemberRequest>;

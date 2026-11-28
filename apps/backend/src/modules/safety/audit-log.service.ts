@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { SnowflakeGenerator } from '../../common/snowflake.js';
 import { AuditLogRepository } from './audit-log.repository.js';
 import type { AuditChanges } from './audit-log.schema.js';
@@ -38,21 +38,28 @@ export type AuditEntry = {
 // Owner: safety (A). Servers, safety (SAFE-01) and SRV-05 inject it.
 @Injectable()
 export class AuditLogService {
+  private readonly logger = new Logger(AuditLogService.name);
+
   constructor(
     private readonly repo: AuditLogRepository,
     private readonly ids: SnowflakeGenerator,
   ) {}
 
-  record(e: AuditEntry) {
-    return this.repo.insert({
-      id: this.ids.next(),
-      serverId: e.serverId,
-      actorId: e.actorId,
-      targetId: e.targetId ?? null,
-      actionType: e.action,
-      reason: e.reason ?? null,
-      changes: e.changes ?? null,
-    });
+  // The action is done and announced already: a failed entry is logged, never a 500 for it.
+  async record(e: AuditEntry) {
+    await this.repo
+      .insert({
+        id: this.ids.next(),
+        serverId: e.serverId,
+        actorId: e.actorId,
+        targetId: e.targetId ?? null,
+        actionType: e.action,
+        reason: e.reason ?? null,
+        changes: e.changes ?? null,
+      })
+      .catch((err: unknown) =>
+        this.logger.error(`audit ${e.action} ${e.serverId}`, err),
+      );
   }
 }
 

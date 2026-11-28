@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { AvatarUrls } from '../auth/auth.contract.js';
 import { SnowflakeId } from '../snowflake.js';
-import { MODERATION_REASON_MAX } from './member.contract.js';
+import { ModerationReason } from './member.contract.js';
 
 // Paths are relative to /api/v1 (SRS 5.3 Ban). Every route needs BAN_MEMBERS (40302).
 export const BanRoutes = {
@@ -17,13 +17,7 @@ export const BAN_PAGE_MAX = 100;
 
 // REQ-ROLE-05: "Xóa tin nhắn gần đây" — Không xóa · 1 ngày qua · 7 ngày qua (AC1).
 export const BanRequest = z.object({
-  reason: z
-    .string()
-    .trim()
-    .max(MODERATION_REASON_MAX)
-    .transform((r) => r || null)
-    .nullable()
-    .optional(),
+  reason: ModerationReason,
   delete_message_days: z
     .union([z.literal(0), z.literal(1), z.literal(7)])
     .default(0),
